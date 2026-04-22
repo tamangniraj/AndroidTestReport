@@ -3,17 +3,17 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <meta http-equiv="x-ua-compatible" content="IE=edge"/>
-<title>Test results - Class com.vivekahealth.vivekahealth.openEnrollment.OpenEnrollmentUtilsTest</title>
+<title>Test results - Class com.vivekahealth.vivekahealth.SortingUtilsTest</title>
 <link href="../css/base-style.css" rel="stylesheet" type="text/css"/>
 <link href="../css/style.css" rel="stylesheet" type="text/css"/>
 <script src="../js/report.js" type="text/javascript"></script>
 </head>
 <body>
 <div id="content">
-<h1>Class com.vivekahealth.vivekahealth.openEnrollment.OpenEnrollmentUtilsTest</h1>
+<h1>Class com.vivekahealth.vivekahealth.SortingUtilsTest</h1>
 <div class="breadcrumbs">
 <a href="../index.html">all</a> &gt; 
-<a href="../packages/com.vivekahealth.vivekahealth.openEnrollment.html">com.vivekahealth.vivekahealth.openEnrollment</a> &gt; OpenEnrollmentUtilsTest</div>
+<a href="../packages/com.vivekahealth.vivekahealth.html">com.vivekahealth.vivekahealth</a> &gt; SortingUtilsTest</div>
 <div id="summary">
 <table>
 <tr>
@@ -23,7 +23,7 @@
 <tr>
 <td>
 <div class="infoBox" id="tests">
-<div class="counter">12</div>
+<div class="counter">11</div>
 <p>tests</p>
 </div>
 </td>
@@ -41,7 +41,7 @@
 </td>
 <td>
 <div class="infoBox" id="duration">
-<div class="counter">0.001s</div>
+<div class="counter">0.010s</div>
 <p>duration</p>
 </div>
 </td>
@@ -75,62 +75,57 @@
 </tr>
 </thead>
 <tr>
-<td class="success">formatEnrollmentDate with blank input returns empty string</td>
+<td class="success">test complete sorting real scenario 2</td>
 <td class="success">0s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
-<td class="success">formatEnrollmentDate with default pattern returns MM-dd-yyyy</td>
+<td class="success">test complete sorting real scenario 3</td>
+<td class="success">0s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">test complete sorting scenario</td>
+<td class="success">0s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">test getRelationshipPriority case insensitive</td>
+<td class="success">0s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">test getRelationshipPriority returns correct priorities</td>
+<td class="success">0s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">test multiple children with same birth date plus primary and spouse</td>
 <td class="success">0.001s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
-<td class="success">formatEnrollmentDate with display pattern returns readable date</td>
+<td class="success">test sortHeadShots filters out items </td>
 <td class="success">0s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
-<td class="success">formatEnrollmentDate with empty string returns empty string</td>
+<td class="success">test sortHeadShots with empty list</td>
+<td class="success">0.008s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">test sortHeadShots with relationship priority</td>
 <td class="success">0s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
-<td class="success">formatEnrollmentDate with malformed input returns raw string</td>
-<td class="success">0s</td>
+<td class="success">test sortHeadShots with same relationship and birth date sorted by name</td>
+<td class="success">0.001s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
-<td class="success">formatEnrollmentDate with null input returns empty string</td>
-<td class="success">0s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">maskSsn masks all but last 4 digits</td>
-<td class="success">0s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">maskSsn strips dashes before masking</td>
-<td class="success">0s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">maskSsn with blank returns empty string</td>
-<td class="success">0s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">maskSsn with exactly 4 digits masks none</td>
-<td class="success">0s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">maskSsn with fewer than 4 digits returns raw value</td>
-<td class="success">0s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">maskSsn with null returns empty string</td>
+<td class="success">test sortHeadShots with same relationship sorted by birth date</td>
 <td class="success">0s</td>
 <td class="success">passed</td>
 </tr>
