@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>XCResults</title>
+    <style type='text/css'>
+        .resultSummaryLineFailed {
+            color: red;
+            margin: 0 0 0 16px;
+        }
+        .resultSummaryLineWarning {
+            color: orange;
+            margin: 0 0 0 16px;
+        }
+        .resultSummaryLineSuccess {
+            margin: 0 0 0 16px;
+        }
+        .testTargetFailed {
+            color: red;
+            margin: 0 0 0 16px;
+            font-weight: bold;
+        }
+        .testTargetSuccess {
+            margin: 0 0 0 16px;
+            font-weight: bold;
+        }
+        .testClassFailed {
+            color: red;
+            margin: 8px 0 0 32px;
+        }
+        .testClassSuccess {
+            color: green;
+            margin: 8px 0 0 32px;
+        }
+        .singleTestItemFailed {
+            color: red;
+            margin: 0 0 8px 48px;
+        }
+        .singleTestItemFailedWithMessage {
+            color: red;
+            margin: 0 0 0 32px;
+        }
+        .singleTestItemFailedMessage {
+            color: red;
+            margin: 0 0 8px 48px;
+        }
+        .singleTestItemSuccess {
+            color: green;
+            margin: 0 0 8px 48px;
+        }
+        .codeCoverageTargetSummary {
+            margin: 0 0 0 16px;
+        }
+        .codeCoverageFileSummary {
+            margin: 0 0 0 32px;
+        }
+        .codeCoverageFunctionSummary {
+            margin: 0 0 0 48px;
+        }
+        .accordion {
+            background-color: #eee;
+            color: #444;
+            cursor: pointer;
+            padding: 8px 0 8px 16px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 15px;
+            transition: 0.4s;
+        }
+        .active, .accordion:hover {
+            background-color: #ccc;
+        }
+        .panel {
+            padding: 0 18px;
+            background-color: white;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+        }
+        td {
+            text-align: right;
+            padding: 0 0 0 16px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Summary</h2>
+<p class="resultSummaryLineSuccess">Number of errors = 0</p>
+<p class="resultSummaryLineWarning">Number of warnings = 69</p>
+<p class="resultSummaryLineSuccess">Number of analyzer warnings = 0</p>
+<p class="resultSummaryLineSuccess">Number of tests = 3</p>
+<p class="resultSummaryLineSuccess">Number of failed tests = 0</p>
+<p class="resultSummaryLineSuccess">Number of skipped tests = 0</p>
+<p class="resultSummaryLineSuccess">Execution time = 37.001s</p>
+<p class="resultSummaryLineSuccess">Execution date = 2026-05-05T04:14:41Z</p>
+
+<hr>
+
+<h2>Test Scheme Action</h2>
+<h2>u281 on 'iPhone 16 Plus'</h2>
+<p class="testTargetSuccess">u281Tests.xctest (0s)</p>
+<button class="accordion"><span class="testClassSuccess">FirebaseSetupTests (0s)</span></button>
+<div class="panel">
+<p class="singleTestItemSuccess">✓ testFirebaseAppIsInitializedAndHasTargetComponents() (0s)</p>
+<p class="singleTestItemSuccess">✓ testFirebaseConfigFileExistsInTarget() (0s)</p>
+<p class="singleTestItemSuccess">✓ testFirebaseConfigFileHasCorrectTargetComponents() (0s)</p>
+</div>
+<div class="panel">
+</div>
+<div class="panel">
+</div>
+<hr>
+
+    <script>
+        var acc = document.getElementsByClassName("accordion");
+        var i;
+
+        for (i = 0; i < acc.length; i++) {
+            acc[i].addEventListener("click", function() {
+                this.classList.toggle("active");
+                var panel = this.nextElementSibling;
+                if (panel.style.maxHeight) {
+                    panel.style.maxHeight = null;
+                } else {
+                    panel.style.maxHeight = panel.scrollHeight + "px";
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
