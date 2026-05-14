@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InferenceInfoGraphic.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.mlkit</a> &gt; <span class="el_source">InferenceInfoGraphic.java</span></div><h1>InferenceInfoGraphic.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2020 Google LLC. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.vivekahealth.vivekahealth.mlkit;
+
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+
+import androidx.annotation.Nullable;
+
+/** Graphic instance for rendering inference info (latency, FPS, resolution) in an overlay view. */
+public class InferenceInfoGraphic extends GraphicOverlay.Graphic {
+
+  private static final int TEXT_COLOR = Color.WHITE;
+  private static final float TEXT_SIZE = 60.0f;
+
+  private final Paint textPaint;
+  private final GraphicOverlay overlay;
+  private final long frameLatency;
+  private final long detectorLatency;
+
+  // Only valid when a stream of input images is being processed. Null for single image mode.
+  @Nullable private final Integer framesPerSecond;
+<span class="nc" id="L38">  private boolean showLatencyInfo = true;</span>
+
+  public InferenceInfoGraphic(
+      GraphicOverlay overlay,
+      long frameLatency,
+      long detectorLatency,
+      @Nullable Integer framesPerSecond) {
+<span class="nc" id="L45">    super(overlay);</span>
+<span class="nc" id="L46">    this.overlay = overlay;</span>
+<span class="nc" id="L47">    this.frameLatency = frameLatency;</span>
+<span class="nc" id="L48">    this.detectorLatency = detectorLatency;</span>
+<span class="nc" id="L49">    this.framesPerSecond = framesPerSecond;</span>
+<span class="nc" id="L50">    textPaint = new Paint();</span>
+<span class="nc" id="L51">    textPaint.setColor(TEXT_COLOR);</span>
+<span class="nc" id="L52">    textPaint.setTextSize(TEXT_SIZE);</span>
+<span class="nc" id="L53">    textPaint.setShadowLayer(5.0f, 0f, 0f, Color.BLACK);</span>
+<span class="nc" id="L54">    postInvalidate();</span>
+<span class="nc" id="L55">  }</span>
+
+  /** Creates an {@link InferenceInfoGraphic} to only display image size. */
+  public InferenceInfoGraphic(GraphicOverlay overlay) {
+<span class="nc" id="L59">    this(overlay, 0, 0, null);</span>
+<span class="nc" id="L60">    showLatencyInfo = false;</span>
+<span class="nc" id="L61">  }</span>
+
+  @Override
+  public synchronized void draw(Canvas canvas) {
+<span class="nc" id="L65">    float x = TEXT_SIZE * 0.5f;</span>
+<span class="nc" id="L66">    float y = TEXT_SIZE * 1.5f;</span>
+
+<span class="nc" id="L68">    canvas.drawText(</span>
+<span class="nc" id="L69">        &quot;InputImage size: &quot; + overlay.getImageHeight() + &quot;x&quot; + overlay.getImageWidth(),</span>
+        x,
+        y,
+        textPaint);
+
+<span class="nc bnc" id="L74" title="All 2 branches missed.">    if (!showLatencyInfo) {</span>
+<span class="nc" id="L75">      return;</span>
+    }
+    // Draw FPS (if valid) and inference latency
+<span class="nc bnc" id="L78" title="All 2 branches missed.">    if (framesPerSecond != null) {</span>
+<span class="nc" id="L79">      canvas.drawText(</span>
+          &quot;FPS: &quot; + framesPerSecond + &quot;, Frame latency: &quot; + frameLatency + &quot; ms&quot;,
+          x,
+          y + TEXT_SIZE,
+          textPaint);
+    } else {
+<span class="nc" id="L85">      canvas.drawText(&quot;Frame latency: &quot; + frameLatency + &quot; ms&quot;, x, y + TEXT_SIZE, textPaint);</span>
+    }
+<span class="nc" id="L87">    canvas.drawText(</span>
+        &quot;Detector latency: &quot; + detectorLatency + &quot; ms&quot;, x, y + TEXT_SIZE * 2, textPaint);
+<span class="nc" id="L89">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

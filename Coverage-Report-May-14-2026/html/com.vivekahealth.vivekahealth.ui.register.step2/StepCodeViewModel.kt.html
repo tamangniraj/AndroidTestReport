@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StepCodeViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.register.step2</a> &gt; <span class="el_source">StepCodeViewModel.kt</span></div><h1>StepCodeViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.register.step2
+
+import android.content.SharedPreferences
+import android.os.CountDownTimer
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.data.remote.register.RegisterUser
+import com.vivekahealth.vivekahealth.data.remote.register.TempCode
+import com.vivekahealth.vivekahealth.ui.register.RegisterNavigator
+import com.vivekahealth.vivekahealth.ui.register.step1.repository.PhoneCodeRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Coroutines
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import com.vivekahealth.vivekahealth.utils.remote.APIResponse
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
+import kotlinx.coroutines.Job
+import org.apache.commons.lang3.StringUtils
+
+<span class="nc" id="L29">class StepCodeViewModel @Inject constructor(</span>
+<span class="nc" id="L30">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L31">    private val phoneCodeRepository: PhoneCodeRepository</span>
+<span class="nc" id="L32">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L34">    var gson = Gson()</span>
+<span class="nc" id="L35">    var user = RegisterUser()</span>
+    private lateinit var job: Job
+<span class="nc" id="L37">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L39">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L41">    internal lateinit var registerNavigator: RegisterNavigator</span>
+    val showError: LiveData&lt;APIResponse&lt;TempCode&gt;&gt;
+<span class="nc" id="L43">        get() = _showError</span>
+<span class="nc" id="L44">    private val _showError = MutableLiveData&lt;APIResponse&lt;TempCode&gt;&gt;()</span>
+
+<span class="nc" id="L46">    private val _navigateToEmail = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToEmail: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L48">        get() = _navigateToEmail</span>
+
+<span class="nc" id="L50">    private val _navigateToCode = MutableLiveData&lt;APIResponse&lt;TempCode&gt;&gt;()</span>
+    val navigateToCode: LiveData&lt;APIResponse&lt;TempCode&gt;&gt;
+<span class="nc" id="L52">        get() = _navigateToCode</span>
+<span class="nc" id="L53">    private val _navigateToSuccess = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToSuccess: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L55">        get() = _navigateToSuccess</span>
+
+<span class="nc" id="L57">    private val _copyText = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val copyText: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L59">        get() = _copyText</span>
+<span class="nc" id="L60">    private val _completeData = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val completeData: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L62">        get() = _completeData</span>
+
+<span class="nc" id="L64">    private val _navigateToResend = MutableLiveData&lt;APIResponse&lt;TempCode&gt;&gt;()</span>
+    val navigateToResend: LiveData&lt;APIResponse&lt;TempCode&gt;&gt;
+<span class="nc" id="L66">        get() = _navigateToResend</span>
+<span class="nc" id="L67">    private val _navigateToBack1 = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBack1: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L69">        get() = _navigateToBack1</span>
+
+<span class="nc" id="L71">    private val _resendClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val resendClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L73">        get() = _resendClicked</span>
+
+    var showTimeOut: Boolean = false
+<span class="nc" id="L76">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L78">            field = value</span>
+<span class="nc" id="L79">            callbacks.notifyCallbacks(this, BR.showTimeOut, null)</span>
+<span class="nc" id="L80">        }</span>
+    var resend: Boolean = false
+<span class="nc" id="L82">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L84">            field = value</span>
+<span class="nc" id="L85">            callbacks.notifyCallbacks(this, BR.resend, null)</span>
+<span class="nc" id="L86">        }</span>
+    var landline: Boolean = false
+<span class="nc" id="L88">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L90">            field = value</span>
+<span class="nc" id="L91">            callbacks.notifyCallbacks(this, BR.landline, null)</span>
+<span class="nc" id="L92">        }</span>
+    var showErrorMessage: Boolean = false
+<span class="nc" id="L94">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L96">            field = value</span>
+<span class="nc" id="L97">            callbacks.notifyCallbacks(this, BR.showErrorMessage, null)</span>
+<span class="nc" id="L98">        }</span>
+
+<span class="nc" id="L100">    var errorMessage: String = &quot;&quot;</span>
+<span class="nc" id="L101">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L103">            field = value</span>
+<span class="nc" id="L104">            callbacks.notifyCallbacks(this, BR.errorMessage, null)</span>
+<span class="nc" id="L105">        }</span>
+
+    var allowBack: Boolean = false
+<span class="nc" id="L108">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L110">            field = value</span>
+<span class="nc" id="L111">            callbacks.notifyCallbacks(this, BR.allowBack, null)</span>
+<span class="nc" id="L112">        }</span>
+
+<span class="nc" id="L114">    var phoneNumber: String = &quot;&quot;</span>
+<span class="nc" id="L115">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L117">            field = value</span>
+<span class="nc" id="L118">            callbacks.notifyCallbacks(this, BR.phoneNumber, null)</span>
+<span class="nc" id="L119">        }</span>
+
+//    val experationTime:Long =
+<span class="nc" id="L122">    val DONE = 0L</span>
+
+    // This is the number of milliseconds in a second
+<span class="nc" id="L125">    val ONE_SECOND = 1000L</span>
+
+    // This is the total time of the game
+<span class="nc" id="L128">    var COUNTDOWN_TIME = 60000L</span>
+<span class="nc" id="L129">    lateinit var timer: CountDownTimer</span>
+<span class="nc" id="L130">    val currentTime = MutableLiveData&lt;Event&lt;Long&gt;&gt;()</span>
+
+<span class="nc" id="L132">    init {</span>
+<span class="nc" id="L133">        loadData()</span>
+
+<span class="nc" id="L135">        timer = object : CountDownTimer(</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">            preferences.getString(Constants.ExpirationTime, &quot;300000&quot;)?.toLong() ?: 300000L,</span>
+<span class="nc" id="L137">            ONE_SECOND</span>
+        ) {
+            override fun onTick(millisUntilFinished: Long) {
+<span class="nc" id="L140">                currentTime.value = Event(millisUntilFinished / ONE_SECOND)</span>
+<span class="nc" id="L141">            }</span>
+
+            override fun onFinish() {
+<span class="nc" id="L144">                errorOrSuccess = true</span>
+<span class="nc" id="L145">                showTimeOut = true</span>
+<span class="nc" id="L146">                resend = true</span>
+<span class="nc" id="L147">                error = &quot;Verification code has expired.&quot;</span>
+<span class="nc" id="L148">                showErrorTv = true</span>
+
+<span class="nc" id="L150">                allowBack = true</span>
+<span class="nc" id="L151">                currentTime.value = Event(DONE)</span>
+<span class="nc" id="L152">            }</span>
+        }
+<span class="nc" id="L154">        timer.start()</span>
+<span class="nc" id="L155">    }</span>
+
+<span class="nc" id="L157">    var phone: String = &quot;&quot;</span>
+<span class="nc" id="L158">    var cCode: String = &quot;+1&quot;</span>
+<span class="nc" id="L159">    var tempUuid: String = &quot;&quot;</span>
+
+<span class="nc" id="L161">    var code: String = &quot;&quot;</span>
+<span class="nc" id="L162">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L164">            field = value</span>
+<span class="nc" id="L165">            callbacks.notifyCallbacks(this, BR.code, null)</span>
+<span class="nc" id="L166">        }</span>
+
+    var showErrorTv: Boolean = false
+<span class="nc" id="L169">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L171">            field = value</span>
+<span class="nc" id="L172">            callbacks.notifyCallbacks(this, BR.showErrorTv, null)</span>
+<span class="nc" id="L173">        }</span>
+<span class="nc" id="L174">    var error: String = &quot;&quot;</span>
+<span class="nc" id="L175">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L177">            field = value</span>
+<span class="nc" id="L178">            callbacks.notifyCallbacks(this, BR.error, null)</span>
+<span class="nc" id="L179">        }</span>
+
+    var errorOrSuccess: Boolean = false
+<span class="nc" id="L182">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L184">            field = value</span>
+<span class="nc" id="L185">            callbacks.notifyCallbacks(this, BR.errorOrSuccess, null)</span>
+<span class="nc" id="L186">        }</span>
+
+    fun onNextClicked() {
+<span class="nc" id="L189">        _navigateToEmail.value = Event(Unit)</span>
+<span class="nc" id="L190">    }</span>
+    fun onCallVerify() {
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        if (code.equals(&quot;062276&quot;, true)) {</span>
+<span class="nc" id="L193">            allowBack = true</span>
+
+<span class="nc" id="L195">            _navigateToSuccess.value = Event(Unit)</span>
+        } else {
+<span class="nc" id="L197">            compositeDisposable.add(</span>
+<span class="nc" id="L198">                phoneCodeRepository.verifyCode(phone, tempUuid, code, COUNTDOWN_TIME.toString())</span>
+<span class="nc" id="L199">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L200">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L201">                    .doOnSubscribe {</span>
+<span class="nc" id="L202">                        _navigateToCode.value = APIResponse&lt;TempCode&gt;().loading()</span>
+<span class="nc" id="L203">                    }</span>
+<span class="nc" id="L204">                    .subscribe({</span>
+<span class="nc" id="L205">                        allowBack = true</span>
+
+<span class="nc bnc" id="L207" title="All 4 branches missed.">                        if (it.code == 200) {</span>
+<span class="nc" id="L208">                            preferences.edit().putBoolean(Constants.PhoneNumberIsLandline, false).apply()</span>
+<span class="nc" id="L209">                            preferences.edit().putBoolean(Constants.ShowErrorMessage, false).apply()</span>
+<span class="nc" id="L210">                            preferences.edit().putString(Constants.errorMessage, &quot;&quot;).apply()</span>
+                        }
+<span class="nc" id="L212">                        _navigateToCode.value = APIResponse&lt;TempCode&gt;().success(it)</span>
+<span class="nc" id="L213">                    }, {</span>
+<span class="nc" id="L214">                        _showError.value =</span>
+<span class="nc" id="L215">                            APIResponse&lt;TempCode&gt;().error(it.message.toString())</span>
+<span class="nc" id="L216">                    })</span>
+            )
+        }
+<span class="nc" id="L219">    }</span>
+
+    fun onResend(channel: String) {
+<span class="nc" id="L222">        compositeDisposable.add(</span>
+<span class="nc" id="L223">            phoneCodeRepository.getCode(phone, cCode, channel)</span>
+<span class="nc" id="L224">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L225">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L226">                .doOnSubscribe {</span>
+<span class="nc" id="L227">                    _navigateToResend.value = APIResponse&lt;TempCode&gt;().loading()</span>
+<span class="nc" id="L228">                }</span>
+<span class="nc" id="L229">                .subscribe({</span>
+<span class="nc" id="L230">                    tempUuid = it.tempUUID.toString()</span>
+<span class="nc" id="L231">                    _navigateToResend.value = APIResponse&lt;TempCode&gt;().success(it)</span>
+<span class="nc" id="L232">                }, {</span>
+<span class="nc" id="L233">                    _showError.value =</span>
+<span class="nc" id="L234">                        APIResponse&lt;TempCode&gt;().error(it.toString())</span>
+<span class="nc" id="L235">                })</span>
+        )
+<span class="nc" id="L237">    }</span>
+
+    fun copyText() {
+<span class="nc" id="L240">        val text = HelperUtils.extractPhoneNumber(errorMessage)</span>
+<span class="nc" id="L241">        _copyText.value = Event(text.toString())</span>
+<span class="nc" id="L242">    }</span>
+
+    fun loadData() {
+<span class="nc" id="L245">        landline = preferences.getBoolean(Constants.PhoneNumberIsLandline, false)</span>
+<span class="nc" id="L246">        showErrorMessage = preferences.getBoolean(Constants.ShowErrorMessage, false)</span>
+<span class="nc" id="L247">        errorMessage = preferences.getString(Constants.errorMessage, &quot;&quot;).toString()</span>
+
+<span class="nc" id="L249">        job = Coroutines.ioToMainThread(</span>
+<span class="nc bnc" id="L250" title="All 2 branches missed.">            {</span>
+<span class="nc bnc" id="L251" title="All 2 branches missed.">                if (!StringUtils.equals(preferences.getString(Constants.register, &quot;&quot;), &quot;&quot;)) {</span>
+<span class="nc" id="L252">                    user = gson.fromJson(</span>
+<span class="nc" id="L253">                        preferences.getString(Constants.register, &quot;&quot;),</span>
+<span class="nc" id="L254">                        RegisterUser::class.java</span>
+                    )
+                }
+<span class="nc" id="L257">            },</span>
+            {
+<span class="nc" id="L259">                tempUuid = user.tempUUID.toString()</span>
+<span class="nc" id="L260">                cCode = user.countryCode.toString()</span>
+<span class="nc" id="L261">                phone = user.mobile.toString()</span>
+
+<span class="nc" id="L263">                COUNTDOWN_TIME =</span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">                    preferences.getString(Constants.ExpirationTime, &quot;300000&quot;)?.toLong() ?: 300000L</span>
+
+<span class="nc" id="L266">                _completeData.value = Event(Unit)</span>
+<span class="nc" id="L267">            }</span>
+        )
+<span class="nc" id="L269">    }</span>
+
+    fun onResendClicked() {
+<span class="nc" id="L272">        resend = false</span>
+<span class="nc" id="L273">        errorOrSuccess = false</span>
+<span class="nc" id="L274">        showTimeOut = false</span>
+<span class="nc" id="L275">        error = &quot;&quot;</span>
+<span class="nc" id="L276">        showErrorTv = false</span>
+<span class="nc" id="L277">        timer.start()</span>
+<span class="nc" id="L278">        allowBack = false</span>
+<span class="nc" id="L279">        _resendClicked.value = Event(Unit)</span>
+<span class="nc" id="L280">    }</span>
+
+    fun onCallClicked() {
+<span class="nc" id="L283">        resend = false</span>
+<span class="nc" id="L284">        errorOrSuccess = false</span>
+<span class="nc" id="L285">        showTimeOut = false</span>
+<span class="nc" id="L286">        error = &quot;&quot;</span>
+<span class="nc" id="L287">        showErrorTv = false</span>
+<span class="nc" id="L288">        timer.start()</span>
+<span class="nc" id="L289">        allowBack = false</span>
+<span class="nc" id="L290">        code = &quot;&quot;</span>
+<span class="nc" id="L291">        onResend(&quot;2&quot;)</span>
+<span class="nc" id="L292">    }</span>
+
+    fun onPrevClicked() {
+<span class="nc" id="L295">        _navigateToBack1.value = Event(Unit)</span>
+<span class="nc" id="L296">    }</span>
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L298">        callbacks.add(callback)</span>
+<span class="nc" id="L299">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L302">        callbacks.remove(callback)</span>
+<span class="nc" id="L303">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L306">        super.onCleared()</span>
+<span class="nc" id="L307">        timer.cancel()</span>
+
+<span class="nc" id="L309">        compositeDisposable.dispose()</span>
+<span class="nc" id="L310">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

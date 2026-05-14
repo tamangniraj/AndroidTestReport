@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TutorialPopupHelper.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.tutorial</a> &gt; <span class="el_source">TutorialPopupHelper.kt</span></div><h1>TutorialPopupHelper.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.tutorial
+
+import android.content.Context
+import android.graphics.Typeface
+import android.util.TypedValue
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.animation.AccelerateInterpolator
+import android.widget.PopupWindow
+import androidx.constraintlayout.widget.ConstraintSet
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.databinding.DescriptionCardviewBinding
+import com.vivekahealth.vivekahealth.ui.tutorial.model.Tutorial
+
+object TutorialPopupHelper {
+<span class="fc" id="L18">    private var animationDuration = 250</span>
+    private var popupMenu: PopupWindow? = null
+    fun showPopup(
+        context: Context,
+        tutorial: Tutorial?,
+        onSkip: () -&gt; Unit,
+        onNext: (() -&gt; Unit),
+        onDismiss: (dontShowAgain: Boolean) -&gt; Unit
+    ) {
+<span class="pc bpc" id="L27" title="1 of 6 branches missed.">        if (popupMenu?.isShowing == true) {</span>
+<span class="fc" id="L28">            dismiss()</span>
+<span class="fc" id="L29">            popupMenu = null</span>
+        }
+<span class="fc" id="L31">        val inflater =</span>
+<span class="fc" id="L32">            context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater</span>
+<span class="fc" id="L33">        val view = DescriptionCardviewBinding.inflate(inflater)</span>
+<span class="pc bpc" id="L34" title="1 of 4 branches missed.">        tutorial?.let { tutorial -&gt;</span>
+<span class="fc" id="L35">            view.tvSkip.setOnClickListener {</span>
+<span class="nc" id="L36">                dismiss()</span>
+<span class="nc" id="L37">                onDismiss(false)</span>
+<span class="nc" id="L38">            }</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">            if (tutorial.isLast) {</span>
+<span class="nc" id="L40">                view.rlLast.visibility = View.VISIBLE</span>
+<span class="nc" id="L41">                view.rlNotLast.visibility = View.GONE</span>
+            } else {
+<span class="fc" id="L43">                view.rlLast.visibility = View.GONE</span>
+<span class="fc" id="L44">                view.rlNotLast.visibility = View.VISIBLE</span>
+            }
+<span class="fc" id="L46">            view.tvTitle.text = tutorial.title</span>
+<span class="fc" id="L47">            view.tvDescription.text = tutorial.message</span>
+<span class="fc" id="L48">            view.btnNext.setOnClickListener {</span>
+<span class="nc" id="L49">                onNext()</span>
+<span class="nc" id="L50">            }</span>
+<span class="fc" id="L51">            view.btnGotIt.setOnClickListener {</span>
+<span class="nc" id="L52">                onDismiss(view.cbDontShow.isChecked)</span>
+<span class="nc" id="L53">                dismiss()</span>
+<span class="nc" id="L54">            }</span>
+<span class="fc" id="L55">            view.tvSkip.setOnClickListener {</span>
+<span class="fc" id="L56">                onSkip()</span>
+<span class="fc" id="L57">            }</span>
+<span class="fc" id="L58">            view.root.measure(</span>
+<span class="fc" id="L59">                View.MeasureSpec.makeMeasureSpec(</span>
+<span class="fc" id="L60">                    context.resources.displayMetrics.widthPixels - 128,</span>
+<span class="fc" id="L61">                    View.MeasureSpec.UNSPECIFIED</span>
+                ),
+<span class="fc" id="L63">                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)</span>
+            )
+<span class="fc" id="L65">            view.scrollDesc.measure(</span>
+<span class="fc" id="L66">                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),</span>
+<span class="fc" id="L67">                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)</span>
+            )
+
+<span class="fc" id="L70">            val location = IntArray(2)</span>
+<span class="fc" id="L71">            tutorial.actualAnchorView.getLocationInWindow(location)</span>
+
+<span class="fc" id="L73">            popupMenu = PopupWindow(</span>
+<span class="fc" id="L74">                view.root,</span>
+<span class="fc" id="L75">                context.resources.displayMetrics.widthPixels - 128,</span>
+<span class="fc" id="L76">                ViewGroup.LayoutParams.WRAP_CONTENT,</span>
+<span class="fc" id="L77">                false</span>
+<span class="fc" id="L78">            ).also { popupWindow -&gt;</span>
+<span class="fc" id="L79">                popupWindow.isClippingEnabled = false</span>
+<span class="fc" id="L80">                popupWindow.update()</span>
+<span class="fc" id="L81">                popupWindow.contentView.measure(</span>
+<span class="fc" id="L82">                    View.MeasureSpec.makeMeasureSpec(</span>
+<span class="fc" id="L83">                        context.resources.displayMetrics.widthPixels - 128,</span>
+<span class="fc" id="L84">                        View.MeasureSpec.UNSPECIFIED</span>
+                    ),
+<span class="fc" id="L86">                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)</span>
+                )
+<span class="fc" id="L88">            }</span>
+
+<span class="fc" id="L90">            val isActuallyDownward: Boolean =</span>
+<span class="fc" id="L91">                calculatePopUpDirection(context, tutorial, location, view)</span>
+
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">            popupMenu?.showAtLocation(</span>
+<span class="fc" id="L94">                tutorial.actualAnchorView,</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">                if (isActuallyDownward) {</span>
+<span class="fc" id="L96">                    Gravity.NO_GRAVITY</span>
+                } else {
+<span class="nc" id="L98">                    Gravity.BOTTOM or Gravity.START</span>
+                },
+<span class="fc" id="L100">                64,</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">                if (isActuallyDownward) {</span>
+<span class="fc" id="L102">                    location[1] + tutorial.actualAnchorView.height + 20</span>
+                } else {
+<span class="nc" id="L104">                    calculateHeightAndSetOffset(context, location)</span>
+                }
+            )
+<span class="fc" id="L107">            popupMenu!!.contentView.apply {</span>
+<span class="fc" id="L108">                alpha = 0f</span>
+<span class="fc" id="L109">                animate()</span>
+<span class="fc" id="L110">                    .alpha(1f)</span>
+<span class="fc" id="L111">                    .setDuration(animationDuration.toLong())</span>
+<span class="fc" id="L112">                    .setInterpolator(AccelerateInterpolator())</span>
+<span class="fc" id="L113">            }</span>
+<span class="fc" id="L114">        } ?: run {</span>
+<span class="fc" id="L115">            view.tvTitle.visibility = View.GONE</span>
+<span class="fc" id="L116">            view.tvDescription.text = context.resources.getString(R.string.don_t_show_tour)</span>
+<span class="fc" id="L117">            view.rlLast.visibility = View.VISIBLE</span>
+<span class="fc" id="L118">            view.rlNotLast.visibility = View.GONE</span>
+<span class="fc" id="L119">            view.btnGotIt.text = context.resources.getString(R.string.confirm)</span>
+<span class="fc" id="L120">            view.btnGotIt.setOnClickListener {</span>
+<span class="fc" id="L121">                onDismiss(view.cbDontShow.isChecked)</span>
+<span class="fc" id="L122">                dismiss()</span>
+<span class="fc" id="L123">            }</span>
+<span class="fc" id="L124">            view.tvDescription.setTypeface(null, Typeface.BOLD)</span>
+<span class="fc" id="L125">            view.tvDescription.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16f)</span>
+<span class="fc" id="L126">            popupMenu = PopupWindow(</span>
+<span class="fc" id="L127">                view.root,</span>
+<span class="fc" id="L128">                context.resources.displayMetrics.widthPixels - 128,</span>
+<span class="fc" id="L129">                ViewGroup.LayoutParams.WRAP_CONTENT,</span>
+<span class="fc" id="L130">                false</span>
+            )
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">            popupMenu?.showAtLocation(</span>
+<span class="fc" id="L133">                view.root,</span>
+<span class="fc" id="L134">                Gravity.NO_GRAVITY,</span>
+<span class="fc" id="L135">                64,</span>
+<span class="fc" id="L136">                context.resources.displayMetrics.heightPixels / 2</span>
+<span class="fc" id="L137">            )</span>
+        }
+<span class="fc" id="L139">    }</span>
+
+    fun dismiss() {
+<span class="fc bfc" id="L142" title="All 2 branches covered.">        popupMenu?.dismiss()</span>
+<span class="fc" id="L143">        popupMenu = null</span>
+<span class="fc" id="L144">    }</span>
+
+    private fun calculateHeightAndSetOffset(
+        context: Context,
+        location: IntArray
+    ): Int {
+<span class="nc" id="L150">        val statusBarHeight =</span>
+<span class="nc" id="L151">            context.resources.getDimensionPixelSize(</span>
+<span class="nc" id="L152">                context.resources.getIdentifier(</span>
+<span class="nc" id="L153">                    &quot;status_bar_height&quot;,</span>
+<span class="nc" id="L154">                    &quot;dimen&quot;,</span>
+<span class="nc" id="L155">                    &quot;android&quot;</span>
+                )
+            )
+<span class="nc" id="L158">        var bottomNavBarHeight =</span>
+<span class="nc" id="L159">            context.resources.getDimensionPixelSize(</span>
+<span class="nc" id="L160">                context.resources.getIdentifier(</span>
+<span class="nc" id="L161">                    &quot;navigation_bar_height&quot;,</span>
+<span class="nc" id="L162">                    &quot;dimen&quot;,</span>
+<span class="nc" id="L163">                    &quot;android&quot;</span>
+                )
+            )
+
+<span class="nc" id="L167">        val screenHeight = context.resources.displayMetrics.heightPixels</span>
+<span class="nc" id="L168">        return screenHeight - (location[1] - statusBarHeight - bottomNavBarHeight - 20)</span>
+    }
+
+    private fun calculatePopUpDirection(
+        context: Context,
+        tutorial: Tutorial,
+        location: IntArray,
+        view: DescriptionCardviewBinding
+    ): Boolean {
+<span class="fc" id="L177">        val screenHeight = context.resources.displayMetrics.heightPixels</span>
+<span class="fc" id="L178">        val statusBarHeight =</span>
+<span class="fc" id="L179">            context.resources.getDimensionPixelSize(</span>
+<span class="fc" id="L180">                context.resources.getIdentifier(</span>
+<span class="fc" id="L181">                    &quot;status_bar_height&quot;,</span>
+<span class="fc" id="L182">                    &quot;dimen&quot;,</span>
+<span class="fc" id="L183">                    &quot;android&quot;</span>
+                )
+            )
+<span class="fc" id="L186">        var bottomNavBarHeight =</span>
+<span class="fc" id="L187">            context.resources.getDimensionPixelSize(</span>
+<span class="fc" id="L188">                context.resources.getIdentifier(</span>
+<span class="fc" id="L189">                    &quot;navigation_bar_height&quot;,</span>
+<span class="fc" id="L190">                    &quot;dimen&quot;,</span>
+<span class="fc" id="L191">                    &quot;android&quot;</span>
+                )
+            )
+
+<span class="fc" id="L195">        var isActuallyDownward: Boolean = tutorial.isDownward</span>
+
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">        if (location[1] + tutorial.actualAnchorView.height + 20 + view.root.measuredHeight &lt;= screenHeight - statusBarHeight - bottomNavBarHeight) {</span>
+            // popup is ok to be displayed downward
+<span class="fc" id="L199">            isActuallyDownward = true</span>
+        } else {
+            // popup is not ok to be displayed downward
+            // check if upwards has enough space
+<span class="nc bnc" id="L203" title="All 2 branches missed.">            if (location[1] - view.root.measuredHeight - 20 - statusBarHeight - bottomNavBarHeight &gt;= 0) {</span>
+                // enough space to be displayed upward
+<span class="nc" id="L205">                isActuallyDownward = false</span>
+            } else {
+                // not enough space to be displayed upwards as well
+                // calculate which direction has more space
+                // set direction of tutorial to one that has more space
+<span class="nc bnc" id="L210" title="All 2 branches missed.">                if (location[1] - 20 &gt; screenHeight - (location[1] + tutorial.actualAnchorView.height + 20)) {</span>
+                    // set calculated direction to upward
+<span class="nc" id="L212">                    isActuallyDownward = false</span>
+                } else {
+                    // set calculated direction to downward
+<span class="nc" id="L215">                    isActuallyDownward = true</span>
+                }
+                // make message text view scrollable with max height 100
+                // FUTURE IMPROVEMENT: calculate the max height
+<span class="nc" id="L219">                val cs = ConstraintSet()</span>
+<span class="nc" id="L220">                cs.clone(view.csLayout)</span>
+<span class="nc" id="L221">                cs.constrainMaxHeight(view.scrollDesc.id, 100)</span>
+<span class="nc" id="L222">                cs.constrainedHeight(view.scrollDesc.id, true)</span>
+<span class="nc" id="L223">                cs.applyTo(view.csLayout)</span>
+            }
+        }
+<span class="fc" id="L226">        return isActuallyDownward</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

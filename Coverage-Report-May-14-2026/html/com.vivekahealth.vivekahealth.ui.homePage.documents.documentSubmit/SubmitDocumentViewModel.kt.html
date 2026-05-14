@@ -1,0 +1,540 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SubmitDocumentViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.documents.documentSubmit</a> &gt; <span class="el_source">SubmitDocumentViewModel.kt</span></div><h1>SubmitDocumentViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.documents.documentSubmit
+
+import android.content.SharedPreferences
+import android.content.res.Resources
+import android.location.Location
+import android.net.Uri
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.Log
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.remote.enroll.DocumentUploadSuccessEnroll
+import com.vivekahealth.vivekahealth.data.remote.home.Dto
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.ui.enroll.repository.EnrollRepository
+import com.vivekahealth.vivekahealth.ui.homePage.documents.repository.DocumentRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import com.vivekahealth.vivekahealth.utils.remote.APIResponse
+import com.vivekahealth.vivekahealth.utils.thread.ThreadUtils
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import java.io.File
+import java.util.*
+import javax.inject.Inject
+import okhttp3.MultipartBody
+import org.apache.commons.lang3.StringUtils
+import timber.log.Timber
+
+<span class="fc" id="L40">class SubmitDocumentViewModel @Inject constructor(</span>
+<span class="fc" id="L41">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L42">    private val enrollRepository: EnrollRepository,</span>
+<span class="fc" id="L43">    private val documentRepository: DocumentRepository,</span>
+<span class="fc" id="L44">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L45">    private val resources: Resources</span>
+<span class="fc" id="L46">) : ViewModel(), Observable {</span>
+
+<span class="fc" id="L48">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L50">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="fc" id="L52">    private val _navigateToDoc = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToDoc: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L54">        get() = _navigateToDoc</span>
+<span class="pc" id="L55">    var docTypeList: ArrayList&lt;Dto&gt; = ArrayList()</span>
+<span class="fc" id="L56">    private val _typeListGenerated = MutableLiveData&lt;Event&lt;List&lt;Dto&gt;&gt;&gt;()</span>
+    val typeListGenerated: LiveData&lt;Event&lt;List&lt;Dto&gt;&gt;&gt;
+<span class="fc" id="L58">        get() = _typeListGenerated</span>
+<span class="fc" id="L59">    private val _newDocTypeListGenerated = MutableLiveData&lt;Event&lt;List&lt;Dto&gt;&gt;&gt;()</span>
+    val newDocTypeListGenerated: LiveData&lt;Event&lt;List&lt;Dto&gt;&gt;&gt;
+<span class="fc" id="L61">        get() = _newDocTypeListGenerated</span>
+
+<span class="pc" id="L63">    var bubbleMemberList: ArrayList&lt;MemberInfo&gt; = ArrayList()</span>
+<span class="fc" id="L64">    private val _bubbleListGenerated = MutableLiveData&lt;Event&lt;List&lt;MemberInfo&gt;&gt;&gt;()</span>
+    val bubbleListGenerated: LiveData&lt;Event&lt;List&lt;MemberInfo&gt;&gt;&gt;
+<span class="fc" id="L66">        get() = _bubbleListGenerated</span>
+
+<span class="fc" id="L68">    private val _navigateToDocPicker = MutableLiveData&lt;Event&lt;MemberInfo&gt;&gt;()</span>
+    val navigateToDocPicker: LiveData&lt;Event&lt;MemberInfo&gt;&gt;
+<span class="fc" id="L70">        get() = _navigateToDocPicker</span>
+
+<span class="fc" id="L72">    private val _navigateToUpload = MutableLiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt;()</span>
+    val navigateToUpload: LiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt;
+<span class="fc" id="L74">        get() = _navigateToUpload</span>
+
+<span class="pc" id="L76">    var uriImage: Uri? = null</span>
+<span class="nc" id="L77">    lateinit var filePart: MultipartBody.Part</span>
+<span class="pc" id="L78">    var selectedFile: File? = null</span>
+<span class="pc" id="L79">    var selectedDocType: Dto? = null</span>
+<span class="pc" id="L80">    var selectedFileName: String? = null</span>
+<span class="pc" id="L81">    var currentLocation: Location? = null</span>
+
+<span class="pc" id="L83">    var selectedReferenceMember: MemberInfo? = null</span>
+
+<span class="nc" id="L85">    var memberInfoDb =</span>
+<span class="pc" id="L86">        homeRepository.getMemberSid(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()).asLiveData()</span>
+<span class="fc" id="L87">    private var memberInfoList = homeRepository.getMemberFromDb().asLiveData()</span>
+
+<span class="fc" id="L89">    var memberInfo: MemberInfo = MemberInfo()</span>
+<span class="fc" id="L90">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L92">            field = value</span>
+<span class="nc" id="L93">            callbacks.notifyCallbacks(this, BR.memberInfo, null)</span>
+<span class="nc" id="L94">        }</span>
+
+    var uploadEnabled: Boolean = false
+<span class="fc" id="L97">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L99">            field = value</span>
+
+<span class="fc" id="L101">            callbacks.notifyCallbacks(this, BR.uploadEnabled, null)</span>
+<span class="fc" id="L102">        }</span>
+    var addButtonEnabled: Boolean = false
+<span class="fc" id="L104">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L106">            field = value</span>
+
+<span class="nc" id="L108">            callbacks.notifyCallbacks(this, BR.addButtonEnabled, null)</span>
+<span class="nc" id="L109">        }</span>
+
+    var hasDocument: Boolean = false
+<span class="fc" id="L112">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L114">            field = value</span>
+
+<span class="nc" id="L116">            callbacks.notifyCallbacks(this, BR.hasDocument, null)</span>
+<span class="nc" id="L117">        }</span>
+
+    var loading: Boolean = false
+<span class="fc" id="L120">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L122">            field = value</span>
+<span class="fc" id="L123">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="fc" id="L124">        }</span>
+<span class="fc" id="L125">    var hideDocType: Boolean = true</span>
+<span class="fc" id="L126">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L128">            field = value</span>
+<span class="fc" id="L129">            callbacks.notifyCallbacks(this, BR.hideDocType, null)</span>
+<span class="fc" id="L130">        }</span>
+<span class="fc" id="L131">    var hideReferenceMember: Boolean = true</span>
+<span class="fc" id="L132">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L134">            field = value</span>
+<span class="nc" id="L135">            callbacks.notifyCallbacks(this, BR.hideReferenceMember, null)</span>
+<span class="nc" id="L136">        }</span>
+<span class="fc" id="L137">    var docTypeTitle: String = resources.getString(R.string.select_type)</span>
+<span class="nc" id="L138">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L140">            field = value</span>
+<span class="nc" id="L141">            callbacks.notifyCallbacks(this, BR.docTypeTitle, null)</span>
+<span class="nc" id="L142">        }</span>
+<span class="fc" id="L143">    var docCategoryTitle: String = resources.getString(R.string.document_category)</span>
+<span class="nc" id="L144">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L146">            field = value</span>
+<span class="nc" id="L147">            callbacks.notifyCallbacks(this, BR.docCategoryTitle, null)</span>
+<span class="nc" id="L148">        }</span>
+<span class="fc" id="L149">    var memberName: String = resources.getString(R.string.select_person)</span>
+<span class="nc" id="L150">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L152">            field = value</span>
+<span class="nc" id="L153">            callbacks.notifyCallbacks(this, BR.memberName, null)</span>
+<span class="nc" id="L154">        }</span>
+
+<span class="fc" id="L156">    var docName: String = &quot;&quot;</span>
+<span class="fc" id="L157">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L159">            field = value</span>
+<span class="fc" id="L160">            callbacks.notifyCallbacks(this, BR.docName, null)</span>
+<span class="fc" id="L161">        }</span>
+<span class="fc" id="L162">    private val _navigateToClose = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToClose: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L164">        get() = _navigateToClose</span>
+
+    var pendingDocumentEnabled: Boolean = false
+<span class="fc" id="L167">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L169">            field = value</span>
+<span class="nc" id="L170">            callbacks.notifyCallbacks(this, BR.pendingDocumentEnabled, null)</span>
+<span class="nc" id="L171">        }</span>
+<span class="fc" id="L172">    private val _docNameChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val docNameChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="fc" id="L174">        get() = _docNameChanged</span>
+
+<span class="nc" id="L176">    @get:Bindable</span>
+<span class="fc" id="L177">    val docNameTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L180">        }</span>
+
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L183">        }</span>
+
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L186">            _docNameChanged.value = Event(s.toString())</span>
+<span class="nc" id="L187">        }</span>
+    }
+
+    fun loadMemberList(memberInfo: MemberInfo) {
+<span class="nc" id="L191">        bubbleMemberList.clear()</span>
+<span class="nc" id="L192">        memberInfo.isSelected = false</span>
+
+<span class="nc" id="L194">        loading = true</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        memberInfo.insured?.let { it1 -&gt;</span>
+<span class="nc" id="L196">            bubbleMemberList.add(it1)</span>
+<span class="nc" id="L197">            bubbleMemberList.add(memberInfo)</span>
+<span class="nc" id="L198">        } ?: run {</span>
+<span class="nc" id="L199">            bubbleMemberList.add(0, memberInfo)</span>
+<span class="nc" id="L200">        }</span>
+
+<span class="nc bnc" id="L202" title="All 2 branches missed.">        memberInfo.dependentsArrayList?.sortByDescending {</span>
+            DateUtils.stringServerDateToDate(
+                it.birthDate.toString()
+            )
+        }
+
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        memberInfo.dependentsArrayList?.reverse()</span>
+
+<span class="nc bnc" id="L210" title="All 2 branches missed.">        memberInfo.dependentsArrayList?.let { it1 -&gt;</span>
+<span class="nc bnc" id="L211" title="All 2 branches missed.">            for (member in it1) {</span>
+//                if (!member.memberAdditionInReview) {
+<span class="nc bnc" id="L213" title="All 2 branches missed.">                if (StringUtils.equalsIgnoreCase(member.memberRelationship, &quot;Spouse&quot;)) {</span>
+<span class="nc" id="L214">                    bubbleMemberList.add(1, member)</span>
+                } else {
+<span class="nc bnc" id="L216" title="All 2 branches missed.">                    if (!member.hideProfileFromHome) {</span>
+<span class="nc" id="L217">                        bubbleMemberList.add(member)</span>
+                    }
+                }
+//                }
+            }
+
+<span class="nc" id="L223">            var grouped = bubbleMemberList.groupBy { it.memberRelationship }</span>
+<span class="nc" id="L224">            grouped.forEach {</span>
+<span class="nc" id="L225">                it.value.sortedByDescending { item -&gt;</span>
+                    DateUtils.stringServerDateToDate(
+                        item.birthDate.toString()
+                    )
+                }
+<span class="nc" id="L230">                it.value.reversed()</span>
+<span class="nc" id="L231">            }</span>
+
+<span class="nc" id="L233">            bubbleMemberList.clear()</span>
+
+<span class="nc" id="L235">            grouped.forEach {</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">                if (it.key.equals(&quot;Insured&quot;, true)) {</span>
+<span class="nc" id="L237">                    bubbleMemberList.add(0, it.value[0])</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">                } else if (it.key.equals(&quot;Spouse&quot;, true)) {</span>
+<span class="nc bnc" id="L239" title="All 2 branches missed.">                    if (grouped.containsKey(&quot;Insured&quot;)) {</span>
+<span class="nc" id="L240">                        bubbleMemberList.add(1, it.value[0])</span>
+                    } else {
+<span class="nc" id="L242">                        bubbleMemberList.add(0, it.value[0])</span>
+                    }
+<span class="nc bnc" id="L244" title="All 2 branches missed.">                } else if (it.key.equals(&quot;Child&quot;, true)) {</span>
+<span class="nc" id="L245">                    val dateGroup = it.value.groupBy { date -&gt;</span>
+<span class="nc" id="L246">                        DateUtils.stringServerDateToDate(</span>
+<span class="nc" id="L247">                            date.birthDate.toString()</span>
+<span class="nc" id="L248">                        )</span>
+                    }
+
+<span class="nc" id="L251">                    dateGroup.forEach { item -&gt;</span>
+<span class="nc" id="L252">                        val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }</span>
+<span class="nc" id="L253">                        bubbleMemberList.addAll(sorted)</span>
+<span class="nc" id="L254">                    }</span>
+                }
+<span class="nc" id="L256">            }</span>
+<span class="nc" id="L257">            val tempOthers: ArrayList&lt;MemberInfo&gt; = arrayListOf()</span>
+<span class="nc" id="L258">            grouped.forEach {</span>
+<span class="nc bnc" id="L259" title="All 4 branches missed.">                if (!it.key.equals(&quot;Insured&quot;, true) &amp;&amp; !it.key.equals(</span>
+<span class="nc" id="L260">                        &quot;Spouse&quot;,</span>
+<span class="nc" id="L261">                        true</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">                    ) &amp;&amp; !it.key.equals(&quot;Child&quot;, true)</span>
+                ) {
+<span class="nc" id="L264">                    tempOthers.addAll(it.value)</span>
+                }
+<span class="nc" id="L266">            }</span>
+
+<span class="nc" id="L268">            val dateGroup = tempOthers.groupBy { date -&gt;</span>
+<span class="nc" id="L269">                DateUtils.stringServerDateToDate(</span>
+<span class="nc" id="L270">                    date.birthDate.toString()</span>
+<span class="nc" id="L271">                )</span>
+            }
+<span class="nc" id="L273">            dateGroup.forEach { item -&gt;</span>
+<span class="nc" id="L274">                val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }</span>
+<span class="nc" id="L275">                bubbleMemberList.addAll(sorted)</span>
+<span class="nc" id="L276">            }</span>
+<span class="nc" id="L277">        }</span>
+<span class="nc" id="L278">        loading = false</span>
+<span class="nc" id="L279">        _bubbleListGenerated.value = Event(bubbleMemberList.toList())</span>
+<span class="nc" id="L280">    }</span>
+    fun close() {
+<span class="nc" id="L282">        _navigateToClose.value = Event(Unit)</span>
+<span class="nc" id="L283">    }</span>
+
+    fun getCategory(clientId: String) {
+<span class="nc" id="L286">        docTypeList.clear()</span>
+<span class="nc" id="L287">        loading = true</span>
+
+<span class="nc" id="L289">        compositeDisposable.add(</span>
+<span class="nc" id="L290">            documentRepository.getType(clientId).subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L291">                .observeOn(AndroidSchedulers.mainThread()).doOnSubscribe {</span>
+<span class="nc" id="L292">                    loading = true</span>
+<span class="nc" id="L293">                }.subscribe({ typeList -&gt;</span>
+<span class="nc" id="L294">                    Timber.d(typeList.toString())</span>
+
+<span class="nc" id="L296">                    var list = typeList.dtos</span>
+<span class="nc bnc" id="L297" title="All 2 branches missed.">                    typeList.dtos?.let { it1 -&gt;</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">                        for (doc in it1) {</span>
+<span class="nc" id="L299">                            docTypeList.add(doc)</span>
+                        }
+<span class="nc" id="L301">                    }</span>
+<span class="nc" id="L302">                    docTypeList.sortBy { it.documentType.lowercase() }</span>
+<span class="nc" id="L303">                    _typeListGenerated.value = Event(docTypeList.toList())</span>
+<span class="nc" id="L304">                    loading = false</span>
+<span class="nc" id="L305">                }, {</span>
+<span class="nc" id="L306">                    Timber.d(it.toString())</span>
+<span class="nc" id="L307">                    loading = false</span>
+<span class="nc" id="L308">                })</span>
+        )
+<span class="nc" id="L310">    }</span>
+
+    fun docTypeButton() {
+<span class="nc bnc" id="L313" title="All 2 branches missed.">        hideDocType = !hideDocType</span>
+<span class="nc" id="L314">    }</span>
+
+    fun setSelectedDoc(docType: Dto) {
+<span class="nc" id="L317">        val index = docTypeList.indexOf(docType)</span>
+
+<span class="nc bnc" id="L319" title="All 2 branches missed.">        for (item in docTypeList) {</span>
+<span class="nc bnc" id="L320" title="All 2 branches missed.">            if (docTypeList.indexOf(item) == index) {</span>
+<span class="nc" id="L321">                docTypeList[index].apply {</span>
+<span class="nc bnc" id="L322" title="All 2 branches missed.">                    isSelected = !(docTypeList[index].isSelected)</span>
+<span class="nc" id="L323">                }</span>
+            } else {
+<span class="nc" id="L325">                docTypeList[docTypeList.indexOf(item)].apply {</span>
+<span class="nc" id="L326">                    isSelected = false</span>
+<span class="nc" id="L327">                }</span>
+            }
+        }
+
+        // set doc title
+<span class="nc" id="L332">        docTypeTitle = resources.getString(R.string.select_type)</span>
+<span class="nc" id="L333">        docCategoryTitle = resources.getString(R.string.document_category)</span>
+<span class="nc bnc" id="L334" title="All 2 branches missed.">        for (doc in docTypeList) {</span>
+<span class="nc bnc" id="L335" title="All 2 branches missed.">            if (doc.isSelected) {</span>
+<span class="nc" id="L336">                docTypeTitle = doc.documentType</span>
+<span class="nc" id="L337">                docCategoryTitle = doc.documentCategory</span>
+<span class="nc" id="L338">                docName = doc.documentType</span>
+<span class="nc" id="L339">                selectedDocType = doc</span>
+            }
+        }
+<span class="nc" id="L342">        docTypeList.sortBy { it.documentType.lowercase() }</span>
+<span class="nc" id="L343">        updateDocumentName()</span>
+<span class="nc" id="L344">        _typeListGenerated.value = Event(docTypeList.toList())</span>
+<span class="nc" id="L345">    }</span>
+
+    fun referenceToButton() {
+<span class="nc bnc" id="L348" title="All 2 branches missed.">        hideReferenceMember = !hideReferenceMember</span>
+<span class="nc" id="L349">    }</span>
+
+    fun updateDocumentName() {
+<span class="nc bnc" id="L352" title="All 4 branches missed.">        if (memberName.isNotBlank()) {</span>
+<span class="nc bnc" id="L353" title="All 2 branches missed.">            if (memberName != resources.getString(R.string.select_person)) {</span>
+<span class="nc bnc" id="L354" title="All 2 branches missed.">                docName = if (selectedDocType == null) {</span>
+<span class="nc" id="L355">                    memberName</span>
+                } else {
+<span class="nc bnc" id="L357" title="All 2 branches missed.">                    memberName + &quot;'s &quot; + selectedDocType?.documentType</span>
+                }
+            }
+        }
+<span class="nc" id="L361">    }</span>
+
+    fun selectedReferenceMember(memberInfo: MemberInfo) {
+<span class="nc" id="L364">        selectedReferenceMember = memberInfo</span>
+<span class="nc" id="L365">        val index = bubbleMemberList.indexOf(memberInfo)</span>
+
+<span class="nc bnc" id="L367" title="All 2 branches missed.">        for (item in bubbleMemberList) {</span>
+<span class="nc bnc" id="L368" title="All 2 branches missed.">            if (bubbleMemberList.indexOf(item) == index) {</span>
+<span class="nc" id="L369">                bubbleMemberList[index].apply {</span>
+<span class="nc bnc" id="L370" title="All 2 branches missed.">                    isSelected = !(bubbleMemberList[index].isSelected)</span>
+<span class="nc" id="L371">                }</span>
+            } else {
+<span class="nc" id="L373">                bubbleMemberList[bubbleMemberList.indexOf(item)].apply {</span>
+<span class="nc" id="L374">                    isSelected = false</span>
+<span class="nc" id="L375">                }</span>
+            }
+        }
+
+        // set reference name
+<span class="nc" id="L380">        memberName = resources.getString(R.string.select_person)</span>
+<span class="nc bnc" id="L381" title="All 2 branches missed.">        for (mem in bubbleMemberList) {</span>
+<span class="nc bnc" id="L382" title="All 2 branches missed.">            if (mem.isSelected) {</span>
+<span class="nc" id="L383">                memberName = mem.lastName.toString() + &quot;, &quot; + mem.firstName.toString()</span>
+            }
+        }
+<span class="nc" id="L386">        updateDocumentName()</span>
+<span class="nc" id="L387">        _bubbleListGenerated.value = Event(bubbleMemberList.toList())</span>
+<span class="nc" id="L388">    }</span>
+
+    fun addDocument() {
+<span class="nc" id="L391">        _navigateToDocPicker.value = Event(memberInfo)</span>
+<span class="nc" id="L392">    }</span>
+
+    private fun uploadDocument(
+        documentName: String,
+        docTypeID: Int,
+        docCategoryId: Int,
+        referenceId: Int,
+        longitude: Double?,
+        latitude: Double?
+    ) {
+<span class="nc" id="L402">        ThreadUtils.runOnUiThread(</span>
+            Runnable {
+<span class="nc" id="L404">                compositeDisposable.add(</span>
+<span class="nc" id="L405">                    documentRepository.uploadDoc(</span>
+<span class="nc" id="L406">                        memberInfo.selfId,</span>
+<span class="nc" id="L407">                        filePart,</span>
+<span class="nc" id="L408">                        docTypeID,</span>
+<span class="nc" id="L409">                        docCategoryId,</span>
+<span class="nc" id="L410">                        documentName,</span>
+<span class="nc" id="L411">                        referenceId,</span>
+<span class="nc" id="L412">                        longitude,</span>
+<span class="nc" id="L413">                        latitude,</span>
+<span class="nc" id="L414">                        &quot;&quot;</span>
+<span class="nc" id="L415">                    ).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).doOnSubscribe {</span>
+<span class="nc" id="L416">                        loading = true</span>
+<span class="nc" id="L417">                        _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().loading()</span>
+<span class="nc" id="L418">                    }.subscribe({</span>
+<span class="nc" id="L419">                        crossDocumentButton()</span>
+<span class="nc" id="L420">                        loading = false</span>
+<span class="nc" id="L421">                        _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().success(</span>
+<span class="nc" id="L422">                            it</span>
+                        )
+<span class="nc" id="L424">                    }, {</span>
+<span class="nc" id="L425">                        loading = false</span>
+<span class="nc" id="L426">                        _navigateToUpload.value =</span>
+<span class="nc" id="L427">                            APIResponse&lt;DocumentUploadSuccessEnroll&gt;().error(it.localizedMessage!!)</span>
+<span class="nc" id="L428">                    })</span>
+                )
+<span class="nc" id="L430">            }</span>
+        )
+<span class="nc" id="L432">    }</span>
+
+    fun resetSubmitView() {
+<span class="nc" id="L435">        hasDocument = false</span>
+<span class="nc" id="L436">        selectedFile = null</span>
+
+<span class="nc bnc" id="L438" title="All 2 branches missed.">        for (i in 0 until bubbleMemberList.count()) {</span>
+<span class="nc" id="L439">            bubbleMemberList[i].isSelected = false</span>
+        }
+
+<span class="nc" id="L442">        _bubbleListGenerated.value = Event(bubbleMemberList.toList())</span>
+
+<span class="nc bnc" id="L444" title="All 2 branches missed.">        for (i in 0 until docTypeList.count()) {</span>
+<span class="nc" id="L445">            docTypeList[i].isSelected = false</span>
+        }
+
+<span class="nc" id="L448">        _typeListGenerated.value = Event(docTypeList.toList())</span>
+
+        // set doc title
+<span class="nc" id="L451">        docTypeTitle = resources.getString(R.string.select_type)</span>
+<span class="nc" id="L452">        docCategoryTitle = resources.getString(R.string.document_category)</span>
+<span class="nc" id="L453">        docName = &quot;&quot;</span>
+<span class="nc" id="L454">        memberName = resources.getString(R.string.select_person)</span>
+
+<span class="nc" id="L456">        enableUploadButton()</span>
+<span class="nc" id="L457">        enableAddButton()</span>
+<span class="nc" id="L458">    }</span>
+
+    fun uploadButton() {
+<span class="nc" id="L461">        selectedFileName = docName</span>
+<span class="nc" id="L462">        Log.e(&quot;name&quot;, selectedFileName!!)</span>
+<span class="nc bnc" id="L463" title="All 2 branches missed.">        Log.e(&quot;doctype&quot;, selectedDocType?.documentTypeId!!.toString())</span>
+<span class="nc bnc" id="L464" title="All 2 branches missed.">        Log.e(&quot;doctype&quot;, selectedDocType?.documentType!!.toString())</span>
+<span class="nc bnc" id="L465" title="All 2 branches missed.">        Log.e(&quot;doctype&quot;, selectedDocType?.documentCategory!!.toString())</span>
+<span class="nc bnc" id="L466" title="All 2 branches missed.">        Log.e(&quot;cat type&quot;, selectedDocType?.documentCategoryId!!.toString())</span>
+<span class="nc bnc" id="L467" title="All 2 branches missed.">        Log.e(&quot;ref id &quot;, selectedReferenceMember?.selfId!!)</span>
+<span class="nc" id="L468">        Log.e(&quot;location&quot;, currentLocation.toString())</span>
+
+<span class="nc" id="L470">        uploadDocument(</span>
+<span class="nc" id="L471">            HelperUtils.fileName(</span>
+<span class="nc" id="L472">                selectedDocType!!.documentType,</span>
+<span class="nc" id="L473">                selectedReferenceMember!!.firstName.toString(),</span>
+<span class="nc" id="L474">                selectedReferenceMember!!.lastName.toString()</span>
+            ),
+<span class="nc bnc" id="L476" title="All 2 branches missed.">            selectedDocType?.documentTypeId!!,</span>
+<span class="nc bnc" id="L477" title="All 2 branches missed.">            selectedDocType?.documentCategoryId!!,</span>
+<span class="nc bnc" id="L478" title="All 2 branches missed.">            selectedReferenceMember?.selfId!!.toInt(),</span>
+<span class="nc bnc" id="L479" title="All 2 branches missed.">            currentLocation?.longitude,</span>
+<span class="nc bnc" id="L480" title="All 2 branches missed.">            currentLocation?.latitude</span>
+        )
+
+//        uploadDocument(selectedFile!!,selectedFileName.toString(),selectedDocType?.documentTypeId!!)
+<span class="nc" id="L484">    }</span>
+
+    fun crossDocumentButton() {
+<span class="nc" id="L487">        hasDocument = false</span>
+<span class="nc" id="L488">        selectedFile = null</span>
+
+<span class="nc" id="L490">        enableUploadButton()</span>
+<span class="nc" id="L491">        enableAddButton()</span>
+<span class="nc" id="L492">    }</span>
+
+    fun enableAddButton() {
+<span class="nc" id="L495">        addButtonEnabled =</span>
+<span class="nc bnc" id="L496" title="All 4 branches missed.">            (docTypeTitle != resources.getString(R.string.select_type)) &amp;&amp; memberName != resources.getString(</span>
+<span class="nc" id="L497">            R.string.select_person</span>
+        )
+<span class="nc" id="L499">    }</span>
+
+    fun enableUploadButton() {
+<span class="nc" id="L502">        uploadEnabled =</span>
+<span class="nc bnc" id="L503" title="All 4 branches missed.">            if ((docTypeTitle != resources.getString(R.string.select_type)) &amp;&amp; memberName != resources.getString(</span>
+<span class="nc" id="L504">                    R.string.select_person</span>
+                )
+            ) {
+<span class="nc" id="L507">                hasDocument</span>
+            } else {
+<span class="nc" id="L509">                false</span>
+            }
+<span class="nc" id="L511">    }</span>
+
+    fun backButton() {
+<span class="nc" id="L514">        _navigateToDoc.value = Event(Unit)</span>
+<span class="nc" id="L515">    }</span>
+
+    fun String.capitalize(): String {
+<span class="nc bnc" id="L518" title="All 4 branches missed.">        return this.replaceFirstChar {</span>
+<span class="nc bnc" id="L519" title="All 2 branches missed.">            if (it.isLowerCase()) {</span>
+<span class="nc" id="L520">                it.titlecase(Locale.getDefault())</span>
+            } else {
+<span class="nc" id="L522">                it.toString()</span>
+<span class="nc" id="L523">            }</span>
+        }
+    }
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L528">        callbacks.add(callback)</span>
+<span class="nc" id="L529">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L532">        callbacks.remove(callback)</span>
+<span class="nc" id="L533">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L536">        super.onCleared()</span>
+<span class="nc" id="L537">        compositeDisposable.dispose()</span>
+<span class="nc" id="L538">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

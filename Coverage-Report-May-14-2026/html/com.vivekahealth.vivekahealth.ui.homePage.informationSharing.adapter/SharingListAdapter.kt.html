@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SharingListAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.informationSharing.adapter</a> &gt; <span class="el_source">SharingListAdapter.kt</span></div><h1>SharingListAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.informationSharing.adapter
+
+import android.annotation.SuppressLint
+import android.graphics.Typeface
+import android.text.Spannable
+import android.text.SpannableStringBuilder
+import android.text.style.StyleSpan
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.core.view.isVisible
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.local.home.QuickItem
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfoShare
+import com.vivekahealth.vivekahealth.data.remote.home.SharingDetails
+import com.vivekahealth.vivekahealth.databinding.*
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import timber.log.Timber
+
+class SharingListAdapter(
+    private var onClick: (ArrayList&lt;SharingDetails&gt;) -&gt; Unit,
+    private var dateRangePickerClick: (
+        memberInfo: MemberInfoShare,
+        pos: Int,
+        facilityEnable: Boolean,
+        prescriptionEnable: Boolean,
+        professionalEnable: Boolean
+    ) -&gt; Unit,
+    var memberID: String
+) : ListAdapter&lt;MemberInfoShare, RecyclerView.ViewHolder&gt;(SharingInformationDiffCallback()) {
+
+    var maxWidth: Int = 0
+    var selectedPosition: Int = 0
+    var currentTimeMills: String ? = null
+
+    var shareList: ArrayList&lt;SharingDetails&gt; = arrayListOf()
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return InformationSharingViewHolder(
+            InformationSharingListItemBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            )
+        )
+    }
+
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+
+    @SuppressLint(&quot;SetTextI18n&quot;)
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = getItem(position)
+
+        (holder as InformationSharingViewHolder).binding.viewModel = item
+        holder.binding.hasImage = item.hasAvatar.toBooleanStrict()
+
+        holder.binding.currentTime = currentTimeMills
+
+        var pro: Boolean = true
+        var facility: Boolean = true
+        var pres: Boolean = true
+        var diag: Boolean = true
+        var lab: Boolean = true
+
+        // initially remove the switch
+        holder.binding.professionalSwitch = false
+        holder.binding.facilitySwitch = false
+        holder.binding.prescriptionSwitch = false
+
+        shareList = item.sharingDetails!!
+        for (sharingDetails in item.sharingDetails!!) {
+            when (sharingDetails.shareType) {
+                &quot;3&quot; -&gt; {
+                    pro = sharingDetails.shareRemove?.lowercase().toBoolean()
+                    holder.binding.professionalSwitch = !(sharingDetails.shareRemove?.lowercase()?.toBoolean() ?: true)
+                }
+
+                &quot;4&quot; -&gt; {
+                    facility = sharingDetails.shareRemove?.lowercase().toBoolean()
+
+                    holder.binding.facilitySwitch = !(sharingDetails.shareRemove?.lowercase()?.toBoolean() ?: true)
+                }
+
+                &quot;6&quot; -&gt; {
+                    pres = sharingDetails.shareRemove?.lowercase().toBoolean()
+                    holder.binding.prescriptionSwitch = !(sharingDetails.shareRemove?.lowercase()?.toBoolean()?:true)
+                }
+
+                &quot;1&quot; -&gt; {
+                    diag = sharingDetails.shareRemove?.lowercase().toBoolean()
+                    holder.binding.diagnosisSwitch = !sharingDetails.shareRemove?.lowercase().toBoolean()
+                }
+
+                &quot;7&quot; -&gt; {
+                    lab = sharingDetails.shareRemove?.lowercase().toBoolean()
+                    holder.binding.labSwitch = !sharingDetails.shareRemove?.lowercase().toBoolean()
+                }
+
+                else -&gt; {
+                }
+            }
+        }
+        holder.binding.facilityIcon = !facility
+        holder.binding.prescriptionIcon = !pres
+        holder.binding.professionalIcon = !pro
+
+        item.facilityEnable?.let {
+            Timber.d(&quot;FacilitySwitch: $it&quot;)
+            holder.binding.facilitySwitch = it
+        }
+
+        item.prescriptionEnable?.let {
+            holder.binding.prescriptionSwitch = it
+        }
+
+        item.professionalEnable?.let {
+            holder.binding.professionalSwitch = it
+        }
+
+        holder.binding.nameView.setOnClickListener {
+            item.expanded = null
+
+            if (!holder.binding.shareList.isVisible) {
+                holder.binding.shareList.visibility = View.VISIBLE
+                holder.binding.next.setImageResource(R.drawable.ic_collapse)
+                if (position == itemCount - 1) {
+                }
+            } else {
+                holder.binding.shareList.visibility = View.GONE
+                holder.binding.next.setImageResource(R.drawable.ic_expand)
+            }
+
+            if (!holder.binding.chips.isVisible) {
+                holder.binding.chips.visibility = View.VISIBLE
+            } else {
+                holder.binding.chips.visibility = View.GONE
+            }
+        }
+
+        item.expanded?.let {
+            holder.binding.shareList.visibility = View.VISIBLE
+            holder.binding.chips.visibility = View.VISIBLE
+            holder.binding.next.setImageResource(R.drawable.ic_collapse)
+        }
+
+        holder.binding.apply {
+        }
+
+        holder.binding.lnrDateRange.setOnClickListener {
+            val clickable =
+                (holder.binding.facilitySwitch ?: false) || (holder.binding.prescriptionSwitch ?: false) || (holder.binding.professionalSwitch ?: false)
+
+            if (clickable) {
+                dateRangePickerClick(
+                    item,
+                    position,
+                    (holder.binding.facilitySwitch ?: false),
+                    (holder.binding.prescriptionSwitch ?: false),
+                    (holder.binding.professionalSwitch ?: false)
+                )
+            }
+        }
+
+        holder.binding.facility.setOnClickListener {
+            holder.binding.facilitySwitch = facility
+            facility = !facility
+            shareList.forEach {
+                if (it.shareType.equals(&quot;4&quot;)) {
+                    it.selfId = item.selfId
+                    it.shareRemove = HelperUtils.capitalizeString(facility.toString())
+                }
+            }
+
+            val value = shareList.filter {
+                it.shareType.equals(&quot;4&quot;)
+            }
+
+            if (value.isNullOrEmpty()) {
+                shareList.add(
+                    SharingDetails(
+                        item.selfId,
+                        &quot;4&quot;,
+                        HelperUtils.capitalizeString(facility.toString())
+                    )
+                )
+            }
+
+            checkOfDetails(item, holder)
+
+            onClick(shareList)
+        }
+
+        holder.binding.prescription.setOnClickListener {
+            holder.binding.prescriptionSwitch = pres
+            pres = !pres
+            shareList.forEach {
+                if (it.shareType.equals(&quot;6&quot;)) {
+                    it.selfId = item.selfId
+
+                    it.shareRemove = HelperUtils.capitalizeString(pres.toString())
+                }
+            }
+
+            val value = shareList.filter {
+                it.shareType.equals(&quot;6&quot;)
+            }
+
+            if (value.isNullOrEmpty()) {
+                shareList.add(
+                    SharingDetails(item.selfId, &quot;6&quot;, HelperUtils.capitalizeString(pres.toString()))
+                )
+            }
+
+            checkOfDetails(item, holder)
+
+            onClick(shareList)
+        }
+        holder.binding.professional.setOnClickListener {
+            holder.binding.professionalSwitch = pro
+            pro = !pro
+            shareList.forEach {
+                if (it.shareType.equals(&quot;3&quot;)) {
+                    it.selfId = item.selfId
+
+                    it.shareRemove = HelperUtils.capitalizeString(pro.toString())
+                }
+            }
+
+            val value = shareList.filter {
+                it.shareType.equals(&quot;3&quot;)
+            }
+
+            if (value.isNullOrEmpty()) {
+                shareList.add(
+                    SharingDetails(item.selfId, &quot;3&quot;, HelperUtils.capitalizeString(pro.toString()))
+                )
+            }
+
+            onClick(shareList)
+
+            checkOfDetails(item, holder)
+        }
+
+        checkOfDetails(item, holder)
+    }
+
+    fun checkOfDetails(item: MemberInfoShare?, holder: InformationSharingViewHolder) {
+        item?.startDate?.let {
+            var startDateOriginal = it.replace(&quot; &quot;, &quot;&quot;)
+
+            val clickable =
+                (holder.binding.facilitySwitch ?: false) || (holder.binding.prescriptionSwitch ?: false) || (holder.binding.professionalSwitch ?: false)
+
+            if (startDateOriginal.isNotEmpty() &amp;&amp; clickable) {
+                holder.binding.showDatePicked = true
+
+                val startDate = DateUtils.dateToNamePres(
+                    DateUtils.diagnosisDate(
+                        it.replace(&quot; &quot;, &quot;&quot;)
+                    )
+                )
+
+                var endDate = holder.itemView.context.getString(R.string.all_future_dates)
+                var endDateTitle = holder.itemView.context.getString(R.string.no_end_date)
+
+                item.endDate?.let {
+                    if (it.replace(&quot; &quot;, &quot;&quot;).isNotEmpty()) {
+                        endDateTitle = it.replace(&quot; &quot;, &quot;&quot;)
+
+                        endDate = DateUtils.dateToNamePres(
+                            DateUtils.diagnosisDate(
+                                it.replace(&quot; &quot;, &quot;&quot;)
+                            )
+                        )
+                    }
+                }
+
+                holder.binding.dateText.setText(&quot;$startDateOriginal - $endDateTitle&quot;)
+                holder.binding.dateText.visibility = View.VISIBLE
+
+                val display =
+                    holder.itemView.context.getString(
+                        R.string.selected_information_from_and_will_be_visible_to,
+                        startDate,
+                        endDate,
+                        item.firstName
+                    )
+
+                val spannableBuilder = SpannableStringBuilder(display)
+
+                val startIndex = display.indexOf(startDate)
+                val endIndex = startIndex + startDate.length
+                spannableBuilder.setSpan(
+                    StyleSpan(Typeface.BOLD),
+                    startIndex,
+                    endIndex,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+
+                val endStartIndex = display.indexOf(endDate)
+                val endEndIndex = endStartIndex + endDate.length
+                spannableBuilder.setSpan(
+                    StyleSpan(android.graphics.Typeface.BOLD),
+                    endStartIndex,
+                    endEndIndex,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+
+                holder.binding.txtSelectedDateRange.text = spannableBuilder
+            } else {
+                holder.binding.showDatePicked = false
+                holder.binding.dateText.setText(&quot;&quot;)
+                holder.binding.dateText.visibility = View.GONE
+            }
+        } ?: run {
+            holder.binding.showDatePicked = false
+            holder.binding.dateText.setText(&quot;&quot;)
+            holder.binding.dateText.visibility = View.GONE
+        }
+    }
+
+    class InformationSharingViewHolder(
+        val binding: InformationSharingListItemBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        init {
+
+            binding.shareList.visibility = View.GONE
+            binding.chips.visibility = View.GONE
+        }
+    }
+
+    fun updateItem(memberInfo: MemberInfoShare, pos: Int) {
+        val currentList = currentList.toMutableList()
+
+        val updated = MemberInfoShare(
+            selfId = memberInfo.selfId,
+            firstName = memberInfo.firstName,
+            lastName = memberInfo.lastName,
+            sharingDetails = memberInfo.sharingDetails,
+            hasAvatar = memberInfo.hasAvatar,
+            birthDate = memberInfo.birthDate,
+            memberRelationship = memberInfo.memberRelationship
+        )
+        updated.startDate = memberInfo.startDate
+        updated.endDate = memberInfo.endDate
+
+        updated.prescriptionList = memberInfo.prescriptionList
+        updated.diagnosisList = memberInfo.diagnosisList
+
+        updated.facilityEnable = memberInfo.facilityEnable
+        updated.professionalEnable = memberInfo.professionalEnable
+        updated.prescriptionEnable = memberInfo.prescriptionEnable
+
+        updated.expanded = true
+
+        currentList[pos] = updated
+        submitList(currentList) // Submit the updated list
+        notifyItemChanged(pos)
+    }
+
+    fun updateAllPrescription(event: Event&lt;List&lt;QuickItem&gt;&gt;) {
+        val data = currentList.toMutableList()
+
+        data.forEach {
+            it.prescriptionList?.clear()
+            it.prescriptionList?.addAll(event.peekContent())
+        }
+        submitList(data)
+        notifyDataSetChanged()
+    }
+
+    fun updateAllDiagnosis(event: Event&lt;List&lt;QuickItem&gt;&gt;) {
+        val data = currentList.toMutableList()
+
+        data.forEach {
+            it.diagnosisList?.clear()
+            it.diagnosisList?.addAll(event.peekContent())
+        }
+        submitList(data)
+        notifyDataSetChanged()
+    }
+}
+
+<span class="fc" id="L392">private class SharingInformationDiffCallback : DiffUtil.ItemCallback&lt;MemberInfoShare&gt;() {</span>
+
+    override fun areItemsTheSame(oldItem: MemberInfoShare, newItem: MemberInfoShare): Boolean {
+<span class="nc" id="L395">        return oldItem == newItem</span>
+    }
+
+    override fun areContentsTheSame(
+        oldItem: MemberInfoShare,
+        newItem: MemberInfoShare
+    ): Boolean {
+<span class="nc" id="L402">        return oldItem.selfId == newItem.selfId</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

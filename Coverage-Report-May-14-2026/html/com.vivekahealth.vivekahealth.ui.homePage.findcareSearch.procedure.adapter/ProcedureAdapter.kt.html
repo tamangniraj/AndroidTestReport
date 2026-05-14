@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProcedureAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.procedure.adapter</a> &gt; <span class="el_source">ProcedureAdapter.kt</span></div><h1>ProcedureAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.procedure.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.databinding.ProcedureDesignBinding
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityModel.Procedure
+
+class ProcedureAdapter(
+    private var onClick:
+        (Procedure) -&gt; Unit
+) :
+    ListAdapter&lt;Procedure, RecyclerView.ViewHolder&gt;(ValueDiffCallback()) {
+
+    var selectedPosition: Int = 0
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return ProcedureViewHolder(
+            ProcedureDesignBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            ),
+            onClick
+        )
+    }
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = getItem(position)
+        (holder as ProcedureViewHolder).binding.item = item
+
+        (holder as ProcedureViewHolder).binding.setClickListener {
+            onClick(item)
+        }
+    }
+
+    class ProcedureViewHolder(
+        val binding: ProcedureDesignBinding,
+        private val onClick: (Procedure) -&gt; Unit
+    ) : RecyclerView.ViewHolder(binding.root)
+}
+
+<span class="nc" id="L48">private class ValueDiffCallback : DiffUtil.ItemCallback&lt;Procedure&gt;() {</span>
+    override fun areItemsTheSame(oldItem: Procedure, newItem: Procedure): Boolean {
+<span class="nc" id="L50">        return oldItem.code == newItem.code</span>
+    }
+
+    override fun areContentsTheSame(oldItem: Procedure, newItem: Procedure): Boolean {
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        return oldItem.code == newItem.code &amp;&amp; // Check the primary key</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">            oldItem.price == newItem.price &amp;&amp; // Compare price</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">            oldItem.priceLoading == newItem.priceLoading &amp;&amp; // Compare loading state</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">            oldItem.minPrice == newItem.minPrice &amp;&amp; // Compare min price</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            oldItem.maxPrice == newItem.maxPrice &amp;&amp; // Compare max price</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">            oldItem.occurrence == newItem.occurrence // Compare occurrence</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

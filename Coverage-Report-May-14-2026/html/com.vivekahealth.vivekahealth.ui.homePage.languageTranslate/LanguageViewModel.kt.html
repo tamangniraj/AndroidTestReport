@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LanguageViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.languageTranslate</a> &gt; <span class="el_source">LanguageViewModel.kt</span></div><h1>LanguageViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.languageTranslate
+
+import android.content.SharedPreferences
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.AppScope
+import com.vivekahealth.vivekahealth.data.remote.home.LanguageList
+import com.vivekahealth.vivekahealth.data.remote.home.UpdateDetails
+import com.vivekahealth.vivekahealth.ui.guestHome.repository.GuestHomeRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.launch
+import timber.log.Timber
+import javax.inject.Inject
+
+<span class="fc" id="L23">class LanguageViewModel @Inject constructor(</span>
+<span class="fc" id="L24">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L25">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L26">    private val guestHomeRepository: GuestHomeRepository</span>
+<span class="fc" id="L27">) : ViewModel(), Observable {</span>
+
+<span class="fc" id="L29">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L31">    private val _languages = MutableLiveData&lt;List&lt;LanguageList&gt;&gt;()</span>
+<span class="fc" id="L32">    val languages: LiveData&lt;List&lt;LanguageList&gt;&gt; get() = _languages</span>
+
+<span class="pc" id="L34">    var selectedCode: String? = null</span>
+<span class="fc" id="L35">    private var languageMap: List&lt;LanguageList&gt; = emptyList()</span>
+
+    var loading: Boolean = false
+<span class="fc" id="L38">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L40">            field = value</span>
+<span class="fc" id="L41">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="fc" id="L42">        }</span>
+
+    fun initLanguages(localizedLabels: List&lt;Pair&lt;String, String&gt;&gt;) {
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        val memId = preferences.getString(&quot;memberID&quot;, &quot;&quot;) ?: &quot;&quot;</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        val savedCode = preferences.getString(&quot;$memId${Constants.LanguagePref}&quot;, &quot;en&quot;) ?: &quot;en&quot;</span>
+
+        // Use saved preference OR Constants.LOCAL_LANG_MODIFIED (if non-blank)
+<span class="pc bpc" id="L49" title="6 of 10 branches missed.">        selectedCode = Constants.CURRENT_LANGUAGE.takeIf { !it.isNullOrBlank() } ?: savedCode</span>
+
+<span class="fc" id="L51">        languageMap = localizedLabels.map { (label, code) -&gt;</span>
+<span class="fc" id="L52">            LanguageList(label, selectedCode.equals(code, ignoreCase = true), code)</span>
+        }
+
+<span class="fc" id="L55">        _languages.value = languageMap</span>
+<span class="fc" id="L56">    }</span>
+
+    fun selectLanguage(selected: LanguageList) {
+<span class="fc" id="L59">        selectedCode = selected.code</span>
+<span class="fc" id="L60">        Constants.LOCAL_LANG_MODIFIED = selected.code</span>
+<span class="fc" id="L61">        Constants.CURRENT_LANGUAGE = selected.code</span>
+<span class="fc" id="L62">        saveLanguage(selected)</span>
+
+<span class="fc" id="L64">        _languages.value = languageMap.map {</span>
+<span class="fc" id="L65">            it.copy(selected = it.code == selected.code)</span>
+        }
+
+<span class="fc" id="L68">        sendToServer(selected)</span>
+<span class="fc" id="L69">    }</span>
+
+    private fun saveLanguage(language: LanguageList) {
+<span class="fc" id="L72">        preferences.edit()</span>
+<span class="fc" id="L73">            .putString(</span>
+<span class="fc" id="L74">                preferences.getString(&quot;memberID&quot;, &quot;&quot;) + Constants.LanguagePref,</span>
+<span class="fc" id="L75">                language.code</span>
+            )
+<span class="fc" id="L77">            .apply()</span>
+<span class="fc" id="L78">    }</span>
+
+    private fun sendToServer(language: LanguageList) {
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">        if (!Constants.IS_OFFLINE) {</span>
+<span class="fc" id="L82">            loading = true</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">            AppScope.scope.launch {</span>
+<span class="fc" id="L84">                try {</span>
+<span class="fc" id="L85">                    val isGuest = preferences.getBoolean(Constants.IS_GUEST, false)</span>
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">                    val memberId = preferences.getString(&quot;memberID&quot;, &quot;&quot;) ?: &quot;&quot;</span>
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">                    if (isGuest) {</span>
+<span class="nc" id="L88">                        guestHomeRepository.setLanguagePreference(language.code)</span>
+<span class="nc" id="L89">                            .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L90">                            .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L91">                            .subscribe({</span>
+<span class="nc" id="L92">                                loading = false</span>
+<span class="nc" id="L93">                            }, {</span>
+<span class="nc" id="L94">                                loading = false</span>
+<span class="nc" id="L95">                            })</span>
+                    } else {
+<span class="fc" id="L97">                        homeRepository.updateUserDetails(</span>
+<span class="fc" id="L98">                            memberId,</span>
+<span class="fc" id="L99">                            UpdateDetails(languagePreference = language.code)</span>
+<span class="fc" id="L100">                        ).subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L101">                            .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="pc" id="L102">                            .subscribe({</span>
+<span class="nc" id="L103">                                loading = false</span>
+<span class="pc" id="L104">                            }, {</span>
+<span class="nc" id="L105">                                loading = false</span>
+<span class="nc" id="L106">                            })</span>
+                    }
+<span class="nc" id="L108">                } catch (e: Exception) {</span>
+<span class="nc" id="L109">                    loading = false</span>
+<span class="nc" id="L110">                    Timber.e(&quot;Language update failed: ${e.localizedMessage}&quot;)</span>
+                }
+<span class="fc" id="L112">            }</span>
+        }
+<span class="fc" id="L114">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L117">        callbacks.add(callback)</span>
+<span class="nc" id="L118">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L121">        callbacks.remove(callback)</span>
+<span class="nc" id="L122">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

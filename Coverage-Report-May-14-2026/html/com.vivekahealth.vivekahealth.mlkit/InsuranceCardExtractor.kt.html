@@ -1,0 +1,1793 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InsuranceCardExtractor.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.mlkit</a> &gt; <span class="el_source">InsuranceCardExtractor.kt</span></div><h1>InsuranceCardExtractor.kt</h1><pre class="source lang-java linenums">/**
+ * Insurance Card Details Extractor (Kotlin/Android)
+ * ==================================================
+ * Extracts member name and member ID from OCR text using regex patterns.
+ * Designed for offline on-device extraction in Android applications.
+ *
+ * Port of the Python insurance_card_extractor.py - regex-only mode.
+ */
+
+package com.vivekahealth.vivekahealth.mlkit
+
+import com.google.mlkit.vision.text.Text
+import kotlin.math.abs
+
+/**
+ * Data class for extracted insurance card information
+ */
+<span class="nc" id="L18">data class ExtractedData(</span>
+<span class="nc" id="L19">    val names: List&lt;String&gt; = emptyList(),</span>
+<span class="nc" id="L20">    val memberIds: List&lt;String&gt; = emptyList(),</span>
+<span class="nc" id="L21">    val dates: List&lt;String&gt; = emptyList(),</span>
+<span class="nc" id="L22">    val insuranceProvider: String? = null,</span>
+<span class="nc" id="L23">    val planType: String? = null,</span>
+<span class="nc" id="L24">    val groupNumber: String? = null,</span>
+<span class="nc" id="L25">    val rxBin: String? = null,</span>
+<span class="nc" id="L26">    val rxPcn: String? = null,</span>
+<span class="nc" id="L27">    val rxGrp: String? = null,</span>
+<span class="nc" id="L28">    val rxId: String? = null,</span>
+<span class="nc" id="L29">    val sponsorNumber: String? = null,</span>
+<span class="nc" id="L30">    val issuer: String? = null,</span>
+<span class="nc" id="L31">    val phone: String? = null,</span>
+<span class="nc" id="L32">    val rawText: String = &quot;&quot;</span>
+<span class="nc" id="L33">) {</span>
+<span class="nc" id="L34">    fun toMap(): Map&lt;String, Any?&gt; = mapOf(</span>
+<span class="nc" id="L35">        &quot;names&quot; to names,</span>
+<span class="nc" id="L36">        &quot;member_ids&quot; to memberIds,</span>
+<span class="nc" id="L37">        &quot;dates&quot; to dates,</span>
+<span class="nc" id="L38">        &quot;insurance_provider&quot; to insuranceProvider,</span>
+<span class="nc" id="L39">        &quot;plan_type&quot; to planType,</span>
+<span class="nc" id="L40">        &quot;group_number&quot; to groupNumber,</span>
+<span class="nc" id="L41">        &quot;rx_bin&quot; to rxBin,</span>
+<span class="nc" id="L42">        &quot;rx_pcn&quot; to rxPcn,</span>
+<span class="nc" id="L43">        &quot;rx_grp&quot; to rxGrp,</span>
+<span class="nc" id="L44">        &quot;rx_id&quot; to rxId,</span>
+<span class="nc" id="L45">        &quot;sponsor_number&quot; to sponsorNumber,</span>
+<span class="nc" id="L46">        &quot;issuer&quot; to issuer,</span>
+<span class="nc" id="L47">        &quot;phone&quot; to phone</span>
+<span class="nc" id="L48">    )</span>
+}
+
+/**
+ * Collection of regex patterns for insurance card extraction
+ */
+object InsurancePatterns {
+
+    // =========================================================================
+    // MEMBER ID PATTERNS
+    // =========================================================================
+<span class="fc" id="L59">    val ID_PATTERNS = listOf(</span>
+        // Labeled ID patterns
+<span class="fc" id="L61">        &quot;&quot;&quot;(?i:Member\s*ID\s*Number|Identification\s*Number|Subscriber\s*ID\s*Number)[\s:]+([A-Z0-9\-]{6,20})&quot;&quot;&quot;,</span>
+<span class="fc" id="L62">        &quot;&quot;&quot;(?i:ID\s*[#$]|ID)[\s:]+([A-Z0-9\-]{6,20})&quot;&quot;&quot;,</span>
+<span class="fc" id="L63">        &quot;&quot;&quot;(?i:Identification\s*No)[\s:]+([A-Z0-9\-]{6,20})&quot;&quot;&quot;,</span>
+<span class="fc" id="L64">        &quot;&quot;&quot;(?i:Member\s*ID|MemberID|Subscriber\s*ID|MEDICAL/MH/MAP\s*ID|Mbr\s*ID|Member\s*#)[\s:]+([A-Z0-9\-]{6,20})&quot;&quot;&quot;,</span>
+<span class="fc" id="L65">        &quot;&quot;&quot;(?i:Member|Subscriber|Patient|Cardholder)\s*(?i:ID|Number|No|#)[\s:]+([A-Z0-9\-]{6,20})&quot;&quot;&quot;,</span>
+<span class="fc" id="L66">        &quot;&quot;&quot;(?&lt;!Rx\s)(?i:ID|Identification|1D)[\s:]+([A-Z0-9\-]{8,20})&quot;&quot;&quot;,</span>
+
+        // Unlabeled ID patterns
+<span class="fc" id="L69">        &quot;&quot;&quot;\b(BXL[A-Z0-9]{6,12})\b&quot;&quot;&quot;,</span>
+<span class="fc" id="L70">        &quot;&quot;&quot;\b(FUN[0-9]{9})\b&quot;&quot;&quot;,</span>
+<span class="fc" id="L71">        &quot;&quot;&quot;\b(TLO[0-9]{9})\b&quot;&quot;&quot;,</span>
+<span class="fc" id="L72">        &quot;&quot;&quot;\b(XYB[A-Z0-9]{8,15})\b&quot;&quot;&quot;,</span>
+<span class="fc" id="L73">        &quot;&quot;&quot;\b([A-Z]{1,3}[0-9]{6,12})\b&quot;&quot;&quot;,</span>
+<span class="fc" id="L74">        &quot;&quot;&quot;\b([0-9]{9,12})\b&quot;&quot;&quot;,</span>
+<span class="fc" id="L75">        &quot;&quot;&quot;\b([0-9]{3}[-][0-9]{2}[-][0-9]{4}[-][A-Z])\b&quot;&quot;&quot;,</span>
+<span class="fc" id="L76">        &quot;&quot;&quot;\b([0-9]{3}[-\s][0-9]{3}[-\s][0-9]{3,4})\b&quot;&quot;&quot;,</span>
+<span class="fc" id="L77">        &quot;&quot;&quot;\b([0-9]{3}[-\s][0-9]{2}[-\s][0-9]{4,5})\b&quot;&quot;&quot;,</span>
+<span class="fc" id="L78">        &quot;&quot;&quot;\b([A-Z][0-9]{8,11})\b&quot;&quot;&quot;,</span>
+<span class="fc" id="L79">        &quot;&quot;&quot;\b([0-9]{3}[A-Z]{2}[0-9]{4,6})\b&quot;&quot;&quot;,</span>
+<span class="fc" id="L80">        &quot;&quot;&quot;^(?=.*[0-9])[A-Z0-9]{6,15}$&quot;&quot;&quot;</span>
+    )
+
+    // =========================================================================
+    // DATE PATTERNS
+    // =========================================================================
+<span class="fc" id="L86">    val DATE_PATTERNS = listOf(</span>
+        // Labeled date patterns
+<span class="fc" id="L88">        &quot;&quot;&quot;(?:Updated|Effective|Eff|DOB|Date|Valid|Expires?|Exp|Issue[d]?)[\s:]+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})&quot;&quot;&quot;,</span>
+<span class="fc" id="L89">        &quot;&quot;&quot;(?:Updated|Effective|Eff|DOB|Date|Valid|Expires?|Exp|Issue[d]?)[\s:]+(\d{4}[/\-]\d{1,2}[/\-]\d{1,2})&quot;&quot;&quot;,</span>
+
+        // US format: MM/DD/YYYY or MM-DD-YYYY
+<span class="fc" id="L92">        &quot;&quot;&quot;\b(0?[1-9]|1[0-2])[/\-](0?[1-9]|[12][0-9]|3[01])[/\-](20[0-9]{2})\b&quot;&quot;&quot;,</span>
+<span class="fc" id="L93">        &quot;&quot;&quot;\b(0?[1-9]|1[0-2])[/\-](0?[1-9]|[12][0-9]|3[01])[/\-]([0-9]{2})\b&quot;&quot;&quot;,</span>
+
+        // ISO format: YYYY/MM/DD
+<span class="fc" id="L96">        &quot;&quot;&quot;\b(20[0-9]{2})[/\-](0?[1-9]|1[0-2])[/\-](0?[1-9]|[12][0-9]|3[01])\b&quot;&quot;&quot;,</span>
+
+        // European format: DD/MM/YYYY
+<span class="fc" id="L99">        &quot;&quot;&quot;\b(0?[1-9]|[12][0-9]|3[01])[/\-](0?[1-9]|1[0-2])[/\-](20[0-9]{2})\b&quot;&quot;&quot;,</span>
+
+        // Month name formats
+<span class="fc" id="L102">        &quot;&quot;&quot;\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(\d{1,2}),?\s+(20[0-9]{2})\b&quot;&quot;&quot;,</span>
+<span class="fc" id="L103">        &quot;&quot;&quot;\b(\d{1,2})\s+(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(20[0-9]{2})\b&quot;&quot;&quot;,</span>
+
+        // Compact formats
+<span class="fc" id="L106">        &quot;&quot;&quot;\b(20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])\b&quot;&quot;&quot;,</span>
+<span class="fc" id="L107">        &quot;&quot;&quot;\b(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])(20[0-9]{2})\b&quot;&quot;&quot;</span>
+    )
+
+    // =========================================================================
+    // NAME PATTERNS - LABELED
+    // =========================================================================
+<span class="fc" id="L113">    val NAME_PATTERNS_LABELED = listOf(</span>
+        // Pattern with number prefix
+<span class="fc" id="L115">        &quot;&quot;&quot;(?:Name\s*of\s*Beneficiary|Member\s*Name|Subscriber\s*Name|Patient\s*Name|Cardholder\s*Name|Beneficiary|Member|Subscriber|(?&lt;!Group\s)Name)\s*[:\s]+\d{1,2}[ \t]+([A-Z]{3,12}[ \t]+[A-Z]{3,15}(?:[ \t]+(?:SR|JR|III|II|IV|V)\.?)?)&quot;&quot;&quot;,</span>
+<span class="fc" id="L116">        &quot;&quot;&quot;(?:Name\s*of\s*Beneficiary|Member\s*Name|Subscriber\s*Name|Patient\s*Name|Cardholder\s*Name|Beneficiary|Member|Subscriber|(?&lt;!Group\s)Name)\s*[:\s]+\d{1,2}[ \t]+([A-Z]{3,12}[ \t]+[A-Z]{1,2}\.?[ \t]+[A-Z]{3,15}(?:[ \t]+(?:SR|JR|III|II|IV|V)\.?)?)&quot;&quot;&quot;,</span>
+
+        // ALL CAPS labeled patterns
+<span class="fc" id="L119">        &quot;&quot;&quot;(?:Name\s*of\s*Beneficiary|Member\s*Name|Subscriber\s*Name|Patient\s*Name|Cardholder\s*Name|Beneficiary|Member|Subscriber|(?&lt;!Group\s)Name)\s*[:\s]+([A-Z]{3,12}[ \t]+[A-Z]{3,12}[ \t]+[A-Z]{3,15}(?:[ \t]+(?:SR|JR|III|II|IV|V)\.?)?)&quot;&quot;&quot;,</span>
+<span class="fc" id="L120">        &quot;&quot;&quot;(?:Name\s*of\s*Beneficiary|Member\s*Name|Subscriber\s*Name|Patient\s*Name|Cardholder\s*Name|Beneficiary|Member|Subscriber|(?&lt;!Group\s)Name)\s*[:\s]+([A-Z]{3,12}[ \t]+[A-Z]{1,2}\.?[ \t]+[A-Z]{3,15}(?:[ \t]+(?:SR|JR|III|II|IV|V)\.?)?)&quot;&quot;&quot;,</span>
+<span class="fc" id="L121">        &quot;&quot;&quot;(?:Name\s*of\s*Beneficiary|Member\s*Name|Subscriber\s*Name|Patient\s*Name|Cardholder\s*Name|Beneficiary|Member|Subscriber|(?&lt;!Group\s)Name)\s*[:\s]+([A-Z]{3,12}[ \t]+[A-Z]{3,15})&quot;&quot;&quot;,</span>
+
+        // Patterns with suffixes - Title Case
+<span class="fc" id="L124">        &quot;&quot;&quot;(?:Name\s*of\s*Beneficiary|Member\s*Name|Subscriber\s*Name|Patient\s*Name|Cardholder\s*Name|Beneficiary|(?&lt;!Group\s)Name)\s*[:\s]+([A-Z][a-z]+(?:[ \t]+[A-Z]\.?)?(?:[ \t]+[A-Z][a-z]+)+[ \t]+(?:SR|JR|III|II|IV|V)\.?)&quot;&quot;&quot;,</span>
+
+        // Standard labeled patterns - Title Case
+<span class="fc" id="L127">        &quot;&quot;&quot;(?:Name\s*of\s*Beneficiary|Member\s*Name|Subscriber\s*Name|Patient\s*Name|Cardholder\s*Name|Beneficiary|(?&lt;!Group\s)Name)\s*[:\s]+([A-Z][a-z]+[ \t]+[A-Z][a-z]+(?:[ \t]+[A-Z][a-z]+)?)&quot;&quot;&quot;,</span>
+<span class="fc" id="L128">        &quot;&quot;&quot;(?:Name\s*of\s*Beneficiary|Member\s*Name|Subscriber\s*Name|Patient\s*Name|Cardholder\s*Name|Beneficiary)\s*[:\s]+([A-Z][a-zA-Z\-]+[ \t]+[A-Z][a-zA-Z\-]+)&quot;&quot;&quot;,</span>
+<span class="fc" id="L129">        &quot;&quot;&quot;(?:Name\s*of\s*Beneficiary|Member\s*Name|Subscriber\s*Name|Patient\s*Name|Cardholder\s*Name|Beneficiary|(?&lt;!Group\s)Name)\s*[:\s]+([A-Z][a-z]+(?:[ \t]+[A-Z](?:[a-z]+)?)?(?:[ \t]+[A-Z][a-z]+)?)&quot;&quot;&quot;</span>
+    )
+
+    // =========================================================================
+    // NAME PATTERNS - UNLABELED
+    // =========================================================================
+<span class="fc" id="L135">    val NAME_PATTERNS_UNLABELED = listOf(</span>
+        // Pattern with number prefix on standalone line
+<span class="fc" id="L137">        &quot;&quot;&quot;(?:^|\n)\d{1,2}[ \t]+([A-Z]{3,12}[ \t]+[A-Z]{3,15})(?:\n|$)&quot;&quot;&quot;,</span>
+<span class="fc" id="L138">        &quot;&quot;&quot;(?:^|\n)\d{1,2}[ \t]+([A-Z]{3,12}[ \t]+[A-Z]{1,2}\.?[ \t]+[A-Z]{3,15})(?:\n|$)&quot;&quot;&quot;,</span>
+<span class="fc" id="L139">        &quot;&quot;&quot;(?:^|\n)\d{1,2}[ \t]+([A-Z]{3,12}[ \t]+[A-Z]{3,15}[ \t]+(?:SR|JR|III|II|IV|V)\.?)(?:\n|$)&quot;&quot;&quot;,</span>
+
+        // Unlabeled patterns - careful matching for standalone names
+<span class="fc" id="L142">        &quot;&quot;&quot;^([A-Z][a-z]{2,12}\s+[A-Z][a-z]{2,15})$&quot;&quot;&quot;,</span>
+<span class="fc" id="L143">        &quot;&quot;&quot;(?:^|\n)([A-Z][a-z]{2,12}\s+[A-Z][a-z]{2,15})(?:\n|$)&quot;&quot;&quot;,</span>
+
+        // ALL CAPS patterns
+<span class="fc" id="L146">        &quot;&quot;&quot;^([A-Z]{3,12}[ \t]+[A-Z]{3,15})$&quot;&quot;&quot;,</span>
+<span class="fc" id="L147">        &quot;&quot;&quot;(?:^|\n)([A-Z]{3,12}[ \t]+[A-Z]{3,15})(?:\n|$)&quot;&quot;&quot;,</span>
+<span class="fc" id="L148">        &quot;&quot;&quot;^([A-Z]{3,12}[ \t]+[A-Z]{1,2}\.?[ \t]+[A-Z]{3,15})$&quot;&quot;&quot;,</span>
+<span class="fc" id="L149">        &quot;&quot;&quot;^([A-Z]{3,12}[ \t]+[A-Z]{3,12}[ \t]+[A-Z]{3,15})$&quot;&quot;&quot;,</span>
+<span class="fc" id="L150">        &quot;&quot;&quot;^([A-Z]{3,12}[ \t]+[A-Z]{1,2}\.?[ \t]+[A-Z]{3,15}[ \t]+(?:SR|JR|III|II|IV|V)\.?)$&quot;&quot;&quot;,</span>
+<span class="fc" id="L151">        &quot;&quot;&quot;^([A-Z]{3,12}[ \t]+[A-Z]{3,12}[ \t]+[A-Z]{3,15}[ \t]+(?:SR|JR|III|II|IV|V)\.?)$&quot;&quot;&quot;</span>
+    )
+
+    // =========================================================================
+    // INSURANCE PROVIDER PATTERNS
+    // =========================================================================
+<span class="fc" id="L157">    val PROVIDER_PATTERNS = listOf(</span>
+<span class="fc" id="L158">        &quot;&quot;&quot;(UnitedHealth(?:care)?|United\s*Health(?:care)?)&quot;&quot;&quot;,</span>
+<span class="fc" id="L159">        &quot;&quot;&quot;(Blue\s*Cross\s*Blue\s*Shield|BCBS|Blue\s*Cross)&quot;&quot;&quot;,</span>
+<span class="fc" id="L160">        &quot;&quot;&quot;(Aetna)&quot;&quot;&quot;,</span>
+<span class="fc" id="L161">        &quot;&quot;&quot;(Cigna)&quot;&quot;&quot;,</span>
+<span class="fc" id="L162">        &quot;&quot;&quot;(Humana)&quot;&quot;&quot;,</span>
+<span class="fc" id="L163">        &quot;&quot;&quot;(Kaiser\s*Permanente|Kaiser)&quot;&quot;&quot;,</span>
+<span class="fc" id="L164">        &quot;&quot;&quot;(Anthem)&quot;&quot;&quot;,</span>
+<span class="fc" id="L165">        &quot;&quot;&quot;(Express\s*Scripts)&quot;&quot;&quot;,</span>
+<span class="fc" id="L166">        &quot;&quot;&quot;(CVS\s*Caremark|CVS\s*Health)&quot;&quot;&quot;,</span>
+<span class="fc" id="L167">        &quot;&quot;&quot;(OptumRx|Optum)&quot;&quot;&quot;,</span>
+<span class="fc" id="L168">        &quot;&quot;&quot;(Medicaid|Medicare)&quot;&quot;&quot;,</span>
+<span class="fc" id="L169">        &quot;&quot;&quot;(VSP|Vision\s*Service\s*Plan)&quot;&quot;&quot;,</span>
+<span class="fc" id="L170">        &quot;&quot;&quot;(Delta\s*Dental)&quot;&quot;&quot;,</span>
+<span class="fc" id="L171">        &quot;&quot;&quot;(MetLife)&quot;&quot;&quot;,</span>
+<span class="fc" id="L172">        &quot;&quot;&quot;(Guardian)&quot;&quot;&quot;,</span>
+<span class="fc" id="L173">        &quot;&quot;&quot;(Molina)&quot;&quot;&quot;,</span>
+<span class="fc" id="L174">        &quot;&quot;&quot;(Centene)&quot;&quot;&quot;,</span>
+<span class="fc" id="L175">        &quot;&quot;&quot;(WellCare)&quot;&quot;&quot;</span>
+    )
+
+    // =========================================================================
+    // OTHER FIELD PATTERNS
+    // =========================================================================
+<span class="fc" id="L181">    val GROUP_PATTERNS = listOf(</span>
+<span class="fc" id="L182">        &quot;&quot;&quot;((?:Group\s*(?:Name|No|Number|#|ID)?|Grp|GRP)[\s:]+[A-Z0-9][A-Z0-9\-\s]{2,19})&quot;&quot;&quot;,</span>
+<span class="fc" id="L183">        &quot;&quot;&quot;((?:Group)[\s:]+(?!Name|Number|No|ID|#)[A-Za-z0-9][A-Za-z0-9\s]{2,29})&quot;&quot;&quot;</span>
+    )
+
+<span class="fc" id="L186">    val RX_BIN_PATTERNS = listOf(</span>
+<span class="fc" id="L187">        &quot;&quot;&quot;((?:Rx\s*)?BIN[\s:]*(\d{6}))&quot;&quot;&quot;,</span>
+<span class="fc" id="L188">        &quot;&quot;&quot;((?:Rx\s*)?Bin[\s:]*(\d{6}))&quot;&quot;&quot;,</span>
+<span class="fc" id="L189">        &quot;&quot;&quot;(BIN\s*[#:]?\s*(\d{6}))&quot;&quot;&quot;</span>
+    )
+
+<span class="fc" id="L192">    val RX_PCN_PATTERNS = listOf(</span>
+<span class="fc" id="L193">        &quot;&quot;&quot;((?:Rx\s*)?PCN[\s:]*[A-Z0-9]{2,10})&quot;&quot;&quot;,</span>
+<span class="fc" id="L194">        &quot;&quot;&quot;(PCN\s*[#:]?\s*[A-Z0-9]{2,10})&quot;&quot;&quot;</span>
+    )
+
+<span class="fc" id="L197">    val RX_GRP_PATTERNS = listOf(</span>
+<span class="fc" id="L198">        &quot;&quot;&quot;((?:Rx\s*)?GRP[\s:]*[A-Z0-9]{3,20})&quot;&quot;&quot;,</span>
+<span class="fc" id="L199">        &quot;&quot;&quot;(RxGRP[\s:]*[A-Z0-9]{3,20})&quot;&quot;&quot;</span>
+    )
+
+<span class="fc" id="L202">    val RX_ID_PATTERNS = listOf(</span>
+<span class="fc" id="L203">        &quot;&quot;&quot;((?:Rx(?:/DEN)?(?:/VIS)?)\s*ID[\s:]+[A-Z0-9]{3,15})&quot;&quot;&quot;,</span>
+<span class="fc" id="L204">        &quot;&quot;&quot;((?:Rx(?:/DEN)?(?:/VIS)?)\s*Id[\s:]+[A-Z0-9]{3,15})&quot;&quot;&quot;,</span>
+<span class="fc" id="L205">        &quot;&quot;&quot;(RxID[\s:]+[A-Z0-9]{3,15})&quot;&quot;&quot;</span>
+    )
+
+<span class="fc" id="L208">    val SPONSOR_PATTERNS = listOf(</span>
+<span class="fc" id="L209">        &quot;&quot;&quot;(Sponsor\s*(?:No|Number|#)[\s:]*[A-Z0-9]{3,20})&quot;&quot;&quot;,</span>
+<span class="fc" id="L210">        &quot;&quot;&quot;(Sponsor[\s:]+[A-Z0-9]{3,20})&quot;&quot;&quot;,</span>
+<span class="fc" id="L211">        &quot;&quot;&quot;(Sponsor\s*#[\s:]*[A-Z0-9]{3,20})&quot;&quot;&quot;</span>
+    )
+
+<span class="fc" id="L214">    val ISSUER_PATTERNS = listOf(</span>
+<span class="fc" id="L215">        &quot;&quot;&quot;(Issuer[\s:]+[A-Z0-9]{3,20})&quot;&quot;&quot;,</span>
+<span class="fc" id="L216">        &quot;&quot;&quot;(Issuer\s*(?:No|Number|#)[\s:]*[A-Z0-9]{3,20})&quot;&quot;&quot;,</span>
+<span class="fc" id="L217">        &quot;&quot;&quot;(ssuer[\s:]+[A-Z0-9]{3,20})&quot;&quot;&quot;</span>
+    )
+
+<span class="fc" id="L220">    val FALL_BACK_ID_PATTERN = listOf(</span>
+<span class="fc" id="L221">        &quot;&quot;&quot;(?i:\b(ID:|ID\s+|Member\s*ID|Subscriber\s*ID|Identification\s*No|Cardholder|Cardmember\s*#|Patient|Member\s*#|Mbr\s*ID)\b)[\s:]*([A-Z0-9-]{6,20})&quot;&quot;&quot;</span>
+    )
+
+<span class="fc" id="L224">    val PLAN_TYPE_PATTERNS = listOf(</span>
+<span class="fc" id="L225">        &quot;&quot;&quot;(Plan\s*T[vy]pe[\s:]*[A-Za-z]+)&quot;&quot;&quot;,</span>
+<span class="fc" id="L226">        &quot;&quot;&quot;\b(HMO|PPO|EPO|POS|HDHP)\b&quot;&quot;&quot;,</span>
+<span class="fc" id="L227">        &quot;&quot;&quot;\b(Medical|Dental|Vision|Pharmacy)\b&quot;&quot;&quot;</span>
+    )
+}
+
+/**
+ * OCR text exclusion phrases - common boilerplate texts to remove
+ */
+<span class="fc" id="L234">val OCR_EXCLUSION_PHRASES = listOf(</span>
+<span class="fc" id="L235">    &quot;Send all claims to Payer ID&quot;,</span>
+<span class="fc" id="L236">    &quot;Send all claims to&quot;,</span>
+<span class="fc" id="L237">    &quot;Submit claims to&quot;,</span>
+<span class="fc" id="L238">    &quot;Mail claims to&quot;,</span>
+<span class="fc" id="L239">    &quot;For verification of eligibility, coverage, and prior authorizations&quot;,</span>
+<span class="fc" id="L240">    &quot;For verification of eligibility&quot;,</span>
+<span class="fc" id="L241">    &quot;For eligibility verification&quot;,</span>
+<span class="fc" id="L242">    &quot;Call for prior authorization&quot;,</span>
+<span class="fc" id="L243">    &quot;Prior authorization required&quot;,</span>
+<span class="fc" id="L244">    &quot;For customer service&quot;,</span>
+<span class="fc" id="L245">    &quot;Call customer service&quot;,</span>
+<span class="fc" id="L246">    &quot;Contact customer service&quot;,</span>
+<span class="fc" id="L247">    &quot;Member services&quot;,</span>
+<span class="fc" id="L248">    &quot;Visit our website&quot;,</span>
+<span class="fc" id="L249">    &quot;Go to our website&quot;,</span>
+<span class="fc" id="L250">    &quot;For more information visit&quot;,</span>
+<span class="fc" id="L251">    &quot;This card does not guarantee coverage&quot;,</span>
+<span class="fc" id="L252">    &quot;This is not insurance&quot;,</span>
+<span class="fc" id="L253">    &quot;Keep this card with you at all times&quot;,</span>
+<span class="fc" id="L254">    &quot;Carry this card at all times&quot;,</span>
+<span class="fc" id="L255">    &quot;Present this card to your provider&quot;,</span>
+<span class="fc" id="L256">    &quot;Show this card to your pharmacy&quot;,</span>
+<span class="fc" id="L257">    &quot;Claims Administrator&quot;,</span>
+<span class="fc" id="L258">    &quot;Claims Payer&quot;,</span>
+<span class="fc" id="L259">    &quot;Claims Address&quot;,</span>
+<span class="fc" id="L260">    &quot;Important information on reverse&quot;,</span>
+<span class="fc" id="L261">    &quot;See reverse for details&quot;,</span>
+<span class="fc" id="L262">    &quot;Additional information on back&quot;,</span>
+<span class="fc" id="L263">    &quot;Prescription Drug Program&quot;,</span>
+<span class="fc" id="L264">    &quot;Prescription Drug&quot;,</span>
+<span class="fc" id="L265">    &quot;Independence Keystone&quot;,</span>
+<span class="fc" id="L266">    &quot;Electronic Payer&quot;,</span>
+<span class="fc" id="L267">    &quot;OPEN ACCESS PLUS&quot;,</span>
+<span class="fc" id="L268">    &quot;Missouri Preferred&quot;,</span>
+<span class="fc" id="L269">    &quot;CHOICE POS II PLAN&quot;,</span>
+<span class="fc" id="L270">    &quot;Teamsters Local Union&quot;,</span>
+<span class="fc" id="L271">    &quot;No. 727 Health and Welfare Fund&quot;</span>
+)
+
+const val FUZZY_MATCH_THRESHOLD = 0.80
+
+/**
+ * Main Insurance Card Extractor class
+ * Extracts insurance card information using regex patterns only (no spacy).
+ */
+<span class="fc" id="L280">class InsuranceCardExtractor {</span>
+
+    // Compiled regex patterns
+    private val idRegexes: List&lt;Regex&gt;
+    private val dateRegexes: List&lt;Regex&gt;
+    private val nameLabeledRegexes: List&lt;Regex&gt;
+    private val nameUnlabeledRegexes: List&lt;Regex&gt;
+    private val providerRegexes: List&lt;Regex&gt;
+    private val groupRegexes: List&lt;Regex&gt;
+    private val rxBinRegexes: List&lt;Regex&gt;
+    private val rxPcnRegexes: List&lt;Regex&gt;
+    private val rxGrpRegexes: List&lt;Regex&gt;
+    private val rxIdRegexes: List&lt;Regex&gt;
+    private val sponsorRegexes: List&lt;Regex&gt;
+    private val issuerRegexes: List&lt;Regex&gt;
+    private val planTypeRegexes: List&lt;Regex&gt;
+    private val fallbackIdRegexes: List&lt;Regex&gt;
+
+    // Exclusion sets
+<span class="fc" id="L299">    private val nameExclusions = setOf(</span>
+<span class="fc" id="L300">        &quot;member&quot;, &quot;name&quot;, &quot;subscriber&quot;, &quot;patient&quot;, &quot;cardholder&quot;, &quot;id&quot;,</span>
+<span class="fc" id="L301">        &quot;group&quot;, &quot;plan&quot;, &quot;type&quot;, &quot;bin&quot;, &quot;pcn&quot;, &quot;grp&quot;, &quot;rx&quot;, &quot;updated&quot;,</span>
+<span class="fc" id="L302">        &quot;eligible&quot;, &quot;eligibility&quot;, &quot;call&quot;, &quot;local&quot;, &quot;demo&quot;, &quot;health&quot;,</span>
+<span class="fc" id="L303">        &quot;healthcare&quot;, &quot;medical&quot;, &quot;dental&quot;, &quot;vision&quot;, &quot;pharmacy&quot;, &quot;yes&quot;,</span>
+<span class="fc" id="L304">        &quot;no&quot;, &quot;account&quot;, &quot;issuer&quot;, &quot;express&quot;, &quot;scripts&quot;, &quot;administered&quot;,</span>
+<span class="fc" id="L305">        &quot;benefits&quot;, &quot;the&quot;, &quot;and&quot;, &quot;for&quot;, &quot;with&quot;, &quot;effective&quot;, &quot;date&quot;,</span>
+<span class="fc" id="L306">        &quot;exp&quot;, &quot;expires&quot;, &quot;valid&quot;, &quot;from&quot;, &quot;to&quot;, &quot;coverage&quot;, &quot;copay&quot;,</span>
+<span class="fc" id="L307">        &quot;deductible&quot;, &quot;premium&quot;, &quot;network&quot;, &quot;provider&quot;, &quot;service&quot;,</span>
+<span class="fc" id="L308">        &quot;emergency&quot;, &quot;urgent&quot;, &quot;care&quot;, &quot;office&quot;, &quot;visit&quot;, &quot;specialist&quot;,</span>
+<span class="fc" id="L309">        &quot;primary&quot;, &quot;pcp&quot;, &quot;referral&quot;, &quot;authorization&quot;, &quot;prior&quot;, &quot;auth&quot;,</span>
+<span class="fc" id="L310">        &quot;lab&quot;, &quot;laboratories&quot;, &quot;laboratorles&quot;, &quot;card&quot;, &quot;header&quot;, &quot;sponsor&quot;,</span>
+<span class="fc" id="L311">        &quot;cardmember&quot;, &quot;identification&quot;, &quot;information&quot;, &quot;number&quot;, &quot;family&quot;,</span>
+<span class="fc" id="L312">        &quot;individual&quot;, &quot;insured&quot;, &quot;fully&quot;, &quot;beneficary&quot;</span>
+    )
+
+<span class="fc" id="L315">    private val insuranceTerms = setOf(</span>
+<span class="fc" id="L316">        &quot;unitedhealthcare&quot;, &quot;united&quot;, &quot;healthcare&quot;, &quot;express&quot;, &quot;scripts&quot;,</span>
+<span class="fc" id="L317">        &quot;expressscripts&quot;, &quot;cigna&quot;, &quot;aetna&quot;, &quot;humana&quot;, &quot;bcbs&quot;, &quot;anthem&quot;,</span>
+<span class="fc" id="L318">        &quot;medicaid&quot;, &quot;medicare&quot;, &quot;optum&quot;, &quot;cvs&quot;, &quot;caremark&quot;, &quot;vsp&quot;, &quot;delta&quot;,</span>
+<span class="fc" id="L319">        &quot;dental&quot;, &quot;metlife&quot;, &quot;guardian&quot;, &quot;kaiser&quot;, &quot;permanente&quot;, &quot;molina&quot;,</span>
+<span class="fc" id="L320">        &quot;centene&quot;, &quot;wellcare&quot;, &quot;blue&quot;, &quot;cross&quot;, &quot;shield&quot;, &quot;viveka&quot;, &quot;gvs&quot;,</span>
+<span class="fc" id="L321">        &quot;prescription&quot;, &quot;drug&quot;, &quot;program&quot;</span>
+    )
+
+<span class="fc" id="L324">    private val planNamePatterns = listOf(</span>
+<span class="fc" id="L325">        &quot;&quot;&quot;Teamsters\s+Local\s+Union.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L326">        &quot;&quot;&quot;Local\s+Union\s+No\.?\s*\d+.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L327">        &quot;&quot;&quot;Local\s+No\.?\s*\d+.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L328">        &quot;&quot;&quot;Union\s+Local\s+\d+.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L329">        &quot;&quot;&quot;AFL[-\s]?CIO.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L330">        &quot;&quot;&quot;IBEW\s+Local.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L331">        &quot;&quot;&quot;Laborers\s+Local.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L332">        &quot;&quot;&quot;Carpenters\s+Local.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L333">        &quot;&quot;&quot;Plumbers\s+Local.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L334">        &quot;&quot;&quot;Electricians\s+Local.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L335">        &quot;&quot;&quot;Operating\s+Engineers.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L336">        &quot;&quot;&quot;Sheet\s+Metal\s+Workers.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L337">        &quot;&quot;&quot;Iron\s+Workers.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L338">        &quot;&quot;&quot;Painters\s+Local.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L339">        &quot;&quot;&quot;Bricklayers\s+Local.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L340">        &quot;&quot;&quot;Pipefitters\s+Local.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L341">        &quot;&quot;&quot;Boilermakers\s+Local.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L342">        &quot;&quot;&quot;Machinists\s+Local.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L343">        &quot;&quot;&quot;Steelworkers\s+Local.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L344">        &quot;&quot;&quot;UAW\s+Local.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L345">        &quot;&quot;&quot;UFCW\s+Local.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L346">        &quot;&quot;&quot;SEIU\s+Local.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L347">        &quot;&quot;&quot;AFSCME\s+Local.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L348">        &quot;&quot;&quot;Health\s+and\s+Welfare\s+Fund.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L349">        &quot;&quot;&quot;Health\s*&amp;\s*Welfare\s+Fund.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L350">        &quot;&quot;&quot;Health\s+Welfare\s+Fund.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L351">        &quot;&quot;&quot;Welfare\s+Fund.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L352">        &quot;&quot;&quot;Trust\s+Fund.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L353">        &quot;&quot;&quot;Benefit\s+Fund.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L354">        &quot;&quot;&quot;Pension\s+Fund.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L355">        &quot;&quot;&quot;Benefits\s+Trust.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L356">        &quot;&quot;&quot;Health\s+Trust.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L357">        &quot;&quot;&quot;Employee\s+Benefit\s+Trust.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L358">        &quot;&quot;&quot;Multi[-\s]?Employer\s+Trust.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L359">        &quot;&quot;&quot;Association\s+Health\s+Plan.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L360">        &quot;&quot;&quot;Employees\s+Association.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L361">        &quot;&quot;&quot;Employee\s+Benefits\s+Plan.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L362">        &quot;&quot;&quot;Group\s+Health\s+Plan.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L363">        &quot;&quot;&quot;Employer\s+Group.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L364">        &quot;&quot;&quot;Corporate\s+Health.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L365">        &quot;&quot;&quot;Company\s+Plan.*&quot;&quot;&quot;,</span>
+<span class="fc" id="L366">        &quot;&quot;&quot;Health\s+Plan$&quot;&quot;&quot;,</span>
+<span class="fc" id="L367">        &quot;&quot;&quot;Medical\s+Plan$&quot;&quot;&quot;,</span>
+<span class="fc" id="L368">        &quot;&quot;&quot;Benefit\s+Plan$&quot;&quot;&quot;,</span>
+<span class="fc" id="L369">        &quot;&quot;&quot;Insurance\s+Plan$&quot;&quot;&quot;,</span>
+<span class="fc" id="L370">        &quot;&quot;&quot;Coverage\s+Plan$&quot;&quot;&quot;</span>
+    )
+
+<span class="fc" id="L373">    init {</span>
+        // Compile all regex patterns
+<span class="fc" id="L375">        idRegexes = InsurancePatterns.ID_PATTERNS.map {</span>
+<span class="fc" id="L376">            it.toRegex(RegexOption.IGNORE_CASE)</span>
+        }
+<span class="fc" id="L378">        dateRegexes = InsurancePatterns.DATE_PATTERNS.map {</span>
+<span class="fc" id="L379">            it.toRegex(RegexOption.IGNORE_CASE)</span>
+        }
+<span class="fc" id="L381">        nameLabeledRegexes = InsurancePatterns.NAME_PATTERNS_LABELED.map {</span>
+<span class="fc" id="L382">            it.toRegex(RegexOption.IGNORE_CASE)</span>
+        }
+<span class="fc" id="L384">        nameUnlabeledRegexes = InsurancePatterns.NAME_PATTERNS_UNLABELED.map {</span>
+<span class="fc" id="L385">            it.toRegex(RegexOption.MULTILINE)</span>
+        }
+<span class="fc" id="L387">        providerRegexes = InsurancePatterns.PROVIDER_PATTERNS.map {</span>
+<span class="fc" id="L388">            it.toRegex(RegexOption.IGNORE_CASE)</span>
+        }
+<span class="fc" id="L390">        groupRegexes = InsurancePatterns.GROUP_PATTERNS.map {</span>
+<span class="fc" id="L391">            it.toRegex(RegexOption.IGNORE_CASE)</span>
+        }
+<span class="fc" id="L393">        rxBinRegexes = InsurancePatterns.RX_BIN_PATTERNS.map {</span>
+<span class="fc" id="L394">            it.toRegex(RegexOption.IGNORE_CASE)</span>
+        }
+<span class="fc" id="L396">        rxPcnRegexes = InsurancePatterns.RX_PCN_PATTERNS.map {</span>
+<span class="fc" id="L397">            it.toRegex(RegexOption.IGNORE_CASE)</span>
+        }
+<span class="fc" id="L399">        rxGrpRegexes = InsurancePatterns.RX_GRP_PATTERNS.map {</span>
+<span class="fc" id="L400">            it.toRegex(RegexOption.IGNORE_CASE)</span>
+        }
+<span class="fc" id="L402">        rxIdRegexes = InsurancePatterns.RX_ID_PATTERNS.map {</span>
+<span class="fc" id="L403">            it.toRegex(RegexOption.IGNORE_CASE)</span>
+        }
+<span class="fc" id="L405">        sponsorRegexes = InsurancePatterns.SPONSOR_PATTERNS.map {</span>
+<span class="fc" id="L406">            it.toRegex(RegexOption.IGNORE_CASE)</span>
+        }
+<span class="fc" id="L408">        issuerRegexes = InsurancePatterns.ISSUER_PATTERNS.map {</span>
+<span class="fc" id="L409">            it.toRegex(RegexOption.IGNORE_CASE)</span>
+        }
+<span class="fc" id="L411">        planTypeRegexes = InsurancePatterns.PLAN_TYPE_PATTERNS.map {</span>
+<span class="fc" id="L412">            it.toRegex(RegexOption.IGNORE_CASE)</span>
+        }
+<span class="fc" id="L414">        fallbackIdRegexes = InsurancePatterns.FALL_BACK_ID_PATTERN.map {</span>
+<span class="fc" id="L415">            it.toRegex(RegexOption.IGNORE_CASE)</span>
+        }
+<span class="fc" id="L417">    }</span>
+
+    // =========================================================================
+    // TEXT CLEANING METHODS
+    // =========================================================================
+
+    /**
+     * Calculate similarity between two strings (Levenshtein-based)
+     */
+    fun calculateSimilarity(str1: String, str2: String): Double {
+<span class="fc" id="L427">        val s1 = str1.lowercase()</span>
+<span class="fc" id="L428">        val s2 = str2.lowercase()</span>
+
+<span class="fc bfc" id="L430" title="All 2 branches covered.">        if (s1 == s2) return 1.0</span>
+<span class="fc bfc" id="L431" title="All 8 branches covered.">        if (s1.isEmpty() || s2.isEmpty()) return 0.0</span>
+
+<span class="fc" id="L433">        val maxLen = maxOf(s1.length, s2.length)</span>
+<span class="fc" id="L434">        val distance = levenshteinDistanceSingleRow(s1, s2)</span>
+<span class="fc" id="L435">        return 1.0 - (distance.toDouble() / maxLen)</span>
+    }
+
+    // Single-row Levenshtein for optimal memory usage
+    private fun levenshteinDistanceSingleRow(s1: String, s2: String): Int {
+<span class="fc bfc" id="L440" title="All 2 branches covered.">        val prev = IntArray(s2.length + 1) { it }</span>
+<span class="fc" id="L441">        val curr = IntArray(s2.length + 1)</span>
+
+<span class="pc bpc" id="L443" title="1 of 4 branches missed.">        for (i in 1..s1.length) {</span>
+<span class="fc" id="L444">            curr[0] = i</span>
+<span class="pc bpc" id="L445" title="1 of 4 branches missed.">            for (j in 1..s2.length) {</span>
+<span class="fc bfc" id="L446" title="All 2 branches covered.">                val cost = if (s1[i - 1] == s2[j - 1]) 0 else 1</span>
+<span class="fc" id="L447">                curr[j] = minOf(</span>
+<span class="fc" id="L448">                    prev[j] + 1, // deletion</span>
+<span class="fc" id="L449">                    curr[j - 1] + 1, // insertion</span>
+<span class="fc" id="L450">                    prev[j - 1] + cost</span>
+                ) // substitution
+            }
+<span class="fc bfc" id="L453" title="All 2 branches covered.">            for (k in prev.indices) prev[k] = curr[k]</span>
+        }
+
+<span class="fc" id="L456">        return curr[s2.length]</span>
+    }
+
+<span class="fc" id="L459">    private val knownLabels = listOf(</span>
+<span class="fc" id="L460">        &quot;Identification&quot;, &quot;Member&quot;, &quot;Subscriber&quot;, &quot;Cardholder&quot;,</span>
+<span class="fc" id="L461">        &quot;Medical&quot;, &quot;Benefits&quot;, &quot;Administered&quot;, &quot;Laboratories&quot;,</span>
+<span class="fc" id="L462">        &quot;Updated&quot;, &quot;Eligible&quot;, &quot;Account&quot;, &quot;Type&quot;, &quot;Group&quot;,</span>
+<span class="fc" id="L463">        &quot;Number&quot;, &quot;Provider&quot;, &quot;Insurance&quot;, &quot;Patient&quot;, &quot;Dependent&quot;,</span>
+<span class="fc" id="L464">        &quot;Copay&quot;, &quot;Deductible&quot;, &quot;Pharmacy&quot;, &quot;Prescription&quot;,</span>
+<span class="fc" id="L465">        &quot;Effective&quot;, &quot;Network&quot;, &quot;Authorization&quot;, &quot;Certificate&quot;,</span>
+<span class="fc" id="L466">        &quot;Name&quot;, &quot;Plan&quot;, &quot;Date&quot;, &quot;Service&quot;, &quot;Coverage&quot;, &quot;Call&quot;, &quot;MEDICAL/MH&quot;</span>
+    )
+
+    /**
+     * Fuzzy-fix OCR-mangled words by matching against known insurance labels.
+     * Uses similarity ratio (1 - dist/maxLen) with a 0.70 threshold so heavily
+     * mangled words like &quot;lderecation&quot; → &quot;Identification&quot; still get caught.
+     */
+    private fun fuzzyFixKnownLabels(text: String): String {
+<span class="fc" id="L475">        val wordPattern = Regex(&quot;\\b[A-Za-z]{4,}\\b&quot;)</span>
+<span class="fc" id="L476">        return wordPattern.replace(text) { match -&gt;</span>
+<span class="fc" id="L477">            val word = match.value</span>
+<span class="fc" id="L478">            val wordLower = word.lowercase()</span>
+
+            // Skip if already an exact match (case-insensitive)
+<span class="fc bfc" id="L481" title="All 2 branches covered.">            if (knownLabels.any { it.lowercase() == wordLower }) {</span>
+<span class="fc" id="L482">                return@replace knownLabels.first { it.lowercase() == wordLower }</span>
+            }
+
+<span class="fc" id="L485">            var bestLabel: String? = null</span>
+<span class="fc" id="L486">            var bestSimilarity = 0.0</span>
+
+<span class="fc bfc" id="L488" title="All 2 branches covered.">            for (label in knownLabels) {</span>
+<span class="fc" id="L489">                val maxLen = maxOf(word.length, label.length)</span>
+                // Skip if lengths are too different (&gt;40% difference)
+<span class="fc bfc" id="L491" title="All 2 branches covered.">                if (abs(word.length - label.length) &gt; maxLen * 0.4) continue</span>
+
+<span class="fc" id="L493">                val dist = levenshteinDistanceSingleRow(wordLower, label.lowercase())</span>
+<span class="fc" id="L494">                val similarity = 1.0 - dist.toDouble() / maxLen</span>
+
+<span class="pc bpc" id="L496" title="1 of 4 branches missed.">                if (similarity &gt; bestSimilarity &amp;&amp; similarity &gt;= 0.60) {</span>
+<span class="fc" id="L497">                    bestSimilarity = similarity</span>
+<span class="fc" id="L498">                    bestLabel = label</span>
+                }
+            }
+
+<span class="pc bpc" id="L502" title="1 of 2 branches missed.">            bestLabel ?: word</span>
+        }
+    }
+
+    /**
+     * Remove exclusion phrases from text using fuzzy matching
+     */
+    private fun removeExclusionPhrases(text: String): String {
+<span class="pc bpc" id="L510" title="2 of 4 branches missed.">        if (text.isEmpty()) return &quot;&quot;</span>
+
+<span class="fc" id="L512">        val lines = text.split(&quot;\n&quot;)</span>
+<span class="fc" id="L513">        val cleanedLines = mutableListOf&lt;String&gt;()</span>
+
+<span class="fc bfc" id="L515" title="All 2 branches covered.">        for (line in lines) {</span>
+<span class="fc" id="L516">            val lineStripped = line.trim()</span>
+<span class="pc bpc" id="L517" title="2 of 4 branches missed.">            if (lineStripped.isEmpty()) {</span>
+<span class="nc" id="L518">                cleanedLines.add(line)</span>
+<span class="nc" id="L519">                continue</span>
+            }
+
+<span class="fc" id="L522">            var cleanedLine = line</span>
+
+<span class="fc bfc" id="L524" title="All 2 branches covered.">            for (exclusionPhrase in OCR_EXCLUSION_PHRASES) {</span>
+                // Method 1: Exact substring match (case-insensitive)
+<span class="fc" id="L526">                val lowerLine = cleanedLine.lowercase()</span>
+<span class="fc" id="L527">                val lowerPhrase = exclusionPhrase.lowercase()</span>
+
+<span class="pc bpc" id="L529" title="1 of 2 branches missed.">                if (lowerPhrase in lowerLine) {</span>
+<span class="nc" id="L530">                    val startIdx = lowerLine.indexOf(lowerPhrase)</span>
+<span class="nc bnc" id="L531" title="All 2 branches missed.">                    if (startIdx != -1) {</span>
+<span class="nc" id="L532">                        cleanedLine = cleanedLine.substring(0, startIdx) +</span>
+<span class="nc" id="L533">                            cleanedLine.substring(startIdx + exclusionPhrase.length)</span>
+<span class="nc" id="L534">                        cleanedLine = cleanedLine.split(&quot;\\s+&quot;.toRegex()).joinToString(&quot; &quot;)</span>
+<span class="nc" id="L535">                        continue</span>
+                    }
+                }
+//
+// //                 Method 2: Fuzzy matching
+//                val words = cleanedLine.split(&quot;\\s+&quot;.toRegex())
+//                outer@ for (start in words.indices) {
+//                    for (end in start + 1..words.size) {
+//                        val substring = words.subList(start, end).joinToString(&quot; &quot;)
+//                        val similarity = calculateSimilarity(substring, exclusionPhrase)
+//
+//                        if (similarity &gt;= FUZZY_MATCH_THRESHOLD) {
+//                            cleanedLine = cleanedLine.replace(substring, &quot;&quot;, ignoreCase = true)
+//                            cleanedLine = cleanedLine.split(&quot;\\s+&quot;.toRegex()).joinToString(&quot; &quot;)
+//                            break@outer
+//                        }
+//                    }
+//                }
+            }
+
+<span class="fc" id="L555">            cleanedLine = cleanedLine.trim()</span>
+<span class="pc bpc" id="L556" title="2 of 4 branches missed.">            if (cleanedLine.isNotEmpty()) {</span>
+<span class="fc" id="L557">                cleanedLines.add(cleanedLine)</span>
+            }
+        }
+
+<span class="fc" id="L561">        return cleanedLines.joinToString(&quot;\n&quot;)</span>
+    }
+
+    /**
+     * Clean and normalize OCR text
+     */
+    fun cleanOcrText(text: String): String {
+<span class="fc bfc" id="L568" title="All 4 branches covered.">        if (text.isEmpty()) return &quot;&quot;</span>
+
+<span class="fc" id="L570">        var cleaned = text</span>
+
+        // Step 1: Remove exclusion phrases
+<span class="fc" id="L573">        cleaned = removeExclusionPhrases(cleaned)</span>
+
+        // Replace escaped newlines
+<span class="fc" id="L576">        cleaned = cleaned.replace(&quot;\\n&quot;, &quot;\n&quot;)</span>
+
+        // Normalize whitespace (except newlines)
+<span class="fc" id="L579">        cleaned = cleaned.replace(Regex(&quot;[^\\S\n]+&quot;), &quot; &quot;)</span>
+
+        // Fix common OCR character substitutions
+<span class="fc" id="L582">        val ocrFixes = mapOf(</span>
+<span class="fc" id="L583">            Regex(&quot;(?&lt;=\\d)O(?=\\d)&quot;) to &quot;0&quot;,</span>
+<span class="fc" id="L584">            Regex(&quot;\\bl(?=\\s*[A-Z])&quot;) to &quot;I&quot;,</span>
+<span class="fc" id="L585">            Regex(&quot;(?&lt;=[A-Z])l(?=[A-Z])&quot;) to &quot;I&quot;,</span>
+<span class="fc" id="L586">            Regex(&quot;\\bldentification\\b&quot;) to &quot;Identification&quot;,</span>
+<span class="fc" id="L587">            Regex(&quot;\\b[Il]dentification\\b&quot;) to &quot;Identification&quot;,</span>
+<span class="fc" id="L588">            Regex(&quot;\\brn\\b&quot;) to &quot;m&quot;,</span>
+<span class="fc" id="L589">            Regex(&quot;\\bvv&quot;) to &quot;w&quot;</span>
+        )
+
+<span class="fc bfc" id="L592" title="All 2 branches covered.">        for ((pattern, replacement) in ocrFixes) {</span>
+<span class="fc" id="L593">            cleaned = pattern.replace(cleaned, replacement)</span>
+        }
+
+        // Fuzzy fix known insurance labels
+<span class="fc" id="L597">        cleaned = fuzzyFixKnownLabels(cleaned)</span>
+
+        // Remove excessive punctuation
+<span class="fc" id="L600">        cleaned = cleaned.replace(Regex(&quot;[^\\w\\s\\-:/.,#()&amp;@+$]&quot;), &quot;&quot;)</span>
+
+        // Normalize spaces
+<span class="fc" id="L603">        cleaned = cleaned.replace(Regex(&quot;[ \\t]+&quot;), &quot; &quot;)</span>
+
+        // Normalize newlines
+<span class="fc" id="L606">        cleaned = cleaned.replace(Regex(&quot;\n\\s*\n+&quot;), &quot;\n&quot;)</span>
+
+        // Clean each line
+<span class="fc" id="L609">        val lines = cleaned.split(&quot;\n&quot;)</span>
+<span class="fc" id="L610">        val cleanedLines = mutableListOf&lt;String&gt;()</span>
+
+<span class="fc bfc" id="L612" title="All 2 branches covered.">        for (line in lines) {</span>
+<span class="fc" id="L613">            var lineClean = line.trim()</span>
+
+            // Skip standalone &quot;I&quot; or &quot;i&quot;
+<span class="pc bpc" id="L616" title="1 of 4 branches missed.">            if (lineClean == &quot;I&quot; || lineClean == &quot;i&quot;) continue</span>
+
+            // Remove &quot;I &quot; or &quot;i &quot; prefix (left border artifact)
+<span class="fc bfc" id="L619" title="All 2 branches covered.">            if (lineClean.startsWith(&quot;I &quot;)) {</span>
+<span class="fc" id="L620">                lineClean = lineClean.substring(2).trim()</span>
+<span class="pc bpc" id="L621" title="1 of 2 branches missed.">            } else if (lineClean.startsWith(&quot;i &quot;)) {</span>
+<span class="nc" id="L622">                lineClean = lineClean.substring(2).trim()</span>
+            }
+
+<span class="pc bpc" id="L625" title="2 of 4 branches missed.">            if (lineClean.isNotEmpty()) {</span>
+<span class="fc" id="L626">                cleanedLines.add(lineClean)</span>
+            }
+        }
+
+<span class="fc" id="L630">        return cleanedLines.joinToString(&quot;\n&quot;).trim()</span>
+    }
+
+    /**
+     * Fix Personal Choice name split pattern
+     */
+    private fun fixPersonalChoiceNameSplit(text: String): String {
+<span class="nc bnc" id="L637" title="All 4 branches missed.">        if (text.isEmpty()) return text</span>
+
+<span class="nc" id="L639">        val lines = text.split(&quot;\n&quot;).toMutableList()</span>
+<span class="nc" id="L640">        val fixedLines = mutableListOf&lt;String&gt;()</span>
+<span class="nc" id="L641">        var i = 0</span>
+
+<span class="nc bnc" id="L643" title="All 2 branches missed.">        while (i &lt; lines.size) {</span>
+<span class="nc" id="L644">            val currentLine = lines[i].trim()</span>
+<span class="nc" id="L645">            val currentLower = currentLine.lowercase()</span>
+
+<span class="nc bnc" id="L647" title="All 2 branches missed.">            if (currentLower.contains(&quot;independence&quot;) ||</span>
+<span class="nc bnc" id="L648" title="All 2 branches missed.">                currentLower.contains(&quot;personal choice&quot;) ||</span>
+<span class="nc bnc" id="L649" title="All 2 branches missed.">                currentLower.contains(&quot;personal choic&quot;) ||</span>
+<span class="nc bnc" id="L650" title="All 2 branches missed.">                currentLower.contains(&quot;indenpdendenc&quot;)</span>
+            ) {
+<span class="nc" id="L652">                fixedLines.add(currentLine)</span>
+<span class="nc" id="L653">                i++</span>
+
+                // Check if next line is also header
+<span class="nc bnc" id="L656" title="All 2 branches missed.">                if (i &lt; lines.size) {</span>
+<span class="nc" id="L657">                    val nextLine = lines[i].trim()</span>
+<span class="nc" id="L658">                    val nextLower = nextLine.lowercase()</span>
+
+<span class="nc bnc" id="L660" title="All 2 branches missed.">                    if (nextLower.contains(&quot;independence&quot;) ||</span>
+<span class="nc bnc" id="L661" title="All 2 branches missed.">                        nextLower.contains(&quot;personal choice&quot;) ||</span>
+<span class="nc bnc" id="L662" title="All 2 branches missed.">                        nextLower.contains(&quot;personal choic&quot;)</span>
+                    ) {
+<span class="nc" id="L664">                        fixedLines.add(nextLine)</span>
+<span class="nc" id="L665">                        i++</span>
+                    }
+                }
+
+                // Look for name lines and Member ID
+<span class="nc bnc" id="L670" title="All 2 branches missed.">                if (i + 2 &lt; lines.size) {</span>
+<span class="nc" id="L671">                    var namePart1 = lines[i].trim()</span>
+<span class="nc" id="L672">                    var namePart2 = lines[i + 1].trim()</span>
+<span class="nc" id="L673">                    val possibleId = lines[i + 2].trim()</span>
+
+                    // Clean left border artifacts
+<span class="nc bnc" id="L676" title="All 4 branches missed.">                    if (namePart1 == &quot;I&quot; || namePart1 == &quot;i&quot;) {</span>
+<span class="nc" id="L677">                        namePart1 = &quot;&quot;</span>
+<span class="nc bnc" id="L678" title="All 2 branches missed.">                    } else if (namePart1.startsWith(&quot;i &quot;)) {</span>
+<span class="nc" id="L679">                        namePart1 = namePart1.substring(2).trim()</span>
+<span class="nc bnc" id="L680" title="All 2 branches missed.">                    } else if (namePart1.startsWith(&quot;I &quot;)) namePart1 = namePart1.substring(2).trim()</span>
+
+<span class="nc bnc" id="L682" title="All 4 branches missed.">                    if (namePart2 == &quot;I&quot; || namePart2 == &quot;i&quot;) {</span>
+<span class="nc" id="L683">                        namePart2 = &quot;&quot;</span>
+<span class="nc bnc" id="L684" title="All 2 branches missed.">                    } else if (namePart2.startsWith(&quot;i &quot;)) {</span>
+<span class="nc" id="L685">                        namePart2 = namePart2.substring(2).trim()</span>
+<span class="nc bnc" id="L686" title="All 2 branches missed.">                    } else if (namePart2.startsWith(&quot;I &quot;)) namePart2 = namePart2.substring(2).trim()</span>
+
+                    // Check if possibleId is a Member ID line
+<span class="nc bnc" id="L689" title="All 2 branches missed.">                    val isMemberIdLine = possibleId.contains(</span>
+<span class="nc" id="L690">                        Regex(&quot;(?i)(member\\s*id|subscriber\\s*id|id)\\s*[:]\\s*[A-Z0-9]&quot;)</span>
+                    ) ||
+<span class="nc bnc" id="L692" title="All 2 branches missed.">                        possibleId.matches(Regex(&quot;^[A-Z0-9]{8,15}$&quot;))</span>
+
+<span class="nc bnc" id="L694" title="All 2 branches missed.">                    if (isMemberIdLine) {</span>
+<span class="nc" id="L695">                        val mergedName = &quot;$namePart1 $namePart2&quot;.trim()</span>
+<span class="nc" id="L696">                        fixedLines.add(mergedName)</span>
+<span class="nc" id="L697">                        fixedLines.add(possibleId)</span>
+<span class="nc" id="L698">                        i += 3</span>
+                    } else {
+<span class="nc" id="L700">                        fixedLines.add(namePart1)</span>
+<span class="nc" id="L701">                        i++</span>
+                    }
+                }
+            } else {
+<span class="nc" id="L705">                fixedLines.add(currentLine)</span>
+<span class="nc" id="L706">                i++</span>
+            }
+        }
+
+<span class="nc" id="L710">        return fixedLines.joinToString(&quot;\n&quot;)</span>
+    }
+
+    /**
+     * Merge label lines with their values
+     */
+    private fun mergeLabelLines(text: String): String {
+<span class="nc bnc" id="L717" title="All 4 branches missed.">        if (text.isEmpty()) return text</span>
+
+<span class="nc" id="L719">        val lines = text.split(&quot;\n&quot;)</span>
+<span class="nc" id="L720">        val mergedLines = mutableListOf&lt;String&gt;()</span>
+<span class="nc" id="L721">        var i = 0</span>
+
+<span class="nc bnc" id="L723" title="All 2 branches missed.">        while (i &lt; lines.size) {</span>
+<span class="nc" id="L724">            val currentLine = lines[i].trim()</span>
+
+<span class="nc bnc" id="L726" title="All 4 branches missed.">            if (currentLine.endsWith(&quot;:&quot;) &amp;&amp; i + 1 &lt; lines.size) {</span>
+<span class="nc" id="L727">                val nextLine = lines[i + 1].trim()</span>
+
+<span class="nc bnc" id="L729" title="All 6 branches missed.">                if (nextLine.isNotEmpty() &amp;&amp; !nextLine.endsWith(&quot;:&quot;)) {</span>
+<span class="nc" id="L730">                    mergedLines.add(&quot;$currentLine $nextLine&quot;)</span>
+<span class="nc" id="L731">                    i += 2</span>
+                } else {
+<span class="nc" id="L733">                    mergedLines.add(currentLine)</span>
+<span class="nc" id="L734">                    i++</span>
+                }
+            } else {
+<span class="nc bnc" id="L737" title="All 4 branches missed.">                if (currentLine.isNotEmpty()) {</span>
+<span class="nc" id="L738">                    mergedLines.add(currentLine)</span>
+                }
+<span class="nc" id="L740">                i++</span>
+            }
+        }
+
+<span class="nc" id="L744">        return mergedLines.joinToString(&quot;\n&quot;)</span>
+    }
+
+    /**
+     * Merge split name lines (consecutive ALL CAPS single words)
+     */
+    private fun mergeSplitNameLines(text: String): String {
+<span class="nc bnc" id="L751" title="All 4 branches missed.">        if (text.isEmpty()) return text</span>
+
+        // Skip if there's already a name label
+<span class="nc bnc" id="L754" title="All 2 branches missed.">        if (text.contains(</span>
+<span class="nc" id="L755">                Regex(&quot;(?i)(?:Name|Member|Subscriber|Patient|Cardholder|Beneficiary)\\s*:&quot;)</span>
+            )
+        ) {
+<span class="nc" id="L758">            return text</span>
+        }
+
+<span class="nc" id="L761">        val nonNameTerms = setOf(</span>
+<span class="nc" id="L762">            &quot;plan&quot;, &quot;hlt&quot;, &quot;pcp&quot;, &quot;spec&quot;, &quot;inn&quot;, &quot;oon&quot;, &quot;ind&quot;, &quot;fam&quot;, &quot;ded&quot;,</span>
+<span class="nc" id="L763">            &quot;oop&quot;, &quot;max&quot;, &quot;bin&quot;, &quot;pcn&quot;, &quot;grp&quot;, &quot;rxid&quot;, &quot;group&quot;, &quot;member&quot;,</span>
+<span class="nc" id="L764">            &quot;subscriber&quot;, &quot;patient&quot;, &quot;cardholder&quot;, &quot;identification&quot;, &quot;id&quot;,</span>
+<span class="nc" id="L765">            &quot;copay&quot;, &quot;coinsurance&quot;, &quot;deductible&quot;, &quot;premium&quot;, &quot;network&quot;,</span>
+<span class="nc" id="L766">            &quot;emergency&quot;, &quot;urgent&quot;, &quot;hospital&quot;, &quot;medical&quot;, &quot;dental&quot;, &quot;vision&quot;,</span>
+<span class="nc" id="L767">            &quot;pharmacy&quot;, &quot;prescription&quot;, &quot;drug&quot;, &quot;program&quot;, &quot;benefits&quot;,</span>
+<span class="nc" id="L768">            &quot;effective&quot;, &quot;expires&quot;, &quot;valid&quot;, &quot;date&quot;, &quot;dob&quot;, &quot;issuer&quot;,</span>
+<span class="nc" id="L769">            &quot;sponsor&quot;, &quot;desktop&quot;, &quot;card&quot;, &quot;insurance&quot;, &quot;health&quot;, &quot;care&quot;,</span>
+<span class="nc" id="L770">            &quot;service&quot;, &quot;services&quot;, &quot;provider&quot;, &quot;providers&quot;, &quot;authorization&quot;,</span>
+<span class="nc" id="L771">            &quot;prior&quot;, &quot;auth&quot;, &quot;referral&quot;, &quot;primary&quot;, &quot;specialist&quot;, &quot;office&quot;,</span>
+<span class="nc" id="L772">            &quot;visit&quot;, &quot;er&quot;, &quot;lab&quot;, &quot;xray&quot;, &quot;imaging&quot;, &quot;therapy&quot;, &quot;mental&quot;,</span>
+<span class="nc" id="L773">            &quot;behavioral&quot;, &quot;substance&quot;, &quot;abuse&quot;, &quot;maternity&quot;, &quot;pediatric&quot;,</span>
+<span class="nc" id="L774">            &quot;adult&quot;, &quot;senior&quot;, &quot;family&quot;, &quot;individual&quot;, &quot;single&quot;, &quot;employee&quot;,</span>
+<span class="nc" id="L775">            &quot;dependent&quot;, &quot;spouse&quot;, &quot;child&quot;, &quot;children&quot;, &quot;coverage&quot;, &quot;covered&quot;,</span>
+<span class="nc" id="L776">            &quot;excluded&quot;, &quot;limitation&quot;, &quot;exclusion&quot;, &quot;preexisting&quot;, &quot;condition&quot;</span>
+        )
+
+<span class="nc" id="L779">        val lines = text.split(&quot;\n&quot;)</span>
+<span class="nc" id="L780">        val mergedLines = mutableListOf&lt;String&gt;()</span>
+<span class="nc" id="L781">        var i = 0</span>
+
+<span class="nc bnc" id="L783" title="All 2 branches missed.">        while (i &lt; lines.size) {</span>
+<span class="nc" id="L784">            val currentLine = lines[i].trim()</span>
+
+            // Check if current line is single ALL CAPS word
+<span class="nc bnc" id="L787" title="All 2 branches missed.">            if (currentLine.matches(Regex(&quot;^[A-Z]{2,15}$&quot;)) &amp;&amp;</span>
+<span class="nc bnc" id="L788" title="All 2 branches missed.">                currentLine.lowercase() !in nonNameTerms &amp;&amp;</span>
+<span class="nc bnc" id="L789" title="All 2 branches missed.">                i + 1 &lt; lines.size</span>
+            ) {
+<span class="nc" id="L791">                val nextLine = lines[i + 1].trim()</span>
+
+                // Check if next line is also single ALL CAPS word
+<span class="nc bnc" id="L794" title="All 2 branches missed.">                if (nextLine.matches(Regex(&quot;^[A-Z]{2,15}$&quot;)) &amp;&amp;</span>
+<span class="nc bnc" id="L795" title="All 2 branches missed.">                    nextLine.lowercase() !in nonNameTerms</span>
+                ) {
+                    // Check if followed by insurance data
+<span class="nc" id="L798">                    var isFollowedByInsuranceData = false</span>
+<span class="nc bnc" id="L799" title="All 2 branches missed.">                    if (i + 2 &lt; lines.size) {</span>
+<span class="nc" id="L800">                        val thirdLine = lines[i + 2].trim().lowercase()</span>
+<span class="nc bnc" id="L801" title="All 2 branches missed.">                        if (thirdLine.contains(</span>
+<span class="nc" id="L802">                                Regex(&quot;(plan|pcp|spec|ded|oop|inn|oon|grp|bin|pcn|id|group|member)&quot;)</span>
+                            ) ||
+<span class="nc bnc" id="L804" title="All 2 branches missed.">                            thirdLine.matches(Regex(&quot;^[a-z]{2,5}\\s+\\d.*&quot;)) ||</span>
+<span class="nc bnc" id="L805" title="All 2 branches missed.">                            thirdLine.matches(Regex(&quot;^\\d.*&quot;))</span>
+                        ) {
+<span class="nc" id="L807">                            isFollowedByInsuranceData = true</span>
+                        }
+                    } else {
+<span class="nc" id="L810">                        isFollowedByInsuranceData = true</span>
+                    }
+
+<span class="nc bnc" id="L813" title="All 2 branches missed.">                    if (isFollowedByInsuranceData) {</span>
+<span class="nc" id="L814">                        mergedLines.add(&quot;$currentLine $nextLine&quot;)</span>
+<span class="nc" id="L815">                        i += 2</span>
+<span class="nc" id="L816">                        continue</span>
+                    }
+                }
+            }
+
+<span class="nc bnc" id="L821" title="All 4 branches missed.">            if (currentLine.isNotEmpty()) {</span>
+<span class="nc" id="L822">                mergedLines.add(currentLine)</span>
+            }
+<span class="nc" id="L824">            i++</span>
+        }
+
+<span class="nc" id="L827">        return mergedLines.joinToString(&quot;\n&quot;)</span>
+    }
+
+    // =========================================================================
+    // NAME EXTRACTION METHODS
+    // =========================================================================
+
+    /**
+     * Extract dependent names to exclude from primary member detection
+     */
+    private fun extractDependentNames(text: String): Set&lt;String&gt; {
+<span class="nc" id="L838">        val dependentNames = mutableSetOf&lt;String&gt;()</span>
+
+<span class="nc" id="L840">        val dependentPattern = Regex(</span>
+<span class="nc" id="L841">            &quot;&quot;&quot;Dependents?(?:\(s\))?[\s:]+(.+?)(?=\n(?:Group|Plan|PPO|HMO|EPO|BIN|PCN|Member|Subscriber|$)|\Z)&quot;&quot;&quot;,</span>
+<span class="nc" id="L842">            setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)</span>
+        )
+
+<span class="nc" id="L845">        val match = dependentPattern.find(text)</span>
+<span class="nc bnc" id="L846" title="All 2 branches missed.">        if (match != null) {</span>
+<span class="nc" id="L847">            val dependentText = match.groupValues[1]</span>
+<span class="nc bnc" id="L848" title="All 2 branches missed.">            for (line in dependentText.split(&quot;\n&quot;)) {</span>
+<span class="nc" id="L849">                val lineTrimmed = line.trim()</span>
+                // Check if line looks like a name (ALL CAPS, 2+ words)
+<span class="nc bnc" id="L851" title="All 2 branches missed.">                if (lineTrimmed.matches(Regex(&quot;^[A-Z]{2,15}(?:\\s+[A-Z]{2,15})+$&quot;))) {</span>
+<span class="nc" id="L852">                    dependentNames.add(lineTrimmed.uppercase())</span>
+                }
+                // Also check comma-separated names
+<span class="nc bnc" id="L855" title="All 2 branches missed.">                if (lineTrimmed.contains(&quot;,&quot;)) {</span>
+<span class="nc bnc" id="L856" title="All 2 branches missed.">                    for (part in lineTrimmed.split(&quot;,&quot;)) {</span>
+<span class="nc" id="L857">                        val partTrimmed = part.trim()</span>
+<span class="nc bnc" id="L858" title="All 2 branches missed.">                        if (partTrimmed.matches(Regex(&quot;^[A-Z]{2,15}(?:\\s+[A-Z]{2,15})+$&quot;))) {</span>
+<span class="nc" id="L859">                            dependentNames.add(partTrimmed.uppercase())</span>
+                        }
+                    }
+                }
+            }
+        }
+
+        // Exclude names after Child/Spouse labels
+<span class="nc" id="L867">        val childSpousePattern = Regex(</span>
+<span class="nc" id="L868">            &quot;&quot;&quot;(?:Child|Spouse)[\s:]+([A-Z][A-Za-z\-]+(?:\s+[A-Z][A-Za-z\-]+)+)&quot;&quot;&quot;,</span>
+<span class="nc" id="L869">            RegexOption.IGNORE_CASE</span>
+        )
+<span class="nc bnc" id="L871" title="All 2 branches missed.">        for (m in childSpousePattern.findAll(text)) {</span>
+<span class="nc" id="L872">            dependentNames.add(m.groupValues[1].uppercase().trim())</span>
+        }
+
+<span class="nc" id="L875">        return dependentNames</span>
+    }
+
+    /**
+     * Remove plan names from a line to isolate member name
+     */
+    private fun removePlanNamesFromLine(line: String): String {
+<span class="nc" id="L882">        var cleaned = line</span>
+
+<span class="nc bnc" id="L884" title="All 2 branches missed.">        for (pattern in planNamePatterns) {</span>
+<span class="nc" id="L885">            cleaned = cleaned.replace(Regex(pattern, RegexOption.IGNORE_CASE), &quot;&quot;)</span>
+        }
+
+<span class="nc bnc" id="L888" title="All 2 branches missed.">        for (phrase in OCR_EXCLUSION_PHRASES) {</span>
+<span class="nc bnc" id="L889" title="All 2 branches missed.">            if (cleaned.lowercase().contains(phrase.lowercase())) {</span>
+<span class="nc" id="L890">                val startIdx = cleaned.lowercase().indexOf(phrase.lowercase())</span>
+<span class="nc bnc" id="L891" title="All 2 branches missed.">                if (startIdx != -1) {</span>
+<span class="nc" id="L892">                    cleaned = cleaned.substring(0, startIdx) + cleaned.substring(</span>
+<span class="nc" id="L893">                        startIdx + phrase.length</span>
+                    )
+                }
+            }
+        }
+
+<span class="nc bnc" id="L899" title="All 2 branches missed.">        return cleaned.split(&quot;\\s+&quot;.toRegex()).filter { it.isNotEmpty() }.joinToString(&quot; &quot;)</span>
+    }
+
+    /**
+     * Extract name near Member ID / Identification Number label
+     */
+    private fun extractNameNearMemberIdLabel(text: String): List&lt;Pair&lt;String, Double&gt;&gt; {
+<span class="nc" id="L906">        val names = mutableListOf&lt;Pair&lt;String, Double&gt;&gt;()</span>
+<span class="nc" id="L907">        var foundPrimary = false</span>
+
+<span class="nc" id="L909">        val lines = text.split(&quot;\n&quot;)</span>
+
+<span class="nc bnc" id="L911" title="All 2 branches missed.">        for (i in lines.indices) {</span>
+<span class="nc" id="L912">            val lineStripped = lines[i].trim()</span>
+<span class="nc" id="L913">            val lineLower = lineStripped.lowercase()</span>
+
+            // Pattern 1: Name appears BEFORE &quot;Identification Number&quot; or &quot;Member ID&quot; on next line
+<span class="nc bnc" id="L916" title="All 2 branches missed.">            if (i + 1 &lt; lines.size) {</span>
+<span class="nc" id="L917">                val nextLine = lines[i + 1].trim().lowercase()</span>
+<span class="nc bnc" id="L918" title="All 2 branches missed.">                if (nextLine.contains(&quot;identification&quot;) ||</span>
+<span class="nc bnc" id="L919" title="All 2 branches missed.">                    nextLine.contains(&quot;member id&quot;) ||</span>
+<span class="nc bnc" id="L920" title="All 2 branches missed.">                    nextLine.contains(&quot;subscriber id&quot;)</span>
+                ) {
+<span class="nc" id="L922">                    val cleanedLine = removePlanNamesFromLine(lineStripped)</span>
+<span class="nc" id="L923">                    val nameMatch = Regex(&quot;^([A-Z]{2,15}(?:\\s+[A-Z]\\.?)?\\s+[A-Z]{2,15})&quot;).find(</span>
+<span class="nc" id="L924">                        cleanedLine</span>
+                    )
+
+<span class="nc bnc" id="L927" title="All 2 branches missed.">                    if (nameMatch != null) {</span>
+<span class="nc" id="L928">                        val name = nameMatch.groupValues[1].trim()</span>
+<span class="nc bnc" id="L929" title="All 2 branches missed.">                        if (isValidName(name)) {</span>
+<span class="nc" id="L930">                            names.add(name to 0.98)</span>
+<span class="nc" id="L931">                            foundPrimary = true</span>
+                        }
+                    }
+                }
+            }
+
+            // Pattern 2: Current line contains ID label, check for name on NEXT line(s)
+<span class="nc" id="L938">            val isIdLine = lineLower.contains(</span>
+<span class="nc" id="L939">                Regex(</span>
+<span class="nc" id="L940">                    &quot;(medical.*id|mh.*id|map.*id|rx.*id|member\\s*id|subscriber\\s*id|identification)&quot;</span>
+                )
+            )
+
+<span class="nc bnc" id="L944" title="All 4 branches missed.">            if (isIdLine &amp;&amp; !foundPrimary) {</span>
+<span class="nc bnc" id="L945" title="All 2 branches missed.">                for (j in i + 1 until minOf(i + 5, lines.size)) {</span>
+<span class="nc" id="L946">                    val nextLine = lines[j].trim()</span>
+
+<span class="nc bnc" id="L948" title="All 4 branches missed.">                    if (nextLine.isEmpty()) continue</span>
+<span class="nc bnc" id="L949" title="All 2 branches missed.">                    if (nextLine.contains(</span>
+<span class="nc" id="L950">                            Regex(&quot;(?i)(id\\s*:|#|deductible|co-?pay|network|bin|pcn|grp)&quot;)</span>
+                        )
+                    ) {
+<span class="nc" id="L953">                        break</span>
+                    }
+
+<span class="nc" id="L956">                    val nameMatch = Regex(</span>
+<span class="nc" id="L957">                        &quot;^([A-Z]{2,15}(?:\\s+[A-Z]\\.?)?\\s+[A-Z]{2,15}(?:\\s+[A-Z]{2,15})?)$&quot;</span>
+<span class="nc" id="L958">                    ).find(nextLine)</span>
+<span class="nc bnc" id="L959" title="All 2 branches missed.">                    if (nameMatch != null) {</span>
+<span class="nc" id="L960">                        val name = nameMatch.groupValues[1].trim()</span>
+<span class="nc bnc" id="L961" title="All 2 branches missed.">                        if (isValidName(name)) {</span>
+<span class="nc" id="L962">                            names.add(name to 0.99)</span>
+<span class="nc" id="L963">                            foundPrimary = true</span>
+<span class="nc" id="L964">                            break</span>
+                        }
+                    }
+                }
+            }
+        }
+
+<span class="nc" id="L971">        return names</span>
+    }
+
+    /**
+     * Extract names using regex patterns
+     */
+    fun extractNamesRegex(text: String): List&lt;Pair&lt;String, Double&gt;&gt; {
+<span class="nc" id="L978">        val names = mutableListOf&lt;Pair&lt;String, Double&gt;&gt;()</span>
+<span class="nc" id="L979">        val dependentNames = extractDependentNames(text)</span>
+
+        // Try to extract name near Member ID label (highest priority)
+<span class="nc" id="L982">        val namesNearId = extractNameNearMemberIdLabel(text)</span>
+<span class="nc bnc" id="L983" title="All 2 branches missed.">        for ((name, conf) in namesNearId) {</span>
+<span class="nc bnc" id="L984" title="All 2 branches missed.">            if (name.uppercase() !in dependentNames) {</span>
+<span class="nc" id="L985">                names.add(name to conf)</span>
+            }
+        }
+
+        // Try labeled patterns (higher confidence)
+<span class="nc bnc" id="L990" title="All 2 branches missed.">        for (regex in nameLabeledRegexes) {</span>
+<span class="nc" id="L991">            val matches = regex.findAll(text)</span>
+<span class="nc bnc" id="L992" title="All 2 branches missed.">            for (match in matches) {</span>
+<span class="nc" id="L993">                val name = cleanName(</span>
+<span class="nc bnc" id="L994" title="All 4 branches missed.">                    match.groupValues.drop(1).firstOrNull { it.isNotEmpty() } ?: continue</span>
+                )
+
+<span class="nc bnc" id="L997" title="All 2 branches missed.">                if (name.uppercase() in dependentNames) continue</span>
+<span class="nc bnc" id="L998" title="All 2 branches missed.">                if (isValidName(name)) {</span>
+<span class="nc" id="L999">                    names.add(name to 0.95)</span>
+                }
+            }
+        }
+
+        // Try unlabeled patterns (lower confidence)
+<span class="nc bnc" id="L1005" title="All 2 branches missed.">        for (regex in nameUnlabeledRegexes) {</span>
+<span class="nc" id="L1006">            val matches = regex.findAll(text)</span>
+<span class="nc bnc" id="L1007" title="All 2 branches missed.">            for (match in matches) {</span>
+<span class="nc" id="L1008">                val name = cleanName(</span>
+<span class="nc bnc" id="L1009" title="All 4 branches missed.">                    match.groupValues.drop(1).firstOrNull { it.isNotEmpty() } ?: continue</span>
+                )
+
+<span class="nc bnc" id="L1012" title="All 2 branches missed.">                if (name.uppercase() in dependentNames) continue</span>
+<span class="nc bnc" id="L1013" title="All 2 branches missed.">                if (isValidName(name)) {</span>
+<span class="nc" id="L1014">                    names.add(name to 0.5)</span>
+                }
+            }
+        }
+
+<span class="nc" id="L1019">        return names</span>
+    }
+
+    /**
+     * Validate if a string is likely a person's name
+     */
+    private fun isValidName(name: String): Boolean {
+<span class="nc bnc" id="L1026" title="All 6 branches missed.">        if (name.isEmpty() || name.length &lt; 3) return false</span>
+
+        // Clean the name
+<span class="nc" id="L1029">        var cleanedName = name.replace(Regex(&quot;[\n\r]+&quot;), &quot; &quot;)</span>
+<span class="nc" id="L1030">        cleanedName = cleanedName.replace(Regex(&quot;\\s+&quot;), &quot; &quot;).trim()</span>
+
+<span class="nc bnc" id="L1032" title="All 2 branches missed.">        if (cleanedName.length &lt; 3) return false</span>
+
+<span class="nc" id="L1034">        val nameLower = cleanedName.lowercase()</span>
+<span class="nc" id="L1035">        val words = nameLower.split(&quot; &quot;)</span>
+
+        // Exact match exclusions
+<span class="nc" id="L1038">        val exactExclusions = setOf(</span>
+<span class="nc" id="L1039">            &quot;ind ded&quot;, &quot;fam ded&quot;, &quot;ind oop&quot;, &quot;fam oop&quot;,</span>
+<span class="nc" id="L1040">            &quot;oop max&quot;, &quot;ind max&quot;, &quot;fam max&quot;,</span>
+<span class="nc" id="L1041">            &quot;in network&quot;, &quot;out network&quot;,</span>
+<span class="nc" id="L1042">            &quot;inn oon&quot;,</span>
+<span class="nc" id="L1043">            &quot;personal choice&quot;, &quot;personal choic&quot;,</span>
+<span class="nc" id="L1044">            &quot;independence personal&quot;, &quot;indenpdendenc&quot;,</span>
+<span class="nc" id="L1045">            &quot;number&quot;, &quot;issuer&quot;, &quot;prescription&quot;, &quot;member&quot;, &quot;id&quot;, &quot;subscriber&quot;,</span>
+<span class="nc" id="L1046">            &quot;patient&quot;, &quot;cardholder&quot;, &quot;identification&quot;, &quot;memberid&quot;</span>
+        )
+
+<span class="nc bnc" id="L1049" title="All 2 branches missed.">        if (nameLower in exactExclusions) return false</span>
+
+        // Must have at least 2 words
+<span class="nc bnc" id="L1052" title="All 2 branches missed.">        if (words.size &lt; 2) return false</span>
+
+        // Must have letters
+<span class="nc bnc" id="L1055" title="All 2 branches missed.">        if (cleanedName.count { it.isLetter() } &lt; 4) return false</span>
+
+        // Should not be mostly numbers
+<span class="nc bnc" id="L1058" title="All 2 branches missed.">        if (cleanedName.count { it.isDigit() } &gt; cleanedName.length / 4) return false</span>
+
+        // Additional exclusions
+<span class="nc" id="L1061">        val additionalExclusions = setOf(</span>
+<span class="nc" id="L1062">            &quot;member&quot;, &quot;subscriber&quot;, &quot;patient&quot;, &quot;cardholder&quot;, &quot;group&quot;,</span>
+<span class="nc" id="L1063">            &quot;plan&quot;, &quot;type&quot;, &quot;tvpe&quot;, &quot;id&quot;, &quot;number&quot;, &quot;no&quot;, &quot;local&quot;, &quot;demo&quot;,</span>
+<span class="nc" id="L1064">            &quot;eligible&quot;, &quot;eligibility&quot;, &quot;elcible&quot;, &quot;updaled&quot;, &quot;updated&quot;,</span>
+<span class="nc" id="L1065">            &quot;effective&quot;, &quot;valid&quot;, &quot;expires&quot;, &quot;bin&quot;, &quot;pcn&quot;, &quot;grp&quot;, &quot;rx&quot;,</span>
+<span class="nc" id="L1066">            &quot;insurance&quot;, &quot;benelils&quot;, &quot;adminislered&quot;, &quot;administered&quot;,</span>
+<span class="nc" id="L1067">            &quot;benefits&quot;, &quot;medlcal&quot;, &quot;medical&quot;, &quot;dental&quot;, &quot;vision&quot;,</span>
+<span class="nc" id="L1068">            &quot;laboratorles&quot;, &quot;laboratories&quot;, &quot;lab&quot;, &quot;account&quot;, &quot;issuer&quot;,</span>
+<span class="nc" id="L1069">            &quot;yes&quot;</span>
+        )
+
+<span class="nc" id="L1072">        val allExclusions = nameExclusions + insuranceTerms + additionalExclusions</span>
+<span class="nc" id="L1073">        val validSuffixes = setOf(&quot;jr&quot;, &quot;sr&quot;, &quot;iii&quot;, &quot;ii&quot;, &quot;iv&quot;, &quot;v&quot;, &quot;jr.&quot;, &quot;sr.&quot;)</span>
+
+<span class="nc bnc" id="L1075" title="All 2 branches missed.">        for (word in words) {</span>
+<span class="nc bnc" id="L1076" title="All 4 branches missed.">            if (word in allExclusions &amp;&amp; word !in validSuffixes) {</span>
+<span class="nc" id="L1077">                return false</span>
+            }
+        }
+
+        // Filter if name contains insurance terms
+<span class="nc bnc" id="L1082" title="All 2 branches missed.">        for (term in insuranceTerms) {</span>
+<span class="nc bnc" id="L1083" title="All 2 branches missed.">            if (term in nameLower) return false</span>
+        }
+
+        // Reasonable length
+<span class="nc bnc" id="L1087" title="All 4 branches missed.">        if (words.size &gt; 5 || cleanedName.length &gt; 50) return false</span>
+
+        // Each word should look like a name part
+<span class="nc bnc" id="L1090" title="All 2 branches missed.">        for ((index, word) in cleanedName.split(&quot; &quot;).withIndex()) {</span>
+<span class="nc" id="L1091">            val wordLower = word.lowercase().trimEnd('.')</span>
+
+            // Skip middle initials
+<span class="nc bnc" id="L1094" title="All 4 branches missed.">            if (word.length &lt;= 2 &amp;&amp; word.endsWith(&quot;.&quot;)) continue</span>
+
+            // Allow suffixes at the end
+<span class="nc bnc" id="L1097" title="All 4 branches missed.">            if (index == words.size - 1 &amp;&amp; wordLower in validSuffixes) continue</span>
+
+            // Word should start with uppercase
+<span class="nc bnc" id="L1100" title="All 2 branches missed.">            if (!word[0].isUpperCase()) return false</span>
+
+            // Word should be mostly letters
+<span class="nc bnc" id="L1103" title="All 2 branches missed.">            if (word.count { it.isLetter() } &lt; word.length * 0.8) return false</span>
+        }
+
+<span class="nc" id="L1106">        return true</span>
+    }
+
+    /**
+     * Clean extracted name string
+     */
+    private fun cleanName(name: String): String {
+<span class="nc" id="L1113">        return name.replace(Regex(&quot;[\n\r]+&quot;), &quot; &quot;)</span>
+<span class="nc" id="L1114">            .replace(Regex(&quot;\\s+&quot;), &quot; &quot;)</span>
+<span class="nc" id="L1115">            .trim()</span>
+    }
+
+    // =========================================================================
+    // ID EXTRACTION METHODS
+    // =========================================================================
+
+    /**
+     * Scan [text] for alphanumeric tokens that could be OCR-mangled IDs and
+     * normalize them through [IdNormalizer].  Only tokens whose first-3-char
+     * prefix matches a known prefix in [IdNormalizer] are touched, so
+     * regular words are never altered.
+     *
+     * e.g. &quot;ASFO02765994&quot; → &quot;ASF002765994&quot; (O→0 in numeric portion)
+     */
+    private fun normalizeIdTokensInText(text: String): String {
+<span class="fc" id="L1131">        val normalizer = IdNormalizer()</span>
+<span class="fc" id="L1132">        return Regex(&quot;\\b([A-Z][A-Z0-9]{7,17})\\b&quot;).replace(text) { mr -&gt;</span>
+<span class="fc" id="L1133">            val token = mr.groupValues[1]</span>
+<span class="fc" id="L1134">            val result = normalizer.normalize(token)</span>
+<span class="pc bpc" id="L1135" title="1 of 2 branches missed.">            if (result.wasModified) result.normalized else token</span>
+        }
+    }
+
+    /**
+     * Extract member/subscriber IDs using regex
+     */
+    fun extractMemberIds(text: String): List&lt;Pair&lt;String, Double&gt;&gt; {
+        // Check for special &quot;no ID&quot; patterns
+<span class="fc" id="L1144">        val noIdPatterns = listOf(</span>
+<span class="fc" id="L1145">            &quot;&quot;&quot;Call\s+NVA\s+for\s+your\s+ID&quot;&quot;&quot;,</span>
+<span class="fc" id="L1146">            &quot;&quot;&quot;ID\s*[:\s]*Use\s+your\s+SSN&quot;&quot;&quot;,</span>
+<span class="fc" id="L1147">            &quot;&quot;&quot;Use\s+your\s+SSN&quot;&quot;&quot;,</span>
+<span class="fc" id="L1148">            &quot;&quot;&quot;Contact.*for.*ID&quot;&quot;&quot;,</span>
+<span class="fc" id="L1149">            &quot;&quot;&quot;Call.*for.*ID&quot;&quot;&quot;</span>
+        )
+
+<span class="fc bfc" id="L1152" title="All 2 branches covered.">        for (pattern in noIdPatterns) {</span>
+<span class="pc bpc" id="L1153" title="1 of 2 branches missed.">            if (text.contains(Regex(pattern, RegexOption.IGNORE_CASE))) {</span>
+<span class="nc" id="L1154">                return listOf(&quot;N/A&quot; to 1.0)</span>
+            }
+        }
+
+        // Normalize OCR-mangled tokens that match a known prefix (e.g. ASFO→ASF0)
+        // so the regex patterns below can match them correctly.
+<span class="fc" id="L1160">        val normalizedText = normalizeIdTokensInText(text)</span>
+
+<span class="fc" id="L1162">        val ids = mutableListOf&lt;Pair&lt;String, Double&gt;&gt;()</span>
+<span class="fc" id="L1163">        val foundIds = mutableSetOf&lt;String&gt;()</span>
+<span class="fc" id="L1164">        val idsToExclude = mutableSetOf&lt;String&gt;()</span>
+
+        // Exclude Rx IDs (handles labels like &quot;Rx/DEN/VIS ID:&quot;)
+<span class="fc" id="L1167">        val rxIdPattern = Regex(</span>
+<span class="fc" id="L1168">            &quot;&quot;&quot;(?:Rx(?:/DEN)?(?:/VIS)?)\s*ID[\s:]+([A-Z0-9]{1,15})&quot;&quot;&quot;,</span>
+<span class="fc" id="L1169">            RegexOption.IGNORE_CASE</span>
+        )
+<span class="pc bpc" id="L1171" title="1 of 2 branches missed.">        for (match in rxIdPattern.findAll(normalizedText)) {</span>
+<span class="nc" id="L1172">            idsToExclude.add(match.groupValues[1].replace(&quot;\\s&quot;.toRegex(), &quot;&quot;))</span>
+        }
+
+        // Exclude Sponsor Numbers
+<span class="fc" id="L1176">        val sponsorPattern = Regex(</span>
+<span class="fc" id="L1177">            &quot;&quot;&quot;Sponsor\s*(?:No|Number|#)?[\s:]*([A-Z0-9]{3,20})&quot;&quot;&quot;,</span>
+<span class="fc" id="L1178">            RegexOption.IGNORE_CASE</span>
+        )
+<span class="pc bpc" id="L1180" title="1 of 2 branches missed.">        for (match in sponsorPattern.findAll(normalizedText)) {</span>
+<span class="nc" id="L1181">            idsToExclude.add(match.groupValues[1].replace(&quot;\\s&quot;.toRegex(), &quot;&quot;))</span>
+        }
+
+        // Exclude Issuer Numbers
+<span class="fc" id="L1185">        val issuerPattern = Regex(</span>
+<span class="fc" id="L1186">            &quot;&quot;&quot;I?ssuer\s*(?:No|Number|#)?[\s:]+(\d{3,20})&quot;&quot;&quot;,</span>
+<span class="fc" id="L1187">            RegexOption.IGNORE_CASE</span>
+        )
+<span class="pc bpc" id="L1189" title="1 of 2 branches missed.">        for (match in issuerPattern.findAll(normalizedText)) {</span>
+<span class="nc" id="L1190">            idsToExclude.add(match.groupValues[1].replace(&quot;\\s&quot;.toRegex(), &quot;&quot;))</span>
+        }
+        // Exclude Issuer with parenthesized number and trailing number e.g. &quot;Issuer (80840) 9140860054&quot;
+<span class="fc" id="L1193">        val issuerParenPattern = Regex(</span>
+<span class="fc" id="L1194">            &quot;&quot;&quot;(?i)I?ssuer\s*(?:No|Number|#)?[\s:]*\((\d{3,20})\)[\s:]*(\d{3,20})&quot;&quot;&quot;</span>
+        )
+<span class="pc bpc" id="L1196" title="1 of 2 branches missed.">        for (match in issuerParenPattern.findAll(normalizedText)) {</span>
+<span class="nc" id="L1197">            idsToExclude.add(match.groupValues[1])</span>
+<span class="nc" id="L1198">            idsToExclude.add(match.groupValues[2])</span>
+        }
+
+        // Exclude Group ID / Group Number values
+<span class="fc" id="L1202">        val groupPattern = Regex(</span>
+<span class="fc" id="L1203">            &quot;&quot;&quot;(?:Group\s*(?:Name|No|Number|#|ID)?|Grp|GRP)[\s:]+([A-Z0-9][A-Z0-9\-]{2,19})&quot;&quot;&quot;,</span>
+<span class="fc" id="L1204">            RegexOption.IGNORE_CASE</span>
+        )
+<span class="pc bpc" id="L1206" title="1 of 2 branches missed.">        for (match in groupPattern.findAll(normalizedText)) {</span>
+<span class="nc" id="L1207">            idsToExclude.add(match.groupValues[1].replace(&quot;\\s&quot;.toRegex(), &quot;&quot;))</span>
+        }
+
+        // Exclude currency amounts e.g. &quot;$2000&quot;, &quot;$200&quot;, &quot;$500&quot;
+<span class="fc" id="L1211">        val currencyPattern = Regex(&quot;&quot;&quot;\$(\d+(?:[.,]\d+)?)&quot;&quot;&quot;)</span>
+<span class="pc bpc" id="L1212" title="1 of 2 branches missed.">        for (match in currencyPattern.findAll(normalizedText)) {</span>
+<span class="nc" id="L1213">            idsToExclude.add(match.groupValues[1].replace(&quot;,&quot;, &quot;&quot;).replace(&quot;.&quot;, &quot;&quot;))</span>
+        }
+
+        // Exclude phone numbers on lines containing &quot;call&quot; or &quot;phone&quot;
+<span class="fc" id="L1217">        val phoneLinePattern = Regex(</span>
+<span class="fc" id="L1218">            &quot;&quot;&quot;^.*(?:call|phone|dial|contact|fax).*?(\(?\d{3}\)?[\s\-.]?\d{3}[\s\-.]?\d{4}).*$&quot;&quot;&quot;,</span>
+<span class="fc" id="L1219">            setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE)</span>
+        )
+<span class="pc bpc" id="L1221" title="1 of 2 branches missed.">        for (match in phoneLinePattern.findAll(normalizedText)) {</span>
+<span class="nc" id="L1222">            val phoneDigits = match.groupValues[1].replace(Regex(&quot;[^\\d]&quot;), &quot;&quot;)</span>
+<span class="nc" id="L1223">            idsToExclude.add(phoneDigits)</span>
+            // Also exclude with dashes in case it appears that way
+<span class="nc" id="L1225">            idsToExclude.add(match.groupValues[1].replace(Regex(&quot;[\\s.()]&quot;), &quot;&quot;))</span>
+        }
+
+<span class="fc bfc" id="L1228" title="All 2 branches covered.">        for ((index, regex) in idRegexes.withIndex()) {</span>
+<span class="fc" id="L1229">            val matches = regex.findAll(normalizedText)</span>
+<span class="fc bfc" id="L1230" title="All 2 branches covered.">            for (match in matches) {</span>
+<span class="fc" id="L1231">                val matchValue =</span>
+<span class="pc bpc" id="L1232" title="2 of 4 branches missed.">                    match.groupValues.drop(1).firstOrNull { it.isNotEmpty() } ?: continue</span>
+<span class="fc" id="L1233">                val memberId = matchValue.replace(&quot;\\s&quot;.toRegex(), &quot;&quot;)</span>
+
+<span class="pc bpc" id="L1235" title="1 of 2 branches missed.">                if (memberId in idsToExclude) continue</span>
+
+<span class="pc bpc" id="L1237" title="1 of 4 branches missed.">                if (isValidId(memberId) &amp;&amp; memberId !in foundIds) {</span>
+<span class="pc bpc" id="L1238" title="1 of 2 branches missed.">                    val confidence = if (index &lt; 3) 0.95 else 0.7</span>
+<span class="fc" id="L1239">                    ids.add(memberId to confidence)</span>
+<span class="fc" id="L1240">                    foundIds.add(memberId)</span>
+                }
+            }
+        }
+
+        // Only apply fallback if no IDs found yet
+<span class="fc bfc" id="L1246" title="All 2 branches covered.">        if (ids.isEmpty()) {</span>
+<span class="fc bfc" id="L1247" title="All 2 branches covered.">            for (regex in fallbackIdRegexes) {</span>
+<span class="pc bpc" id="L1248" title="1 of 2 branches missed.">                for (match in regex.findAll(normalizedText)) {</span>
+<span class="nc bnc" id="L1249" title="All 2 branches missed.">                    val extractedId = match.groups[2]?.value // &lt;-- use group 2, not 1</span>
+<span class="nc bnc" id="L1250" title="All 10 branches missed.">                    if (!extractedId.isNullOrEmpty() &amp;&amp; isValidId(extractedId) &amp;&amp; extractedId !in idsToExclude) {</span>
+<span class="nc" id="L1251">                        ids.add(Pair(extractedId, 1.0))</span>
+                    }
+                }
+            }
+        }
+
+<span class="fc" id="L1257">        return ids</span>
+    }
+
+    /**
+     * Validate if a string is likely a member ID
+     */
+    private fun isValidId(idStr: String): Boolean {
+<span class="pc bpc" id="L1264" title="3 of 6 branches missed.">        if (idStr.isEmpty() || idStr.length &lt; 6) return false</span>
+
+<span class="fc" id="L1266">        val invalidIdWords = setOf(</span>
+<span class="fc" id="L1267">            &quot;number&quot;, &quot;member&quot;, &quot;issuer&quot;, &quot;prescription&quot;, &quot;subscriber&quot;,</span>
+<span class="fc" id="L1268">            &quot;patient&quot;, &quot;cardholder&quot;, &quot;identification&quot;, &quot;memberid&quot;,</span>
+<span class="fc" id="L1269">            &quot;benefits&quot;, &quot;insurance&quot;, &quot;healthcare&quot;, &quot;medical&quot;, &quot;dental&quot;,</span>
+<span class="fc" id="L1270">            &quot;vision&quot;, &quot;pharmacy&quot;, &quot;account&quot;, &quot;sponsor&quot;, &quot;group&quot;,</span>
+<span class="fc" id="L1271">            &quot;eligible&quot;, &quot;eligibility&quot;, &quot;effective&quot;, &quot;coverage&quot;,</span>
+<span class="fc" id="L1272">            &quot;network&quot;, &quot;provider&quot;, &quot;service&quot;, &quot;program&quot;, &quot;plan&quot;,</span>
+<span class="fc" id="L1273">            &quot;electronic&quot;, &quot;payer&quot;, &quot;facilitator&quot;, &quot;administrator&quot;</span>
+        )
+
+<span class="pc bpc" id="L1276" title="1 of 2 branches missed.">        if (idStr.lowercase() in invalidIdWords) return false</span>
+
+        // Not a year
+<span class="pc bpc" id="L1279" title="1 of 2 branches missed.">        if (idStr.matches(Regex(&quot;^(19|20)\\d{2}$&quot;))) return false</span>
+
+        // Not a phone number (US format: NXX-NXX-XXXX where N=2-9)
+<span class="fc" id="L1282">        val cleanId = idStr.replace(Regex(&quot;[-\\s.]&quot;), &quot;&quot;)</span>
+<span class="pc bpc" id="L1283" title="1 of 2 branches missed.">        if (cleanId.matches(Regex(&quot;^[2-9]\\d{2}[2-9]\\d{6}$&quot;))) return false</span>
+
+        // Not too long
+<span class="pc bpc" id="L1286" title="1 of 2 branches missed.">        if (idStr.length &gt; 20) return false</span>
+
+        // Must contain at least one digit
+<span class="pc bpc" id="L1289" title="1 of 2 branches missed.">        if (!idStr.any { it.isDigit() }) return false</span>
+
+<span class="fc" id="L1291">        return true</span>
+    }
+
+    // =========================================================================
+    // DATE EXTRACTION METHODS
+    // =========================================================================
+
+    /**
+     * Extract dates using regex patterns
+     */
+    fun extractDates(text: String): List&lt;Pair&lt;String, Double&gt;&gt; {
+<span class="fc" id="L1302">        val dates = mutableListOf&lt;Pair&lt;String, Double&gt;&gt;()</span>
+<span class="fc" id="L1303">        val foundDates = mutableSetOf&lt;String&gt;()</span>
+
+<span class="fc bfc" id="L1305" title="All 2 branches covered.">        for ((index, regex) in dateRegexes.withIndex()) {</span>
+<span class="fc" id="L1306">            val matches = regex.findAll(text)</span>
+<span class="fc bfc" id="L1307" title="All 2 branches covered.">            for (match in matches) {</span>
+<span class="pc bpc" id="L1308" title="1 of 2 branches missed.">                val parts = match.groupValues.drop(1).filter { it.isNotEmpty() }</span>
+<span class="fc" id="L1309">                val dateStr = parts.joinToString(&quot;/&quot;)</span>
+
+<span class="fc" id="L1311">                val normalized = normalizeDate(dateStr)</span>
+<span class="pc bpc" id="L1312" title="1 of 4 branches missed.">                if (normalized != null &amp;&amp; normalized !in foundDates) {</span>
+<span class="pc bpc" id="L1313" title="1 of 2 branches missed.">                    val confidence = if (index &lt; 2) 0.95 else 0.8</span>
+<span class="fc" id="L1314">                    dates.add(normalized to confidence)</span>
+<span class="fc" id="L1315">                    foundDates.add(normalized)</span>
+                }
+            }
+        }
+
+<span class="fc" id="L1320">        return dates</span>
+    }
+
+    /**
+     * Normalize date to readable format
+     */
+    private fun normalizeDate(dateStr: String): String? {
+<span class="pc bpc" id="L1327" title="3 of 6 branches missed.">        if (dateStr.isEmpty() || dateStr.length &lt; 6) return null</span>
+
+<span class="fc" id="L1329">        return dateStr.replace(&quot;\\s+&quot;.toRegex(), &quot; &quot;)</span>
+<span class="fc" id="L1330">            .trim()</span>
+<span class="fc" id="L1331">            .replace(&quot;-&quot;, &quot;/&quot;)</span>
+    }
+
+    // =========================================================================
+    // OTHER FIELD EXTRACTION METHODS
+    // =========================================================================
+
+    fun extractInsuranceProvider(text: String): String? {
+<span class="fc bfc" id="L1339" title="All 2 branches covered.">        for (regex in providerRegexes) {</span>
+<span class="fc" id="L1340">            val match = regex.find(text)</span>
+<span class="pc bpc" id="L1341" title="1 of 2 branches missed.">            if (match != null) {</span>
+<span class="nc" id="L1342">                return match.groupValues[1].trim()</span>
+            }
+        }
+<span class="fc" id="L1345">        return null</span>
+    }
+
+    fun extractGroupNumber(text: String): String? {
+<span class="fc bfc" id="L1349" title="All 2 branches covered.">        for (regex in groupRegexes) {</span>
+<span class="fc" id="L1350">            val match = regex.find(text)</span>
+<span class="fc bfc" id="L1351" title="All 2 branches covered.">            if (match != null) {</span>
+<span class="fc" id="L1352">                val group = match.groupValues[1].trim()</span>
+<span class="pc bpc" id="L1353" title="1 of 2 branches missed.">                if (group.lowercase() !in listOf(&quot;local&quot;, &quot;demo&quot;, &quot;test&quot;)) {</span>
+<span class="fc" id="L1354">                    return group</span>
+                }
+            }
+        }
+<span class="fc" id="L1358">        return null</span>
+    }
+
+    fun extractRxInfo(text: String): Map&lt;String, String?&gt; {
+<span class="fc" id="L1362">        val rxInfo = mutableMapOf&lt;String, String?&gt;(</span>
+<span class="fc" id="L1363">            &quot;rx_bin&quot; to null,</span>
+<span class="fc" id="L1364">            &quot;rx_pcn&quot; to null,</span>
+<span class="fc" id="L1365">            &quot;rx_grp&quot; to null</span>
+        )
+
+<span class="fc bfc" id="L1368" title="All 2 branches covered.">        for (regex in rxBinRegexes) {</span>
+<span class="fc" id="L1369">            val match = regex.find(text)</span>
+<span class="pc bpc" id="L1370" title="1 of 2 branches missed.">            if (match != null) {</span>
+<span class="nc" id="L1371">                rxInfo[&quot;rx_bin&quot;] = match.groupValues[1].trim()</span>
+<span class="nc" id="L1372">                break</span>
+            }
+        }
+
+<span class="fc bfc" id="L1376" title="All 2 branches covered.">        for (regex in rxPcnRegexes) {</span>
+<span class="fc" id="L1377">            val match = regex.find(text)</span>
+<span class="pc bpc" id="L1378" title="1 of 2 branches missed.">            if (match != null) {</span>
+<span class="nc" id="L1379">                rxInfo[&quot;rx_pcn&quot;] = match.groupValues[1].trim()</span>
+<span class="nc" id="L1380">                break</span>
+            }
+        }
+
+<span class="fc bfc" id="L1384" title="All 2 branches covered.">        for (regex in rxGrpRegexes) {</span>
+<span class="fc" id="L1385">            val match = regex.find(text)</span>
+<span class="pc bpc" id="L1386" title="1 of 2 branches missed.">            if (match != null) {</span>
+<span class="nc" id="L1387">                rxInfo[&quot;rx_grp&quot;] = match.groupValues[1].trim()</span>
+<span class="nc" id="L1388">                break</span>
+            }
+        }
+
+<span class="fc" id="L1392">        return rxInfo</span>
+    }
+
+    fun extractPlanType(text: String): String? {
+<span class="nc bnc" id="L1396" title="All 2 branches missed.">        for (regex in planTypeRegexes) {</span>
+<span class="nc" id="L1397">            val match = regex.find(text)</span>
+<span class="nc bnc" id="L1398" title="All 2 branches missed.">            if (match != null) {</span>
+<span class="nc" id="L1399">                return match.groupValues[1].trim()</span>
+            }
+        }
+<span class="nc" id="L1402">        return null</span>
+    }
+
+    fun extractRxBin(text: String): String? {
+<span class="pc bpc" id="L1406" title="1 of 2 branches missed.">        for (regex in rxBinRegexes) {</span>
+<span class="fc" id="L1407">            val match = regex.find(text)</span>
+<span class="pc bpc" id="L1408" title="1 of 2 branches missed.">            if (match != null) {</span>
+<span class="fc" id="L1409">                return match.groupValues[1].trim()</span>
+            }
+        }
+<span class="nc" id="L1412">        return null</span>
+    }
+
+    fun extractRxId(text: String): String? {
+<span class="nc bnc" id="L1416" title="All 2 branches missed.">        for (regex in rxIdRegexes) {</span>
+<span class="nc" id="L1417">            val match = regex.find(text)</span>
+<span class="nc bnc" id="L1418" title="All 2 branches missed.">            if (match != null) {</span>
+<span class="nc" id="L1419">                return match.groupValues[1].trim()</span>
+            }
+        }
+<span class="nc" id="L1422">        return null</span>
+    }
+
+    fun extractSponsorNumber(text: String): String? {
+<span class="nc bnc" id="L1426" title="All 2 branches missed.">        for (regex in sponsorRegexes) {</span>
+<span class="nc" id="L1427">            val match = regex.find(text)</span>
+<span class="nc bnc" id="L1428" title="All 2 branches missed.">            if (match != null) {</span>
+<span class="nc" id="L1429">                val sponsor = match.groupValues[1].trim()</span>
+<span class="nc bnc" id="L1430" title="All 2 branches missed.">                if (sponsor.lowercase() !in listOf(&quot;local&quot;, &quot;demo&quot;, &quot;test&quot;)) {</span>
+<span class="nc" id="L1431">                    return sponsor</span>
+                }
+            }
+        }
+<span class="nc" id="L1435">        return null</span>
+    }
+
+    fun extractIssuer(text: String): String? {
+<span class="nc bnc" id="L1439" title="All 2 branches missed.">        for (regex in issuerRegexes) {</span>
+<span class="nc" id="L1440">            val match = regex.find(text)</span>
+<span class="nc bnc" id="L1441" title="All 2 branches missed.">            if (match != null) {</span>
+<span class="nc" id="L1442">                val issuer = match.groupValues[1].trim()</span>
+<span class="nc bnc" id="L1443" title="All 2 branches missed.">                if (issuer.lowercase() !in listOf(&quot;local&quot;, &quot;demo&quot;, &quot;test&quot;)) {</span>
+<span class="nc" id="L1444">                    return issuer</span>
+                }
+            }
+        }
+<span class="nc" id="L1448">        return null</span>
+    }
+
+    // =========================================================================
+    // PHONE EXTRACTION METHODS
+    // =========================================================================
+
+    /**
+     * Extract phone number from lines that contain context keywords like
+     * &quot;call&quot;, &quot;phone&quot;, &quot;dial&quot;, &quot;contact&quot;, &quot;fax&quot;.
+     * e.g. &quot;app or call 708-575-6757&quot; → &quot;708-575-6757&quot;
+     */
+    fun extractPhone(text: String): String? {
+<span class="fc" id="L1461">        val phoneContextPattern = Regex(</span>
+<span class="fc" id="L1462">            &quot;&quot;&quot;^.*(?:call|phone|dial|contact|fax|tel)\s+.*?(\(?\d{3}\)?[\s\-.]?\d{3}[\s\-.]?\d{4}).*$&quot;&quot;&quot;,</span>
+<span class="fc" id="L1463">            setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE)</span>
+        )
+<span class="fc" id="L1465">        val match = phoneContextPattern.find(text)</span>
+<span class="fc bfc" id="L1466" title="All 2 branches covered.">        if (match != null) {</span>
+<span class="fc" id="L1467">            return match.groupValues[1].trim()</span>
+        }
+<span class="fc" id="L1469">        return null</span>
+    }
+
+    // =========================================================================
+    // MAIN EXTRACTION METHODS
+    // =========================================================================
+
+    /**
+     * Build merged text from vision text blocks by grouping lines that share
+     * the same vertical position. Handles three layout patterns:
+     *
+     * 1. Key and value on the SAME line in nearby blocks → join them:
+     *    Block[&quot;Member ID&quot;]  Block[&quot;ABC123&quot;]  →  &quot;Member ID ABC123&quot;
+     *
+     * 2. Keys on one row, values on the NEXT row → pair by X-proximity:
+     *    Row1: &quot;Sponsor #&quot;   &quot;Cardmember #&quot;
+     *    Row2: &quot;4279000001&quot;  &quot;XYBC9JEOCLIORFTB&quot;
+     *    →  &quot;Sponsor # 4279000001&quot;
+     *    →  &quot;Cardmember # XYBC9JEOCLIORFTB&quot;
+     *
+     * 3. Two-panel cards (left/right columns from different blocks) → keep separate:
+     *    Left[&quot;Member Name: Lloyd Bates&quot;]  Right[&quot;Claims Fax: (888) 965-4011&quot;]
+     *    →  &quot;Member Name: Lloyd Bates&quot;
+     *    →  &quot;Claims Fax: (888) 965-4011&quot;
+     */
+    fun buildSameLineText(visionText: Text): String {
+<span class="nc" id="L1495">        data class LineInfo(</span>
+<span class="nc" id="L1496">            val text: String,</span>
+<span class="nc" id="L1497">            val yCenter: Float,</span>
+<span class="nc" id="L1498">            val xLeft: Int,</span>
+<span class="nc" id="L1499">            val xRight: Int,</span>
+<span class="nc" id="L1500">            val height: Int,</span>
+<span class="nc" id="L1501">            val blockIdx: Int</span>
+        )
+
+<span class="nc" id="L1504">        val allLines = mutableListOf&lt;LineInfo&gt;()</span>
+
+<span class="nc bnc" id="L1506" title="All 2 branches missed.">        for ((blockIdx, block) in visionText.textBlocks.withIndex()) {</span>
+<span class="nc bnc" id="L1507" title="All 2 branches missed.">            for (line in block.lines) {</span>
+<span class="nc bnc" id="L1508" title="All 2 branches missed.">                val box = line.boundingBox ?: continue</span>
+<span class="nc" id="L1509">                allLines.add(</span>
+<span class="nc" id="L1510">                    LineInfo(</span>
+<span class="nc" id="L1511">                        text = line.text,</span>
+<span class="nc" id="L1512">                        yCenter = (box.top + box.bottom) / 2f,</span>
+<span class="nc" id="L1513">                        xLeft = box.left,</span>
+<span class="nc" id="L1514">                        xRight = box.right,</span>
+<span class="nc" id="L1515">                        height = box.bottom - box.top,</span>
+<span class="nc" id="L1516">                        blockIdx = blockIdx</span>
+                    )
+                )
+            }
+        }
+
+<span class="nc bnc" id="L1522" title="All 2 branches missed.">        if (allLines.isEmpty()) return visionText.text</span>
+
+        // Sort by Y center
+<span class="nc" id="L1525">        allLines.sortBy { it.yCenter }</span>
+
+        // Group lines with similar Y center (tolerance = half of average line height)
+<span class="nc" id="L1528">        val avgHeight = allLines.map { it.height }.average()</span>
+<span class="nc" id="L1529">        val yTolerance = (avgHeight * 0.5).toFloat()</span>
+        // Column gap: items from different blocks with gap &gt; this are separate panels
+<span class="nc" id="L1531">        val columnGapThreshold = (avgHeight * 2).toInt()</span>
+
+<span class="nc" id="L1533">        val yGroups = mutableListOf&lt;MutableList&lt;LineInfo&gt;&gt;()</span>
+<span class="nc" id="L1534">        var currentGroup = mutableListOf(allLines[0])</span>
+
+<span class="nc bnc" id="L1536" title="All 2 branches missed.">        for (idx in 1 until allLines.size) {</span>
+<span class="nc" id="L1537">            val current = allLines[idx]</span>
+<span class="nc" id="L1538">            val groupYCenter = currentGroup.map { it.yCenter }.average().toFloat()</span>
+
+<span class="nc bnc" id="L1540" title="All 2 branches missed.">            if (abs(current.yCenter - groupYCenter) &lt;= yTolerance) {</span>
+<span class="nc" id="L1541">                currentGroup.add(current)</span>
+            } else {
+<span class="nc" id="L1543">                yGroups.add(currentGroup)</span>
+<span class="nc" id="L1544">                currentGroup = mutableListOf(current)</span>
+            }
+        }
+<span class="nc" id="L1547">        yGroups.add(currentGroup)</span>
+
+        // Sort each group left-to-right
+<span class="nc" id="L1550">        yGroups.forEach { it.sortBy { line -&gt; line.xLeft } }</span>
+
+        // Split a Y-group into column sub-groups.
+        // A column boundary exists when consecutive items are from DIFFERENT
+        // blocks AND have a large horizontal gap (separate panels).
+        fun splitIntoColumns(group: List&lt;LineInfo&gt;): List&lt;List&lt;LineInfo&gt;&gt; {
+<span class="nc bnc" id="L1556" title="All 2 branches missed.">            if (group.size &lt;= 1) return listOf(group)</span>
+<span class="nc" id="L1557">            val columns = mutableListOf&lt;MutableList&lt;LineInfo&gt;&gt;()</span>
+<span class="nc" id="L1558">            var col = mutableListOf(group[0])</span>
+<span class="nc bnc" id="L1559" title="All 2 branches missed.">            for (j in 1 until group.size) {</span>
+<span class="nc" id="L1560">                val prev = group[j - 1]</span>
+<span class="nc" id="L1561">                val curr = group[j]</span>
+<span class="nc" id="L1562">                val gap = curr.xLeft - prev.xRight</span>
+<span class="nc bnc" id="L1563" title="All 4 branches missed.">                if (prev.blockIdx != curr.blockIdx &amp;&amp; gap &gt; columnGapThreshold) {</span>
+<span class="nc" id="L1564">                    columns.add(col)</span>
+<span class="nc" id="L1565">                    col = mutableListOf(curr)</span>
+                } else {
+<span class="nc" id="L1567">                    col.add(curr)</span>
+                }
+            }
+<span class="nc" id="L1570">            columns.add(col)</span>
+<span class="nc" id="L1571">            return columns</span>
+        }
+
+        // Process groups
+<span class="nc" id="L1575">        val result = mutableListOf&lt;String&gt;()</span>
+<span class="nc" id="L1576">        var i = 0</span>
+<span class="nc bnc" id="L1577" title="All 2 branches missed.">        while (i &lt; yGroups.size) {</span>
+<span class="nc" id="L1578">            val group = yGroups[i]</span>
+<span class="nc" id="L1579">            val columns = splitIntoColumns(group)</span>
+
+<span class="nc bnc" id="L1581" title="All 2 branches missed.">            if (columns.size &gt;= 2) {</span>
+                // Multiple columns detected (e.g. two-panel card)
+<span class="nc" id="L1583">                val allColumnsAreLabels = columns.all { col -&gt;</span>
+<span class="nc" id="L1584">                    col.all { isLabelText(it.text) }</span>
+                }
+
+<span class="nc bnc" id="L1587" title="All 4 branches missed.">                if (allColumnsAreLabels &amp;&amp; i + 1 &lt; yGroups.size) {</span>
+                    // All columns are labels → pair with values from next row
+<span class="nc" id="L1589">                    val nextGroup = yGroups[i + 1]</span>
+<span class="nc" id="L1590">                    val allLabels = columns.flatten()</span>
+<span class="nc" id="L1591">                    val allValues = splitIntoColumns(nextGroup).flatten()</span>
+<span class="nc" id="L1592">                    val usedValues = mutableSetOf&lt;Int&gt;()</span>
+
+<span class="nc bnc" id="L1594" title="All 2 branches missed.">                    for (label in allLabels) {</span>
+<span class="nc" id="L1595">                        var closestIdx = -1</span>
+<span class="nc" id="L1596">                        var closestDist = Int.MAX_VALUE</span>
+<span class="nc bnc" id="L1597" title="All 2 branches missed.">                        for (j in allValues.indices) {</span>
+<span class="nc bnc" id="L1598" title="All 2 branches missed.">                            if (j in usedValues) continue</span>
+<span class="nc" id="L1599">                            val dist = abs(label.xLeft - allValues[j].xLeft)</span>
+<span class="nc bnc" id="L1600" title="All 2 branches missed.">                            if (dist &lt; closestDist) {</span>
+<span class="nc" id="L1601">                                closestDist = dist</span>
+<span class="nc" id="L1602">                                closestIdx = j</span>
+                            }
+                        }
+<span class="nc bnc" id="L1605" title="All 2 branches missed.">                        if (closestIdx != -1) {</span>
+<span class="nc" id="L1606">                            result.add(&quot;${label.text} ${allValues[closestIdx].text}&quot;)</span>
+<span class="nc" id="L1607">                            usedValues.add(closestIdx)</span>
+                        } else {
+<span class="nc" id="L1609">                            result.add(label.text)</span>
+                        }
+                    }
+<span class="nc bnc" id="L1612" title="All 2 branches missed.">                    for (j in allValues.indices) {</span>
+<span class="nc bnc" id="L1613" title="All 2 branches missed.">                        if (j !in usedValues) {</span>
+<span class="nc" id="L1614">                            result.add(allValues[j].text)</span>
+                        }
+                    }
+<span class="nc" id="L1617">                    i += 2</span>
+                } else {
+                    // Mixed content → output each column as a separate line
+<span class="nc bnc" id="L1620" title="All 2 branches missed.">                    for (col in columns) {</span>
+<span class="nc" id="L1621">                        result.add(col.joinToString(&quot; &quot;) { it.text })</span>
+                    }
+<span class="nc" id="L1623">                    i++</span>
+                }
+            } else {
+                // Single column → join same-line items with space
+<span class="nc" id="L1627">                result.add(group.joinToString(&quot; &quot;) { it.text })</span>
+<span class="nc" id="L1628">                i++</span>
+            }
+        }
+
+        // Split lines that contain multiple key:value pairs from cross-panel merging
+        // e.g. &quot;Lloyd Bates Claims Fax: (888) 965-4011&quot; → two separate lines
+<span class="nc" id="L1634">        val finalResult = result.flatMap { splitAtKeyBoundaries(it) }</span>
+<span class="nc" id="L1635">        return finalResult.joinToString(&quot;\n&quot;)</span>
+    }
+
+    /**
+     * Split a line at label boundaries. When cross-panel merging produces
+     * lines like &quot;Lloyd Bates Claims Fax: (888) 965-4011&quot;, this splits into
+     * [&quot;Lloyd Bates&quot;, &quot;Claims Fax: (888) 965-4011&quot;].
+     *
+     * Only splits when a recognized label keyword (followed by : or #)
+     * appears in the MIDDLE of a line with content before it.
+     */
+<span class="fc" id="L1646">    private val keyBoundaryPattern = Regex(</span>
+<span class="fc" id="L1647">        &quot;(?i)\\b(?:&quot; +</span>
+            &quot;Member\\s*(?:Name|ID|Number|#)|&quot; +
+            &quot;Subscriber\\s*(?:Name|ID)|&quot; +
+            &quot;Patient\\s*(?:Name|ID)|&quot; +
+            &quot;Cardholder\\s*(?:Name|ID)|&quot; +
+            &quot;Cardmember\\s*#?|&quot; +
+            &quot;Group\\s*(?:ID|No|Number|Name|#)|&quot; +
+            &quot;Plan\\s*(?:Type|Year)|&quot; +
+            &quot;Effective\\s*Date|&quot; +
+            &quot;Deductible|Coinsurance|Co-?pay|&quot; +
+            &quot;Rx\\s*(?:BIN|PCN|GRP|ID)|RxBIN|RxPCN|RxGRP|RxID|&quot; +
+            &quot;Issuer|Sponsor\\s*(?:No|Number|#)?|&quot; +
+            &quot;Electronic\\s*Payer\\s*ID|&quot; +
+            &quot;Claims\\s*(?:Fax|Address|Phone)|&quot; +
+            &quot;Eligibility|Eligible|&quot; +
+            &quot;Identification\\s*(?:Number|No)|&quot; +
+            &quot;(?&lt;!Group\\s)Name|&quot; +
+            &quot;BIN|PCN|GRP|DOB|Updated|Network&quot; +
+            &quot;)\\s*[:#]&quot;
+    )
+
+    private fun splitAtKeyBoundaries(line: String): List&lt;String&gt; {
+<span class="nc" id="L1669">        val matches = keyBoundaryPattern.findAll(line).toList()</span>
+<span class="nc bnc" id="L1670" title="All 2 branches missed.">        if (matches.isEmpty()) return listOf(line)</span>
+
+        // Collect split points: positions of keys that have content before them
+<span class="nc" id="L1673">        val splitPoints = mutableListOf&lt;Int&gt;()</span>
+<span class="nc bnc" id="L1674" title="All 2 branches missed.">        for (match in matches) {</span>
+<span class="nc" id="L1675">            val pos = match.range.first</span>
+<span class="nc bnc" id="L1676" title="All 6 branches missed.">            if (pos &gt; 0 &amp;&amp; line.substring(0, pos).trim().isNotEmpty()) {</span>
+<span class="nc" id="L1677">                splitPoints.add(pos)</span>
+            }
+        }
+
+<span class="nc bnc" id="L1681" title="All 2 branches missed.">        if (splitPoints.isEmpty()) return listOf(line)</span>
+
+<span class="nc" id="L1683">        val result = mutableListOf&lt;String&gt;()</span>
+<span class="nc" id="L1684">        var lastPos = 0</span>
+<span class="nc bnc" id="L1685" title="All 2 branches missed.">        for (pos in splitPoints) {</span>
+<span class="nc" id="L1686">            val segment = line.substring(lastPos, pos).trim()</span>
+<span class="nc bnc" id="L1687" title="All 4 branches missed.">            if (segment.isNotEmpty()) result.add(segment)</span>
+<span class="nc" id="L1688">            lastPos = pos</span>
+        }
+<span class="nc" id="L1690">        val remaining = line.substring(lastPos).trim()</span>
+<span class="nc bnc" id="L1691" title="All 4 branches missed.">        if (remaining.isNotEmpty()) result.add(remaining)</span>
+
+<span class="nc" id="L1693">        return result</span>
+    }
+
+    /**
+     * Check if a text fragment looks like a label/key (not a value).
+     * Labels typically end with #, :, or match known field names.
+     */
+    private fun isLabelText(text: String): Boolean {
+<span class="nc" id="L1701">        val trimmed = text.trim()</span>
+        // Ends with common label delimiters
+<span class="nc bnc" id="L1703" title="All 4 branches missed.">        if (trimmed.endsWith(&quot;#&quot;) || trimmed.endsWith(&quot;:&quot;)) return true</span>
+        // Matches known insurance card field labels
+<span class="nc" id="L1705">        return trimmed.matches(</span>
+<span class="nc" id="L1706">            Regex(</span>
+<span class="nc" id="L1707">                &quot;(?i)^(Sponsor|Cardmember|Member|Subscriber|Patient|Cardholder|Group|&quot; +</span>
+                    &quot;Name|ID|Identification|Issuer|Plan|Rx\\s*BIN|Rx\\s*PCN|Rx\\s*GRP|&quot; +
+                    &quot;Rx\\s*ID|BIN|PCN|GRP|Eligible|Effective|Updated|DOB|Date)\\s*[#:.]?\\s*$&quot;
+            )
+        )
+    }
+
+    /**
+     * Extract insurance card details from ML Kit vision text.
+     * Uses block bounding boxes to identify same-line key-value pairs first.
+     */
+    fun extractFromDocument(visionText: Text): ExtractedData {
+<span class="nc" id="L1719">        val sameLineText = buildSameLineText(visionText)</span>
+
+<span class="nc" id="L1721">        return extractFromDocument(mapOf(&quot;full_text&quot; to sameLineText))</span>
+    }
+
+    /**
+     * Extract text from OCR document (supports full_text string format)
+     */
+    private fun extractTextFromOcr(ocrDoc: Map&lt;String, Any?&gt;): String {
+<span class="nc" id="L1728">        var text = &quot;&quot;</span>
+
+        // Get full_text if available
+<span class="nc bnc" id="L1731" title="All 2 branches missed.">        val fullText = ocrDoc[&quot;full_text&quot;] as? String</span>
+<span class="nc bnc" id="L1732" title="All 6 branches missed.">        if (!fullText.isNullOrEmpty()) {</span>
+<span class="nc" id="L1733">            text = fullText</span>
+        }
+
+        // Save original text before cleaning
+        // Clean OCR text
+<span class="nc" id="L1738">        text = cleanOcrText(text)</span>
+
+        // Merge label lines
+<span class="nc" id="L1741">        text = mergeLabelLines(text)</span>
+
+        // Fix Personal Choice name split
+<span class="nc" id="L1744">        text = fixPersonalChoiceNameSplit(text)</span>
+
+        // Merge split name lines
+<span class="nc" id="L1747">        text = mergeSplitNameLines(text)</span>
+
+<span class="nc" id="L1749">        return text</span>
+    }
+
+    /**
+     * Extract all insurance card details from raw OCR text (convenience overload).
+     */
+    fun extractFromText(rawText: String): ExtractedData =
+<span class="nc" id="L1756">        extractFromDocument(mapOf(&quot;full_text&quot; to rawText))</span>
+
+    /**
+     * Extract all insurance card details from a single OCR document
+     */
+    fun extractFromDocument(ocrDoc: Map&lt;String, Any?&gt;): ExtractedData {
+<span class="nc" id="L1762">        val text = extractTextFromOcr(ocrDoc)</span>
+
+        // Extract names using regex only (no spacy in Kotlin)
+<span class="nc" id="L1765">        val namesRegex = extractNamesRegex(text)</span>
+<span class="nc" id="L1766">        val combined = namesRegex.sortedByDescending { it.second }</span>
+
+//
+//        // Combine and deduplicate by confidence
+<span class="nc" id="L1770">        val allNames = mutableListOf&lt;String&gt;()</span>
+<span class="nc" id="L1771">        val seenNames = mutableSetOf&lt;String&gt;()</span>
+
+<span class="nc bnc" id="L1773" title="All 2 branches missed.">        for ((name, _) in combined) {</span>
+<span class="nc" id="L1774">            val nameNorm = name.lowercase().trim()</span>
+<span class="nc bnc" id="L1775" title="All 2 branches missed.">            if (nameNorm !in seenNames) {</span>
+<span class="nc" id="L1776">                allNames.add(name)</span>
+<span class="nc" id="L1777">                seenNames.add(nameNorm)</span>
+            }
+        }
+
+<span class="nc" id="L1781">        val ids = extractMemberIds(text).sortedByDescending { it.second }.map { it.first }</span>
+
+<span class="nc" id="L1783">        val phone = extractPhone(text)</span>
+
+<span class="nc" id="L1785">        return ExtractedData(</span>
+<span class="nc" id="L1786">            memberIds = ids,</span>
+<span class="nc" id="L1787">            rawText = text,</span>
+<span class="nc" id="L1788">            names = allNames,</span>
+<span class="nc" id="L1789">            phone = phone</span>
+        )
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

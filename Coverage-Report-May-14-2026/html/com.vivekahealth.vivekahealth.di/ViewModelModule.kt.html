@@ -1,0 +1,1160 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ViewModelModule.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.di</a> &gt; <span class="el_source">ViewModelModule.kt</span></div><h1>ViewModelModule.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.di
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.vivekahealth.vivekahealth.ui.appUpdate.AppUpdateViewModel
+import com.vivekahealth.vivekahealth.ui.enroll.EnrollViewModel
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.child.ChildViewModel
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.enrollmentEnd.SuccessEnrollmentViewModel
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.legal.LegalAffirmationViewModel
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.maritialStatus.MartialStatusViewModel
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.personalDetail.MemberDetailViewModel
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.spouse.SpouseFragmentViewModel
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.uploadDocuments.RequiredDocumentsViewModel
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.uploadDocuments.uploadUI.UploadDocumentViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.SharedViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.child.dob.ChildDOBViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.child.employed.ChildEmployedViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.child.gender.ChildGenderViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.child.name.ChildNameViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.child.ssn.ChildSSNViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.chooseDependent.ChooseDependentViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.continueEnrollment.ContinuePreviousEnrollmentV2ViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.dependentStatus.DependentStatusViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.dependentStatus.ReviewDependentDetailsViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.legal.DisclaimerSignatureViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.legal.LegalViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.primary.PrimaryPreviousInsuranceV2ViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.requiredDocs.RequiredDocsViewModel
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.OpenEnrollmentDocumentViewModel
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.MissingRequireDocumentViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.dob.DOBViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.employed.EmployedViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.gender.GenderViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.healthInsurance.HealthInsuranceViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.insurance.InsuranceViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.marriage.MarriageDateViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.name.SpouseNameViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.ssn.SSNViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.start.StartEnrollmentViewModel
+import com.vivekahealth.vivekahealth.ui.guestAccNdetails.GuestAccountDetailsViewModel
+import com.vivekahealth.vivekahealth.ui.guestHome.GuestHomeViewModel
+import com.vivekahealth.vivekahealth.ui.guestHome.VerifyIdentityViewModel
+import com.vivekahealth.vivekahealth.ui.guestRegister.email.GuestEmailViewModel
+import com.vivekahealth.vivekahealth.ui.guestRegister.otp.GuestOtpViewModel
+import com.vivekahealth.vivekahealth.ui.guestRegister.password.GuestPasswordViewModel
+import com.vivekahealth.vivekahealth.ui.guestRegister.phone.GuestPhoneViewModel
+import com.vivekahealth.vivekahealth.ui.guestRegister.success.GuestSuccessViewModel
+import com.vivekahealth.vivekahealth.ui.guestVerify.BiometricPermissionViewModel
+import com.vivekahealth.vivekahealth.ui.guestVerify.documents.DocumentScanViewModel
+import com.vivekahealth.vivekahealth.ui.guestVerify.documents.ManualIdViewModel
+import com.vivekahealth.vivekahealth.ui.guestVerify.selfie.AlreadyRegisterViewModel
+import com.vivekahealth.vivekahealth.ui.guestVerify.selfie.SelfieCaptrueViewModel
+import com.vivekahealth.vivekahealth.ui.guestVerify.zip.ZipAddViewModel
+import com.vivekahealth.vivekahealth.ui.headshots.HeadShotViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.HomePageViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.about.AboutViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.AccountDetailsViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.addressChange.AddressChangeViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.changePassword.ChangePasswordViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.changePhoneNumber.code.CodeViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.changePhoneNumber.phone.PhoneViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.dependentPicture.DependentProfilePictureViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.emailPassword.EmailPasswordViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.pickerBottomSheet.PickerSheetViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.pickerBottomSheet.remove.RemovePickerSheetViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.addDependent.AddDependentViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.addDependent.dependentList.DependentListSheetViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.WorkHourBenefitViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.benefitDetails.BenefitDetailsViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.calenderYear.YearCalenderViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.disclaimer.BenefitDisclaimerViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.filter.FilterSheetViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.yearTiles.YearTilesViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.benefitSPD.BenefitSPDViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.disclaimer.DisclaimerViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.documents.DocumentsViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.documents.documentFilter.DocumentFilterViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.documents.documentSubmit.SubmitDocumentViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.documents.documentSubmit.documentPicker.DocumentPickerViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.documents.documentView.DocumentViewViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.documents.pdfViewer.PDFViewerViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.documents.pendingUpload.SubmitPendingViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.documents.sortSheet.SortSheetViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.documents.successDocumentUpload.SuccessDocumentUploadViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.dynamicMenu.DynamicMenuViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findAll.FindAllModel
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.FindCareViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.billPreview.BillPreviewViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.billPreview.deiveryOption.DeliveryOptionViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.billPreview.disclaimer.BillPreviewDisclaimerViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.billPreview.enterValue.PriceEnterViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.filter.FindCareFilterViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.map.MapViewViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.searchLocation.searchLocationUi.SearchAddressViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.selectSpecialty.SelectSpecialityViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.selectSpecialty.subSpeciality.SelectSubSpecialityViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findCareSelectSpecialityActivity.SelectActivityViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.FindCareSearchViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.procedure.ProcedureViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.SpecialityViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityprofile.SpecialityProfileViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityprofile.selectedProcedureList.SelectedProcedureViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality.SelectViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSpecialityDetails.SelectDetailsViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findcareWeb.FindCareWebViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.guardianNurses.GuardianNursesViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.helpFaq.HelpAndFaqViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.helpFaq.customerCare.CustomerCareViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.helpFaq.customerCare.chatLanguageSetting.ChatLanguageSettingViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.helpFaq.documentSend.SubmitDocumentChatViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.home.HomeViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.home.lightWeight.LightWeightDisclaimerViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.home.profilePictureUpload.ProfilePictureUploadViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.home.switcherDisclaimer.SwitcherDisclaimerViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.home.welcomeTutorial.WelcomeTutorialViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.informationSharing.InformationSharingViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.informationSharing.datePreference.DatePreferenceSheetViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.insuranceCard.InsuranceCardsViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.languageTranslate.LanguageViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.maritialStatus.MaritalStatusUpdateViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.MedicalLogsViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.all.AllLogsViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.claims.ClaimsViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.claims.details.ClaimsDetailsViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.claims.filter.ClaimsFilterViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.diagnosis.DiagnosisViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.diagnosis.details.DiagnosisDetailsViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.diagnosis.filter.DiagnosisFilterViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.immunization.ImmunizationViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.immunization.immunizationFilter.ImmunizationFilterViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.immunization.shareImmunization.ShareImmunizationViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.prescription.PrescriptionViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.prescription.prescriptionFilter.PrescriptionFilterViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.messageCenter.MessageCenterViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.more.MoreViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.paperless.GoPaperlessViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.primaryDevicePrompt.PrimaryDevicePromptViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.resetPasswordPrompt.ResetPasswordPromptViewModel
+import com.vivekahealth.vivekahealth.pension.ui.viewmodel.PensionViewModel
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.selfGender.SelfGenderViewModel
+import com.vivekahealth.vivekahealth.ui.guestVerify.manualId.ManualDLViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.saveMoney.SaveMoneyViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.saveMoney.email.EmailPyedViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.shareBenefit.ShareBenefitViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.shareBenefit.mailDialog.MailViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.shareBenefit.mailRequestSuccess.SuccessMailViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.shareBenefit.shareBenefitDisclaimer.ShareBenefitDisclaimerViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.surveys.SurveysViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.talonRewards.TalonRewardsViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.termsAndCondition.TermsAndConditionViewModel
+import com.vivekahealth.vivekahealth.ui.login.LoginMainViewModel
+import com.vivekahealth.vivekahealth.ui.login.continueSignUp.ContinueEnrollmentViewModel
+import com.vivekahealth.vivekahealth.ui.login.continueSignUpReg.ContinueRegistrationViewModel
+import com.vivekahealth.vivekahealth.ui.login.enrollmentPending.SuccessEnrollmentPendingViewModel
+import com.vivekahealth.vivekahealth.ui.login.login.LoginViewModel
+import com.vivekahealth.vivekahealth.ui.login.loginV2.LoginV2ViewModel
+import com.vivekahealth.vivekahealth.ui.login.successReg.StepRegSuccessLoginViewModel
+import com.vivekahealth.vivekahealth.ui.register.RegisterViewModel
+import com.vivekahealth.vivekahealth.ui.register.disclaimerQuick.QuickRegistrationDisclaimerViewModel
+import com.vivekahealth.vivekahealth.ui.register.registrationSuccess.StepRegSuccessViewModel
+import com.vivekahealth.vivekahealth.ui.register.resgitrationFail.StepRegFailViewModel
+import com.vivekahealth.vivekahealth.ui.register.review.ReviewViewModel
+import com.vivekahealth.vivekahealth.ui.register.step1.StepPhoneViewModel
+import com.vivekahealth.vivekahealth.ui.register.step2.StepCodeViewModel
+import com.vivekahealth.vivekahealth.ui.register.step3.StepEmailViewModel
+import com.vivekahealth.vivekahealth.ui.register.step4.StepPasswordViewModel
+import com.vivekahealth.vivekahealth.ui.register.step5.StepNameViewModel
+import com.vivekahealth.vivekahealth.ui.register.step6.StepGenderViewModel
+import com.vivekahealth.vivekahealth.ui.register.step7.StepDateViewModel
+import com.vivekahealth.vivekahealth.ui.register.step8.StepIdentityViewModel
+import com.vivekahealth.vivekahealth.ui.resetPassword.ResetPasswordViewModel
+import com.vivekahealth.vivekahealth.viewmodel.VivekaHealthViewModelFactory
+import dagger.Binds
+import dagger.Module
+import dagger.multibindings.IntoMap
+
+<span class="nc" id="L177">@Module</span>
+abstract class ViewModelModule {
+
+    @Binds
+    internal abstract fun bindsViewModelFactory(factory: VivekaHealthViewModelFactory):
+        ViewModelProvider.Factory
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(RegisterViewModel::class)
+    internal abstract fun bindsRegisterViewModel(registerViewModel: RegisterViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(StepPhoneViewModel::class)
+    internal abstract fun bindsStepPhoneViewModel(stepPhoneViewModel: StepPhoneViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(StepCodeViewModel::class)
+    internal abstract fun bindsStepCodeViewModel(stepCodeViewModel: StepCodeViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(StepEmailViewModel::class)
+    internal abstract fun bindsStepEmailViewModel(stepEmailViewModel: StepEmailViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(StepNameViewModel::class)
+    internal abstract fun bindsStepNameViewModel(stepNameViewModel: StepNameViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(StepGenderViewModel::class)
+    internal abstract fun bindsStepGenderViewModel(stepGenderViewModel: StepGenderViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(StepDateViewModel::class)
+    internal abstract fun bindsStepDateViewModel(stepDateViewModel: StepDateViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(StepPasswordViewModel::class)
+    internal abstract fun bindsStepPasswordViewModel(stepPasswordViewModel: StepPasswordViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(StepIdentityViewModel::class)
+    internal abstract fun bindsStepIdentityViewModel(stepIdentityViewModel: StepIdentityViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(StepRegSuccessViewModel::class)
+    internal abstract fun bindsStepRegSuccessViewModel(
+        stepRegSuccessViewModel: StepRegSuccessViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(StepRegSuccessLoginViewModel::class)
+    internal abstract fun bindsStepRegSuccessLoginViewModel(
+        stepRegSuccessLoginViewModel: StepRegSuccessLoginViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(StepRegFailViewModel::class)
+    internal abstract fun bindsStepRegFailViewModel(stepRegFailViewModel: StepRegFailViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(MartialStatusViewModel::class)
+    internal abstract fun bindsMartialStatusViewModel(
+        martialStatusViewModel: MartialStatusViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SpouseFragmentViewModel::class)
+    internal abstract fun bindsSpouseFragmentViewModel(
+        spouseFragmentViewModel: SpouseFragmentViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(MemberDetailViewModel::class)
+    internal abstract fun bindMemberDetailViewModel(memberDetailViewModel: MemberDetailViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ChildViewModel::class)
+    internal abstract fun bindChildViewModel(childViewModel: ChildViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(UploadDocumentViewModel::class)
+    internal abstract fun bindUploadDocumentViewModel(
+        uploadDocumentViewModel: UploadDocumentViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SuccessEnrollmentViewModel::class)
+    internal abstract fun bindSuccessEnrollmentViewModel(
+        successEnrollmentViewModel: SuccessEnrollmentViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(LegalAffirmationViewModel::class)
+    internal abstract fun bindLegalAffirmationViewModel(
+        legalAffirmationViewModel: LegalAffirmationViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(EnrollViewModel::class)
+    internal abstract fun bindEnrollViewModel(enrollViewModel: EnrollViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(RequiredDocumentsViewModel::class)
+    internal abstract fun bindRequiredDocumentsViewModel(
+        requiredDocumentsViewModel: RequiredDocumentsViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ResetPasswordViewModel::class)
+    internal abstract fun bindResetPasswordViewModel(resetPasswordViewModel: ResetPasswordViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ReviewViewModel::class)
+    internal abstract fun bindReviewViewModel(reviewViewModel: ReviewViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(HomePageViewModel::class)
+    internal abstract fun bindHomePageViewModel(homePageViewModel: HomePageViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(HomeViewModel::class)
+    internal abstract fun bindHomeViewModel(homeViewModel: HomeViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(LoginViewModel::class)
+    internal abstract fun bindHomeLoginViewModel(loginViewModel: LoginViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(LoginMainViewModel::class)
+    internal abstract fun bindHomeLoginMainViewModel(loginMainViewModel: LoginMainViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(AddDependentViewModel::class)
+    internal abstract fun bindAddDependentViewModel(addDependentViewModel: AddDependentViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ContinueEnrollmentViewModel::class)
+    internal abstract fun bindContinueEnrollmentViewModel(
+        continueEnrollmentViewModel: ContinueEnrollmentViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ContinueRegistrationViewModel::class)
+    internal abstract fun bindContinueRegistrationViewModel(
+        continueRegistrationViewModel: ContinueRegistrationViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SuccessEnrollmentPendingViewModel::class)
+    internal abstract fun bindSuccessEnrollmentPendingViewModel(
+        successEnrollmentPendingViewModel: SuccessEnrollmentPendingViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(InsuranceCardsViewModel::class)
+    internal abstract fun bindInsuranceCardsViewModel(
+        insuranceCardsViewModel: InsuranceCardsViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ShareBenefitViewModel::class)
+    internal abstract fun bindShareBenefitViewModel(shareBenefitViewModel: ShareBenefitViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DocumentFilterViewModel::class)
+    internal abstract fun bindDocumentFilterViewModel(
+        documentFilterViewModel: DocumentFilterViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ShareBenefitDisclaimerViewModel::class)
+    internal abstract fun bindShareBenefitDisclaimerViewModel(
+        shareBenefitDisclaimerViewModel: ShareBenefitDisclaimerViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(WorkHourBenefitViewModel::class)
+    internal abstract fun bindHomeBenefitViewModel(benefitViewModel: WorkHourBenefitViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(BenefitDetailsViewModel::class)
+    internal abstract fun bindHomeBenefitDetailsViewModel(
+        benefitDetailsViewModel: BenefitDetailsViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(AccountDetailsViewModel::class)
+    internal abstract fun bindAccountDetailsViewModel(
+        accountDetailsViewModel: AccountDetailsViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(MoreViewModel::class)
+    internal abstract fun bindMoreViewModel(moreViewModel: MoreViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(PickerSheetViewModel::class)
+    internal abstract fun bindPickerSheetViewModel(pickerSheetViewModel: PickerSheetViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(EmailPasswordViewModel::class)
+    internal abstract fun bindEmailPasswordViewModel(emailPasswordViewModel: EmailPasswordViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ChangePasswordViewModel::class)
+    internal abstract fun bindChangePasswordViewModel(
+        changePasswordViewModel: ChangePasswordViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DependentProfilePictureViewModel::class)
+    internal abstract fun bindDependentProfilePictureViewModel(
+        dependentProfilePictureViewModel: DependentProfilePictureViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DocumentsViewModel::class)
+    internal abstract fun bindDocumentsViewModel(documentsViewModel: DocumentsViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SubmitDocumentViewModel::class)
+    internal abstract fun bindSubmitDocumentViewModel(
+        submitDocumentViewModel: SubmitDocumentViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DocumentPickerViewModel::class)
+    internal abstract fun bindDocumentPickerViewModel(
+        documentPickerViewModel: DocumentPickerViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(PDFViewerViewModel::class)
+    internal abstract fun bindPDFViewerViewModel(pdfViewerViewModel: PDFViewerViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SuccessDocumentUploadViewModel::class)
+    internal abstract fun bindSuccessDocumentUploadViewModel(
+        successDocumentUploadViewModel: SuccessDocumentUploadViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SortSheetViewModel::class)
+    internal abstract fun bindSortSheetViewModel(sortSheetViewModel: SortSheetViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DisclaimerViewModel::class)
+    internal abstract fun bindDisclaimerViewModel(disclaimerViewModel: DisclaimerViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(TermsAndConditionViewModel::class)
+    internal abstract fun bindTermsAndConditionViewModel(
+        termsAndConditionViewModel: TermsAndConditionViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(AboutViewModel::class)
+    internal abstract fun bindAboutViewModel(aboutViewModel: AboutViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SubmitPendingViewModel::class)
+    internal abstract fun bindSubmitPendingViewModel(submitPendingViewModel: SubmitPendingViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DocumentViewViewModel::class)
+    internal abstract fun bindDocumentViewViewModel(documentViewViewModel: DocumentViewViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(MedicalLogsViewModel::class)
+    internal abstract fun bindMedicalLogsViewModel(medicalLogsViewModel: MedicalLogsViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(AllLogsViewModel::class)
+    internal abstract fun bindAllLogsViewModel(allLogsViewModel: AllLogsViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(PrescriptionViewModel::class)
+    internal abstract fun bindPrescriptionViewModel(prescriptionViewModel: PrescriptionViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(PrescriptionFilterViewModel::class)
+    internal abstract fun bindPrescriptionFilterViewModel(
+        prescriptionFilterViewModel: PrescriptionFilterViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DiagnosisViewModel::class)
+    internal abstract fun bindDiagnosisViewModel(dagnosisViewModel: DiagnosisViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ClaimsViewModel::class)
+    internal abstract fun bindClaimsViewModel(claimsViewModel: ClaimsViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DependentListSheetViewModel::class)
+    internal abstract fun bindDependentListSheetViewModel(
+        dependentListSheetViewModel: DependentListSheetViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DiagnosisFilterViewModel::class)
+    internal abstract fun bindDiagnosisFilterViewModel(
+        diagnosisFilterViewModel: DiagnosisFilterViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ClaimsFilterViewModel::class)
+    internal abstract fun bindClaimsFilterViewModel(claimsFilterViewModel: ClaimsFilterViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ClaimsDetailsViewModel::class)
+    internal abstract fun bindClaimsDetailsViewModel(claimsDetailsViewModel: ClaimsDetailsViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DiagnosisDetailsViewModel::class)
+    internal abstract fun bindDiagnosisDetailsViewModel(
+        diagnosisDetailsViewModel: DiagnosisDetailsViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(FindCareViewModel::class)
+    internal abstract fun bindFindCareViewModel(findCareViewModel: FindCareViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SelectViewModel::class)
+    internal abstract fun bindSelectSpecialityLogsModel(findCareViewModel: SelectViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(FindCareSearchViewModel::class)
+    internal abstract fun bindFindCareSearchViewModel(findCareViewModel: FindCareSearchViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SpecialityViewModel::class)
+    internal abstract fun bindSpecialityViewModel(specialityViewModel: SpecialityViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ProcedureViewModel::class)
+    internal abstract fun bindProcedureViewModel(procedureViewModel: ProcedureViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SpecialityProfileViewModel::class)
+    internal abstract fun bindSpecialityprofileViewModel(
+        specialityProfileViewModel: SpecialityProfileViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SelectDetailsViewModel::class)
+    internal abstract fun bindSelectDetailsViewModel(selectDetailsViewModel: SelectDetailsViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(FindAllModel::class)
+    internal abstract fun bindFindAllModel(findAllModel: FindAllModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(InformationSharingViewModel::class)
+    internal abstract fun bindInformationSharingViewModel(
+        informationSharingViewModel: InformationSharingViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DatePreferenceSheetViewModel::class)
+    internal abstract fun bindDatePreferenceSheetViewModel(
+        datePreferenceViewModel: DatePreferenceSheetViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(LanguageViewModel::class)
+    internal abstract fun bindLanguageViewModel(languageViewModel: LanguageViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(AddressChangeViewModel::class)
+    internal abstract fun bindAddressChangeViewModel(addressChangeViewModel: AddressChangeViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DynamicMenuViewModel::class)
+    internal abstract fun bindDynamicMenuViewModel(dynamicMenuViewModel: DynamicMenuViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(GoPaperlessViewModel::class)
+    internal abstract fun bindGoPaperlessViewModel(goPaperlessViewModel: GoPaperlessViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(MailViewModel::class)
+    internal abstract fun bindMailViewModel(mailViewModel: MailViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SuccessMailViewModel::class)
+    internal abstract fun bindSuccessMailViewModel(successMailViewModel: SuccessMailViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(MessageCenterViewModel::class)
+    internal abstract fun bindMessageCenterViewModel(messageCenterViewModel: MessageCenterViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(GuardianNursesViewModel::class)
+    internal abstract fun bindGuardianNursesViewModel(
+        guardianNursesViewModel: GuardianNursesViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(TalonRewardsViewModel::class)
+    internal abstract fun bindTalonRewardsViewModel(talonRewardsViewModel: TalonRewardsViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(BenefitSPDViewModel::class)
+    internal abstract fun bindBenefitSPDViewModel(benefitSPDViewModel: BenefitSPDViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SaveMoneyViewModel::class)
+    internal abstract fun bindSaveMoneyViewModel(saveMoneyViewModel: SaveMoneyViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(EmailPyedViewModel::class)
+    internal abstract fun bindEmailPyedViewModel(emailPyedViewModel: EmailPyedViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(PhoneViewModel::class)
+    internal abstract fun bindPhoneViewModel(phoneViewModel: PhoneViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(CodeViewModel::class)
+    internal abstract fun bindCodeViewModel(codeViewModel: CodeViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SwitcherDisclaimerViewModel::class)
+    internal abstract fun bindSwitcherDisclaimerViewModel(
+        switcherDisclaimerViewModel: SwitcherDisclaimerViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(HelpAndFaqViewModel::class)
+    internal abstract fun bindHelpAndFaqViewModel(helpAndFaqViewModel: HelpAndFaqViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(CustomerCareViewModel::class)
+    internal abstract fun bindCustomerCareViewModel(customerCareViewModel: CustomerCareViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(FindCareWebViewModel::class)
+    internal abstract fun bindFindCareWebViewModel(findCareWebViewModel: FindCareWebViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(MaritalStatusUpdateViewModel::class)
+    internal abstract fun bindMaritalStatusUpdateViewModel(
+        maritalStatusUpdateViewModel: MaritalStatusUpdateViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(MapViewViewModel::class)
+    internal abstract fun bindMapViewViewModel(mapViewViewModel: MapViewViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ProfilePictureUploadViewModel::class)
+    internal abstract fun bindProfilePictureUploadViewModel(
+        profilePictureUploadViewModel: ProfilePictureUploadViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(BillPreviewDisclaimerViewModel::class)
+    internal abstract fun bindBillPreviewDisclaimerViewModel(
+        previewDisclaimerViewModel: BillPreviewDisclaimerViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DeliveryOptionViewModel::class)
+    internal abstract fun bindDeliveryOptionViewModel(
+        deliveryOptionViewModel: DeliveryOptionViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(FindCareFilterViewModel::class)
+    internal abstract fun bindFindCareFilterViewModel(
+        findCareFilterViewModel: FindCareFilterViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SelectActivityViewModel::class)
+    internal abstract fun bindSelectActivityViewModel(
+        selectActivityViewModel: SelectActivityViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SearchAddressViewModel::class)
+    internal abstract fun bindSearchAddressViewModel(searchAddressViewModel: SearchAddressViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(BenefitDisclaimerViewModel::class)
+    internal abstract fun bindBenefitDisclaimerViewModel(
+        benefitDisclaimerViewModel: BenefitDisclaimerViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(RemovePickerSheetViewModel::class)
+    internal abstract fun bindRemovePickerSheetViewModel(
+        removePickerSheetViewModel: RemovePickerSheetViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(PriceEnterViewModel::class)
+    internal abstract fun bindRemovePriceEnterViewModel(priceEnterViewModel: PriceEnterViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(AppUpdateViewModel::class)
+    internal abstract fun bindAppUpdateViewModel(appUpdateViewModel: AppUpdateViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SelectSpecialityViewModel::class)
+    internal abstract fun bindSelectSpecialityViewModel(
+        selectSpecialityViewModel: SelectSpecialityViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SelectSubSpecialityViewModel::class)
+    internal abstract fun bindSelectSubSpecialityViewModel(
+        selectSubSpecialityViewModel: SelectSubSpecialityViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(LightWeightDisclaimerViewModel::class)
+    internal abstract fun bindLightWeightDisclaimerViewModel(
+        lightWeightDisclaimerViewModel: LightWeightDisclaimerViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(QuickRegistrationDisclaimerViewModel::class)
+    internal abstract fun bindQuickRegistrationDisclaimerViewModel(
+        quickRegistrationDisclaimerViewModel: QuickRegistrationDisclaimerViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(PrimaryDevicePromptViewModel::class)
+    internal abstract fun bindPrimaryDevicePromptViewModel(
+        primaryDevicePromptViewModel: PrimaryDevicePromptViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ChatLanguageSettingViewModel::class)
+    internal abstract fun bindChatLanguageSettingViewModel(
+        chatLanguageSettingViewModel: ChatLanguageSettingViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ResetPasswordPromptViewModel::class)
+    internal abstract fun bindRestPasswordPromptViewModel(
+        resetPasswordPromptViewModel: ResetPasswordPromptViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SelectedProcedureViewModel::class)
+    internal abstract fun bindSelectedProcedureViewModel(
+        selectedProcedureViewModel: SelectedProcedureViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(FilterSheetViewModel::class)
+    internal abstract fun bindFilterSheetViewModel(
+        filterSheetViewModel: FilterSheetViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(YearCalenderViewModel::class)
+    internal abstract fun bindYearCalenderViewModel(
+        yearCalenderViewModel: YearCalenderViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(YearTilesViewModel::class)
+    internal abstract fun bindYearTilesViewModel(
+        yearTilesViewModel: YearTilesViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SubmitDocumentChatViewModel::class)
+    internal abstract fun bindSubmitDocumentChatViewModel(
+        submitDocumentChatViewModel: SubmitDocumentChatViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(BillPreviewViewModel::class)
+    internal abstract fun bindBillPreviewViewModel(
+        billPreviewViewModel: BillPreviewViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(
+        com.vivekahealth.vivekahealth.ui.register.uploadRequestedDocument.RequiredDocumentsViewModel::class
+    )
+    internal abstract fun bindRequiredDocumentsRegViewModel(
+        requiredDocumentsViewModel: com.vivekahealth.vivekahealth.ui.register.uploadRequestedDocument.RequiredDocumentsViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(WelcomeTutorialViewModel::class)
+    internal abstract fun bindWelcomeTutorialViewModel(
+        welcomeTutorialViewModel: WelcomeTutorialViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(LoginV2ViewModel::class)
+    internal abstract fun bindLoginV2ViewModel(viewModel: LoginV2ViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(GuestPasswordViewModel::class)
+    internal abstract fun bindGuestPasswordViewModel(viewModel: GuestPasswordViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(GuestSuccessViewModel::class)
+    internal abstract fun bindGuestSuccessViewModel(viewModel: GuestSuccessViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(GuestPhoneViewModel::class)
+    internal abstract fun bindsGuestPhoneViewModel(guestPhoneViewModel: GuestPhoneViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(GuestOtpViewModel::class)
+    internal abstract fun bindsGuestOtpViewModel(guestOtpViewModel: GuestOtpViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(GuestEmailViewModel::class)
+    internal abstract fun bindsGuestEmailViewModel(guestEmailViewModel: GuestEmailViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(GuestHomeViewModel::class)
+    internal abstract fun bindsGuestHomeViewModel(guestEmailViewModel: GuestHomeViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(VerifyIdentityViewModel::class)
+    internal abstract fun bindsVerifyIdentityViewModel(
+        verifyIdentityViewModel: VerifyIdentityViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DocumentScanViewModel::class)
+    internal abstract fun bindsDocumentFrontScanViewModel(viewModel: DocumentScanViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ManualIdViewModel::class)
+    internal abstract fun bindsManualIdViewModel(viewModel: ManualIdViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SelfieCaptrueViewModel::class)
+    internal abstract fun bindsSelfieCaptureViewModel(viewModel: SelfieCaptrueViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(GuestAccountDetailsViewModel::class)
+    internal abstract fun bindsGuestAccountDetailsViewModel(viewModel: GuestAccountDetailsViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ZipAddViewModel::class)
+    internal abstract fun bindsZipAddViewModel(viewModel: ZipAddViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DependentStatusViewModel::class)
+    internal abstract fun bindsDocumentStatus(viewModel: DependentStatusViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(OpenEnrollmentDocumentViewModel::class)
+    internal abstract fun bindsFundDependentStatusViewModel(
+        viewModel: OpenEnrollmentDocumentViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ChooseDependentViewModel::class)
+    internal abstract fun bindsChooseDependant(viewModel: ChooseDependentViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ReviewDependentDetailsViewModel::class)
+    internal abstract fun bindsReviewDependentDetails(viewModel: ReviewDependentDetailsViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SpouseNameViewModel::class)
+    internal abstract fun bindsSpouseName(viewModel: SpouseNameViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(MarriageDateViewModel::class)
+    internal abstract fun bindsMarriageDate(viewModel: MarriageDateViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(GenderViewModel::class)
+    internal abstract fun bindsGender(viewModel: GenderViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SSNViewModel::class)
+    internal abstract fun bindsSSN(viewModel: SSNViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DOBViewModel::class)
+    internal abstract fun bindDOB(viewModel: DOBViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(EmployedViewModel::class)
+    internal abstract fun bindEmployed(viewModel: EmployedViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(HealthInsuranceViewModel::class)
+    internal abstract fun bindHealthInsurance(viewModel: HealthInsuranceViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(InsuranceViewModel::class)
+    internal abstract fun bindInsurance(viewModel: InsuranceViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ChildDOBViewModel::class)
+    internal abstract fun bindsChildDOB(viewModel: ChildDOBViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ChildNameViewModel::class)
+    internal abstract fun bindsChildName(viewModel: ChildNameViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ChildGenderViewModel::class)
+    internal abstract fun bindsChildGender(viewModel: ChildGenderViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ChildSSNViewModel::class)
+    internal abstract fun bindsChildSSN(viewModel: ChildSSNViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ChildEmployedViewModel::class)
+    internal abstract fun bindsChildEmployed(viewModel: ChildEmployedViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(RequiredDocsViewModel::class)
+    internal abstract fun bindsChildReqDoc(viewModel: RequiredDocsViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(StartEnrollmentViewModel::class)
+    internal abstract fun bindsStartEnrollment(viewModel: StartEnrollmentViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(PrimaryPreviousInsuranceV2ViewModel::class)
+    internal abstract fun bindsPreviousInsurance(viewModel: PrimaryPreviousInsuranceV2ViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(LegalViewModel::class)
+    internal abstract fun bindsLegal(viewModel: LegalViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(DisclaimerSignatureViewModel::class)
+    internal abstract fun bindsDisclaimerSignature(viewModel: DisclaimerSignatureViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ContinuePreviousEnrollmentV2ViewModel::class)
+    internal abstract fun bindsContinuePreviousEnrollmentV2(
+        viewModel: ContinuePreviousEnrollmentV2ViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SurveysViewModel::class)
+    internal abstract fun bindsSurveysViewModel(
+        viewModel: SurveysViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(AlreadyRegisterViewModel::class)
+    internal abstract fun bindsAlreadyRegister(viewModel: AlreadyRegisterViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(HeadShotViewModel::class)
+    internal abstract fun bindsHeadShotViewModel(viewModel: HeadShotViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(BiometricPermissionViewModel::class)
+    internal abstract fun bindsBiometricPermissionViewModel(viewModel: BiometricPermissionViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ImmunizationViewModel::class)
+    internal abstract fun bindsImmunization(viewModel: ImmunizationViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ImmunizationFilterViewModel::class)
+    internal abstract fun bindsImmunizationFilterViewModel(viewModel: ImmunizationFilterViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ShareImmunizationViewModel::class)
+    internal abstract fun bindsShareImmunizationViewModel(viewModel: ShareImmunizationViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SharedViewModel::class)
+    internal abstract fun bindsSharedViewModel(viewModel: SharedViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(PensionViewModel::class)
+    internal abstract fun bindsPensionViewModel(viewModel: PensionViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(com.vivekahealth.vivekahealth.ui.guestVerify.SharedViewModel::class)
+    internal abstract fun bindsIdentifySharedViewModel(
+        viewModel: com.vivekahealth.vivekahealth.ui.guestVerify.SharedViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(com.vivekahealth.vivekahealth.ui.openEnrollment.OpenEnrollSharedViewModel::class)
+    internal abstract fun bindsOpenEnrollSharedViewModel(
+        viewModel: com.vivekahealth.vivekahealth.ui.openEnrollment.OpenEnrollSharedViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SelfGenderViewModel::class)
+    internal abstract fun bindsSelfGender(viewModel: SelfGenderViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ManualDLViewModel::class)
+    internal abstract fun bindsManualDLViewModel(
+        viewModel: ManualDLViewModel
+    ): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(MissingRequireDocumentViewModel::class)
+    internal abstract fun bindsMissingRequireDocumentViewModel(
+        viewModel: MissingRequireDocumentViewModel
+    ): ViewModel
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

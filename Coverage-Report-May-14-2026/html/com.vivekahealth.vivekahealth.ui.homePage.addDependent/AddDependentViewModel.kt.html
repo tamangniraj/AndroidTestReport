@@ -1,0 +1,979 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AddDependentViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.addDependent</a> &gt; <span class="el_source">AddDependentViewModel.kt</span></div><h1>AddDependentViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.addDependent
+
+import android.content.SharedPreferences
+import android.content.res.Resources
+import android.text.Editable
+import android.text.TextWatcher
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.local.home.DatePickerPurpose
+import com.vivekahealth.vivekahealth.data.local.home.DocumentAddDependent
+import com.vivekahealth.vivekahealth.data.remote.enroll.DocumentUploadSuccessEnroll
+import com.vivekahealth.vivekahealth.data.remote.enroll.EnrollMember
+import com.vivekahealth.vivekahealth.data.remote.enroll.Person
+import com.vivekahealth.vivekahealth.data.remote.home.AddDependent
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.data.remote.home.ResponseAddDependent
+import com.vivekahealth.vivekahealth.ui.enroll.NextClickListener
+import com.vivekahealth.vivekahealth.ui.enroll.repository.EnrollRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.*
+import com.vivekahealth.vivekahealth.utils.remote.APIResponse
+import com.vivekahealth.vivekahealth.utils.thread.ThreadUtils
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import okhttp3.MultipartBody
+import org.apache.commons.lang3.StringUtils
+import java.io.File
+import javax.inject.Inject
+
+<span class="fc" id="L44">class AddDependentViewModel @Inject constructor(</span>
+<span class="fc" id="L45">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L46">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L47">    private val enrollRepository: EnrollRepository,</span>
+<span class="fc" id="L48">    private val resources: Resources</span>
+<span class="fc" id="L49">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L51">    internal lateinit var nextClickListener: NextClickListener</span>
+
+<span class="fc" id="L53">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L55">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="nc" id="L56">    var memberInfoDb =</span>
+<span class="pc" id="L57">        homeRepository.getMemberSid(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()).asLiveData()</span>
+
+<span class="nc" id="L59">    var clientInfoDb =</span>
+<span class="fc" id="L60">        homeRepository.getClientDetail(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="pc" id="L61">            .asLiveData()</span>
+
+<span class="nc" id="L63">    lateinit var filePart: MultipartBody.Part</span>
+
+<span class="nc" id="L65">    var fromChat: Boolean = false</span>
+
+<span class="pc" id="L67">    var nearMatchList: List&lt;MemberInfo&gt; = listOf()</span>
+<span class="pc" id="L68">    var birthCertificateFileId: String = &quot;&quot;</span>
+<span class="pc" id="L69">    var marriageCertificateFileId: String = &quot;&quot;</span>
+<span class="pc" id="L70">    var isSsnRequired: Boolean = false</span>
+
+<span class="pc" id="L72">    var ssnCardFileId: String = &quot;&quot;</span>
+<span class="pc" id="L73">    var currentDocItem: DocumentAddDependent = DocumentAddDependent()</span>
+<span class="nc" id="L74">    var currentItem: Int = 0</span>
+<span class="pc" id="L75">    var currentDoc: String = &quot;&quot;</span>
+<span class="nc" id="L76">    var childPagePosition = 0</span>
+<span class="pc" id="L77">    var gson = Gson()</span>
+<span class="pc" id="L78">    var marriageDate: String = &quot;&quot;</span>
+<span class="nc" id="L79">    var showName = false</span>
+<span class="nc" id="L80">    var showSSN = false</span>
+<span class="nc" id="L81">    var showBirth = false</span>
+<span class="nc" id="L82">    var showMarriage = false</span>
+<span class="nc" id="L83">    var showGender = false</span>
+
+<span class="pc" id="L85">    var docList: MutableList&lt;DocumentAddDependent&gt; = mutableListOf()</span>
+
+<span class="pc" id="L87">    var dependent = Person()</span>
+<span class="pc" id="L88">    var ssnRaw: String = &quot;&quot;</span>
+<span class="fc" id="L89">    private val _openWheelDob = MutableLiveData&lt;Event&lt;DatePickerPurpose&gt;&gt;()</span>
+    val openWheelDob: LiveData&lt;Event&lt;DatePickerPurpose&gt;&gt;
+<span class="nc" id="L91">        get() = _openWheelDob</span>
+
+<span class="fc" id="L93">    private val _ssnChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val ssnChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="fc" id="L95">        get() = _ssnChanged</span>
+
+<span class="fc" id="L97">    private val _dataLoadComplete = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val dataLoadComplete: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L99">        get() = _dataLoadComplete</span>
+<span class="fc" id="L100">    private val _ssnAvailable = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val ssnAvailable: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L102">        get() = _ssnAvailable</span>
+<span class="fc" id="L103">    private val _childDobDateComplete = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val childDobDateComplete: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L105">        get() = _childDobDateComplete</span>
+<span class="fc" id="L106">    private val _childDobDate = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val childDobDate: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L108">        get() = _childDobDate</span>
+
+<span class="fc" id="L110">    private val _marriageDateFill = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val marriageDateFill: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L112">        get() = _marriageDateFill</span>
+<span class="fc" id="L113">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L115">        get() = _navigateToBack</span>
+<span class="fc" id="L116">    private val _navigateToNext = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToNext: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L118">        get() = _navigateToNext</span>
+<span class="fc" id="L119">    private val _childChanged = MutableLiveData&lt;Event&lt;Person&gt;&gt;()</span>
+    val childChanged: LiveData&lt;Event&lt;Person&gt;&gt;
+<span class="nc" id="L121">        get() = _childChanged</span>
+<span class="fc" id="L122">    private val _childRetrieved = MutableLiveData&lt;Event&lt;EnrollMember&gt;&gt;()</span>
+    val childRetrieved: LiveData&lt;Event&lt;EnrollMember&gt;&gt;
+<span class="nc" id="L124">        get() = _childRetrieved</span>
+
+<span class="nc" id="L126">    var childSize: Int = 0</span>
+
+    val nameChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="fc" id="L129">        get() = _nameChanged</span>
+<span class="fc" id="L130">    private val _nameChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+
+<span class="fc" id="L132">    var childNumber: String = &quot;0&quot;</span>
+<span class="nc" id="L133">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L135">            field = value</span>
+<span class="nc" id="L136">            callbacks.notifyCallbacks(this, BR.childNumber, null)</span>
+<span class="nc" id="L137">        }</span>
+<span class="fc" id="L138">    var selectedEmployment: String = &quot;&quot;</span>
+<span class="nc" id="L139">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L141">            field = value</span>
+<span class="fc" id="L142">            callbacks.notifyCallbacks(this, BR.selectedEmployment, null)</span>
+<span class="fc" id="L143">        }</span>
+<span class="fc" id="L144">    var errorMessageSsn: String = &quot;&quot;</span>
+<span class="nc" id="L145">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L147">            field = value</span>
+<span class="nc" id="L148">            callbacks.notifyCallbacks(this, BR.errorMessageSsn, null)</span>
+<span class="nc" id="L149">        }</span>
+    var noSsnCard: Boolean = false
+<span class="fc" id="L151">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L153">            field = value</span>
+<span class="nc" id="L154">            callbacks.notifyCallbacks(this, BR.noSsnCard, null)</span>
+<span class="nc" id="L155">        }</span>
+<span class="fc" id="L156">    var errorMessageAlert: String = &quot;&quot;</span>
+<span class="nc" id="L157">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L159">            field = value</span>
+<span class="nc" id="L160">            callbacks.notifyCallbacks(this, BR.errorMessageAlert, null)</span>
+<span class="nc" id="L161">        }</span>
+<span class="fc" id="L162">    private val _marriageDateComplete = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val marriageDateComplete: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L164">        get() = _marriageDateComplete</span>
+<span class="pc" id="L165">    var memberInfoSpouse: MemberInfo? = MemberInfo()</span>
+<span class="fc" id="L166">    var memberInfo: MemberInfo = MemberInfo()</span>
+<span class="nc" id="L167">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L169">            field = value</span>
+<span class="nc" id="L170">            callbacks.notifyCallbacks(this, BR.memberInfo, null)</span>
+<span class="nc" id="L171">        }</span>
+<span class="fc" id="L172">    var selected: String = &quot;&quot;</span>
+<span class="nc" id="L173">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L175">            field = value</span>
+<span class="nc" id="L176">            callbacks.notifyCallbacks(this, BR.selected, null)</span>
+<span class="nc" id="L177">        }</span>
+<span class="pc" id="L178">    var ssnOptional: Boolean = false</span>
+<span class="nc" id="L179">    var showRelation = false</span>
+<span class="fc" id="L180">    var selectedRel: String = &quot;&quot;</span>
+<span class="nc" id="L181">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L183">            field = value</span>
+<span class="nc" id="L184">            callbacks.notifyCallbacks(this, BR.selectedRel, null)</span>
+<span class="nc" id="L185">        }</span>
+<span class="fc" id="L186">    var enableName: Boolean = true</span>
+<span class="nc" id="L187">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L189">            field = value</span>
+<span class="nc" id="L190">            callbacks.notifyCallbacks(this, BR.enableName, null)</span>
+<span class="nc" id="L191">        }</span>
+<span class="fc" id="L192">    var enableSsn: Boolean = true</span>
+<span class="nc" id="L193">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L195">            field = value</span>
+<span class="nc" id="L196">            callbacks.notifyCallbacks(this, BR.enableSsn, null)</span>
+<span class="nc" id="L197">        }</span>
+
+<span class="fc" id="L199">    var enableRelation: Boolean = true</span>
+<span class="nc" id="L200">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L202">            field = value</span>
+<span class="nc" id="L203">            callbacks.notifyCallbacks(this, BR.enableSsn, null)</span>
+<span class="nc" id="L204">        }</span>
+<span class="fc" id="L205">    var enableDOb: Boolean = true</span>
+<span class="nc" id="L206">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L208">            field = value</span>
+<span class="nc" id="L209">            callbacks.notifyCallbacks(this, BR.enableDOb, null)</span>
+<span class="nc" id="L210">        }</span>
+
+<span class="fc" id="L212">    var enableMarriageDate: Boolean = true</span>
+<span class="nc" id="L213">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L215">            field = value</span>
+<span class="nc" id="L216">            callbacks.notifyCallbacks(this, BR.enableMarriageDate, null)</span>
+<span class="nc" id="L217">        }</span>
+<span class="fc" id="L218">    var enableGender: Boolean = true</span>
+<span class="nc" id="L219">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L221">            field = value</span>
+<span class="nc" id="L222">            callbacks.notifyCallbacks(this, BR.enableGender, null)</span>
+<span class="nc" id="L223">        }</span>
+<span class="fc" id="L224">    var enableEmployment: Boolean = true</span>
+<span class="nc" id="L225">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L227">            field = value</span>
+<span class="nc" id="L228">            callbacks.notifyCallbacks(this, BR.enableEmployment, null)</span>
+<span class="nc" id="L229">        }</span>
+
+<span class="fc" id="L231">    private val _navigateToUpload = MutableLiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt;()</span>
+    val navigateToUpload: LiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt;
+<span class="nc" id="L233">        get() = _navigateToUpload</span>
+<span class="fc" id="L234">    private val _employedClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val employedClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L236">        get() = _employedClicked</span>
+<span class="fc" id="L237">    private val _unEmployedClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val unEmployedClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L239">        get() = _unEmployedClicked</span>
+
+<span class="fc" id="L241">    private val _maleClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val maleClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L243">        get() = _maleClicked</span>
+<span class="fc" id="L244">    private val _femaleClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val femaleClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L246">        get() = _femaleClicked</span>
+
+<span class="fc" id="L248">    private val _grantClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val grantClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L250">        get() = _grantClicked</span>
+<span class="fc" id="L251">    private val _noGrantClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val noGrantClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L253">        get() = _noGrantClicked</span>
+<span class="fc" id="L254">    private val _spouseClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val spouseClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L256">        get() = _spouseClicked</span>
+<span class="fc" id="L257">    private val _childClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val childClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L259">        get() = _childClicked</span>
+
+<span class="fc" id="L261">    private val _hasInsuranceClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val hasInsuranceClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L263">        get() = _hasInsuranceClicked</span>
+<span class="fc" id="L264">    private val _hasNoInsuranceClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val hasNoInsuranceClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L266">        get() = _hasNoInsuranceClicked</span>
+    private lateinit var job: Job
+
+<span class="fc" id="L269">    private val _addDependent = MutableLiveData&lt;APIResponse&lt;ResponseAddDependent&gt;&gt;()</span>
+    val addDependent: LiveData&lt;APIResponse&lt;ResponseAddDependent&gt;&gt;
+<span class="nc" id="L271">        get() = _addDependent</span>
+
+<span class="nc" id="L273">    var nearMatchedSelfId: String? = null</span>
+<span class="pc" id="L274">    var errorMessageDob: String = &quot;&quot;</span>
+<span class="pc" id="L275">    var errorMessageMarriage: String = &quot;&quot;</span>
+<span class="pc" id="L276">    var spouseInsured: String = &quot;&quot;</span>
+<span class="fc" id="L277">    var selectedHasInsurance: String = &quot;&quot;</span>
+<span class="nc" id="L278">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L280">            field = value</span>
+<span class="nc" id="L281">            callbacks.notifyCallbacks(this, BR.selectedHasInsurance, null)</span>
+<span class="nc" id="L282">        }</span>
+
+    var showErrorDob: Boolean = false
+<span class="nc" id="L285">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L287">            field = value</span>
+<span class="nc" id="L288">            callbacks.notifyCallbacks(this, BR.showErrorDob, null)</span>
+<span class="nc" id="L289">        }</span>
+    var showErrorMarriage: Boolean = false
+<span class="nc" id="L291">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L293">            field = value</span>
+<span class="nc" id="L294">            callbacks.notifyCallbacks(this, BR.showErrorMarriage, null)</span>
+<span class="nc" id="L295">        }</span>
+
+<span class="pc" id="L297">    var provideInsuranceSpouse: String = &quot;&quot;</span>
+<span class="fc" id="L298">    var selectedGrantInsurance: String = &quot;&quot;</span>
+<span class="nc" id="L299">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L301">            field = value</span>
+<span class="nc" id="L302">            callbacks.notifyCallbacks(this, BR.selectedGrantInsurance, null)</span>
+<span class="nc" id="L303">        }</span>
+<span class="pc" id="L304">    var childEmployed: String = &quot;&quot;</span>
+<span class="pc" id="L305">    var genderChild: String = &quot;&quot;</span>
+<span class="pc" id="L306">    var dateOfBirthChild: String = &quot;&quot;</span>
+<span class="pc" id="L307">    var spouseEmployerName: String = &quot;&quot;</span>
+<span class="fc" id="L308">    var employerName: String = &quot;&quot;</span>
+<span class="nc" id="L309">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L311">            field = value</span>
+
+<span class="nc" id="L313">            callbacks.notifyCallbacks(this, BR.employerName, null)</span>
+<span class="nc" id="L314">        }</span>
+
+<span class="pc" id="L316">    var viewSequence = arrayListOf&lt;Pair&lt;Int, Boolean&gt;&gt;()</span>
+<span class="pc" id="L317">    var isDemographicUpdate: Boolean = false</span>
+<span class="pc" id="L318">    var currentUpdateState = Pair(0, true)</span>
+<span class="nc" id="L319">    var childIn: Boolean = false</span>
+<span class="pc" id="L320">    var currentPosition: Int = 1</span>
+<span class="fc" id="L321">    var ssn: String = &quot;&quot;</span>
+<span class="fc" id="L322">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L324">            field = value</span>
+<span class="nc" id="L325">            callbacks.notifyCallbacks(this, BR.ssn, null)</span>
+<span class="nc" id="L326">        }</span>
+
+<span class="fc" id="L328">    var totalStep: String = &quot;4&quot;</span>
+<span class="nc" id="L329">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L331">            field = value</span>
+<span class="nc" id="L332">            callbacks.notifyCallbacks(this, BR.totalStep, null)</span>
+<span class="nc" id="L333">        }</span>
+<span class="fc" id="L334">    var currentStep: String = &quot;1&quot;</span>
+<span class="nc" id="L335">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L337">            field = value</span>
+<span class="nc" id="L338">            callbacks.notifyCallbacks(this, BR.currentStep, null)</span>
+<span class="nc" id="L339">        }</span>
+
+<span class="fc" id="L341">    init {</span>
+//        documentList()
+<span class="fc" id="L343">    }</span>
+
+    fun documentList(selectedRel: String) {
+<span class="pc bpc" id="L346" title="1 of 2 branches missed.">        if (docList.any { it.uploaded }) {</span>
+<span class="nc" id="L347">            docList = docList.map {</span>
+<span class="nc" id="L348">                it.copy(optional = ssnOptional)</span>
+<span class="nc" id="L349">            }.toMutableList()</span>
+<span class="nc" id="L350">            return</span>
+        }
+<span class="fc" id="L352">        docList.clear()</span>
+
+<span class="pc bpc" id="L354" title="1 of 2 branches missed.">        if (selectedRel.equals(&quot;Spouse&quot;, true)) {</span>
+<span class="pc bpc" id="L355" title="1 of 2 branches missed.">            if (isSsnRequired) {</span>
+<span class="nc" id="L356">                docList.add(</span>
+<span class="nc" id="L357">                    DocumentAddDependent(false, DocumentType.Ssn, &quot;&quot;, &quot;&quot;)</span>
+                )
+            }
+<span class="fc" id="L360">            docList.add(</span>
+<span class="fc" id="L361">                DocumentAddDependent(</span>
+<span class="fc" id="L362">                    false,</span>
+<span class="fc" id="L363">                    DocumentType.MarriageCertificate,</span>
+<span class="fc" id="L364">                    &quot;&quot;,</span>
+<span class="fc" id="L365">                    &quot;&quot;</span>
+                )
+            )
+        } else {
+<span class="nc bnc" id="L369" title="All 2 branches missed.">            if (isSsnRequired) {</span>
+<span class="nc" id="L370">                docList.add(</span>
+<span class="nc" id="L371">                    DocumentAddDependent(false, DocumentType.Ssn, &quot;&quot;, &quot;&quot;, optional = ssnOptional)</span>
+                )
+            }
+<span class="pc" id="L374">            docList.add(</span>
+<span class="nc" id="L375">                DocumentAddDependent(</span>
+<span class="nc" id="L376">                    false,</span>
+<span class="nc" id="L377">                    DocumentType.BirtCertificate,</span>
+<span class="nc" id="L378">                    &quot;&quot;,</span>
+<span class="nc" id="L379">                    &quot;&quot;,</span>
+<span class="nc" id="L380">                    optional = ssnOptional</span>
+                )
+            )
+        }
+<span class="fc" id="L384">    }</span>
+
+    fun increaseQty() {
+<span class="nc" id="L387">    }</span>
+    fun data(value: String) {
+<span class="nc" id="L389">        isDemographicUpdate = true</span>
+
+<span class="nc" id="L391">        memberInfo = gson.fromJson(value, MemberInfo::class.java)</span>
+
+<span class="nc" id="L393">        enableEmployment = false</span>
+
+<span class="nc bnc" id="L395" title="All 2 branches missed.">        memberInfo.firstName?.let {</span>
+<span class="nc" id="L396">            firstNameChild = it</span>
+<span class="nc" id="L397">        }</span>
+<span class="nc bnc" id="L398" title="All 2 branches missed.">        memberInfo.lastName?.let {</span>
+<span class="nc" id="L399">            lastNameChild = it</span>
+<span class="nc bnc" id="L400" title="All 4 branches missed.">            if (it.isNotBlank()) {</span>
+<span class="nc bnc" id="L401" title="All 2 branches missed.">                if (!fromChat) {</span>
+<span class="nc" id="L402">                    enableName = false</span>
+<span class="nc" id="L403">                    showName = false</span>
+                } else {
+<span class="nc" id="L405">                    showName = true</span>
+                }
+            } else {
+<span class="nc" id="L408">                showName = true</span>
+            }
+<span class="nc" id="L410">        } ?: run {</span>
+<span class="nc" id="L411">            showName = true</span>
+<span class="nc" id="L412">        }</span>
+
+        // Trigger nameChanged event after setting names to enable next button with delay
+<span class="nc bnc" id="L415" title="All 8 branches missed.">        if (firstNameChild.isNotBlank() &amp;&amp; lastNameChild.isNotBlank()) {</span>
+<span class="nc" id="L416">            job = CoroutineScope(Dispatchers.Default).launch {</span>
+<span class="nc" id="L417">                delay(500)</span>
+<span class="nc" id="L418">                ThreadUtils.runOnUiThread {</span>
+<span class="nc" id="L419">                    _nameChanged.value = Event(firstNameChild)</span>
+<span class="nc" id="L420">                }</span>
+<span class="nc" id="L421">            }</span>
+        }
+//       if(memberInfo.memberRelationship.equals(&quot;Spouse&quot;,true)){
+//            spouseClicked()
+//        }else{
+//            childClicked()
+//        }
+
+<span class="nc bnc" id="L429" title="All 2 branches missed.">        memberInfo.gender?.let {</span>
+<span class="nc bnc" id="L430" title="All 2 branches missed.">            if (it.equals(&quot;M&quot;, true)) {</span>
+<span class="nc" id="L431">                genderChild = &quot;M&quot;</span>
+<span class="nc bnc" id="L432" title="All 2 branches missed.">                if (fromChat) {</span>
+<span class="nc" id="L433">                    maleClicked()</span>
+                }
+<span class="nc bnc" id="L435" title="All 2 branches missed.">            } else if (it.equals(&quot;F&quot;, true)) {</span>
+<span class="nc" id="L436">                genderChild = &quot;F&quot;</span>
+<span class="nc bnc" id="L437" title="All 2 branches missed.">                if (fromChat) {</span>
+<span class="nc" id="L438">                    femaleClicked()</span>
+                }
+            } else {
+<span class="nc" id="L441">                showGender = true</span>
+            }
+<span class="nc bnc" id="L443" title="All 4 branches missed.">            if (it.isBlank() || it.equals(&quot;U&quot;, true)) {</span>
+<span class="nc" id="L444">                showGender = true</span>
+            } else {
+<span class="nc bnc" id="L446" title="All 2 branches missed.">                if (!fromChat) {</span>
+<span class="nc" id="L447">                    enableGender = false</span>
+<span class="nc" id="L448">                    showGender = false</span>
+                } else {
+<span class="nc" id="L450">                    showGender = true</span>
+                }
+            }
+<span class="nc" id="L453">        } ?: run {</span>
+<span class="nc" id="L454">            showGender = true</span>
+<span class="nc" id="L455">        }</span>
+<span class="nc bnc" id="L456" title="All 2 branches missed.">        memberInfo.birthDate?.let {</span>
+<span class="nc" id="L457">            dateOfBirthChild = it</span>
+<span class="nc" id="L458">            var date = ActivityUtils.convertDateToFormat(</span>
+<span class="nc" id="L459">                DateUtils.stringServerDateToDate(</span>
+<span class="nc" id="L460">                    it</span>
+                ),
+<span class="nc" id="L462">                &quot;MMddyyyy&quot;</span>
+            )
+<span class="nc bnc" id="L464" title="All 4 branches missed.">            if (it.isNotBlank()) {</span>
+<span class="nc bnc" id="L465" title="All 2 branches missed.">                if (!fromChat) {</span>
+<span class="nc" id="L466">                    enableDOb = false</span>
+<span class="nc" id="L467">                    showBirth = false</span>
+                } else {
+<span class="nc" id="L469">                    showBirth = true</span>
+                }
+<span class="nc" id="L471">                _childDobDate.value = Event(date)</span>
+            } else {
+<span class="nc" id="L473">                showBirth = true</span>
+            }
+<span class="nc" id="L475">        } ?: run {</span>
+<span class="nc" id="L476">            showBirth = true</span>
+<span class="nc" id="L477">        }</span>
+
+//        if (memberInfo.memberRelationship.equals(&quot;Spouse&quot;, true)) {
+//            memberInfo.dateOfMarriage?.let {
+//                marriageDate = it
+//                var date = ActivityUtils.convertDateToFormat(
+//                    DateUtils.stringServerDateToDate(
+//                        it
+//                    ),
+//                    &quot;MMddyyyy&quot;
+//                )
+//                if (it.isNotBlank()) {
+//                    if (!fromChat) {
+//                        enableMarriageDate = false
+//                    } else {
+//                        showMarriage = true
+//                    }
+//                    marriageDate = it
+//                    _marriageDateFill.value = Event(date)
+//                } else {
+//                    showMarriage = true
+//                }
+//            } ?: run {
+//                showMarriage = true
+//            }
+//        }
+<span class="nc bnc" id="L503" title="All 2 branches missed.">        memberInfo.ssn?.let {</span>
+<span class="nc bnc" id="L504" title="All 4 branches missed.">            if (it.isNotBlank()) {</span>
+<span class="nc bnc" id="L505" title="All 2 branches missed.">                if (!fromChat) {</span>
+<span class="nc" id="L506">                    enableSsn = false</span>
+<span class="nc" id="L507">                    showSSN = false</span>
+                } else {
+<span class="nc" id="L509">                    showSSN = true</span>
+                }
+            } else {
+<span class="nc" id="L512">                showSSN = true</span>
+            }
+<span class="nc" id="L514">            _ssnAvailable.value = Event(it)</span>
+<span class="nc" id="L515">        } ?: run {</span>
+<span class="nc" id="L516">            showSSN = true</span>
+<span class="nc" id="L517">        }</span>
+
+<span class="nc" id="L519">        viewSequence = arrayListOf(</span>
+<span class="nc" id="L520">            Pair(0, showName),</span>
+<span class="nc" id="L521">            Pair(1, showMarriage),</span>
+<span class="nc" id="L522">            Pair(2, showGender),</span>
+<span class="nc" id="L523">            Pair(3, showBirth)</span>
+        )
+        // Change properties if SSN is required
+<span class="nc bnc" id="L526" title="All 2 branches missed.">        if (isSsnRequired) {</span>
+<span class="nc" id="L527">            viewSequence += 4 to showSSN</span>
+        }
+<span class="nc" id="L529">        nearMatchedSelfId = memberInfo.selfId</span>
+
+<span class="nc" id="L531">        _dataLoadComplete.value = Event(Unit)</span>
+<span class="nc" id="L532">    }</span>
+
+    fun setDocumentName(id: String, fileName: String) {
+<span class="fc" id="L535">        when {</span>
+<span class="fc bfc" id="L536" title="All 2 branches covered.">            StringUtils.containsIgnoreCase(</span>
+<span class="fc" id="L537">                fileName,</span>
+<span class="fc" id="L538">                DocumentType.Ssn.FileName.sanitize()</span>
+            ) -&gt; {
+<span class="fc" id="L540">                ssnCardFileId = id</span>
+            }
+<span class="fc bfc" id="L542" title="All 2 branches covered.">            StringUtils.containsIgnoreCase(</span>
+<span class="fc" id="L543">                fileName,</span>
+<span class="fc" id="L544">                DocumentType.BirtCertificate.FileName.sanitize()</span>
+            ) -&gt; {
+<span class="fc" id="L546">                birthCertificateFileId = id</span>
+            }
+<span class="pc bpc" id="L548" title="1 of 2 branches missed.">            StringUtils.containsIgnoreCase(</span>
+<span class="fc" id="L549">                fileName,</span>
+<span class="fc" id="L550">                DocumentType.MarriageCertificate.FileName.sanitize()</span>
+            ) -&gt; {
+<span class="fc" id="L552">                marriageCertificateFileId = id</span>
+            }
+        }
+<span class="pc bpc" id="L555" title="1 of 2 branches missed.">        for (item in docList) {</span>
+<span class="nc bnc" id="L556" title="All 2 branches missed.">            if (fileName.contains(</span>
+<span class="nc" id="L557">                    docList[docList.indexOf(item)].docName!!.FileName.sanitize(),</span>
+<span class="nc" id="L558">                    true</span>
+                )
+            ) {
+<span class="nc" id="L561">                docList[docList.indexOf(item)].uploaded = true</span>
+<span class="nc bnc" id="L562" title="All 2 branches missed.">            } else if (fileName.contains(</span>
+<span class="nc" id="L563">                    docList[docList.indexOf(item)].docName!!.FileName.sanitize(),</span>
+<span class="nc" id="L564">                    true</span>
+                )
+            ) {
+<span class="nc" id="L567">                docList[docList.indexOf(item)].uploaded = true</span>
+            }
+        }
+<span class="fc" id="L570">    }</span>
+
+    fun checkAllDocUploaded(): Boolean {
+<span class="fc" id="L573">        return docList.all {</span>
+<span class="pc bpc" id="L574" title="1 of 4 branches missed.">            if (!it.uploaded &amp;&amp; it.optional) {</span>
+<span class="nc" id="L575">                true</span>
+            } else {
+<span class="fc" id="L577">                it.uploaded</span>
+<span class="fc" id="L578">            }</span>
+        }
+    }
+
+    fun decreaseQty() {
+<span class="nc" id="L583">    }</span>
+    var loading: Boolean = false
+<span class="nc" id="L585">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L587">            field = value</span>
+<span class="nc" id="L588">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L589">        }</span>
+<span class="pc" id="L590">    var actionType: String = &quot;&quot;</span>
+
+<span class="fc" id="L592">    var lastNameChild: String = &quot;&quot;</span>
+<span class="nc" id="L593">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L595">            field = value</span>
+
+<span class="nc" id="L597">            callbacks.notifyCallbacks(this, BR.lastNameChild, null)</span>
+<span class="nc" id="L598">        }</span>
+
+<span class="fc" id="L600">    private val _employerNameChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val employerNameChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L602">        get() = _employerNameChanged</span>
+
+<span class="fc" id="L604">    var firstNameChild: String = &quot;&quot;</span>
+<span class="nc" id="L605">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L607">            field = value</span>
+<span class="nc" id="L608">            callbacks.notifyCallbacks(this, BR.firstNameChild, null)</span>
+<span class="nc" id="L609">        }</span>
+
+    fun addDependent() {
+<span class="nc" id="L612">        var relation = &quot;&quot;</span>
+<span class="nc bnc" id="L613" title="All 2 branches missed.">        if (isDemographicUpdate) {</span>
+<span class="nc bnc" id="L614" title="All 2 branches missed.">            relation = memberInfo.memberRelationship ?: &quot;&quot;</span>
+        } else {
+<span class="nc bnc" id="L616" title="All 2 branches missed.">            relation = dependent.relationship ?: &quot;&quot;</span>
+        }
+<span class="nc" id="L618">        compositeDisposable.add(</span>
+<span class="nc" id="L619">            homeRepository.postAddDependent(</span>
+<span class="nc" id="L620">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc" id="L621">                AddDependent(firstNameChild.trim(), lastNameChild.trim(), dateOfBirthChild, genderChild, ssnRaw, birthCertificateFileId, ssnCardFileId, nearMatchedSelfId, relation, dateOfMarriage = marriageDate, marriageCertificateFileId = marriageCertificateFileId, healthInsuranceAvailable = spouseInsured, provideInsurance = provideInsuranceSpouse, selfEmployed = childEmployed, employerName = employerName),</span>
+<span class="nc" id="L622">                actionType,</span>
+<span class="nc" id="L623">                isDemographicUpdate</span>
+            )
+<span class="nc" id="L625">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L626">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L627">                .doOnSubscribe {</span>
+<span class="nc" id="L628">                    _addDependent.value = APIResponse&lt;ResponseAddDependent&gt;().loading()</span>
+<span class="nc" id="L629">                }</span>
+<span class="nc" id="L630">                .subscribe({</span>
+<span class="nc" id="L631">                    _addDependent.value = APIResponse&lt;ResponseAddDependent&gt;().success(it)</span>
+<span class="nc" id="L632">                }, {</span>
+<span class="nc" id="L633">                    _addDependent.value = APIResponse&lt;ResponseAddDependent&gt;().error(</span>
+<span class="nc" id="L634">                        it.localizedMessage</span>
+                    )
+<span class="nc" id="L636">                })</span>
+        )
+<span class="nc" id="L638">    }</span>
+
+    fun onPrevClicked() {
+<span class="fc" id="L641">        _navigateToBack.value = Event(Unit)</span>
+<span class="fc" id="L642">    }</span>
+    fun onNextClicked() {
+<span class="fc" id="L644">        _navigateToNext.value = Event(Unit)</span>
+<span class="fc" id="L645">    }</span>
+
+<span class="fc" id="L647">    @get:Bindable</span>
+<span class="fc" id="L648">    val ssnTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L651">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L653">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="fc" id="L655">            _ssnChanged.value = Event(s.toString())</span>
+<span class="fc" id="L656">        }</span>
+    }
+//    fun populate(){
+//
+//        if (!StringUtils.equals(preferences.getString(Constants.enroll,&quot;&quot;),&quot;&quot;)) {
+//            user = gson.fromJson(preferences.getString(Constants.enroll, &quot;&quot;), EnrollMember::class.java)
+//        }
+//    }
+
+<span class="nc" id="L665">    @get:Bindable</span>
+<span class="fc" id="L666">    val marriageDateWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L669">        }</span>
+
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L672">        }</span>
+
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L675">            _marriageDateComplete.value = Event(s.toString())</span>
+<span class="nc" id="L676">        }</span>
+    }
+
+<span class="nc" id="L679">    @get:Bindable</span>
+<span class="fc" id="L680">    val dobDateWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L683">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L685">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L687">            _childDobDateComplete.value = Event(s.toString())</span>
+<span class="nc" id="L688">        }</span>
+    }
+    fun employed() {
+<span class="fc" id="L691">        selectedEmployment = resources.getString(R.string.yes)</span>
+
+<span class="fc" id="L693">        _employedClicked.value = Event(Unit)</span>
+<span class="fc" id="L694">    }</span>
+    fun unEmployed() {
+<span class="fc" id="L696">        selectedEmployment = resources.getString(R.string.no)</span>
+<span class="fc" id="L697">        _unEmployedClicked.value = Event(Unit)</span>
+<span class="fc" id="L698">    }</span>
+    fun maleClicked() {
+<span class="fc" id="L700">        _maleClicked.value = Event(Unit)</span>
+<span class="fc" id="L701">    }</span>
+    fun femaleClicked() {
+<span class="fc" id="L703">        _femaleClicked.value = Event(Unit)</span>
+<span class="fc" id="L704">    }</span>
+
+    fun spouseClicked() {
+<span class="fc" id="L707">        docList.clear()</span>
+<span class="fc" id="L708">        documentList(&quot;Spouse&quot;)</span>
+<span class="fc" id="L709">        _spouseClicked.value = Event(Unit)</span>
+<span class="fc" id="L710">    }</span>
+
+    fun grantClicked() {
+<span class="fc" id="L713">        _grantClicked.value = Event(Unit)</span>
+<span class="fc" id="L714">    }</span>
+    fun hasInsuranceClicked() {
+<span class="fc" id="L716">        _hasInsuranceClicked.value = Event(Unit)</span>
+<span class="fc" id="L717">    }</span>
+
+    fun hasNoInsuranceClicked() {
+<span class="fc" id="L720">        _hasNoInsuranceClicked.value = Event(Unit)</span>
+<span class="fc" id="L721">    }</span>
+    fun noGrantClicked() {
+<span class="fc" id="L723">        _noGrantClicked.value = Event(Unit)</span>
+<span class="fc" id="L724">    }</span>
+    fun childClicked() {
+<span class="fc" id="L726">        docList.clear()</span>
+<span class="fc" id="L727">        _childClicked.value = Event(Unit)</span>
+<span class="fc" id="L728">    }</span>
+
+    fun addFirstStep() {
+//        child.firstName = firstNameChild
+//        child.lastName = lastNameChild
+
+<span class="nc" id="L734">        firstNameChild.trim()</span>
+<span class="nc" id="L735">        lastNameChild.trim()</span>
+
+<span class="nc" id="L737">        dependent.firstName = firstNameChild.trim()</span>
+<span class="nc" id="L738">        dependent.lastName = lastNameChild.trim()</span>
+
+<span class="nc" id="L740">        dependent.relationship = selectedRel</span>
+
+//        if (user.children!!.size == 0 ){
+//            user.children?.add(child)
+//
+//        }else if(currentPosition &lt; user.children!!.size  ){
+//            user.children.
+//
+//        }
+
+<span class="nc" id="L750">        val regString = gson.toJson(dependent)</span>
+<span class="nc" id="L751">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L752">        regEdit.putString(Constants.dependent, regString)</span>
+<span class="nc" id="L753">        regEdit.apply()</span>
+<span class="nc" id="L754">        _childChanged.value = Event(dependent)</span>
+<span class="nc" id="L755">    }</span>
+    fun addSecondStep() {
+<span class="nc" id="L757">        dependent.gender = genderChild</span>
+
+<span class="nc" id="L759">        val regString = gson.toJson(dependent)</span>
+<span class="nc" id="L760">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L761">        regEdit.putString(Constants.dependent, regString)</span>
+<span class="nc" id="L762">        regEdit.apply()</span>
+
+<span class="nc bnc" id="L764" title="All 4 branches missed.">        if (genderChild.isNotBlank()) {</span>
+<span class="nc" id="L765">            _childChanged.value = Event(dependent)</span>
+        }
+<span class="nc" id="L767">    }</span>
+    fun addThirdStep() {
+<span class="nc" id="L769">        dependent.dateOfBirth = dateOfBirthChild</span>
+
+<span class="nc" id="L771">        val regString = gson.toJson(dependent)</span>
+<span class="nc" id="L772">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L773">        regEdit.putString(Constants.dependent, regString)</span>
+<span class="nc" id="L774">        regEdit.apply()</span>
+<span class="nc bnc" id="L775" title="All 4 branches missed.">        if (dateOfBirthChild.isNotBlank()) {</span>
+<span class="nc" id="L776">            _childChanged.value = Event(dependent)</span>
+        }
+<span class="nc" id="L778">    }</span>
+
+    fun addForthStep() {
+<span class="nc" id="L781">        dependent.ssn = ssn.replace(&quot;-&quot;, &quot;&quot;)</span>
+<span class="nc" id="L782">        ssnRaw = ssn.replace(&quot;-&quot;, &quot;&quot;)</span>
+<span class="nc" id="L783">        val regString = gson.toJson(dependent)</span>
+<span class="nc" id="L784">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L785">        regEdit.putString(Constants.dependent, regString)</span>
+<span class="nc" id="L786">        regEdit.apply()</span>
+<span class="nc bnc" id="L787" title="All 4 branches missed.">        if (ssnRaw.isNotBlank()) {</span>
+<span class="nc" id="L788">            _childChanged.value = Event(dependent)</span>
+        }
+<span class="nc" id="L790">    }</span>
+
+    fun addFifthStep() {
+<span class="nc" id="L793">        dependent.selfEmployed = childEmployed</span>
+
+<span class="nc" id="L795">        val regString = gson.toJson(dependent)</span>
+<span class="nc" id="L796">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L797">        regEdit.putString(Constants.dependent, regString)</span>
+<span class="nc" id="L798">        regEdit.apply()</span>
+
+<span class="nc bnc" id="L800" title="All 4 branches missed.">        if (childEmployed.isNotBlank()) {</span>
+<span class="nc" id="L801">            _childChanged.value = Event(dependent)</span>
+        }
+<span class="nc" id="L803">    }</span>
+
+    fun stepMarriageDate() {
+<span class="nc" id="L806">        dependent.dateOfMarriage = marriageDate</span>
+<span class="nc" id="L807">    }</span>
+
+    fun stepProvideInsurance() {
+<span class="nc" id="L810">        dependent.provideInsurance = provideInsuranceSpouse</span>
+<span class="nc" id="L811">    }</span>
+
+    fun stepHasInsurance() {
+<span class="nc" id="L814">        dependent.healthInsuranceAvailable = spouseInsured</span>
+<span class="nc" id="L815">    }</span>
+
+    fun addDocStep() {
+<span class="nc" id="L818">        dependent.ssnCardFileId = ssnCardFileId</span>
+<span class="nc" id="L819">        dependent.birthCertificateFileId = birthCertificateFileId</span>
+<span class="nc" id="L820">        val regString = gson.toJson(dependent)</span>
+<span class="nc" id="L821">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L822">        regEdit.putString(Constants.dependent, regString)</span>
+<span class="nc" id="L823">        regEdit.apply()</span>
+<span class="nc bnc" id="L824" title="All 8 branches missed.">        if (ssnCardFileId.isNotEmpty() &amp;&amp; birthCertificateFileId.isNotEmpty()) {</span>
+<span class="nc" id="L825">            _childChanged.value = Event(dependent)</span>
+        }
+<span class="nc" id="L827">    }</span>
+
+<span class="fc" id="L829">    @get:Bindable</span>
+<span class="fc" id="L830">    val fNameWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L833">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L835">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="pc bpc" id="L837" title="3 of 4 branches missed.">            if (isDemographicUpdate &amp;&amp; !showName) {</span>
+<span class="nc" id="L838">                return</span>
+            }
+<span class="fc" id="L840">            _nameChanged.value = Event(s.toString())</span>
+<span class="fc" id="L841">        }</span>
+    }
+
+<span class="nc" id="L844">    @get:Bindable</span>
+<span class="fc" id="L845">    val employerNameTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L848">        }</span>
+
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L851">        }</span>
+
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L854">            _employerNameChanged.value = Event(s.toString())</span>
+<span class="nc" id="L855">        }</span>
+    }
+
+<span class="fc" id="L858">    @get:Bindable</span>
+<span class="fc" id="L859">    val lNameWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L862">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L864">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="pc bpc" id="L866" title="3 of 4 branches missed.">            if (isDemographicUpdate &amp;&amp; !showName) {</span>
+<span class="nc" id="L867">                return</span>
+            }
+<span class="fc" id="L869">            _nameChanged.value = Event(s.toString())</span>
+<span class="fc" id="L870">        }</span>
+    }
+
+    fun uploadPicture(pic: File, fileName: String) {
+<span class="nc" id="L874">        val file: File = pic</span>
+
+<span class="nc" id="L876">        ThreadUtils.runOnUiThread(</span>
+            Runnable {
+<span class="nc" id="L878">                compositeDisposable.add(</span>
+<span class="nc" id="L879">                    enrollRepository.uploadDoc(</span>
+<span class="nc" id="L880">                        filePart,</span>
+<span class="nc" id="L881">                        HelperUtils.fileName(fileName, firstNameChild, lastNameChild)</span>
+                    )
+<span class="nc" id="L883">                        .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L884">                        .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L885">                        .doOnSubscribe {</span>
+<span class="nc" id="L886">                            _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().loading()</span>
+<span class="nc" id="L887">                        }</span>
+<span class="nc" id="L888">                        .subscribe({</span>
+<span class="nc" id="L889">                            _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().success(</span>
+<span class="nc" id="L890">                                it</span>
+                            )
+<span class="nc" id="L892">                        }, {</span>
+<span class="nc" id="L893">                            _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().error(</span>
+<span class="nc" id="L894">                                it.localizedMessage!!</span>
+                            )
+<span class="nc" id="L896">                        })</span>
+                )
+<span class="nc" id="L898">            }</span>
+        )
+<span class="nc" id="L900">    }</span>
+
+    fun updateName() {
+<span class="nc bnc" id="L903" title="All 2 branches missed.">        for (item in docList) {</span>
+<span class="nc" id="L904">            docList[docList.indexOf(item)].FirstName = firstNameChild</span>
+<span class="nc" id="L905">            docList[docList.indexOf(item)].LastName = lastNameChild</span>
+        }
+<span class="nc" id="L907">    }</span>
+
+    fun calDobClicked() {
+<span class="nc" id="L910">        _openWheelDob.value = Event(DatePickerPurpose.DOB)</span>
+<span class="nc" id="L911">    }</span>
+
+    fun calDomClicked() {
+<span class="nc" id="L914">        _openWheelDob.value = Event(DatePickerPurpose.DOM)</span>
+<span class="nc" id="L915">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L918">        callbacks.add(callback)</span>
+<span class="nc" id="L919">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L922">        callbacks.remove(callback)</span>
+<span class="nc" id="L923">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L926">        super.onCleared()</span>
+<span class="nc" id="L927">        compositeDisposable.dispose()</span>
+<span class="nc" id="L928">    }</span>
+
+    fun nextState(): Int {
+<span class="nc" id="L931">        val firstViewPair = viewSequence.first {</span>
+<span class="nc" id="L932">            it.second</span>
+        }
+<span class="nc" id="L934">        val lastPair = viewSequence.last() {</span>
+<span class="nc" id="L935">            it.second</span>
+        }
+<span class="nc" id="L937">        val listOfView = viewSequence.filter { it.second }</span>
+<span class="nc bnc" id="L938" title="All 2 branches missed.">        if (listOfView.count() == 1) {</span>
+<span class="nc" id="L939">            return -1</span>
+        } else {
+<span class="nc" id="L941">            listOfView.forEachIndexed { index, item -&gt;</span>
+<span class="nc bnc" id="L942" title="All 2 branches missed.">                if (item.first == currentUpdateState.first) {</span>
+<span class="nc bnc" id="L943" title="All 2 branches missed.">                    if (lastPair.first == currentUpdateState.first) {</span>
+<span class="nc" id="L944">                        return -1</span>
+                    } else {
+<span class="nc" id="L946">                        currentUpdateState = listOfView[index + 1]</span>
+<span class="nc" id="L947">                        return listOfView[index + 1].first</span>
+                    }
+                }
+<span class="nc" id="L950">            }</span>
+        }
+<span class="nc" id="L952">        return -2</span>
+    }
+    fun prevState(): Int {
+<span class="nc" id="L955">        val firstViewPair = viewSequence.first {</span>
+<span class="nc" id="L956">            it.second</span>
+        }
+<span class="nc" id="L958">        val lastPair = viewSequence.last() {</span>
+<span class="nc" id="L959">            it.second</span>
+        }
+<span class="nc" id="L961">        val listOfView = viewSequence.filter { it.second }</span>
+<span class="nc bnc" id="L962" title="All 2 branches missed.">        if (listOfView.count() == 1) {</span>
+<span class="nc" id="L963">            return -1</span>
+        } else {
+<span class="nc" id="L965">            listOfView.forEachIndexed { index, item -&gt;</span>
+<span class="nc bnc" id="L966" title="All 2 branches missed.">                if (item.first == currentUpdateState.first) {</span>
+<span class="nc bnc" id="L967" title="All 2 branches missed.">                    if (firstViewPair.first == currentUpdateState.first) {</span>
+<span class="nc" id="L968">                        return -1</span>
+                    } else {
+<span class="nc" id="L970">                        currentUpdateState = listOfView[index - 1]</span>
+<span class="nc" id="L971">                        return listOfView[index - 1].first</span>
+                    }
+                }
+<span class="nc" id="L974">            }</span>
+        }
+<span class="nc" id="L976">        return -2</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VivekaHealthApplication.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth</a> &gt; <span class="el_source">VivekaHealthApplication.kt</span></div><h1>VivekaHealthApplication.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth
+
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.app.Application
+import android.content.Intent
+import android.content.SharedPreferences
+import android.database.CursorWindow
+import android.os.CountDownTimer
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.OnLifecycleEvent
+import androidx.lifecycle.ProcessLifecycleOwner
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.jakewharton.threetenabp.AndroidThreeTen
+import com.newrelic.agent.android.NewRelic
+import com.vivekahealth.vivekahealth.di.AppInjector
+import com.vivekahealth.vivekahealth.ui.login.LoginActivity
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import dagger.android.AndroidInjector
+import dagger.android.DispatchingAndroidInjector
+import dagger.android.HasAndroidInjector
+import timber.log.Timber
+import javax.inject.Inject
+
+<span class="fc" id="L29">class VivekaHealthApplication : Application(), HasAndroidInjector, LifecycleObserver {</span>
+
+    private var countDown: CountDownTimer? = null
+<span class="fc" id="L32">    var currentActivity: Activity? = null</span>
+
+<span class="pc" id="L34">    @Inject</span>
+<span class="nc" id="L35">    lateinit var dispatchingActivityInjector: DispatchingAndroidInjector&lt;Any&gt;</span>
+
+<span class="pc" id="L37">    @Inject</span>
+<span class="nc" id="L38">    lateinit var sharedPreferences: SharedPreferences</span>
+
+<span class="pc" id="L40">    val activityList = mutableListOf&lt;Activity&gt;()</span>
+
+    fun addActivity(activity: Activity) {
+<span class="nc" id="L43">        activityList.add(activity)</span>
+<span class="nc" id="L44">    }</span>
+
+    fun removeActivity(activity: Activity) {
+<span class="nc" id="L47">        activityList.remove(activity)</span>
+<span class="nc" id="L48">    }</span>
+
+    fun closeAllActivities() {
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        for (activity in activityList) {</span>
+<span class="nc" id="L52">            activity.finishAffinity()</span>
+        }
+<span class="nc" id="L54">        activityList.clear()</span>
+<span class="nc" id="L55">    }</span>
+
+<span class="pc" id="L57">    @Inject</span>
+<span class="nc" id="L58">    lateinit var firebaseAnalytics: FirebaseAnalytics</span>
+    override fun onCreate() {
+<span class="fc" id="L60">        super.onCreate()</span>
+
+<span class="fc" id="L62">        try {</span>
+<span class="fc" id="L63">            @SuppressLint(&quot;PrivateApi&quot;)</span>
+<span class="fc" id="L64">            val field = CursorWindow::class.java.getDeclaredField(&quot;sCursorWindowSize&quot;)</span>
+<span class="fc" id="L65">            field.isAccessible = true</span>
+<span class="fc" id="L66">            field.set(null, 100 * 1024 * 1024) // the 100MB is the new size</span>
+<span class="nc" id="L67">        } catch (e: Exception) {</span>
+<span class="nc" id="L68">            e.printStackTrace()</span>
+        }
+
+<span class="fc" id="L71">        AppInjector.initialize(this)</span>
+<span class="fc" id="L72">        ProcessLifecycleOwner.get().lifecycle.addObserver(this)</span>
+<span class="fc" id="L73">        AndroidThreeTen.init(this)</span>
+<span class="fc" id="L74">        firebaseAnalytics.setUserProperty(&quot;app_version&quot;, BuildConfig.VERSION_NAME)</span>
+
+<span class="pc bpc" id="L76" title="5 of 6 branches missed.">        if (!BuildConfig.DEBUG &amp;&amp; BuildConfig.NEW_RELIC.isNotEmpty()) {</span>
+<span class="nc" id="L77">            NewRelic.withApplicationToken(BuildConfig.NEW_RELIC).start(</span>
+<span class="nc" id="L78">                this.applicationContext</span>
+            )
+        }
+
+<span class="fc" id="L82">        Timber.plant(Timber.DebugTree())</span>
+<span class="fc" id="L83">    }</span>
+
+//    public fun  reInit(){
+//        AppInjector.initialize(this)
+//
+//    }
+<span class="fc" id="L89">    override fun androidInjector(): AndroidInjector&lt;Any&gt; = dispatchingActivityInjector</span>
+
+    fun startCountDownTimer(activity: AppCompatActivity) {
+<span class="fc" id="L92">        sharedPreferences.edit().putLong(</span>
+<span class="fc" id="L93">            Constants.INACTIVITY_TIME_STAMP,</span>
+<span class="fc" id="L94">            DateUtils.getCurrentDateTime().time</span>
+<span class="fc" id="L95">        ).apply()</span>
+<span class="fc" id="L96">        countDown = object : CountDownTimer((Constants.INACTIVITY_MINUTES * 60000).toLong(), 1000) {</span>
+            override fun onTick(millisUntilFinished: Long) {
+<span class="fc" id="L98">            }</span>
+
+            override fun onFinish() {
+<span class="nc" id="L101">                Timber.d(&quot;FINISH TIMER&quot;)</span>
+<span class="nc" id="L102">                val isActivityInForeground =</span>
+<span class="nc" id="L103">                    activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)</span>
+
+<span class="nc bnc" id="L105" title="All 2 branches missed.">                if (!isActivityInForeground) {</span>
+<span class="nc" id="L106">                    return</span>
+                }
+
+<span class="nc" id="L109">                HelperUtils.dismissAllDialogs(activity.supportFragmentManager)</span>
+
+<span class="nc" id="L111">                val intent = Intent(activity, LoginActivity::class.java)</span>
+<span class="nc" id="L112">                activity.startActivity(intent)</span>
+<span class="nc" id="L113">                activity.finishAffinity()</span>
+<span class="nc" id="L114">            }</span>
+<span class="fc" id="L115">        }.start()</span>
+<span class="fc" id="L116">    }</span>
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+    fun onAppBackgrounded() {
+        // App in background
+<span class="fc" id="L121">        Constants.appAppInForground = false</span>
+<span class="fc" id="L122">    }</span>
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_START)
+    fun onAppForegrounded() {
+        // App in foreground
+<span class="fc" id="L127">        Constants.appAppInForground = true</span>
+<span class="fc" id="L128">    }</span>
+    fun stopCountDownTimer() {
+<span class="fc" id="L130">        sharedPreferences.edit().remove(Constants.INACTIVITY_TIME_STAMP).apply()</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">        countDown?.cancel()</span>
+<span class="fc" id="L132">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

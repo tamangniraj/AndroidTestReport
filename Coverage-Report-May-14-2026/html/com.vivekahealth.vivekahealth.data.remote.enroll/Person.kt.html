@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Person.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.remote.enroll</a> &gt; <span class="el_source">Person.kt</span></div><h1>Person.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.remote.enroll
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.UploadedDocument
+
+@Entity
+<span class="pc bpc" id="L8" title="9 of 18 branches missed.">data class Person(</span>
+<span class="pc" id="L9">    var firstName: String? = &quot;&quot;,</span>
+<span class="pc" id="L10">    var middleName: String? = &quot;&quot;,</span>
+<span class="pc" id="L11">    var lastName: String? = &quot;&quot;,</span>
+<span class="pc" id="L12">    var dateOfBirth: String? = &quot;&quot;,</span>
+<span class="pc" id="L13">    var dateOfMarriage: String? = &quot;&quot;,</span>
+<span class="pc" id="L14">    @PrimaryKey var ssn: String? = &quot;&quot;,</span>
+<span class="pc" id="L15">    var gender: String? = &quot;&quot;,</span>
+<span class="pc" id="L16">    var phoneNumber: String? = &quot;&quot;,</span>
+<span class="pc" id="L17">    var street1: String? = &quot;&quot;,</span>
+<span class="pc" id="L18">    var street2: String? = &quot;&quot;,</span>
+<span class="pc" id="L19">    var city: String? = &quot;&quot;,</span>
+<span class="pc" id="L20">    var state: String? = &quot;&quot;,</span>
+<span class="pc" id="L21">    var zip: String? = &quot;&quot;,</span>
+<span class="pc" id="L22">    var zipExtension: String? = &quot;&quot;,</span>
+<span class="pc" id="L23">    var country: String? = &quot;&quot;,</span>
+<span class="pc" id="L24">    var selfEmployed: String? = &quot;&quot;,</span>
+<span class="pc" id="L25">    var employerName: String? = &quot;&quot;,</span>
+<span class="pc" id="L26">    var healthInsuranceAvailable: String? = &quot;&quot;,</span>
+<span class="pc" id="L27">    var marriageCertificateFileName: String? = &quot;&quot;,</span>
+<span class="pc" id="L28">    var birthCertificateFileName: String? = &quot;&quot;,</span>
+<span class="pc" id="L29">    var signatureFileName: String? = &quot;&quot;,</span>
+<span class="pc" id="L30">    var continueCoverageFileName: String? = &quot;&quot;,</span>
+<span class="pc" id="L31">    var marriageCertificateFileId: String? = &quot;&quot;,</span>
+<span class="pc" id="L32">    var birthCertificateFileId: String? = &quot;&quot;,</span>
+<span class="pc" id="L33">    var signatureFileId: String? = &quot;&quot;,</span>
+<span class="pc" id="L34">    var continueCoverageFileId: String? = &quot;&quot;,</span>
+<span class="pc" id="L35">    var relationship: String? = &quot;&quot;,</span>
+<span class="pc" id="L36">    var benefitPercentage: String? = &quot;&quot;,</span>
+<span class="pc" id="L37">    var ssnCardFileId: String? = &quot;&quot;,</span>
+<span class="pc" id="L38">    var provideInsurance: String? = &quot;&quot;,</span>
+<span class="pc" id="L39">    var licenseFrontFileId: String? = &quot;&quot;,</span>
+<span class="pc" id="L40">    var licenseBackFileId: String? = &quot;&quot;,</span>
+<span class="pc" id="L41">    var spouseInsuranceFrontViewFileName: String? = &quot;&quot;,</span>
+<span class="pc" id="L42">    var spouseInsuranceFrontViewFileId: String? = &quot;&quot;,</span>
+<span class="pc" id="L43">    var spouseInsuranceBackViewFileName: String? = &quot;&quot;,</span>
+<span class="pc" id="L44">    var spouseInsuranceBackViewFileId: String? = &quot;&quot;,</span>
+<span class="pc" id="L45">    var birthDate: String? = &quot;&quot;,</span>
+<span class="pc" id="L46">    var ssnOptional: Boolean = false,</span>
+<span class="pc" id="L47">    var memberId: String? = &quot;&quot;,</span>
+<span class="pc" id="L48">    var uploadedDocuments: List&lt;UploadedDocument&gt;? = emptyList(),</span>
+<span class="pc" id="L49">    var emailAddress: String? = null</span>
+<span class="fc" id="L50">)</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

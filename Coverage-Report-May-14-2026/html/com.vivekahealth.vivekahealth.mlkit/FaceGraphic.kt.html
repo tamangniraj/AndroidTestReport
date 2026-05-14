@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FaceGraphic.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.mlkit</a> &gt; <span class="el_source">FaceGraphic.kt</span></div><h1>FaceGraphic.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright 2020 Google LLC. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.vivekahealth.vivekahealth.mlkit
+
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import com.google.mlkit.vision.face.Face
+import com.google.mlkit.vision.face.FaceLandmark
+import com.google.mlkit.vision.face.FaceLandmark.LandmarkType
+import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.max
+
+/**
+ * Graphic instance for rendering face position, contour, and landmarks within the associated
+ * graphic overlay view.
+ */
+<span class="nc" id="L33">class FaceGraphic constructor(overlay: GraphicOverlay?, private val face: Face) : GraphicOverlay.Graphic(</span>
+<span class="nc" id="L34">    overlay</span>
+) {
+    private val facePositionPaint: Paint
+<span class="nc" id="L37">    private val numColors = COLORS.size</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">    private val idPaints = Array(numColors) { Paint() }</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">    private val boxPaints = Array(numColors) { Paint() }</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">    private val labelPaints = Array(numColors) { Paint() }</span>
+
+<span class="nc" id="L42">    init {</span>
+<span class="nc" id="L43">        val selectedColor = Color.WHITE</span>
+<span class="nc" id="L44">        facePositionPaint = Paint()</span>
+<span class="nc" id="L45">        facePositionPaint.color = selectedColor</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        for (i in 0 until numColors) {</span>
+<span class="nc" id="L47">            idPaints[i] = Paint()</span>
+<span class="nc" id="L48">            idPaints[i].color = COLORS[i][0]</span>
+<span class="nc" id="L49">            idPaints[i].textSize = ID_TEXT_SIZE</span>
+<span class="nc" id="L50">            boxPaints[i] = Paint()</span>
+<span class="nc" id="L51">            boxPaints[i].color = COLORS[i][1]</span>
+<span class="nc" id="L52">            boxPaints[i].style = Paint.Style.STROKE</span>
+<span class="nc" id="L53">            boxPaints[i].strokeWidth = BOX_STROKE_WIDTH</span>
+<span class="nc" id="L54">            labelPaints[i] = Paint()</span>
+<span class="nc" id="L55">            labelPaints[i].color = COLORS[i][1]</span>
+<span class="nc" id="L56">            labelPaints[i].style = Paint.Style.FILL</span>
+        }
+<span class="nc" id="L58">    }</span>
+
+    /** Draws the face annotations for position on the supplied canvas. */
+    override fun draw(canvas: Canvas) {
+        // Draws a circle at the position of the detected face, with the face's track id below.
+
+        // Draws a circle at the position of the detected face, with the face's track id below.
+<span class="nc" id="L65">        val x = translateX(face.boundingBox.centerX().toFloat())</span>
+<span class="nc" id="L66">        val y = translateY(face.boundingBox.centerY().toFloat())</span>
+<span class="nc" id="L67">        canvas.drawCircle(x, y, FACE_POSITION_RADIUS, facePositionPaint)</span>
+
+        // Calculate positions.
+<span class="nc" id="L70">        val left = x - scale(face.boundingBox.width() / 2.0f)</span>
+<span class="nc" id="L71">        val top = y - scale(face.boundingBox.height() / 2.0f)</span>
+<span class="nc" id="L72">        val right = x + scale(face.boundingBox.width() / 2.0f)</span>
+<span class="nc" id="L73">        val bottom = y + scale(face.boundingBox.height() / 2.0f)</span>
+<span class="nc" id="L74">        val lineHeight = ID_TEXT_SIZE + BOX_STROKE_WIDTH</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        var yLabelOffset: Float = if (face.trackingId == null) 0f else -lineHeight</span>
+
+        // Decide color based on face ID
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        val colorID = if (face.trackingId == null) 0 else abs(face.trackingId!! % NUM_COLORS)</span>
+
+        // Calculate width and height of label box
+<span class="nc" id="L81">        var textWidth = idPaints[colorID].measureText(&quot;ID: &quot; + face.trackingId)</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if (face.smilingProbability != null) {</span>
+<span class="nc" id="L83">            yLabelOffset -= lineHeight</span>
+<span class="nc" id="L84">            textWidth =</span>
+<span class="nc" id="L85">                max(</span>
+                    textWidth,
+<span class="nc" id="L87">                    idPaints[colorID].measureText(</span>
+<span class="nc" id="L88">                        String.format(Locale.US, &quot;Happiness: %.2f&quot;, face.smilingProbability)</span>
+                    )
+                )
+        }
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (face.leftEyeOpenProbability != null) {</span>
+<span class="nc" id="L93">            yLabelOffset -= lineHeight</span>
+<span class="nc" id="L94">            textWidth =</span>
+<span class="nc" id="L95">                max(</span>
+                    textWidth,
+<span class="nc" id="L97">                    idPaints[colorID].measureText(</span>
+<span class="nc" id="L98">                        String.format(Locale.US, &quot;Left eye open: %.2f&quot;, face.leftEyeOpenProbability)</span>
+                    )
+                )
+        }
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (face.rightEyeOpenProbability != null) {</span>
+<span class="nc" id="L103">            yLabelOffset -= lineHeight</span>
+<span class="nc" id="L104">            textWidth =</span>
+<span class="nc" id="L105">                max(</span>
+                    textWidth,
+<span class="nc" id="L107">                    idPaints[colorID].measureText(</span>
+<span class="nc" id="L108">                        String.format(</span>
+<span class="nc" id="L109">                            Locale.US,</span>
+<span class="nc" id="L110">                            &quot;Right eye open: %.2f&quot;,</span>
+<span class="nc" id="L111">                            face.rightEyeOpenProbability</span>
+                        )
+                    )
+                )
+        }
+
+<span class="nc" id="L117">        yLabelOffset = yLabelOffset - 3 * lineHeight</span>
+<span class="nc" id="L118">        textWidth =</span>
+<span class="nc" id="L119">            Math.max(</span>
+<span class="nc" id="L120">                textWidth,</span>
+<span class="nc" id="L121">                idPaints[colorID].measureText(</span>
+<span class="nc" id="L122">                    String.format(Locale.US, &quot;EulerX: %.2f&quot;, face.headEulerAngleX)</span>
+                )
+            )
+<span class="nc" id="L125">        textWidth =</span>
+<span class="nc" id="L126">            Math.max(</span>
+<span class="nc" id="L127">                textWidth,</span>
+<span class="nc" id="L128">                idPaints[colorID].measureText(</span>
+<span class="nc" id="L129">                    String.format(Locale.US, &quot;EulerY: %.2f&quot;, face.headEulerAngleY)</span>
+                )
+            )
+<span class="nc" id="L132">        textWidth =</span>
+<span class="nc" id="L133">            Math.max(</span>
+<span class="nc" id="L134">                textWidth,</span>
+<span class="nc" id="L135">                idPaints[colorID].measureText(</span>
+<span class="nc" id="L136">                    String.format(Locale.US, &quot;EulerZ: %.2f&quot;, face.headEulerAngleZ)</span>
+                )
+            )
+
+        // Draw labels
+<span class="nc" id="L141">        canvas.drawRect(</span>
+<span class="nc" id="L142">            left - BOX_STROKE_WIDTH,</span>
+<span class="nc" id="L143">            top + yLabelOffset,</span>
+<span class="nc" id="L144">            left + textWidth + 2 * BOX_STROKE_WIDTH,</span>
+<span class="nc" id="L145">            top,</span>
+<span class="nc" id="L146">            labelPaints[colorID]</span>
+        )
+<span class="nc" id="L148">        yLabelOffset += ID_TEXT_SIZE</span>
+<span class="nc" id="L149">        canvas.drawRect(left, top, right, bottom, boxPaints[colorID])</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        if (face.trackingId != null) {</span>
+<span class="nc" id="L151">            canvas.drawText(&quot;ID: &quot; + face.trackingId, left, top + yLabelOffset, idPaints[colorID])</span>
+<span class="nc" id="L152">            yLabelOffset += lineHeight</span>
+        }
+
+        // Draws all face contours.
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        for (contour in face.allContours) {</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">            for (point in contour.points) {</span>
+<span class="nc" id="L158">                canvas.drawCircle(</span>
+<span class="nc" id="L159">                    translateX(point.x),</span>
+<span class="nc" id="L160">                    translateY(point.y),</span>
+<span class="nc" id="L161">                    FACE_POSITION_RADIUS,</span>
+<span class="nc" id="L162">                    facePositionPaint</span>
+                )
+            }
+        }
+
+        // Draws smiling and left/right eye open probabilities.
+<span class="nc bnc" id="L168" title="All 2 branches missed.">        if (face.smilingProbability != null) {</span>
+<span class="nc" id="L169">            canvas.drawText(</span>
+<span class="nc" id="L170">                &quot;Smiling: &quot; + String.format(Locale.US, &quot;%.2f&quot;, face.smilingProbability),</span>
+<span class="nc" id="L171">                left,</span>
+<span class="nc" id="L172">                top + yLabelOffset,</span>
+<span class="nc" id="L173">                idPaints[colorID]</span>
+            )
+<span class="nc" id="L175">            yLabelOffset += lineHeight</span>
+        }
+
+<span class="nc" id="L178">        val leftEye = face.getLandmark(FaceLandmark.LEFT_EYE)</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">        if (face.leftEyeOpenProbability != null) {</span>
+<span class="nc" id="L180">            canvas.drawText(</span>
+<span class="nc" id="L181">                &quot;Left eye open: &quot; + String.format(Locale.US, &quot;%.2f&quot;, face.leftEyeOpenProbability),</span>
+<span class="nc" id="L182">                left,</span>
+<span class="nc" id="L183">                top + yLabelOffset,</span>
+<span class="nc" id="L184">                idPaints[colorID]</span>
+            )
+<span class="nc" id="L186">            yLabelOffset += lineHeight</span>
+        }
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        if (leftEye != null) {</span>
+<span class="nc" id="L189">            val leftEyeLeft =</span>
+<span class="nc" id="L190">                translateX(leftEye.position.x) - idPaints[colorID].measureText(&quot;Left Eye&quot;) / 2.0f</span>
+<span class="nc" id="L191">            canvas.drawRect(</span>
+<span class="nc" id="L192">                leftEyeLeft - BOX_STROKE_WIDTH,</span>
+<span class="nc" id="L193">                translateY(leftEye.position.y) + ID_Y_OFFSET - ID_TEXT_SIZE,</span>
+<span class="nc" id="L194">                leftEyeLeft + idPaints[colorID].measureText(&quot;Left Eye&quot;) + BOX_STROKE_WIDTH,</span>
+<span class="nc" id="L195">                translateY(leftEye.position.y) + ID_Y_OFFSET + BOX_STROKE_WIDTH,</span>
+<span class="nc" id="L196">                labelPaints[colorID]</span>
+            )
+<span class="nc" id="L198">            canvas.drawText(</span>
+<span class="nc" id="L199">                &quot;Left Eye&quot;,</span>
+<span class="nc" id="L200">                leftEyeLeft,</span>
+<span class="nc" id="L201">                translateY(leftEye.position.y) + ID_Y_OFFSET,</span>
+<span class="nc" id="L202">                idPaints[colorID]</span>
+            )
+        }
+
+<span class="nc" id="L206">        val rightEye = face.getLandmark(FaceLandmark.RIGHT_EYE)</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">        if (face.rightEyeOpenProbability != null) {</span>
+<span class="nc" id="L208">            canvas.drawText(</span>
+<span class="nc" id="L209">                &quot;Right eye open: &quot; + String.format(Locale.US, &quot;%.2f&quot;, face.rightEyeOpenProbability),</span>
+<span class="nc" id="L210">                left,</span>
+<span class="nc" id="L211">                top + yLabelOffset,</span>
+<span class="nc" id="L212">                idPaints[colorID]</span>
+            )
+<span class="nc" id="L214">            yLabelOffset += lineHeight</span>
+        }
+<span class="nc bnc" id="L216" title="All 2 branches missed.">        if (rightEye != null) {</span>
+<span class="nc" id="L217">            val rightEyeLeft =</span>
+<span class="nc" id="L218">                translateX(rightEye.position.x) - idPaints[colorID].measureText(&quot;Right Eye&quot;) / 2.0f</span>
+<span class="nc" id="L219">            canvas.drawRect(</span>
+<span class="nc" id="L220">                rightEyeLeft - BOX_STROKE_WIDTH,</span>
+<span class="nc" id="L221">                translateY(rightEye.position.y) + ID_Y_OFFSET - ID_TEXT_SIZE,</span>
+<span class="nc" id="L222">                rightEyeLeft + idPaints[colorID].measureText(&quot;Right Eye&quot;) + BOX_STROKE_WIDTH,</span>
+<span class="nc" id="L223">                translateY(rightEye.position.y) + ID_Y_OFFSET + BOX_STROKE_WIDTH,</span>
+<span class="nc" id="L224">                labelPaints[colorID]</span>
+            )
+<span class="nc" id="L226">            canvas.drawText(</span>
+<span class="nc" id="L227">                &quot;Right Eye&quot;,</span>
+<span class="nc" id="L228">                rightEyeLeft,</span>
+<span class="nc" id="L229">                translateY(rightEye.position.y) + ID_Y_OFFSET,</span>
+<span class="nc" id="L230">                idPaints[colorID]</span>
+            )
+        }
+
+<span class="nc" id="L234">        canvas.drawText(</span>
+<span class="nc" id="L235">            &quot;EulerX: &quot; + face.headEulerAngleX,</span>
+<span class="nc" id="L236">            left,</span>
+<span class="nc" id="L237">            top + yLabelOffset,</span>
+<span class="nc" id="L238">            idPaints[colorID]</span>
+        )
+<span class="nc" id="L240">        yLabelOffset += lineHeight</span>
+<span class="nc" id="L241">        canvas.drawText(</span>
+<span class="nc" id="L242">            &quot;EulerY: &quot; + face.headEulerAngleY,</span>
+<span class="nc" id="L243">            left,</span>
+<span class="nc" id="L244">            top + yLabelOffset,</span>
+<span class="nc" id="L245">            idPaints[colorID]</span>
+        )
+<span class="nc" id="L247">        yLabelOffset += lineHeight</span>
+<span class="nc" id="L248">        canvas.drawText(</span>
+<span class="nc" id="L249">            &quot;EulerZ: &quot; + face.headEulerAngleZ,</span>
+<span class="nc" id="L250">            left,</span>
+<span class="nc" id="L251">            top + yLabelOffset,</span>
+<span class="nc" id="L252">            idPaints[colorID]</span>
+        )
+
+        // Draw facial landmarks
+<span class="nc" id="L256">        drawFaceLandmark(canvas, FaceLandmark.LEFT_EYE)</span>
+<span class="nc" id="L257">        drawFaceLandmark(canvas, FaceLandmark.RIGHT_EYE)</span>
+<span class="nc" id="L258">        drawFaceLandmark(canvas, FaceLandmark.LEFT_CHEEK)</span>
+<span class="nc" id="L259">        drawFaceLandmark(canvas, FaceLandmark.RIGHT_CHEEK)</span>
+<span class="nc" id="L260">    }</span>
+
+    private fun drawFaceLandmark(canvas: Canvas, @LandmarkType landmarkType: Int) {
+<span class="nc" id="L263">        val faceLandmark = face.getLandmark(landmarkType)</span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">        if (faceLandmark != null) {</span>
+<span class="nc" id="L265">            canvas.drawCircle(</span>
+<span class="nc" id="L266">                translateX(faceLandmark.position.x),</span>
+<span class="nc" id="L267">                translateY(faceLandmark.position.y),</span>
+<span class="nc" id="L268">                FACE_POSITION_RADIUS,</span>
+<span class="nc" id="L269">                facePositionPaint</span>
+            )
+        }
+<span class="nc" id="L272">    }</span>
+
+    companion object {
+        private const val FACE_POSITION_RADIUS = 8.0f
+        private const val ID_TEXT_SIZE = 30.0f
+        private const val ID_Y_OFFSET = 40.0f
+        private const val BOX_STROKE_WIDTH = 5.0f
+        private const val NUM_COLORS = 10
+        private val COLORS =
+<span class="nc" id="L281">            arrayOf(</span>
+<span class="nc" id="L282">                intArrayOf(Color.BLACK, Color.WHITE),</span>
+<span class="nc" id="L283">                intArrayOf(Color.WHITE, Color.MAGENTA),</span>
+<span class="nc" id="L284">                intArrayOf(Color.BLACK, Color.LTGRAY),</span>
+<span class="nc" id="L285">                intArrayOf(Color.WHITE, Color.RED),</span>
+<span class="nc" id="L286">                intArrayOf(Color.WHITE, Color.BLUE),</span>
+<span class="nc" id="L287">                intArrayOf(Color.WHITE, Color.DKGRAY),</span>
+<span class="nc" id="L288">                intArrayOf(Color.BLACK, Color.CYAN),</span>
+<span class="nc" id="L289">                intArrayOf(Color.BLACK, Color.YELLOW),</span>
+<span class="nc" id="L290">                intArrayOf(Color.WHITE, Color.BLACK),</span>
+<span class="nc" id="L291">                intArrayOf(Color.BLACK, Color.GREEN)</span>
+            )
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

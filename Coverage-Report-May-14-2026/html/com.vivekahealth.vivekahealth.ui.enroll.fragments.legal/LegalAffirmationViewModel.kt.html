@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LegalAffirmationViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.enroll.fragments.legal</a> &gt; <span class="el_source">LegalAffirmationViewModel.kt</span></div><h1>LegalAffirmationViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.enroll.fragments.legal
+
+import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.view.View
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.data.remote.enroll.DocumentUploadSuccessEnroll
+import com.vivekahealth.vivekahealth.data.remote.enroll.EnrollMember
+import com.vivekahealth.vivekahealth.data.remote.enroll.Person
+import com.vivekahealth.vivekahealth.data.remote.register.DataResponse
+import com.vivekahealth.vivekahealth.ui.enroll.NextClickListener
+import com.vivekahealth.vivekahealth.ui.enroll.repository.EnrollRepository
+import com.vivekahealth.vivekahealth.utils.*
+import com.vivekahealth.vivekahealth.utils.remote.APIResponse
+import com.vivekahealth.vivekahealth.utils.thread.ThreadUtils
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
+import javax.inject.Inject
+import kotlinx.coroutines.Job
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import org.apache.commons.lang3.StringUtils
+
+<span class="nc" id="L36">class LegalAffirmationViewModel @Inject constructor(</span>
+<span class="nc" id="L37">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L38">    private val enrollRepository: EnrollRepository</span>
+<span class="nc" id="L39">) : ViewModel(), Observable {</span>
+    // TODO: Implement the ViewModel
+<span class="nc" id="L41">    internal lateinit var nextClickListener: NextClickListener</span>
+
+<span class="nc" id="L43">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L45">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L47">    lateinit var user: EnrollMember</span>
+<span class="nc" id="L48">    lateinit var person: Person</span>
+
+<span class="nc" id="L50">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L52">        get() = _navigateToBack</span>
+<span class="nc" id="L53">    private val _navigateToNext = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToNext: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L55">        get() = _navigateToNext</span>
+
+<span class="nc" id="L57">    private val _clearClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val clearClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L59">        get() = _clearClicked</span>
+
+<span class="nc" id="L61">    private val _navigateToUpload = MutableLiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt;()</span>
+    val navigateToUpload: LiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt;
+<span class="nc" id="L63">        get() = _navigateToUpload</span>
+<span class="nc" id="L64">    private val _memberClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val memberClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L66">        get() = _memberClicked</span>
+<span class="nc" id="L67">    private val _spouseClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val spouseClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L69">        get() = _spouseClicked</span>
+<span class="nc" id="L70">    private val _childRetrieved = MutableLiveData&lt;Event&lt;EnrollMember&gt;&gt;()</span>
+    val childRetrieved: LiveData&lt;Event&lt;EnrollMember&gt;&gt;
+<span class="nc" id="L72">        get() = _childRetrieved</span>
+
+<span class="nc" id="L74">    private val _navigateToEnroll = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+    val navigateToEnroll: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
+<span class="nc" id="L76">        get() = _navigateToEnroll</span>
+<span class="nc" id="L77">    lateinit var signatureBitmap: Bitmap</span>
+
+<span class="nc" id="L79">    var signed: Boolean = false</span>
+<span class="nc" id="L80">    var currentStep: String = &quot;&quot;</span>
+<span class="nc" id="L81">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L83">            field = value</span>
+<span class="nc" id="L84">            callbacks.notifyCallbacks(this, BR.currentStep, null)</span>
+<span class="nc" id="L85">        }</span>
+    var loading: Boolean = false
+<span class="nc" id="L87">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L89">            field = value</span>
+<span class="nc" id="L90">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L91">        }</span>
+<span class="nc" id="L92">    var checkBox: Boolean = false</span>
+
+<span class="nc" id="L94">    private val _check = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+    val check: LiveData&lt;Event&lt;Boolean&gt;&gt;
+<span class="nc" id="L96">        get() = _check</span>
+<span class="nc" id="L97">    lateinit var currentPerson: Person</span>
+<span class="nc" id="L98">    var currentDate: String = DateUtils.getCurrentLocalDateMonthName().toString()</span>
+
+<span class="nc" id="L100">    var currentNameFirst: String = &quot;&quot;</span>
+<span class="nc" id="L101">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L103">            field = value</span>
+<span class="nc" id="L104">            callbacks.notifyCallbacks(this, BR.currentNameFirst, null)</span>
+<span class="nc" id="L105">        }</span>
+<span class="nc" id="L106">    var currentNameLast: String = &quot;&quot;</span>
+<span class="nc" id="L107">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L109">            field = value</span>
+<span class="nc" id="L110">            callbacks.notifyCallbacks(this, BR.currentNameLast, null)</span>
+<span class="nc" id="L111">        }</span>
+
+<span class="nc" id="L113">    var memberName: String = &quot;&quot;</span>
+<span class="nc" id="L114">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L116">            field = value</span>
+<span class="nc" id="L117">            callbacks.notifyCallbacks(this, BR.memberName, null)</span>
+<span class="nc" id="L118">        }</span>
+
+<span class="nc" id="L120">    var spouseName: String = &quot;&quot;</span>
+<span class="nc" id="L121">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L123">            field = value</span>
+<span class="nc" id="L124">            callbacks.notifyCallbacks(this, BR.spouseName, null)</span>
+<span class="nc" id="L125">        }</span>
+<span class="nc" id="L126">    lateinit var filesDir: File</span>
+
+    var memberDone: Boolean = false
+<span class="nc" id="L129">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L131">            field = value</span>
+<span class="nc" id="L132">            callbacks.notifyCallbacks(this, BR.memberDone, null)</span>
+<span class="nc" id="L133">        }</span>
+
+    var spouseDone: Boolean = false
+<span class="nc" id="L136">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L138">            field = value</span>
+<span class="nc" id="L139">            callbacks.notifyCallbacks(this, BR.spouseDone, null)</span>
+<span class="nc" id="L140">        }</span>
+<span class="nc" id="L141">    var checkBoxErrorVisibility = View.GONE</span>
+<span class="nc" id="L142">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L144">            field = value</span>
+<span class="nc" id="L145">            callbacks.notifyChange(this, BR.checkBoxErrorVisibility)</span>
+<span class="nc" id="L146">        }</span>
+
+<span class="nc" id="L148">    var string: Boolean = false</span>
+
+<span class="nc" id="L150">    var gson = Gson()</span>
+
+<span class="nc" id="L152">    var married: Boolean = preferences.getString(Constants.maritalStatus, &quot;&quot;).equals(</span>
+<span class="nc" id="L153">        &quot;married&quot;,</span>
+<span class="nc" id="L154">        ignoreCase = true</span>
+<span class="nc" id="L155">    )</span>
+
+    private lateinit var job: Job
+
+    fun loadData() {
+<span class="nc" id="L160">        job = Coroutines.ioToMainThread(</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">            {</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">                if (!StringUtils.equals(preferences.getString(Constants.enroll, &quot;&quot;), &quot;&quot;)) {</span>
+<span class="nc" id="L163">                    user = gson.fromJson(</span>
+<span class="nc" id="L164">                        preferences.getString(Constants.enroll, &quot;&quot;),</span>
+<span class="nc" id="L165">                        EnrollMember::class.java</span>
+                    )
+                }
+<span class="nc" id="L168">            },</span>
+            {
+<span class="nc" id="L170">                setupList()</span>
+
+<span class="nc" id="L172">                _childRetrieved.value = Event(user)</span>
+<span class="nc" id="L173">            }</span>
+        )
+<span class="nc" id="L175">    }</span>
+    fun memberLegalClick() {
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        currentNameFirst = user.subscriber?.firstName.toString()</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">        currentNameLast = user.subscriber?.lastName.toString()</span>
+<span class="nc" id="L179">        currentPerson = user.subscriber!!</span>
+
+<span class="nc" id="L181">        _memberClicked.value = Event(Unit)</span>
+<span class="nc" id="L182">    }</span>
+
+    fun setupList() {
+<span class="nc bnc" id="L185" title="All 4 branches missed.">        memberName = user.subscriber?.lastName + &quot;, &quot; + user.subscriber?.firstName</span>
+
+<span class="nc bnc" id="L187" title="All 4 branches missed.">        spouseName = user.spouse?.lastName + &quot;, &quot; + user.spouse?.firstName</span>
+<span class="nc" id="L188">    }</span>
+    fun spouseLegalClick() {
+<span class="nc bnc" id="L190" title="All 2 branches missed.">        currentNameFirst = user.spouse?.firstName.toString()</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">        currentNameLast = user.spouse?.lastName.toString()</span>
+<span class="nc" id="L192">        currentPerson = user.spouse!!</span>
+<span class="nc" id="L193">        _spouseClicked.value = Event(Unit)</span>
+<span class="nc" id="L194">    }</span>
+    fun onPrevClicked() {
+<span class="nc" id="L196">        _navigateToBack.value = Event(Unit)</span>
+<span class="nc" id="L197">    }</span>
+
+    fun clearClicked() {
+<span class="nc" id="L200">        _clearClicked.value = Event(Unit)</span>
+<span class="nc" id="L201">    }</span>
+    fun onNextClicked() {
+<span class="nc" id="L203">        _navigateToNext.value = Event(Unit)</span>
+<span class="nc" id="L204">    }</span>
+
+    fun uploadData(memberID: String) {
+<span class="nc" id="L207">        ThreadUtils.runOnUiThread(</span>
+            Runnable {
+<span class="nc" id="L209">                compositeDisposable.add(</span>
+<span class="nc" id="L210">                    enrollRepository.enrollMember(</span>
+<span class="nc" id="L211">                        user,</span>
+<span class="nc" id="L212">                        memberID</span>
+                    )
+<span class="nc" id="L214">                        .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L215">                        .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L216">                        .doOnSubscribe {</span>
+<span class="nc" id="L217">                            _navigateToEnroll.value = APIResponse&lt;DataResponse&gt;().loading()</span>
+<span class="nc" id="L218">                            loading = true</span>
+<span class="nc" id="L219">                        }</span>
+<span class="nc" id="L220">                        .subscribe({</span>
+<span class="nc" id="L221">                            _navigateToEnroll.value = APIResponse&lt;DataResponse&gt;().success(it)</span>
+<span class="nc" id="L222">                            loading = false</span>
+<span class="nc" id="L223">                        }, {</span>
+<span class="nc" id="L224">                            _navigateToEnroll.value = APIResponse&lt;DataResponse&gt;().error(</span>
+<span class="nc" id="L225">                                it.localizedMessage!!</span>
+                            )
+<span class="nc" id="L227">                            loading = false</span>
+<span class="nc" id="L228">                        })</span>
+                )
+<span class="nc" id="L230">            }</span>
+        )
+<span class="nc" id="L232">    }</span>
+
+    fun setDocumentName(id: String, fileName: String) {
+<span class="nc" id="L235">        job = Coroutines.ioToMainThread(</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">            {</span>
+<span class="nc" id="L237">                when (currentPerson) {</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">                    user.subscriber -&gt; {</span>
+<span class="nc" id="L239">                        user.subscriber!!.signatureFileId = id</span>
+<span class="nc" id="L240">                        user.subscriber!!.signatureFileName = fileName</span>
+
+<span class="nc" id="L242">                        memberDone = true</span>
+                    }
+<span class="nc bnc" id="L244" title="All 2 branches missed.">                    user.spouse -&gt; {</span>
+<span class="nc" id="L245">                        user.spouse!!.signatureFileId = id</span>
+<span class="nc" id="L246">                        user.spouse!!.signatureFileName = fileName</span>
+<span class="nc" id="L247">                        spouseDone = true</span>
+                    }
+                }
+<span class="nc" id="L250">            },</span>
+            {
+<span class="nc" id="L252">                val regString = gson.toJson(user)</span>
+<span class="nc" id="L253">                val regEdit = preferences.edit()</span>
+<span class="nc" id="L254">                regEdit.putString(Constants.enroll, regString)</span>
+<span class="nc" id="L255">                regEdit.apply()</span>
+
+//                uploadData()
+<span class="nc" id="L258">            }</span>
+        )
+<span class="nc" id="L260">    }</span>
+
+    fun uploadSign(pic: File) {
+<span class="nc" id="L263">        val file: File = File(pic?.path)</span>
+
+<span class="nc" id="L265">        val filePart: MultipartBody.Part = MultipartBody.Part.createFormData(</span>
+<span class="nc" id="L266">            &quot;file&quot;,</span>
+
+<span class="nc" id="L268">            file.name,</span>
+<span class="nc" id="L269">            file.asRequestBody(&quot;image/*&quot;.toMediaTypeOrNull())</span>
+        )
+
+<span class="nc" id="L272">        ThreadUtils.runOnUiThread(</span>
+            Runnable {
+<span class="nc" id="L274">                compositeDisposable.add(</span>
+<span class="nc" id="L275">                    enrollRepository.uploadDoc(</span>
+<span class="nc" id="L276">                        filePart,</span>
+<span class="nc" id="L277">                        HelperUtils.fileName(Constants.Signature, currentNameFirst, currentNameLast)</span>
+                    )
+<span class="nc" id="L279">                        .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L280">                        .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L281">                        .doOnSubscribe {</span>
+<span class="nc" id="L282">                            _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().loading()</span>
+<span class="nc" id="L283">                        }</span>
+<span class="nc" id="L284">                        .subscribe({</span>
+<span class="nc" id="L285">                            _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().success(</span>
+<span class="nc" id="L286">                                it</span>
+                            )
+<span class="nc" id="L288">                        }, {</span>
+<span class="nc" id="L289">                            _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().error(</span>
+<span class="nc" id="L290">                                it.localizedMessage!!</span>
+                            )
+<span class="nc" id="L292">                        })</span>
+                )
+<span class="nc" id="L294">            }</span>
+        )
+<span class="nc" id="L296">    }</span>
+    fun persistImage(bitmap: Bitmap, name: String) {
+<span class="nc" id="L298">        val filesDir: File = filesDir</span>
+<span class="nc" id="L299">        val imageFile = File(filesDir, &quot;$name.png&quot;)</span>
+<span class="nc" id="L300">        val os: OutputStream</span>
+<span class="nc" id="L301">        try {</span>
+<span class="nc" id="L302">            os = FileOutputStream(imageFile)</span>
+<span class="nc" id="L303">            bitmap.compress(Bitmap.CompressFormat.PNG, 100, os)</span>
+<span class="nc" id="L304">            os.flush()</span>
+<span class="nc" id="L305">            os.close()</span>
+<span class="nc" id="L306">        } catch (e: Exception) {</span>
+<span class="nc" id="L307">            e.stackTrace</span>
+        }
+<span class="nc" id="L309">        uploadSign(imageFile)</span>
+<span class="nc" id="L310">    }</span>
+
+    fun ssnRadio() {
+<span class="nc bnc" id="L313" title="All 2 branches missed.">        checkBox = !checkBox</span>
+
+<span class="nc" id="L315">        _check.value = Event(checkBox)</span>
+<span class="nc bnc" id="L316" title="All 2 branches missed.">        checkBoxErrorVisibility = if (signed) {</span>
+<span class="nc bnc" id="L317" title="All 2 branches missed.">            if (checkBox) View.GONE else View.VISIBLE</span>
+        } else {
+<span class="nc" id="L319">            View.GONE</span>
+        }
+<span class="nc" id="L321">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L324">        callbacks.add(callback)</span>
+<span class="nc" id="L325">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L328">        callbacks.remove(callback)</span>
+<span class="nc" id="L329">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L332">        super.onCleared()</span>
+<span class="nc" id="L333">        compositeDisposable.dispose()</span>
+<span class="nc" id="L334">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

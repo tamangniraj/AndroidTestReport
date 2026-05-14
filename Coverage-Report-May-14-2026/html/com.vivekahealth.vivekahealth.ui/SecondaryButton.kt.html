@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SecondaryButton.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui</a> &gt; <span class="el_source">SecondaryButton.kt</span></div><h1>SecondaryButton.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui
+
+import android.content.Context
+import android.util.AttributeSet
+import android.view.LayoutInflater
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import com.vivekahealth.vivekahealth.R
+
+<span class="nc" id="L11">class SecondaryButton @JvmOverloads constructor(</span>
+    context: Context,
+<span class="nc" id="L13">    attrs: AttributeSet? = null,</span>
+<span class="nc" id="L14">    defStyleAttr: Int = 0</span>
+<span class="nc" id="L15">) : LinearLayout(context, attrs, defStyleAttr) {</span>
+
+    private val iconView: ImageView
+    private val textView: TextView
+
+<span class="nc" id="L20">    init {</span>
+<span class="nc" id="L21">        LayoutInflater.from(context).inflate(R.layout.custom_secondary_button, this, true)</span>
+
+<span class="nc" id="L23">        iconView = findViewById(R.id.iv_button_icon)</span>
+<span class="nc" id="L24">        textView = findViewById(R.id.tv_button_text)</span>
+
+        // Handle custom attributes
+<span class="nc bnc" id="L27" title="All 2 branches missed.">        attrs?.let {</span>
+<span class="nc" id="L28">            val typedArray = context.obtainStyledAttributes(it, R.styleable.SecondaryButton)</span>
+
+<span class="nc" id="L30">            val text = typedArray.getString(R.styleable.SecondaryButton_buttonText)</span>
+<span class="nc" id="L31">            val iconRes = typedArray.getResourceId(</span>
+<span class="nc" id="L32">                R.styleable.SecondaryButton_buttonIcon,</span>
+<span class="nc" id="L33">                R.drawable.ic_sms</span>
+            )
+<span class="nc" id="L35">            val enabled = typedArray.getBoolean(R.styleable.SecondaryButton_buttonEnabled, true)</span>
+
+<span class="nc bnc" id="L37" title="All 2 branches missed.">            setText(text ?: &quot;&quot;)</span>
+<span class="nc" id="L38">            setIcon(iconRes)</span>
+
+<span class="nc" id="L40">            setEnabled(enabled)</span>
+
+<span class="nc" id="L42">            typedArray.recycle()</span>
+<span class="nc" id="L43">        }</span>
+<span class="nc" id="L44">    }</span>
+
+    fun setText(text: String) {
+<span class="nc" id="L47">        textView.text = text</span>
+<span class="nc" id="L48">    }</span>
+
+    fun setIcon(iconRes: Int) {
+<span class="nc" id="L51">        iconView.setImageResource(iconRes)</span>
+<span class="nc" id="L52">    }</span>
+
+    override fun setEnabled(enabled: Boolean) {
+<span class="nc" id="L55">        super.setEnabled(enabled)</span>
+<span class="nc" id="L56">        iconView.isEnabled = enabled</span>
+<span class="nc" id="L57">        textView.isEnabled = enabled</span>
+
+        // Control clickable and focusable based on enabled state
+<span class="nc" id="L60">        isClickable = enabled</span>
+<span class="nc" id="L61">        isFocusable = enabled</span>
+
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        alpha = if (enabled) 1.0f else 0.6f</span>
+<span class="nc" id="L64">    }</span>
+
+    override fun performClick(): Boolean {
+        // Only perform click if button is enabled
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        return if (isEnabled) {</span>
+<span class="nc" id="L69">            super.performClick()</span>
+        } else {
+<span class="nc" id="L71">            false</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

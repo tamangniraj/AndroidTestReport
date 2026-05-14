@@ -1,0 +1,767 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SpecialityProfileViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityprofile</a> &gt; <span class="el_source">SpecialityProfileViewModel.kt</span></div><h1>SpecialityProfileViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityprofile
+
+import android.content.SharedPreferences
+import android.content.res.Resources
+import android.os.Handler
+import android.os.Looper
+import androidx.appcompat.widget.SearchView
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.BillPreviewModel
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.providerRecommended.RecommendedRequest
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.providerRecommended.Result
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.FeeSchedule
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.Value
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityprofile.adapter.DetailType
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityprofile.repository.SpecialityProfileRepository
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityprofile.responce.ProcedureList
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityprofile.responce.Procedures
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import java.util.*
+import javax.inject.Inject
+import kotlin.collections.ArrayList
+
+<span class="fc" id="L34">class SpecialityProfileViewModel @Inject constructor(</span>
+<span class="fc" id="L35">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L36">    private val specialityRepository: SpecialityProfileRepository,</span>
+<span class="fc" id="L37">    private val resources: Resources</span>
+<span class="fc" id="L38">) : ViewModel(), Observable {</span>
+<span class="fc" id="L39">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L40">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="pc" id="L41">    var ValueList: ArrayList&lt;Procedures&gt; = ArrayList()</span>
+<span class="pc" id="L42">    var ValueList1: ArrayList&lt;ProcedureList&gt; = ArrayList()</span>
+<span class="pc" id="L43">    var eligibleValueList: ArrayList&lt;Procedures&gt; = ArrayList()</span>
+<span class="pc" id="L44">    var listForDoctorAdapter: List&lt;Procedures&gt; = listOf()</span>
+
+<span class="pc" id="L46">    var docDetailList: ArrayList&lt;DetailType&gt; = arrayListOf()</span>
+<span class="pc" id="L47">    var feeScheduleList: ArrayList&lt;FeeSchedule&gt; = arrayListOf()</span>
+<span class="pc" id="L48">    var selectedScheduleList: ArrayList&lt;FeeSchedule&gt; = arrayListOf()</span>
+<span class="pc" id="L49">    var once: Int = 0</span>
+<span class="fc" id="L50">    var selectedItemsList: ArrayList&lt;FeeSchedule&gt; = arrayListOf()</span>
+<span class="fc" id="L51">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L53">            field = value</span>
+<span class="nc" id="L54">            callbacks.notifyCallbacks(this, BR.selectedItemsList, null)</span>
+<span class="nc" id="L55">        }</span>
+<span class="fc" id="L56">    var showNoData: Boolean = true</span>
+<span class="fc" id="L57">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L59">            field = value</span>
+<span class="nc" id="L60">            callbacks.notifyCallbacks(this, BR.showNoData, null)</span>
+<span class="nc" id="L61">        }</span>
+<span class="pc" id="L62">    var filterOn: Boolean = false</span>
+<span class="pc" id="L63">    var deliveryOption: Int = 1</span>
+<span class="nc" id="L64">    var paperDeliveryStatus: Boolean = false</span>
+<span class="pc" id="L65">    var page: Int = 1</span>
+<span class="pc" id="L66">    var pageSize: Int = 35</span>
+<span class="pc" id="L67">    var isLastPage = false</span>
+<span class="pc" id="L68">    var isScrolling = false</span>
+<span class="pc" id="L69">    var search: Boolean = false</span>
+
+<span class="pc" id="L71">    var checkBoxShown = false</span>
+<span class="pc" id="L72">    var gson = Gson()</span>
+<span class="fc" id="L73">    private val _logsListGenerated = MutableLiveData&lt;Event&lt;ArrayList&lt;FeeSchedule&gt;&gt;&gt;()</span>
+    val logsListGenerated: LiveData&lt;Event&lt;ArrayList&lt;FeeSchedule&gt;&gt;&gt;
+<span class="fc" id="L75">        get() = _logsListGenerated</span>
+<span class="fc" id="L76">    private val _logsListGeneratedSearch = MutableLiveData&lt;Event&lt;ArrayList&lt;FeeSchedule&gt;&gt;&gt;()</span>
+    val logsListGeneratedSearch: LiveData&lt;Event&lt;ArrayList&lt;FeeSchedule&gt;&gt;&gt;
+<span class="nc" id="L78">        get() = _logsListGeneratedSearch</span>
+<span class="fc" id="L79">    private val _sortView = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val sortView: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L81">        get() = _sortView</span>
+
+<span class="fc" id="L83">    private val _selectedView = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val selectedView: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L85">        get() = _selectedView</span>
+<span class="fc" id="L86">    private val _billPreview = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val billPreview: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="fc" id="L88">        get() = _billPreview</span>
+
+<span class="fc" id="L90">    private val _billPreviewDisclaimer = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val billPreviewDisclaimer: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L92">        get() = _billPreviewDisclaimer</span>
+
+<span class="fc" id="L94">    private val _nonChecked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val nonChecked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L96">        get() = _nonChecked</span>
+<span class="fc" id="L97">    private val _updateList = MutableLiveData&lt;Event&lt;List&lt;FeeSchedule&gt;&gt;&gt;()</span>
+    val updateList: LiveData&lt;Event&lt;List&lt;FeeSchedule&gt;&gt;&gt;
+<span class="nc" id="L99">        get() = _updateList</span>
+
+<span class="fc" id="L101">    private val _openDetails = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val openDetails: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L103">        get() = _openDetails</span>
+
+<span class="fc" id="L105">    private val _recommendedProcedureList = MutableLiveData&lt;Event&lt;List&lt;Result&gt;?&gt;&gt;()</span>
+    val recommendedProcedureList: LiveData&lt;Event&lt;List&lt;Result&gt;?&gt;&gt;
+<span class="fc" id="L107">        get() = _recommendedProcedureList</span>
+<span class="pc" id="L108">    var tempListFlat: ArrayList&lt;Any&gt; = arrayListOf()</span>
+<span class="pc" id="L109">    final var memberID = preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+    var loading: Boolean = false
+<span class="fc" id="L111">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L113">            field = value</span>
+<span class="nc" id="L114">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L115">        }</span>
+
+    var expandSelected: Boolean = false
+<span class="fc" id="L118">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L120">            field = value</span>
+<span class="nc" id="L121">            callbacks.notifyCallbacks(this, BR.expandSelected, null)</span>
+<span class="nc" id="L122">        }</span>
+
+    var showDetails: Boolean = false
+<span class="fc" id="L125">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L127">            field = value</span>
+<span class="fc" id="L128">            callbacks.notifyCallbacks(this, BR.showDetails, null)</span>
+<span class="fc" id="L129">        }</span>
+
+    var showProcedure: Boolean = false
+<span class="fc" id="L132">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L134">            field = value</span>
+<span class="fc" id="L135">            callbacks.notifyCallbacks(this, BR.showProcedure, null)</span>
+<span class="fc" id="L136">        }</span>
+
+<span class="fc" id="L138">    var outOfText: String = &quot;&quot;</span>
+<span class="fc" id="L139">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L141">            field = value</span>
+<span class="nc" id="L142">            callbacks.notifyCallbacks(this, BR.outOfText, null)</span>
+<span class="nc" id="L143">        }</span>
+<span class="fc" id="L144">    var docValue: Value = Value()</span>
+<span class="nc" id="L145">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L147">            field = value</span>
+<span class="nc" id="L148">            callbacks.notifyCallbacks(this, BR.docValue, null)</span>
+<span class="nc" id="L149">        }</span>
+<span class="pc" id="L150">    var location = &quot;&quot;</span>
+    var data: Boolean = false
+<span class="fc" id="L152">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L154">            field = value</span>
+<span class="nc" id="L155">            callbacks.notifyCallbacks(this, BR.data, null)</span>
+<span class="nc" id="L156">        }</span>
+<span class="fc" id="L157">    var reason: String = &quot;&quot;</span>
+<span class="fc" id="L158">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L160">            field = value</span>
+<span class="nc" id="L161">            callbacks.notifyCallbacks(this, BR.reason, null)</span>
+<span class="nc" id="L162">        }</span>
+<span class="pc" id="L163">    var sortby = &quot;relevance&quot;</span>
+<span class="pc" id="L164">    var sortAction = &quot;desc&quot;</span>
+<span class="pc" id="L165">    var searchText = &quot;&quot;</span>
+<span class="pc" id="L166">    var tempList: ArrayList&lt;FeeSchedule&gt; = arrayListOf()</span>
+
+<span class="pc" id="L168">    var lat: String? = &quot;&quot;</span>
+<span class="pc" id="L169">    var long: String? = &quot;&quot;</span>
+<span class="pc" id="L170">    var primaryTaxonomy: String? = &quot;&quot;</span>
+<span class="pc" id="L171">    var radius: String? = &quot;&quot;</span>
+<span class="pc" id="L172">    var codeType: String? = null</span>
+<span class="pc" id="L173">    var codeValue: String? = null</span>
+<span class="fc" id="L174">    private val _navigateToRemove = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToRemove: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L176">        get() = _navigateToRemove</span>
+    var totalPrice: Double = 0.0
+<span class="fc" id="L178">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L180">            field = value</span>
+<span class="nc" id="L181">            callbacks.notifyCallbacks(this, BR.totalPrice, null)</span>
+<span class="nc" id="L182">        }</span>
+    var outOf: Boolean = false
+<span class="fc" id="L184">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L186">            field = value</span>
+<span class="nc" id="L187">            callbacks.notifyCallbacks(this, BR.outOf, null)</span>
+<span class="nc" id="L188">        }</span>
+<span class="pc" id="L189">    var discShowing: Boolean = false</span>
+<span class="fc" id="L190">    private val _showDiscAdded = MutableLiveData&lt;Event&lt;SharedPreferences&gt;&gt;()</span>
+    val showDiscAdded: LiveData&lt;Event&lt;SharedPreferences&gt;&gt;
+<span class="nc" id="L192">        get() = _showDiscAdded</span>
+
+    var totalSelected: Int = 0
+<span class="fc" id="L195">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L197">            field = value</span>
+<span class="nc" id="L198">            callbacks.notifyCallbacks(this, BR.totalSelected, null)</span>
+<span class="nc" id="L199">        }</span>
+<span class="fc" id="L200">    var recommendedList: ArrayList&lt;Result&gt; = arrayListOf()</span>
+<span class="nc" id="L201">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L203">            field = value</span>
+<span class="nc" id="L204">            callbacks.notifyCallbacks(this, BR.recommendedList, null)</span>
+<span class="nc" id="L205">        }</span>
+    fun data(value: String) {
+<span class="nc" id="L207">        docValue = gson.fromJson(value, Value::class.java)</span>
+<span class="nc" id="L208">    }</span>
+
+<span class="fc" id="L210">    var title: String = &quot;&quot;</span>
+<span class="nc" id="L211">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L213">            field = value</span>
+<span class="nc" id="L214">            callbacks.notifyCallbacks(this, BR.title, null)</span>
+<span class="nc" id="L215">        }</span>
+
+    fun select(pos: Int, state: Boolean) {
+<span class="nc" id="L218">        selectedItemsList[pos].showCheckBox = state</span>
+<span class="nc" id="L219">        _navigateToRemove.value = Event(Unit)</span>
+<span class="nc" id="L220">    }</span>
+    fun remove(item: FeeSchedule) {
+<span class="nc" id="L222">        val searchList = feeScheduleList.filter { it.codeValue == item.codeValue }</span>
+<span class="nc" id="L223">        var searchListSecond = selectedScheduleList.filter { it.codeValue == item.codeValue }</span>
+<span class="nc" id="L224">        var searchListThird = selectedItemsList.filter { it.codeValue == item.codeValue }</span>
+
+<span class="nc bnc" id="L226" title="All 4 branches missed.">        if (searchList.isNotEmpty()) {</span>
+<span class="nc" id="L227">            val pos = feeScheduleList.indexOf(</span>
+<span class="nc bnc" id="L228" title="All 4 branches missed.">                feeScheduleList.find { it.codeValue == item.codeValue }</span>
+            )
+<span class="nc" id="L230">            listUpdate(feeScheduleList, pos, false, &quot;&quot;)</span>
+        }
+//        if (searchListSecond.isNotEmpty()) {
+//            selectedScheduleList.remove(
+//                selectedScheduleList.find { it.codeValue == item.codeValue }
+//            )
+//        }
+<span class="nc bnc" id="L237" title="All 4 branches missed.">        if (searchListThird.isNotEmpty()) {</span>
+<span class="nc" id="L238">            val pos = selectedItemsList.indexOf(</span>
+<span class="nc bnc" id="L239" title="All 4 branches missed.">                selectedItemsList.find { it.codeValue == item.codeValue }</span>
+
+            )
+<span class="nc bnc" id="L242" title="All 4 branches missed.">            selectedItemsList.remove(selectedItemsList.find { it.codeValue == item.codeValue })</span>
+        }
+<span class="nc bnc" id="L244" title="All 2 branches missed.">        if (selectedItemsList.isEmpty()) {</span>
+<span class="nc" id="L245">            expandSelected = false</span>
+        }
+<span class="nc" id="L247">        recalculatePrice(null)</span>
+<span class="nc" id="L248">        _navigateToRemove.value = Event(Unit)</span>
+<span class="nc" id="L249">    }</span>
+
+<span class="nc" id="L251">    @get:Bindable</span>
+<span class="fc" id="L252">    val searchTextWatcher = object : SearchView.OnQueryTextListener {</span>
+        override fun onQueryTextSubmit(query: String?): Boolean {
+<span class="nc" id="L254">            return false</span>
+        }
+
+        override fun onQueryTextChange(newText: String): Boolean {
+<span class="nc" id="L258">            Handler(Looper.getMainLooper()).postDelayed({</span>
+<span class="nc" id="L259">                searchText = newText.lowercase()</span>
+//                filter(newText.lowercase())
+<span class="nc" id="L261">                page = 1</span>
+<span class="nc" id="L262">                getProvidersList(docValue.npi.toString(), docValue.ein.toString(), true)</span>
+<span class="nc" id="L263">            }, 300)</span>
+<span class="nc" id="L264">            return true</span>
+        }
+    }
+
+    fun filter(text: String) {
+<span class="nc bnc" id="L269" title="All 4 branches missed.">        if (text.isNotBlank()) {</span>
+<span class="nc" id="L270">            var found = feeScheduleList.filter {</span>
+<span class="nc bnc" id="L271" title="All 8 branches missed.">                it.codeValue.lowercase().contains(text) || it.codeLongDescription?.lowercase()?.contains(</span>
+<span class="nc" id="L272">                    text</span>
+<span class="nc bnc" id="L273" title="All 6 branches missed.">                ) ?: false || it.codeShortDescription?.lowercase()?.contains(</span>
+<span class="nc" id="L274">                    text</span>
+<span class="nc" id="L275">                ) ?: false</span>
+            }
+<span class="nc" id="L277">            tempList.clear()</span>
+<span class="nc" id="L278">            tempList.addAll(found)</span>
+<span class="nc" id="L279">            data = tempList.isEmpty()</span>
+<span class="nc" id="L280">            filterOn = true</span>
+<span class="nc" id="L281">            sortTemp()</span>
+<span class="nc" id="L282">            _logsListGeneratedSearch.value = Event(tempList)</span>
+        } else {
+<span class="nc" id="L284">            filterOn = false</span>
+<span class="nc" id="L285">            data = feeScheduleList.isEmpty()</span>
+<span class="nc" id="L286">            sortMian()</span>
+<span class="nc" id="L287">            _logsListGenerated.value = Event(feeScheduleList)</span>
+        }
+<span class="nc" id="L289">    }</span>
+
+    fun addSelected(item: FeeSchedule) {
+//        item.checked = true
+<span class="nc" id="L293">        selectedItemsList.add(item)</span>
+<span class="nc" id="L294">        listUpdateSelected(feeScheduleList, item, true, &quot;&quot;)</span>
+<span class="nc" id="L295">    }</span>
+    fun listUpdateCheckBox(showCheckBox: Boolean) {
+<span class="nc" id="L297">        checkBoxShown = showCheckBox</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">        if (filterOn) {</span>
+<span class="nc" id="L299">            tempList.forEach {</span>
+<span class="nc" id="L300">                it.showCheckBox = showCheckBox</span>
+<span class="nc" id="L301">            }</span>
+<span class="nc" id="L302">            feeScheduleList.forEach {</span>
+<span class="nc" id="L303">                it.showCheckBox = showCheckBox</span>
+<span class="nc" id="L304">            }</span>
+<span class="nc" id="L305">            _updateList.value = Event(tempList)</span>
+        } else {
+<span class="nc" id="L307">            feeScheduleList.forEach {</span>
+<span class="nc" id="L308">                it.showCheckBox = showCheckBox</span>
+<span class="nc" id="L309">            }</span>
+<span class="nc" id="L310">            tempList.forEach {</span>
+<span class="nc" id="L311">                it.showCheckBox = showCheckBox</span>
+<span class="nc" id="L312">            }</span>
+<span class="nc" id="L313">            _updateList.value = Event(feeScheduleList)</span>
+        }
+<span class="nc" id="L315">        getRecommendedProcedure(docValue.npi, docValue.ein)</span>
+<span class="nc" id="L316">    }</span>
+    fun openDetails() {
+<span class="fc" id="L318">        showProcedure = false</span>
+<span class="fc bfc" id="L319" title="All 2 branches covered.">        showDetails = !showDetails</span>
+//        _openDetails.value = Event(Unit)
+<span class="fc" id="L321">    }</span>
+    fun openProcedure() {
+<span class="fc" id="L323">        showDetails = false</span>
+<span class="fc bfc" id="L324" title="All 2 branches covered.">        showProcedure = !showProcedure</span>
+<span class="fc" id="L325">    }</span>
+    fun listUpdate(mainList: List&lt;FeeSchedule&gt;, changed: Int, isChecked: Boolean, price: String) {
+<span class="nc bnc" id="L327" title="All 4 branches missed.">        if (changed &lt; 0 || changed &gt;= mainList.size) {</span>
+<span class="nc" id="L328">            return // or handle the error</span>
+        }
+<span class="nc" id="L330">        val index = changed</span>
+<span class="nc" id="L331">        val value = mainList[index]</span>
+<span class="nc" id="L332">        value.checked = isChecked</span>
+<span class="nc" id="L333">        value.showCheckBox = false</span>
+
+<span class="nc bnc" id="L335" title="All 4 branches missed.">        if (price.isNotBlank()) {</span>
+<span class="nc" id="L336">            value.allowedAmount = price.toDouble()</span>
+        }
+<span class="nc bnc" id="L338" title="All 2 branches missed.">        if (value.amountChanged) {</span>
+<span class="nc bnc" id="L339" title="All 2 branches missed.">            if (!isChecked) {</span>
+<span class="nc" id="L340">                value.allowedAmount = 0.0</span>
+            }
+        }
+<span class="nc bnc" id="L343" title="All 2 branches missed.">        if (isChecked) {</span>
+<span class="nc" id="L344">            selectedItemsList.add(value)</span>
+        } else {
+<span class="nc" id="L346">            selectedItemsList.removeAll { it.codeValue == value.codeValue }</span>
+        }
+
+<span class="nc" id="L349">        var originalIndex = feeScheduleList.indexOf(</span>
+<span class="nc bnc" id="L350" title="All 4 branches missed.">            feeScheduleList.find { it.codeValue == value.codeValue }</span>
+        )
+//        var item = selectedScheduleList.find { it.codeValue == value.codeValue }
+//        item?.let {
+//            selectedScheduleList.remove(
+//                selectedScheduleList.find { it.codeValue == value.codeValue }
+//            )
+//        }
+
+<span class="nc" id="L359">        val updatedItems = feeScheduleList.toMutableList().apply { this[originalIndex] = value }</span>
+<span class="nc" id="L360">        val updatedItemsView = mainList.toMutableList().apply { this[index] = value }</span>
+
+<span class="nc" id="L362">        feeScheduleList.clear()</span>
+<span class="nc" id="L363">        feeScheduleList.addAll(updatedItems)</span>
+
+<span class="nc" id="L365">        recalculatePrice(value)</span>
+<span class="nc" id="L366">        _updateList.value = Event(updatedItemsView)</span>
+<span class="nc" id="L367">    }</span>
+
+    fun showDisc(isChecked: Boolean) {
+<span class="nc bnc" id="L370" title="All 4 branches missed.">        if (isChecked &amp;&amp; !preferences.getBoolean(</span>
+<span class="nc" id="L371">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()+&quot;_&quot;+&quot;doNot_show_price&quot;,</span>
+<span class="nc" id="L372">                false</span>
+            )
+        ) {
+<span class="nc" id="L375">            _showDiscAdded.value = Event(preferences)</span>
+        }
+<span class="nc" id="L377">    }</span>
+
+    fun added() {
+<span class="nc bnc" id="L380" title="All 2 branches missed.">        if (!preferences.getBoolean(</span>
+<span class="nc" id="L381">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()+&quot;_&quot;+&quot;doNot_show_price&quot;,</span>
+<span class="nc" id="L382">                false</span>
+<span class="nc bnc" id="L383" title="All 2 branches missed.">            ) &amp;&amp; !discShowing</span>
+        ) {
+<span class="nc" id="L385">            discShowing = true</span>
+<span class="nc" id="L386">            _showDiscAdded.value = Event(preferences)</span>
+        }
+<span class="nc" id="L388">    }</span>
+    fun listUpdateSelected(
+        mainList: List&lt;FeeSchedule&gt;,
+        changed: FeeSchedule,
+        isChecked: Boolean,
+        price: String
+    ) {
+<span class="nc bnc" id="L395" title="All 4 branches missed.">        val index = mainList.indexOf(mainList.find { it.codeValue == changed.codeValue })</span>
+
+<span class="nc" id="L397">        val originalIndex =</span>
+<span class="nc bnc" id="L398" title="All 4 branches missed.">            feeScheduleList.indexOf(feeScheduleList.find { it.codeValue == changed.codeValue })</span>
+
+<span class="nc bnc" id="L400" title="All 4 branches missed.">        if (price.isNotBlank()) {</span>
+<span class="nc" id="L401">            changed.allowedAmount = price.toDouble()</span>
+        }
+
+<span class="nc bnc" id="L404" title="All 2 branches missed.">        if (isChecked) {</span>
+<span class="nc" id="L405">            changed.checked = true</span>
+<span class="nc" id="L406">            selectedItemsList.add(changed)</span>
+        } else {
+<span class="nc" id="L408">            selectedItemsList.removeAll { it.codeValue == changed.codeValue }</span>
+        }
+
+<span class="nc bnc" id="L411" title="All 2 branches missed.">        if (originalIndex != -1) {</span>
+<span class="nc" id="L412">            val updatedItems =</span>
+<span class="nc" id="L413">                feeScheduleList.toMutableList().apply { this[originalIndex] = changed }</span>
+<span class="nc" id="L414">            val updatedItemsView = mainList.toMutableList().apply { this[index] = changed }</span>
+<span class="nc" id="L415">            feeScheduleList.clear()</span>
+<span class="nc" id="L416">            feeScheduleList.addAll(updatedItems)</span>
+<span class="nc" id="L417">            _updateList.value = Event(updatedItems)</span>
+        }
+<span class="nc" id="L419">        recalculatePrice(changed)</span>
+<span class="nc" id="L420">    }</span>
+
+    fun listUpdatePrice(
+        mainList: List&lt;FeeSchedule&gt;,
+        price: String,
+        item: FeeSchedule,
+        changed: Int,
+        isChecked: Boolean
+    ) {
+<span class="nc" id="L429">        var index = changed</span>
+
+<span class="nc" id="L431">        var value = item</span>
+<span class="nc" id="L432">        var originalIndex = feeScheduleList.indexOf(</span>
+<span class="nc bnc" id="L433" title="All 4 branches missed.">            feeScheduleList.find { it.codeValue == item.codeValue }</span>
+        )
+<span class="nc bnc" id="L435" title="All 4 branches missed.">        if (price.isNotBlank()) {</span>
+<span class="nc" id="L436">            value.allowedAmount = price.toDouble()</span>
+        }
+<span class="nc bnc" id="L438" title="All 6 branches missed.">        value.checked = isChecked &amp;&amp; price.isNotBlank()</span>
+<span class="nc" id="L439">        value.amountChanged = true</span>
+
+<span class="nc bnc" id="L441" title="All 2 branches missed.">        if (!isChecked) {</span>
+<span class="nc" id="L442">            value.allowedAmount = 0.0</span>
+<span class="nc" id="L443">            value.amountChanged = false</span>
+        }
+
+<span class="nc bnc" id="L446" title="All 2 branches missed.">        if (isChecked) {</span>
+<span class="nc" id="L447">            selectedItemsList.add(value)</span>
+        } else {
+<span class="nc" id="L449">            selectedItemsList.removeAll { it.codeValue == value.codeValue }</span>
+        }
+<span class="nc" id="L451">        val updatedItems = feeScheduleList.toMutableList().apply { this[originalIndex] = value }</span>
+<span class="nc" id="L452">        val updatedItemsView = mainList.toMutableList().apply { this[index] = value }</span>
+
+<span class="nc" id="L454">        feeScheduleList.clear()</span>
+<span class="nc" id="L455">        feeScheduleList.addAll(updatedItems)</span>
+
+<span class="nc" id="L457">        recalculatePrice(item)</span>
+<span class="nc" id="L458">        _updateList.value = Event(updatedItemsView)</span>
+<span class="nc" id="L459">    }</span>
+
+    fun sortList() {
+<span class="nc" id="L462">        page = 1</span>
+<span class="nc" id="L463">        feeScheduleList.clear()</span>
+//        selectedItemsList.clear()
+//        selectedScheduleList.clear()
+//        recalculatePrice(null)
+<span class="nc" id="L467">        getProvidersList(docValue.npi.toString(), docValue.ein.toString(), false)</span>
+
+//        if (filterOn) {
+//            sortTemp()
+//            _updateList.value = Event(tempList)
+//
+//        } else {
+//            sortMian()
+//            _updateList.value = Event(feeScheduleList)
+//        }
+<span class="nc" id="L477">    }</span>
+
+    fun recalculatePrice(value: FeeSchedule?) {
+<span class="nc" id="L480">        val mergedList = selectedItemsList.distinctBy { it.codeValue }</span>
+
+//        val mergedList = (selectedScheduleList.filter { it.checked } + selectedItemsList + feeScheduleList.filter { it.checked }).distinctBy { it.codeValue }
+<span class="nc bnc" id="L483" title="All 4 branches missed.">        totalPrice = (mergedList.sumOf { it.allowedAmount ?: 0.0 })</span>
+<span class="nc" id="L484">        val totalSelectedOld = totalSelected</span>
+<span class="nc" id="L485">        totalSelected = mergedList.count()</span>
+<span class="nc bnc" id="L486" title="All 8 branches missed.">        if (totalSelected &gt; totalSelectedOld &amp;&amp; value?.allowedAmount != null &amp;&amp; value.allowedAmount != 0.0) {</span>
+<span class="nc" id="L487">            added()</span>
+        }
+<span class="nc bnc" id="L489" title="All 2 branches missed.">        var v1 = mergedList.count { it.allowedAmount == null }</span>
+<span class="nc" id="L490">        var v2 = mergedList.count { it.allowedAmount == 0.0 }</span>
+<span class="nc bnc" id="L491" title="All 4 branches missed.">        val totalNonZero = mergedList.filter { (it.allowedAmount == null || it.allowedAmount == 0.0) }</span>
+<span class="nc bnc" id="L492" title="All 6 branches missed.">        if (mergedList.any { it.allowedAmount == null } || mergedList.any { it.allowedAmount == 0.0 }) {</span>
+<span class="nc" id="L493">            outOf = true</span>
+<span class="nc" id="L494">            outOfText = resources.getString(</span>
+<span class="nc" id="L495">                R.string.s_out_of_s_procedures,</span>
+<span class="nc" id="L496">                (mergedList.count() - totalNonZero.count()).toString(),</span>
+<span class="nc" id="L497">                mergedList.count().toString()</span>
+            )
+        } else {
+<span class="nc" id="L500">            outOf = false</span>
+        }
+<span class="nc" id="L502">        getRecommendedProcedure(docValue.npi, docValue.ein)</span>
+<span class="nc" id="L503">    }</span>
+    fun sortMian() {
+<span class="nc bnc" id="L505" title="All 2 branches missed.">        if (sortby.equals(&quot;cost&quot;, true)) {</span>
+<span class="nc bnc" id="L506" title="All 2 branches missed.">            if (sortAction.equals(&quot;asc&quot;, true)) {</span>
+<span class="nc" id="L507">                val sortedList = feeScheduleList.sortedWith(compareBy { it.allowedAmount })</span>
+<span class="nc" id="L508">                feeScheduleList.clear()</span>
+<span class="nc" id="L509">                feeScheduleList.addAll(sortedList)</span>
+<span class="nc bnc" id="L510" title="All 2 branches missed.">            } else if (sortAction.equals(&quot;desc&quot;, true)) {</span>
+<span class="nc" id="L511">                val sortedList = feeScheduleList.sortedByDescending { it.allowedAmount }</span>
+<span class="nc" id="L512">                feeScheduleList.clear()</span>
+<span class="nc" id="L513">                feeScheduleList.addAll(sortedList)</span>
+            }
+<span class="nc bnc" id="L515" title="All 2 branches missed.">        } else if (sortby.equals(&quot;name&quot;, true)) {</span>
+<span class="nc bnc" id="L516" title="All 2 branches missed.">            if (sortAction.equals(&quot;asc&quot;, true)) {</span>
+<span class="nc" id="L517">                val sortedList = feeScheduleList.sortedBy { it.codeValue }</span>
+<span class="nc" id="L518">                feeScheduleList.clear()</span>
+<span class="nc" id="L519">                feeScheduleList.addAll(sortedList)</span>
+<span class="nc bnc" id="L520" title="All 2 branches missed.">            } else if (sortAction.equals(&quot;desc&quot;, true)) {</span>
+<span class="nc" id="L521">                val sortedList = feeScheduleList.sortedByDescending { it.codeValue }</span>
+<span class="nc" id="L522">                feeScheduleList.clear()</span>
+<span class="nc" id="L523">                feeScheduleList.addAll(sortedList)</span>
+            }
+<span class="nc bnc" id="L525" title="All 2 branches missed.">        } else if (sortby.equals(&quot;relevance&quot;, true)) {</span>
+<span class="nc" id="L526">            val sortedList = feeScheduleList.sortedByDescending { it.occurrence }</span>
+<span class="nc" id="L527">            feeScheduleList.clear()</span>
+<span class="nc" id="L528">            feeScheduleList.addAll(sortedList)</span>
+        }
+<span class="nc" id="L530">    }</span>
+
+    fun sortTemp() {
+<span class="nc bnc" id="L533" title="All 2 branches missed.">        if (sortby.equals(&quot;cost&quot;, true)) {</span>
+<span class="nc bnc" id="L534" title="All 2 branches missed.">            if (sortAction.equals(&quot;asc&quot;, true)) {</span>
+<span class="nc" id="L535">                val sortedList = tempList.sortedWith(compareBy { it.allowedAmount })</span>
+<span class="nc" id="L536">                tempList.clear()</span>
+<span class="nc" id="L537">                tempList.addAll(sortedList)</span>
+<span class="nc bnc" id="L538" title="All 2 branches missed.">            } else if (sortAction.equals(&quot;desc&quot;, true)) {</span>
+<span class="nc" id="L539">                val sortedList = tempList.sortedByDescending { it.allowedAmount }</span>
+<span class="nc" id="L540">                tempList.clear()</span>
+<span class="nc" id="L541">                tempList.addAll(sortedList)</span>
+            }
+<span class="nc bnc" id="L543" title="All 2 branches missed.">        } else if (sortby.equals(&quot;name&quot;, true)) {</span>
+<span class="nc bnc" id="L544" title="All 2 branches missed.">            if (sortAction.equals(&quot;asc&quot;, true)) {</span>
+<span class="nc" id="L545">                val sortedList = feeScheduleList.sortedBy { it.codeValue }</span>
+<span class="nc" id="L546">                feeScheduleList.clear()</span>
+<span class="nc" id="L547">                feeScheduleList.addAll(sortedList)</span>
+<span class="nc bnc" id="L548" title="All 2 branches missed.">            } else if (sortAction.equals(&quot;desc&quot;, true)) {</span>
+<span class="nc" id="L549">                val sortedList = feeScheduleList.sortedByDescending { it.codeValue }</span>
+<span class="nc" id="L550">                feeScheduleList.clear()</span>
+<span class="nc" id="L551">                feeScheduleList.addAll(sortedList)</span>
+            }
+<span class="nc bnc" id="L553" title="All 2 branches missed.">        } else if (sortby.equals(&quot;relevance&quot;, true)) {</span>
+<span class="nc" id="L554">            val sortedList = tempList.sortedByDescending { it.occurrence }</span>
+<span class="nc" id="L555">            tempList.clear()</span>
+<span class="nc" id="L556">            tempList.addAll(sortedList)</span>
+        }
+<span class="nc" id="L558">    }</span>
+
+    fun getProvidersList(npi: String, ein: String, search: Boolean) {
+<span class="nc" id="L561">        compositeDisposable.add(</span>
+<span class="nc" id="L562">            specialityRepository.getProcedureList(</span>
+<span class="nc" id="L563">                npi,</span>
+<span class="nc" id="L564">                ein,</span>
+<span class="nc" id="L565">                page,</span>
+<span class="nc" id="L566">                pageSize,</span>
+<span class="nc" id="L567">                sortby,</span>
+<span class="nc" id="L568">                sortAction,</span>
+<span class="nc" id="L569">                searchText,</span>
+<span class="nc" id="L570">                codeType,</span>
+<span class="nc" id="L571">                codeValue</span>
+            )
+<span class="nc" id="L573">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L574">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L575">                .doOnSubscribe {</span>
+<span class="nc" id="L576">                    loading = true</span>
+<span class="nc" id="L577">                }</span>
+<span class="nc" id="L578">                .subscribe({ it -&gt;</span>
+                    // data =  it.doctorList.isNotEmpty()
+//                    Value.isSelected = true
+                    //   ValueList = it.values
+<span class="nc" id="L582">                    loading = false</span>
+<span class="nc" id="L583">                    page++</span>
+<span class="nc" id="L584">                    eligibleValueList = ValueList</span>
+<span class="nc bnc" id="L585" title="All 2 branches missed.">                    if (search) {</span>
+<span class="nc" id="L586">                        feeScheduleList.clear()</span>
+                    }
+
+<span class="nc" id="L589">                    feeScheduleList.addAll(it.feeSchedule)</span>
+
+<span class="nc" id="L591">                    var tempList: ArrayList&lt;FeeSchedule&gt; = arrayListOf()</span>
+
+<span class="nc" id="L593">                    val commonObjects = selectedItemsList.filter { obj1 -&gt;</span>
+<span class="nc" id="L594">                        feeScheduleList.any { obj2 -&gt; obj1.codeValue == obj2.codeValue }</span>
+                    }
+
+<span class="nc" id="L597">                    commonObjects.forEach { it.checked = true }</span>
+
+<span class="nc" id="L599">                    feeScheduleList.replaceAll { obj1 -&gt;</span>
+<span class="nc bnc" id="L600" title="All 6 branches missed.">                        commonObjects.find { obj2 -&gt; obj1.codeValue == obj2.codeValue } ?: obj1</span>
+                    }
+
+<span class="nc" id="L603">                    tempList.addAll(feeScheduleList)</span>
+//                    tempList.forEach { item -&gt;
+// //                        item.showCheckBox = true
+//                    }
+
+                    // Find the elements that match the predicate in both lists
+<span class="nc" id="L609">                    data = feeScheduleList.isEmpty()</span>
+<span class="nc" id="L610">                    listForDoctorAdapter = eligibleValueList.toList()</span>
+<span class="nc bnc" id="L611" title="All 6 branches missed.">                    isLastPage = it.paging?.totalPages == page</span>
+
+<span class="nc bnc" id="L613" title="All 2 branches missed.">                    if (search) {</span>
+<span class="nc" id="L614">                        _logsListGeneratedSearch.value = Event(tempList)</span>
+                    } else {
+<span class="nc" id="L616">                        _logsListGenerated.value = Event(tempList)</span>
+                    }
+<span class="nc" id="L618">                }, {</span>
+<span class="nc" id="L619">                    data = false</span>
+
+<span class="nc" id="L621">                    loading = false</span>
+<span class="nc" id="L622">                })</span>
+        )
+<span class="nc" id="L624">    }</span>
+
+    fun getRecommendedProcedure(npi: String?, ein: String?) {
+<span class="nc" id="L627">        var selectedList: List&lt;String&gt; = listOf()</span>
+
+<span class="nc bnc" id="L629" title="All 2 branches missed.">        selectedList = if (filterOn) {</span>
+<span class="nc" id="L630">            tempList.filter { it.checked }.map { it.codeValue }</span>
+        } else {
+<span class="nc" id="L632">            feeScheduleList.filter { it.checked }.map { it.codeValue }</span>
+        }
+<span class="nc" id="L634">        val list = selectedScheduleList.map { it.codeValue }</span>
+<span class="nc" id="L635">        val listSelected = selectedItemsList.map { it.codeValue }</span>
+
+<span class="nc" id="L637">        selectedList = (selectedList + list + listSelected).distinctBy { it }</span>
+<span class="nc" id="L638">        selectedList.distinct()</span>
+
+//        selectedList = selectedItemsList.map { it.codeValue }.distinct()
+//        totalSelected = selectedList.count()
+<span class="nc" id="L642">        compositeDisposable.add(</span>
+<span class="nc" id="L643">            specialityRepository.getRecommendedProcedureList(</span>
+<span class="nc" id="L644">                RecommendedRequest(</span>
+<span class="nc" id="L645">                    ein = ein,</span>
+<span class="nc" id="L646">                    npi = npi,</span>
+<span class="nc" id="L647">                    latitude = lat,</span>
+<span class="nc" id="L648">                    longitude = long,</span>
+<span class="nc" id="L649">                    primaryTaxonomy = primaryTaxonomy,</span>
+<span class="nc" id="L650">                    radius = radius,</span>
+<span class="nc" id="L651">                    selectedProcedures = selectedList</span>
+                )
+            )
+<span class="nc" id="L654">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L655">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L656">                .doOnSubscribe {</span>
+<span class="nc" id="L657">                    loading = true</span>
+<span class="nc" id="L658">                }</span>
+<span class="nc" id="L659">                .subscribe({</span>
+<span class="nc" id="L660">                    loading = false</span>
+
+<span class="nc" id="L662">                    recommendedList.clear()</span>
+<span class="nc bnc" id="L663" title="All 2 branches missed.">                    it.results?.let { item -&gt;</span>
+<span class="nc" id="L664">                        recommendedList.addAll(item)</span>
+<span class="nc" id="L665">                        recommendedList = recommendedList</span>
+<span class="nc" id="L666">                    }</span>
+
+<span class="nc bnc" id="L668" title="All 2 branches missed.">                    showNoData = totalSelected == 0</span>
+<span class="nc" id="L669">                    _recommendedProcedureList.value = Event(it.results)</span>
+<span class="nc" id="L670">                }, {</span>
+<span class="nc" id="L671">                    data = false</span>
+
+<span class="nc bnc" id="L673" title="All 2 branches missed.">                    showNoData = totalSelected == 0</span>
+<span class="nc" id="L674">                    loading = false</span>
+<span class="nc" id="L675">                })</span>
+        )
+<span class="nc" id="L677">    }</span>
+    fun billPreview() {
+<span class="nc" id="L679">        var contains = feeScheduleList.any { it.checked }</span>
+<span class="nc bnc" id="L680" title="All 2 branches missed.">        if (contains) {</span>
+<span class="nc" id="L681">            _billPreviewDisclaimer.value = Event(Unit)</span>
+        } else {
+<span class="nc" id="L683">            _nonChecked.value = Event(Unit)</span>
+        }
+<span class="nc" id="L685">    }</span>
+
+    fun getBillPreview() {
+<span class="nc" id="L688">        var listSelected: ArrayList&lt;FeeSchedule&gt; = arrayListOf()</span>
+<span class="nc" id="L689">        feeScheduleList.forEach {</span>
+<span class="nc bnc" id="L690" title="All 2 branches missed.">            if (it.checked) {</span>
+<span class="nc" id="L691">                listSelected.add(it)</span>
+            }
+<span class="nc" id="L693">        }</span>
+<span class="nc" id="L694">        selectedScheduleList.forEach {</span>
+<span class="nc" id="L695">            listSelected.add(it)</span>
+<span class="nc" id="L696">        }</span>
+<span class="nc" id="L697">        selectedItemsList.forEach {</span>
+<span class="nc" id="L698">            listSelected.add(it)</span>
+<span class="nc" id="L699">        }</span>
+<span class="nc" id="L700">        var list = listSelected.distinctBy { it.codeValue }</span>
+
+<span class="nc bnc" id="L702" title="All 2 branches missed.">        paperDeliveryStatus = deliveryOption != 1</span>
+<span class="nc" id="L703">        compositeDisposable.add(</span>
+<span class="nc" id="L704">            specialityRepository.getBillPreview(</span>
+<span class="nc" id="L705">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc" id="L706">                BillPreviewModel(</span>
+<span class="nc" id="L707">                    feeSchedule = list,</span>
+<span class="nc" id="L708">                    deliveryType = deliveryOption,</span>
+<span class="nc" id="L709">                    npi = docValue.npi,</span>
+<span class="nc" id="L710">                    paperDocumentDeliveryConfirmation = paperDeliveryStatus,</span>
+<span class="nc bnc" id="L711" title="All 2 branches missed.">                    networkType = getProviderType(docValue.providerNetwork ?: &quot;IN_NETWORK_PROVIDER&quot;),</span>
+<span class="nc" id="L712">                    ein = docValue.ein.toString()</span>
+                )
+            )
+<span class="nc" id="L715">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L716">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L717">                .doOnSubscribe {</span>
+<span class="nc" id="L718">                    loading = true</span>
+<span class="nc" id="L719">                }</span>
+<span class="nc" id="L720">                .subscribe({ it -&gt;</span>
+<span class="nc" id="L721">                    loading = false</span>
+
+//                    if (it.code.equals(&quot;400&quot;, true) ) {
+<span class="nc" id="L724">                    _billPreview.value = Event(it.reason)</span>
+//                    }
+<span class="nc" id="L726">                }, {</span>
+<span class="nc" id="L727">                    loading = false</span>
+<span class="nc" id="L728">                })</span>
+        )
+<span class="nc" id="L730">    }</span>
+
+    fun getProviderType(type: String): Int {
+<span class="nc bnc" id="L733" title="All 2 branches missed.">        if (type.equals(&quot;IN_NETWORK_PROVIDER&quot;, true)) {</span>
+<span class="nc" id="L734">            return 1</span>
+        } else {
+<span class="nc" id="L736">            return 2</span>
+        }
+    }
+
+    fun selectedView() {
+<span class="nc bnc" id="L741" title="All 4 branches missed.">        expandSelected = !expandSelected &amp;&amp; totalSelected &gt; 0</span>
+<span class="nc" id="L742">        var tempList: ArrayList&lt;FeeSchedule&gt; = arrayListOf()</span>
+<span class="nc" id="L743">        tempList.addAll(feeScheduleList.filter { it.checked })</span>
+<span class="nc" id="L744">        tempList.addAll(selectedScheduleList)</span>
+<span class="nc" id="L745">        tempList.addAll(selectedItemsList)</span>
+<span class="nc" id="L746">        selectedItemsList.clear()</span>
+<span class="nc" id="L747">        selectedItemsList.addAll(tempList.distinctBy { it.codeValue })</span>
+<span class="nc" id="L748">        _navigateToRemove.value = Event(Unit)</span>
+<span class="nc" id="L749">    }</span>
+    fun sort() {
+<span class="nc" id="L751">        _sortView.value = Event(Unit)</span>
+<span class="nc" id="L752">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L755">        callbacks.add(callback)</span>
+<span class="nc" id="L756">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L759">        callbacks.remove(callback)</span>
+<span class="nc" id="L760">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L763">        super.onCleared()</span>
+<span class="nc" id="L764">        compositeDisposable.dispose()</span>
+<span class="nc" id="L765">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

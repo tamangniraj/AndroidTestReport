@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DependentStatusModule.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.enrollVTwo.dependentStatus.di</a> &gt; <span class="el_source">DependentStatusModule.kt</span></div><h1>DependentStatusModule.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.enrollVTwo.dependentStatus.di
+
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.child.dob.ChildDOBFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.child.employed.ChildEmployedFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.child.gender.ChildGenderFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.child.name.ChildNameFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.requiredDocs.RequireDocumentFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.child.ssn.ChildSSNFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.chooseDependent.ChooseDependentFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.dependentStatus.DependentStatusFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.dependentStatus.ReviewDependentDetailsFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.legal.DisclaimerSignatureFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.legal.LegalFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.primary.PrimaryPreviousInsuranceV2Fragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.selfGender.SelfGenderFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.dob.DOBFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.employed.EmployedFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.gender.GenderFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.healthInsurance.HealthInsuranceFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.insurance.InsuranceFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.marriage.MarriageDateFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.name.SpouseNameFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.spouse.ssn.SSNFragment
+import dagger.Module
+import dagger.android.ContributesAndroidInjector
+
+<span class="nc" id="L27">@Module</span>
+abstract class DependentStatusModule {
+    @ContributesAndroidInjector
+    abstract fun contributeDependentStatus(): DependentStatusFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeChooseDependent(): ChooseDependentFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeReviewDependents(): ReviewDependentDetailsFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeSpouseName(): SpouseNameFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeMarriageDate(): MarriageDateFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeGender(): GenderFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeSSN(): SSNFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeDob(): DOBFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeEmployed(): EmployedFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeHealthInsurance(): HealthInsuranceFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeInsurance(): InsuranceFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeChildName(): ChildNameFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeChildDob(): ChildDOBFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeChildGender(): ChildGenderFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeChildSSN(): ChildSSNFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeChildEmployed(): ChildEmployedFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeChildReqDoc(): RequireDocumentFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributePreviousInsuranceFragment(): PrimaryPreviousInsuranceV2Fragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeLegalFragment(): LegalFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeDisclaimerSignature(): DisclaimerSignatureFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeSelfGender(): SelfGenderFragment
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

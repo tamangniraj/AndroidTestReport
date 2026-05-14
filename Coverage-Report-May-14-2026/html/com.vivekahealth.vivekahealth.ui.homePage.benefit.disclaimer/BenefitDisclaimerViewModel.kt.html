@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BenefitDisclaimerViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.benefit.disclaimer</a> &gt; <span class="el_source">BenefitDisclaimerViewModel.kt</span></div><h1>BenefitDisclaimerViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.benefit.disclaimer
+
+import android.content.SharedPreferences
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.repository.BenefitWorkRepository
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.disposables.CompositeDisposable
+import javax.inject.Inject
+
+<span class="fc" id="L16">class BenefitDisclaimerViewModel @Inject constructor(</span>
+<span class="fc" id="L17">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L18">    private val benefitWorkRepository: BenefitWorkRepository</span>
+<span class="fc" id="L19">) : ViewModel(), Observable {</span>
+
+<span class="fc" id="L21">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L23">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L24">    var disclaimerString: String = &quot;&quot;</span>
+<span class="fc" id="L25">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L27">            field = value</span>
+<span class="fc" id="L28">            callbacks.notifyCallbacks(this, BR.disclaimerString, null)</span>
+<span class="fc" id="L29">        }</span>
+<span class="fc" id="L30">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L32">        get() = _navigateToBack</span>
+<span class="fc" id="L33">    private val _navigateToAck = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToAck: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L35">        get() = _navigateToAck</span>
+<span class="fc" id="L36">    private val _navigateToOk = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToOK: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L38">        get() = _navigateToOk</span>
+
+    fun onOkClicked() {
+<span class="fc" id="L41">        _navigateToOk.value = Event(Unit)</span>
+<span class="fc" id="L42">    }</span>
+
+    fun setText(value: String) {
+<span class="fc" id="L45">        disclaimerString = value</span>
+<span class="fc" id="L46">    }</span>
+    fun ackClicked() {
+<span class="fc" id="L48">        _navigateToAck.value = Event(Unit)</span>
+<span class="fc" id="L49">    }</span>
+    fun onBackClicked() {
+<span class="fc" id="L51">        _navigateToBack.value = Event(Unit)</span>
+<span class="fc" id="L52">    }</span>
+    fun saveDoNotShow(boolean: Boolean) {
+<span class="fc" id="L54">        preferences.edit().putBoolean(</span>
+<span class="fc" id="L55">            &quot;doNotShowBenefitDisclaimer_&quot; + preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="fc" id="L56">            boolean</span>
+<span class="fc" id="L57">        ).apply()</span>
+<span class="fc" id="L58">    }</span>
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="fc" id="L60">        callbacks.add(callback)</span>
+<span class="fc" id="L61">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L64">        callbacks.remove(callback)</span>
+<span class="nc" id="L65">    }</span>
+
+    override fun onCleared() {
+<span class="fc" id="L68">        super.onCleared()</span>
+<span class="fc" id="L69">        compositeDisposable.dispose()</span>
+<span class="fc" id="L70">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

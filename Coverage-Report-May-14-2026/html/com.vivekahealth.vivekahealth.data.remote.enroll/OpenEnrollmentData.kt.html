@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenEnrollmentData.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.remote.enroll</a> &gt; <span class="el_source">OpenEnrollmentData.kt</span></div><h1>OpenEnrollmentData.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.remote.enroll
+
+import com.vivekahealth.vivekahealth.data.remote.guest.GuestRegisterUser
+import com.vivekahealth.vivekahealth.data.remote.guest.Source
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.Enrollment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.UploadedDocument
+import com.vivekahealth.vivekahealth.ui.openEnrollment.OpenEnrollSharedViewModel
+import com.vivekahealth.vivekahealth.utils.DateUtils
+
+<span class="nc" id="L10">data class OpenEnrollmentData(</span>
+<span class="nc" id="L11">    var subscriber: Person? = Person(),</span>
+<span class="nc" id="L12">    var spouse: Person? = Person(),</span>
+<span class="nc" id="L13">    var children: ArrayList&lt;Person&gt; = arrayListOf(),</span>
+<span class="nc" id="L14">    var employment: EmploymentData,</span>
+<span class="nc" id="L15">    var type: Int? = null</span>
+
+<span class="nc" id="L17">)</span>
+
+<span class="nc" id="L19">data class EmploymentData(</span>
+<span class="nc" id="L20">    val employerName: String = &quot;&quot;,</span>
+<span class="nc" id="L21">    val selectedPlan: String = &quot;&quot;,</span>
+<span class="nc" id="L22">    val jobTitle: String = &quot;&quot;,</span>
+<span class="nc" id="L23">    val dateOfHire: String = &quot;&quot;</span>
+<span class="nc" id="L24">)</span>
+
+<span class="nc" id="L26">fun mapToOpenEnrollMember(</span>
+    enrollment: Enrollment,
+    employment: OpenEnrollSharedViewModel.EmploymentData,
+<span class="nc" id="L29">    register: GuestRegisterUser? = null,</span>
+    selectedPlan: String,
+    dlData: OpenEnrollSharedViewModel.DLData?,
+    ssn: String?,
+    primaryDocumentList: MutableList&lt;UploadedDocument&gt;?
+): OpenEnrollmentData {
+<span class="nc" id="L35">    val spouse = enrollment.findSpouse()</span>
+<span class="nc" id="L36">    val primary = enrollment.findPrimary()</span>
+<span class="nc" id="L37">    val childs = enrollment.findChilds()</span>
+
+<span class="nc bnc" id="L39" title="All 6 branches missed.">    val zips: List&lt;String&gt; = dlData?.zip?.split(&quot;-&quot;) ?: emptyList()</span>
+<span class="nc" id="L40">    var zip: String ? = null</span>
+<span class="nc" id="L41">    var zipExtension: String ? = null</span>
+<span class="nc bnc" id="L42" title="All 4 branches missed.">    if (zips.isNotEmpty()) {</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (zips[0].length == 5) {</span>
+<span class="nc" id="L44">            zip = zips[0]</span>
+        }
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (zips.size &gt; 1) {</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">            if (zips[1].length == 4) {</span>
+<span class="nc" id="L48">                zipExtension = zips[1]</span>
+            }
+        }
+    }
+
+<span class="nc" id="L53">    return OpenEnrollmentData(</span>
+<span class="nc" id="L54">        subscriber = Person(</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">            signatureFileId = primary?.signatureFileId,</span>
+<span class="nc" id="L56">            uploadedDocuments = primaryDocumentList,</span>
+<span class="nc bnc" id="L57" title="All 10 branches missed.">            gender = when (dlData?.gender?.uppercase()) { &quot;MALE&quot; -&gt; &quot;M&quot;; &quot;FEMALE&quot; -&gt; &quot;F&quot;; else -&gt; dlData?.gender }, // step 0</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            firstName = dlData?.firstName,</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">            lastName = dlData?.lastName,</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">            dateOfBirth = DateUtils.toAPIDate(dlData?.dob),</span>
+<span class="nc" id="L61">            ssn = ssn,</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">            street1 = dlData?.streetAddress,</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">            street2 = dlData?.apt,</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">            city = dlData?.city,</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">            state = dlData?.state,</span>
+<span class="nc" id="L66">            zip = zip,</span>
+<span class="nc" id="L67">            zipExtension = zipExtension,</span>
+<span class="nc" id="L68">            country = &quot;US&quot;,</span>
+<span class="nc bnc" id="L69" title="All 4 branches missed.">            phoneNumber = (register?.phone ?: &quot;&quot;),</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            emailAddress = register?.email</span>
+
+        ),
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        spouse = spouse?.let {</span>
+<span class="nc" id="L74">            Person(</span>
+<span class="nc" id="L75">                firstName = it.firstName, // step1</span>
+<span class="nc" id="L76">                lastName = it.lastName, // step1</span>
+<span class="nc" id="L77">                dateOfMarriage = it.marriageDate, // step2</span>
+<span class="nc" id="L78">                gender = it.gender, // step3</span>
+<span class="nc" id="L79">                dateOfBirth = it.dob, // step4</span>
+<span class="nc" id="L80">                ssn = it.ssn, // step 5</span>
+<span class="nc" id="L81">                uploadedDocuments = it.uploadedList</span>
+<span class="nc" id="L82">            )</span>
+        },
+<span class="nc bnc" id="L84" title="All 4 branches missed.">        children = childs?.map { child -&gt;</span>
+<span class="nc" id="L85">            Person(</span>
+<span class="nc" id="L86">                firstName = child.firstName, // step 1</span>
+<span class="nc" id="L87">                lastName = child.lastName, // step 1</span>
+<span class="nc" id="L88">                gender = child.gender, // step 2</span>
+<span class="nc" id="L89">                dateOfBirth = child.dob, // step 3</span>
+<span class="nc" id="L90">                ssn = child.ssn, // step 4</span>
+<span class="nc" id="L91">                uploadedDocuments = child.uploadedList</span>
+<span class="nc" id="L92">            )</span>
+<span class="nc" id="L93">        }?.toCollection(ArrayList()) ?: arrayListOf(),</span>
+<span class="nc" id="L94">        employment = EmploymentData(</span>
+<span class="nc" id="L95">            employment.employerName,</span>
+<span class="nc" id="L96">            selectedPlan = selectedPlan,</span>
+<span class="nc" id="L97">            employment.jobTitle,</span>
+<span class="nc" id="L98">            employment.dateOfHire</span>
+        ),
+<span class="nc" id="L100">        type = Source.OPEN_ENROLLMENT.value</span>
+    )
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

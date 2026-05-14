@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Coroutines.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils</a> &gt; <span class="el_source">Coroutines.kt</span></div><h1>Coroutines.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+
+object Coroutines {
+    /**
+     * This function is basically used for Calling function from IO Thread and
+     * return to the Main Thread
+     * ioToMainThread() is a Generic function and it will take 2 parameter
+     * A : work -&gt; this is a suspended function
+     * B : callback -&gt; which will take return data from
+     *                 work function and return the caller
+     */
+    fun &lt;T : Any&gt; ioToMainThread(work: suspend (() -&gt; T?), callback: (T?) -&gt; Unit) =
+
+<span class="fc" id="L19">        CoroutineScope(Dispatchers.Main).launch {</span>
+<span class="fc" id="L20">            val data = CoroutineScope(Dispatchers.IO).async viveka@{</span>
+<span class="fc" id="L21">                return@viveka work()</span>
+<span class="fc" id="L22">            }.await()</span>
+
+<span class="fc" id="L24">            callback(data)</span>
+<span class="fc" id="L25">        }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

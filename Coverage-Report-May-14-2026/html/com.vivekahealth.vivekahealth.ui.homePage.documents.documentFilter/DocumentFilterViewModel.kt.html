@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocumentFilterViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.documents.documentFilter</a> &gt; <span class="el_source">DocumentFilterViewModel.kt</span></div><h1>DocumentFilterViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.documents.documentFilter
+
+import android.content.SharedPreferences
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import com.vivekahealth.vivekahealth.data.local.VivekaDatabase
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.disposables.CompositeDisposable
+import java.util.*
+import javax.inject.Inject
+import kotlin.collections.ArrayList
+
+<span class="fc" id="L21">class DocumentFilterViewModel @Inject constructor(</span>
+<span class="fc" id="L22">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L23">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L24">    private val vivekaDatabase: VivekaDatabase</span>
+<span class="fc" id="L25">) : ViewModel(), Observable {</span>
+
+<span class="fc" id="L27">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L29">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="fc" id="L31">    private val _navigateToDoc = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToDoc: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L33">        get() = _navigateToDoc</span>
+<span class="fc" id="L34">    private val _navigateToDocFilter = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToDocFilter: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L36">        get() = _navigateToDocFilter</span>
+
+<span class="fc" id="L38">    private var memberInfoList = homeRepository.getMemberFromDb().asLiveData()</span>
+
+<span class="pc" id="L40">    var memberInfoDb = homeRepository.getMemberSid(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()).asLiveData()</span>
+
+<span class="pc" id="L42">    var dependentMemberList: ArrayList&lt;MemberInfo&gt; = ArrayList()</span>
+<span class="pc" id="L43">    var eligibleDependentMemberList: ArrayList&lt;MemberInfo&gt; = ArrayList()</span>
+<span class="pc" id="L44">    var listForDependentAdapter: List&lt;MemberInfo&gt; = listOf()</span>
+<span class="fc" id="L45">    private val _dependentListGenerated = MutableLiveData&lt;Event&lt;List&lt;MemberInfo&gt;&gt;&gt;()</span>
+    val dependentListGenerated: LiveData&lt;Event&lt;List&lt;MemberInfo&gt;&gt;&gt;
+<span class="nc" id="L47">        get() = _dependentListGenerated</span>
+
+<span class="pc" id="L49">    var hasChangeSR: Boolean = false</span>
+<span class="nc" id="L50">    var hasChangedUO: Boolean = false</span>
+<span class="nc" id="L51">    var hasChangedMem: Boolean = false</span>
+
+    var hideOpenCloseMail: Boolean = false
+<span class="fc" id="L54">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L56">            field = value</span>
+
+<span class="fc" id="L58">            callbacks.notifyCallbacks(this, BR.hideOpenCloseMail, null)</span>
+<span class="fc" id="L59">        }</span>
+
+    var sentSelected: Boolean = false
+<span class="fc" id="L62">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L64">            field = value</span>
+
+<span class="fc" id="L66">            callbacks.notifyCallbacks(this, BR.sentSelected, null)</span>
+<span class="fc" id="L67">        }</span>
+    var unOpenSelected: Boolean = false
+<span class="fc" id="L69">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L71">            field = value</span>
+
+<span class="fc" id="L73">            callbacks.notifyCallbacks(this, BR.unOpenSelected, null)</span>
+<span class="fc" id="L74">        }</span>
+    var receiveSelected: Boolean = false
+<span class="fc" id="L76">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L78">            field = value</span>
+
+<span class="fc" id="L80">            callbacks.notifyCallbacks(this, BR.receiveSelected, null)</span>
+<span class="fc" id="L81">        }</span>
+    var openSelected: Boolean = false
+<span class="fc" id="L83">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L85">            field = value</span>
+
+<span class="fc" id="L87">            callbacks.notifyCallbacks(this, BR.openSelected, null)</span>
+<span class="fc" id="L88">        }</span>
+    var applyEnabled: Boolean = false
+<span class="fc" id="L90">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L92">            field = value</span>
+
+<span class="fc" id="L94">            callbacks.notifyCallbacks(this, BR.applyEnabled, null)</span>
+<span class="fc" id="L95">        }</span>
+
+//    fun loadData(memberInfo: MemberInfo) {
+//        dependentMemberList.clear()
+//        memberInfo.isSelected = false
+//
+//        memberInfo.insured?.let { it1 -&gt;
+//
+//            dependentMemberList.add(it1)
+//
+//        } ?: run{
+//            dependentMemberList.add(0,memberInfo)
+//
+//        }
+//        memberInfo.dependentsArrayList?.sortByDescending{ DateUtils.stringServerDateToDate(it.birthDate.toString()) }
+//
+//        memberInfo.dependentsArrayList?.reverse()
+//
+//
+//        memberInfo.dependentsArrayList?.let { it1 -&gt;
+//
+//
+//            for (member in it1){
+//
+//                if(StringUtils.equalsIgnoreCase(member.memberRelationship,&quot;Spouse&quot;)){
+//                    dependentMemberList.add(1,member)
+//
+//                }else{
+//                    dependentMemberList.add(member)
+//
+//                }
+//
+//            }
+//        }
+//
+//        listForDependentAdapter = dependentMemberList.toList()
+//
+//        _dependentListGenerated.value = Event(listForDependentAdapter)
+//
+//    }
+    fun loadList(memList: ArrayList&lt;MemberInfo&gt;) {
+<span class="nc" id="L136">        dependentMemberList.clear()</span>
+
+<span class="nc" id="L138">        dependentMemberList = memList</span>
+<span class="nc" id="L139">        listForDependentAdapter = dependentMemberList.toList()</span>
+
+<span class="nc" id="L141">        _dependentListGenerated.value = Event(listForDependentAdapter)</span>
+<span class="nc" id="L142">    }</span>
+    fun String.capitalize(): String {
+<span class="nc bnc" id="L144" title="All 4 branches missed.">        return this.replaceFirstChar {</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            if (it.isLowerCase()) {</span>
+<span class="nc" id="L146">                it.titlecase(Locale.getDefault())</span>
+            } else {
+<span class="nc" id="L148">                it.toString()</span>
+<span class="nc" id="L149">            }</span>
+        }
+    }
+    fun setSelectedMember(memberInfo: MemberInfo) {
+<span class="nc" id="L153">        hasChangedMem = true</span>
+//
+<span class="nc" id="L155">        val index = dependentMemberList.indexOf(memberInfo)</span>
+<span class="nc" id="L156">        dependentMemberList[index].apply {</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">            isSelected = !(dependentMemberList[index].isSelected)</span>
+<span class="nc" id="L158">        }</span>
+//        for (member in dependentMemberList){
+//            if (member.isSelected){
+//
+//
+//                Log.e(&quot;member SELECTED&quot;, member.firstName.toString().lowercase().capitalize());
+//            }
+//        }
+
+<span class="nc" id="L167">        listForDependentAdapter = dependentMemberList.toList()</span>
+
+<span class="nc" id="L169">        _dependentListGenerated.value = Event(listForDependentAdapter)</span>
+<span class="nc" id="L170">        applyButtonEnabled()</span>
+<span class="nc" id="L171">    }</span>
+    fun applyFilter() {
+<span class="fc" id="L173">        _navigateToDocFilter.value = Event(Unit)</span>
+<span class="fc" id="L174">    }</span>
+    fun applyButtonEnabled() {
+<span class="pc bpc" id="L176" title="4 of 6 branches missed.">        applyEnabled = hasChangedUO || hasChangeSR || hasChangedMem</span>
+<span class="fc" id="L177">    }</span>
+    fun onCrossClicked() {
+<span class="fc" id="L179">        _navigateToDoc.value = Event(Unit)</span>
+<span class="fc" id="L180">    }</span>
+    fun showHideOpenCloseMail() {
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        if (receiveSelected) {</span>
+<span class="fc" id="L183">            hideOpenCloseMail = false</span>
+        } else {
+<span class="fc" id="L185">            openSelected = false</span>
+<span class="fc" id="L186">            unOpenSelected = false</span>
+<span class="fc" id="L187">            hideOpenCloseMail = sentSelected</span>
+        }
+<span class="fc" id="L189">    }</span>
+
+    fun onSentClicked() {
+<span class="fc" id="L192">        hasChangeSR = true</span>
+<span class="pc bpc" id="L193" title="1 of 2 branches missed.">        sentSelected = !sentSelected</span>
+
+<span class="fc" id="L195">        showHideOpenCloseMail()</span>
+
+<span class="fc" id="L197">        applyButtonEnabled()</span>
+<span class="fc" id="L198">    }</span>
+    fun onReceiveClicked() {
+<span class="fc" id="L200">        hasChangeSR = true</span>
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">        receiveSelected = !receiveSelected</span>
+<span class="fc" id="L202">        showHideOpenCloseMail()</span>
+
+<span class="fc" id="L204">        applyButtonEnabled()</span>
+<span class="fc" id="L205">    }</span>
+    fun onOpenClicked() {
+<span class="nc" id="L207">        hasChangedUO = true</span>
+
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        openSelected = !openSelected</span>
+<span class="nc bnc" id="L210" title="All 2 branches missed.">        if (openSelected) {</span>
+<span class="nc" id="L211">            receiveSelected = true</span>
+        }
+<span class="nc" id="L213">        applyButtonEnabled()</span>
+<span class="nc" id="L214">    }</span>
+    fun onUnOpenClicked() {
+<span class="nc" id="L216">        hasChangedUO = true</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">        unOpenSelected = !unOpenSelected</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">        if (unOpenSelected) {</span>
+<span class="nc" id="L219">            receiveSelected = true</span>
+        }
+<span class="nc" id="L221">        applyButtonEnabled()</span>
+<span class="nc" id="L222">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L225">        callbacks.add(callback)</span>
+<span class="nc" id="L226">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L229">        callbacks.remove(callback)</span>
+<span class="nc" id="L230">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L233">        super.onCleared()</span>
+<span class="nc" id="L234">        compositeDisposable.dispose()</span>
+<span class="nc" id="L235">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

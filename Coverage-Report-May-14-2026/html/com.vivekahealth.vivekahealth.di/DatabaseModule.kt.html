@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabaseModule.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.di</a> &gt; <span class="el_source">DatabaseModule.kt</span></div><h1>DatabaseModule.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.di
+
+import android.app.Application
+import com.vivekahealth.vivekahealth.data.local.VivekaDatabase
+import com.vivekahealth.vivekahealth.data.local.home.ClientDetailsDao
+import com.vivekahealth.vivekahealth.data.local.home.GuestClientDetailsDao
+import com.vivekahealth.vivekahealth.data.local.home.GuestInfoDao
+import com.vivekahealth.vivekahealth.data.local.home.HomeBenefitDao
+import com.vivekahealth.vivekahealth.data.local.home.InsuranceWithCardCardDataDao
+import com.vivekahealth.vivekahealth.data.local.home.MemberInfoDao
+import com.vivekahealth.vivekahealth.data.local.home.RecentCardsDao
+import com.vivekahealth.vivekahealth.data.local.home.WorkBenefitV2Dao
+import com.vivekahealth.vivekahealth.pension.data.local.dao.PensionConfigDao
+import com.vivekahealth.vivekahealth.pension.data.local.dao.SummaryImpactDao
+import com.vivekahealth.vivekahealth.pension.data.local.dao.WorkHistoryDao
+import dagger.Module
+import dagger.Provides
+import javax.inject.Singleton
+
+<span class="fc" id="L20">@Module</span>
+class DatabaseModule {
+
+//    @Provides
+//    @Singleton
+//    fun providesVivekaDatabase(context: Application): VivekaDatabase =
+//            Room.databaseBuilder(context, VivekaDatabase::class.java, &quot;viveka-db&quot;).allowMainThreadQueries()
+// //                .addTypeConverter(VivekaTypeConverters()
+//                .build();
+//
+
+    @Singleton
+    @Provides
+    fun provideMemberInfoDao(database: VivekaDatabase): MemberInfoDao {
+<span class="fc" id="L34">        return database.memberInfoDao()</span>
+    }
+
+    @Singleton
+    @Provides
+    fun provideHomeBenefitDao(database: VivekaDatabase): HomeBenefitDao {
+<span class="fc" id="L40">        return database.HomeBenefitDao()</span>
+    }
+
+    @Singleton
+    @Provides
+
+    fun provideRecentCardsDao(database: VivekaDatabase): RecentCardsDao {
+<span class="fc" id="L47">        return database.RecentCardsDao()</span>
+    }
+
+    @Singleton
+    @Provides
+    fun provideClientsDetailDao(database: VivekaDatabase): ClientDetailsDao {
+<span class="fc" id="L53">        return database.ClientDetailsDao()</span>
+    }
+
+    @Singleton
+    @Provides
+    fun provideInsuranceWithCardDataDao(database: VivekaDatabase): InsuranceWithCardCardDataDao {
+<span class="fc" id="L59">        return database.insuranceWithCardDataDao()</span>
+    }
+
+    @Singleton
+    @Provides
+    fun provideWorkLogDao(database: VivekaDatabase): WorkBenefitV2Dao {
+<span class="fc" id="L65">        return database.workBenefitV2Dao()</span>
+    }
+
+    @Singleton
+    @Provides
+    fun provideGuestInfo(database: VivekaDatabase): GuestInfoDao {
+<span class="fc" id="L71">        return database.guestInfoDao()</span>
+    }
+
+    @Singleton
+    @Provides
+    fun providesGuestClientDetails(database: VivekaDatabase): GuestClientDetailsDao {
+<span class="fc" id="L77">        return database.guestClientDetailsDao()</span>
+    }
+
+    @Singleton
+    @Provides
+    fun provideSummaryImpactDao(database: VivekaDatabase): SummaryImpactDao {
+<span class="fc" id="L83">        return database.summaryImpactDao()</span>
+    }
+
+    @Singleton
+    @Provides
+    fun provideWorkHistoryDao(database: VivekaDatabase): WorkHistoryDao {
+<span class="fc" id="L89">        return database.workHistoryDao()</span>
+    }
+
+    @Singleton
+    @Provides
+    fun providePensionConfigDao(database: VivekaDatabase): PensionConfigDao {
+<span class="fc" id="L95">        return database.pensionConfigDao()</span>
+    }
+
+    @Singleton
+    @Provides
+    fun getRoomDbInstance(context: Application): VivekaDatabase {
+<span class="fc" id="L101">        return VivekaDatabase.getDatabase(context)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

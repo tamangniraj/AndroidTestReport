@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SelectActivityViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findCareSelectSpecialityActivity</a> &gt; <span class="el_source">SelectActivityViewModel.kt</span></div><h1>SelectActivityViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findCareSelectSpecialityActivity
+
+import android.content.SharedPreferences
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality.selectSpecialityAllModel.SpecialityAll
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality.selectSpecialityRecentModel.Specialityrecent
+import java.util.ArrayList
+import javax.inject.Inject
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+
+<span class="nc" id="L14">class SelectActivityViewModel @Inject constructor(val preferences: SharedPreferences) : BaseViewModel&lt;SelectSpecialityVerifyNavigator&gt;() {</span>
+    private var mutableSignup: MutableLiveData&lt;SpecialityAll&gt;? = null
+    private var selectrecent: MutableLiveData&lt;Specialityrecent&gt;? = null
+<span class="nc" id="L17">    private val TAG = &quot;VerifyLoginViewModel&quot;</span>
+<span class="nc" id="L18">    var ValueList1: ArrayList&lt;SpecialityAll&gt; = ArrayList()</span>
+<span class="nc" id="L19">    var tempListFlat: ArrayList&lt;Any&gt; = arrayListOf()</span>
+<span class="nc" id="L20">    var pref = preferences</span>
+<span class="nc" id="L21">    init {</span>
+<span class="nc" id="L22">        pref = preferences</span>
+<span class="nc" id="L23">    }</span>
+<span class="nc" id="L24">    var ValueList11: ArrayList&lt;Specialityrecent&gt; = ArrayList()</span>
+<span class="nc" id="L25">    var tempListFlat1: ArrayList&lt;Any&gt; = arrayListOf()</span>
+
+<span class="nc" id="L27">    var tempListFlat11: ArrayList&lt;Any&gt; = arrayListOf()</span>
+<span class="nc" id="L28">    var ValueList111: ArrayList&lt;String&gt; = ArrayList()</span>
+
+    fun selectAll(post: String): LiveData&lt;SpecialityAll&gt; {
+<span class="nc" id="L31">        mutableSignup = MutableLiveData()</span>
+<span class="nc" id="L32">        selectSpecialityAll(post)</span>
+<span class="nc" id="L33">        return mutableSignup!!</span>
+    }
+
+    fun selectRecent(post: String): LiveData&lt;Specialityrecent&gt; {
+<span class="nc" id="L37">        selectrecent = MutableLiveData()</span>
+<span class="nc" id="L38">        selectRecentSpeciality(post)</span>
+<span class="nc" id="L39">        return selectrecent!!</span>
+    }
+
+    private fun selectRecentSpeciality(post: String) {
+<span class="nc" id="L43">        val call: Call&lt;Specialityrecent&gt; = RetrofitClient.getApi()!!.getAllRecentSpeciality(post)</span>
+<span class="nc" id="L44">        call.enqueue(object : Callback&lt;Specialityrecent&gt; {</span>
+            override fun onResponse(
+                call: Call&lt;Specialityrecent&gt;,
+                response: Response&lt;Specialityrecent&gt;
+            ) {
+<span class="nc" id="L49">                try {</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">                    selectrecent?.value = response.body()</span>
+<span class="nc" id="L51">                } catch (e: Exception) {</span>
+                }
+<span class="nc" id="L53">            }</span>
+
+            override fun onFailure(call: Call&lt;Specialityrecent&gt;, t: Throwable) {
+<span class="nc bnc" id="L56" title="All 2 branches missed.">                getNavigator()?.onError(&quot;Email or Password Invalid&quot;)</span>
+                //  Log.d(TAG, &quot;onFailure: ${t.localizedMessage}&quot;)
+<span class="nc" id="L58">            }</span>
+        })
+<span class="nc" id="L60">    }</span>
+
+    private fun selectSpecialityAll(post: String) {
+<span class="nc" id="L63">        val call: Call&lt;SpecialityAll&gt; = RetrofitClient.getApi()!!.getAllAllSpeciality(post)</span>
+<span class="nc" id="L64">        call.enqueue(object : Callback&lt;SpecialityAll&gt; {</span>
+            override fun onResponse(
+                call: Call&lt;SpecialityAll&gt;,
+                response: Response&lt;SpecialityAll&gt;
+            ) {
+<span class="nc" id="L69">                try {</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">                    mutableSignup?.value = response.body()</span>
+<span class="nc" id="L71">                } catch (e: Exception) {</span>
+                }
+<span class="nc" id="L73">            }</span>
+
+            override fun onFailure(call: Call&lt;SpecialityAll&gt;, t: Throwable) {
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                getNavigator()?.onError(&quot;Email or Password Invalid&quot;)</span>
+                //  Log.d(TAG, &quot;onFailure: ${t.localizedMessage}&quot;)
+<span class="nc" id="L78">            }</span>
+        })
+<span class="nc" id="L80">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

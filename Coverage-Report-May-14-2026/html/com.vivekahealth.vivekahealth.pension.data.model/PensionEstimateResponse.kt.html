@@ -1,0 +1,485 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PensionEstimateResponse.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.pension.data.model</a> &gt; <span class="el_source">PensionEstimateResponse.kt</span></div><h1>PensionEstimateResponse.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.pension.data.model
+
+import com.google.gson.annotations.SerializedName
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+<span class="nc" id="L7">@Parcelize</span>
+<span class="nc" id="L8">data class PensionEstimateResponse(</span>
+<span class="nc" id="L9">    @SerializedName(&quot;memberId&quot;)</span>
+<span class="nc" id="L10">    val memberId: Long? = null,</span>
+
+<span class="nc" id="L12">    @SerializedName(&quot;planId&quot;)</span>
+<span class="nc" id="L13">    val planId: String? = null,</span>
+
+<span class="nc" id="L15">    @SerializedName(&quot;asOfDate&quot;)</span>
+<span class="nc" id="L16">    val asOfDate: String? = null,</span>
+
+<span class="nc" id="L18">    @SerializedName(&quot;currentStatus&quot;)</span>
+<span class="nc" id="L19">    val currentStatus: CurrentStatus? = null,</span>
+
+<span class="nc" id="L21">    @SerializedName(&quot;retirementProjection&quot;)</span>
+<span class="nc" id="L22">    val retirementProjection: RetirementProjection? = null,</span>
+
+<span class="nc" id="L24">    @SerializedName(&quot;benefitBreakdown&quot;)</span>
+<span class="nc" id="L25">    val benefitBreakdown: BenefitBreakdown? = null,</span>
+
+<span class="nc" id="L27">    @SerializedName(&quot;survivorBenefitCalculation&quot;)</span>
+<span class="nc" id="L28">    val survivorBenefitCalculation: SurvivorBenefitCalculation? = null,</span>
+
+<span class="nc" id="L30">    @SerializedName(&quot;eligibilityAnalysis&quot;)</span>
+<span class="nc" id="L31">    val eligibilityAnalysis: EligibilityAnalysis? = null,</span>
+
+<span class="nc" id="L33">    @SerializedName(&quot;selectedOptions&quot;)</span>
+<span class="nc" id="L34">    val selectedOptions: SelectedOptions? = null,</span>
+
+<span class="nc" id="L36">    @SerializedName(&quot;projectionSummary&quot;)</span>
+<span class="nc" id="L37">    val projectionSummary: ProjectionSummary? = null,</span>
+
+<span class="nc" id="L39">    @SerializedName(&quot;forfeitureImpact&quot;)</span>
+<span class="nc" id="L40">    val forfeitureImpact: ForfeitureImpact? = null,</span>
+
+<span class="nc" id="L42">    @SerializedName(&quot;availableOptions&quot;)</span>
+<span class="nc" id="L43">    val availableOptions: AvailableOptions? = null,</span>
+
+<span class="nc" id="L45">    @SerializedName(&quot;creditsByRateBreakdown&quot;)</span>
+<span class="nc" id="L46">    val creditsByRateBreakdown: CreditsByRateBreakdown? = null,</span>
+
+<span class="nc" id="L48">    @SerializedName(&quot;warnings&quot;)</span>
+<span class="nc" id="L49">    val warnings: List&lt;String&gt;? = null,</span>
+
+<span class="nc" id="L51">    @SerializedName(&quot;notes&quot;)</span>
+<span class="nc" id="L52">    val notes: List&lt;String&gt;? = null,</span>
+
+<span class="nc" id="L54">    @SerializedName(&quot;isMultiPlan&quot;)</span>
+<span class="nc" id="L55">    val isMultiPlan: Boolean? = null</span>
+<span class="nc" id="L56">) : Parcelable</span>
+
+<span class="nc" id="L58">@Parcelize</span>
+<span class="nc" id="L59">data class CurrentStatus(</span>
+<span class="nc" id="L60">    @SerializedName(&quot;age&quot;)</span>
+<span class="nc" id="L61">    val age: Int? = null,</span>
+
+<span class="nc" id="L63">    @SerializedName(&quot;totalCreditsEarned&quot;)</span>
+<span class="nc" id="L64">    val totalCreditsEarned: Double? = null,</span>
+
+<span class="nc" id="L66">    @SerializedName(&quot;forfeitedCredits&quot;)</span>
+<span class="nc" id="L67">    val forfeitedCredits: Double? = null,</span>
+
+<span class="nc" id="L69">    @SerializedName(&quot;netCredits&quot;)</span>
+<span class="nc" id="L70">    val netCredits: Double? = null,</span>
+
+<span class="nc" id="L72">    @SerializedName(&quot;isVested&quot;)</span>
+<span class="nc" id="L73">    val isVested: Boolean? = null,</span>
+
+<span class="nc" id="L75">    @SerializedName(&quot;vestingPercentage&quot;)</span>
+<span class="nc" id="L76">    val vestingPercentage: Int? = null,</span>
+
+<span class="nc" id="L78">    @SerializedName(&quot;yearsOfService&quot;)</span>
+<span class="nc" id="L79">    val yearsOfService: Int? = null,</span>
+
+<span class="nc" id="L81">    @SerializedName(&quot;breakYears&quot;)</span>
+<span class="nc" id="L82">    val breakYears: Int? = null,</span>
+
+<span class="nc" id="L84">    @SerializedName(&quot;memberStatus&quot;)</span>
+<span class="nc" id="L85">    val memberStatus: String? = null</span>
+<span class="nc" id="L86">) : Parcelable</span>
+
+<span class="nc" id="L88">@Parcelize</span>
+<span class="nc" id="L89">data class RetirementProjection(</span>
+<span class="nc" id="L90">    @SerializedName(&quot;retirementAge&quot;)</span>
+<span class="nc" id="L91">    val retirementAge: Int? = null,</span>
+
+<span class="nc" id="L93">    @SerializedName(&quot;yearsUntilRetirement&quot;)</span>
+<span class="nc" id="L94">    val yearsUntilRetirement: Int? = null,</span>
+
+<span class="nc" id="L96">    @SerializedName(&quot;forecastedYearlyCredits&quot;)</span>
+<span class="nc" id="L97">    val forecastedYearlyCredits: Map&lt;String, Double&gt;? = null,</span>
+
+<span class="nc" id="L99">    @SerializedName(&quot;totalForecastedCredits&quot;)</span>
+<span class="nc" id="L100">    val totalForecastedCredits: Double? = null,</span>
+
+<span class="nc" id="L102">    @SerializedName(&quot;totalCreditsAtRetirement&quot;)</span>
+<span class="nc" id="L103">    val totalCreditsAtRetirement: Double? = null,</span>
+
+<span class="nc" id="L105">    @SerializedName(&quot;willBeVested&quot;)</span>
+<span class="nc" id="L106">    val willBeVested: Boolean? = null,</span>
+
+<span class="nc" id="L108">    @SerializedName(&quot;vestingStatusAtRetirement&quot;)</span>
+<span class="nc" id="L109">    val vestingStatusAtRetirement: String? = null</span>
+<span class="nc" id="L110">) : Parcelable</span>
+
+<span class="nc" id="L112">@Parcelize</span>
+<span class="nc" id="L113">data class BenefitBreakdown(</span>
+<span class="nc" id="L114">    @SerializedName(&quot;currentAccrualRate&quot;)</span>
+<span class="nc" id="L115">    val currentAccrualRate: Double? = null,</span>
+
+<span class="nc" id="L117">    @SerializedName(&quot;rateLockStatus&quot;)</span>
+<span class="nc" id="L118">    val rateLockStatus: String? = null,</span>
+
+<span class="nc" id="L120">    @SerializedName(&quot;actualCredits&quot;)</span>
+<span class="nc" id="L121">    val actualCredits: Double? = null,</span>
+
+<span class="nc" id="L123">    @SerializedName(&quot;actualBenefitMonthly&quot;)</span>
+<span class="nc" id="L124">    val actualBenefitMonthly: Double? = null,</span>
+
+<span class="nc" id="L126">    @SerializedName(&quot;forecastedCredits&quot;)</span>
+<span class="nc" id="L127">    val forecastedCredits: Double? = null,</span>
+
+<span class="nc" id="L129">    @SerializedName(&quot;forecastedBenefitMonthly&quot;)</span>
+<span class="nc" id="L130">    val forecastedBenefitMonthly: Double? = null,</span>
+
+<span class="nc" id="L132">    @SerializedName(&quot;totalCreditsAtRetirement&quot;)</span>
+<span class="nc" id="L133">    val totalCreditsAtRetirement: Double? = null,</span>
+
+<span class="nc" id="L135">    @SerializedName(&quot;totalBaseBenefit&quot;)</span>
+<span class="nc" id="L136">    val totalBaseBenefit: Double? = null</span>
+<span class="nc" id="L137">) : Parcelable</span>
+
+<span class="nc" id="L139">@Parcelize</span>
+<span class="nc" id="L140">data class SurvivorBenefitCalculation(</span>
+<span class="nc" id="L141">    @SerializedName(&quot;selectedOptionCode&quot;)</span>
+<span class="nc" id="L142">    val selectedOptionCode: String? = null,</span>
+
+<span class="nc" id="L144">    @SerializedName(&quot;selectedOptionName&quot;)</span>
+<span class="nc" id="L145">    val selectedOptionName: String? = null,</span>
+
+<span class="nc" id="L147">    @SerializedName(&quot;reductionFactor&quot;)</span>
+<span class="nc" id="L148">    val reductionFactor: Double? = null,</span>
+
+<span class="nc" id="L150">    @SerializedName(&quot;reductionPercentage&quot;)</span>
+<span class="nc" id="L151">    val reductionPercentage: Double? = null,</span>
+
+<span class="nc" id="L153">    @SerializedName(&quot;reductionAmount&quot;)</span>
+<span class="nc" id="L154">    val reductionAmount: Double? = null,</span>
+
+<span class="nc" id="L156">    @SerializedName(&quot;actualCreditsAfterReduction&quot;)</span>
+<span class="nc" id="L157">    val actualCreditsAfterReduction: Double? = null,</span>
+
+<span class="nc" id="L159">    @SerializedName(&quot;forecastedCreditsAfterReduction&quot;)</span>
+<span class="nc" id="L160">    val forecastedCreditsAfterReduction: Double? = null,</span>
+
+<span class="nc" id="L162">    @SerializedName(&quot;memberMonthlyBenefit&quot;)</span>
+<span class="nc" id="L163">    val memberMonthlyBenefit: Double? = null,</span>
+
+<span class="nc" id="L165">    @SerializedName(&quot;survivorMonthlyBenefit&quot;)</span>
+<span class="nc" id="L166">    val survivorMonthlyBenefit: Double? = null,</span>
+
+<span class="nc" id="L168">    @SerializedName(&quot;survivorPercentage&quot;)</span>
+<span class="nc" id="L169">    val survivorPercentage: Int? = null,</span>
+
+<span class="nc" id="L171">    @SerializedName(&quot;requiresSpouseConsent&quot;)</span>
+<span class="nc" id="L172">    val requiresSpouseConsent: Boolean? = null</span>
+<span class="nc" id="L173">) : Parcelable</span>
+
+<span class="nc" id="L175">@Parcelize</span>
+<span class="nc" id="L176">data class EligibilityAnalysis(</span>
+<span class="nc" id="L177">    @SerializedName(&quot;eligibleOptions&quot;)</span>
+<span class="nc" id="L178">    val eligibleOptions: Map&lt;String, EligibilityOption&gt;? = null,</span>
+
+<span class="nc" id="L180">    @SerializedName(&quot;recommendedOption&quot;)</span>
+<span class="nc" id="L181">    val recommendedOption: String? = null,</span>
+
+<span class="nc" id="L183">    @SerializedName(&quot;recommendationReason&quot;)</span>
+<span class="nc" id="L184">    val recommendationReason: String? = null</span>
+<span class="nc" id="L185">) : Parcelable</span>
+
+<span class="nc" id="L187">@Parcelize</span>
+<span class="nc" id="L188">data class EligibilityOption(</span>
+<span class="nc" id="L189">    @SerializedName(&quot;eligible&quot;)</span>
+<span class="nc" id="L190">    val eligible: Boolean? = null,</span>
+
+<span class="nc" id="L192">    @SerializedName(&quot;reason&quot;)</span>
+<span class="nc" id="L193">    val reason: String? = null,</span>
+
+<span class="nc" id="L195">    @SerializedName(&quot;monthlyBenefit&quot;)</span>
+<span class="nc" id="L196">    val monthlyBenefit: Double? = null</span>
+<span class="nc" id="L197">) : Parcelable</span>
+
+<span class="nc" id="L199">@Parcelize</span>
+<span class="nc" id="L200">data class SelectedOptions(</span>
+<span class="nc" id="L201">    @SerializedName(&quot;planId&quot;)</span>
+<span class="nc" id="L202">    val planId: String? = null,</span>
+
+<span class="nc" id="L204">    @SerializedName(&quot;retirementAge&quot;)</span>
+<span class="nc" id="L205">    val retirementAge: Int? = null,</span>
+
+<span class="nc" id="L207">    @SerializedName(&quot;survivorOption&quot;)</span>
+<span class="nc" id="L208">    val survivorOption: String? = null,</span>
+
+<span class="nc" id="L210">    @SerializedName(&quot;maritalStatus&quot;)</span>
+<span class="nc" id="L211">    val maritalStatus: String? = null,</span>
+
+<span class="nc" id="L213">    @SerializedName(&quot;expectedHoursPerYear&quot;)</span>
+<span class="nc" id="L214">    val expectedHoursPerYear: Double? = null,</span>
+
+<span class="nc" id="L216">    @SerializedName(&quot;wasDefaulted&quot;)</span>
+<span class="nc" id="L217">    val wasDefaulted: Boolean? = null,</span>
+
+<span class="nc" id="L219">    @SerializedName(&quot;defaultedFields&quot;)</span>
+<span class="nc" id="L220">    val defaultedFields: DefaultedFields? = null</span>
+<span class="nc" id="L221">) : Parcelable</span>
+
+<span class="nc" id="L223">@Parcelize</span>
+<span class="nc" id="L224">data class DefaultedFields(</span>
+<span class="nc" id="L225">    @SerializedName(&quot;expectedHoursPerYear&quot;)</span>
+<span class="nc" id="L226">    val expectedHoursPerYear: Boolean? = null,</span>
+
+<span class="nc" id="L228">    @SerializedName(&quot;planId&quot;)</span>
+<span class="nc" id="L229">    val planId: Boolean? = null,</span>
+
+<span class="nc" id="L231">    @SerializedName(&quot;maritalStatus&quot;)</span>
+<span class="nc" id="L232">    val maritalStatus: Boolean? = null,</span>
+
+<span class="nc" id="L234">    @SerializedName(&quot;retirementAge&quot;)</span>
+<span class="nc" id="L235">    val retirementAge: Boolean? = null,</span>
+
+<span class="nc" id="L237">    @SerializedName(&quot;survivorOption&quot;)</span>
+<span class="nc" id="L238">    val survivorOption: Boolean? = null</span>
+<span class="nc" id="L239">) : Parcelable</span>
+
+<span class="nc" id="L241">@Parcelize</span>
+<span class="nc" id="L242">data class ProjectionSummary(</span>
+<span class="nc" id="L243">    @SerializedName(&quot;yearsToRetirement&quot;)</span>
+<span class="nc" id="L244">    val yearsToRetirement: Int? = null,</span>
+
+<span class="nc" id="L246">    @SerializedName(&quot;currentCredits&quot;)</span>
+<span class="nc" id="L247">    val currentCredits: Double? = null,</span>
+
+<span class="nc" id="L249">    @SerializedName(&quot;additionalCreditsExpected&quot;)</span>
+<span class="nc" id="L250">    val additionalCreditsExpected: Double? = null,</span>
+
+<span class="nc" id="L252">    @SerializedName(&quot;totalProjectedCredits&quot;)</span>
+<span class="nc" id="L253">    val totalProjectedCredits: Double? = null,</span>
+
+<span class="nc" id="L255">    @SerializedName(&quot;projectionStartYear&quot;)</span>
+<span class="nc" id="L256">    val projectionStartYear: Int? = null,</span>
+
+<span class="nc" id="L258">    @SerializedName(&quot;projectionEndYear&quot;)</span>
+<span class="nc" id="L259">    val projectionEndYear: Int? = null,</span>
+
+<span class="nc" id="L261">    @SerializedName(&quot;projectionBasis&quot;)</span>
+<span class="nc" id="L262">    val projectionBasis: String? = null,</span>
+
+<span class="nc" id="L264">    @SerializedName(&quot;projectionSummaryNote&quot;)</span>
+<span class="nc" id="L265">    val projectionSummaryNote: String? = null</span>
+
+<span class="nc" id="L267">) : Parcelable</span>
+
+<span class="nc" id="L269">@Parcelize</span>
+<span class="nc" id="L270">data class ForfeitureImpact(</span>
+<span class="nc" id="L271">    @SerializedName(&quot;hasForfeiture&quot;)</span>
+<span class="nc" id="L272">    val hasForfeiture: Boolean? = null,</span>
+
+<span class="nc" id="L274">    @SerializedName(&quot;totalCreditsForfeit&quot;)</span>
+<span class="nc" id="L275">    val totalCreditsForfeit: Double? = null,</span>
+
+<span class="nc" id="L277">    @SerializedName(&quot;benefitLostMonthly&quot;)</span>
+<span class="nc" id="L278">    val benefitLostMonthly: Double? = null,</span>
+
+<span class="nc" id="L280">    @SerializedName(&quot;benefitLostAnnually&quot;)</span>
+<span class="nc" id="L281">    val benefitLostAnnually: Double? = null,</span>
+
+<span class="nc" id="L283">    @SerializedName(&quot;lifetimeImpact&quot;)</span>
+<span class="nc" id="L284">    val lifetimeImpact: Double? = null,</span>
+
+<span class="nc" id="L286">    @SerializedName(&quot;impactDescription&quot;)</span>
+<span class="nc" id="L287">    val impactDescription: String ? = null</span>
+<span class="nc" id="L288">) : Parcelable</span>
+
+<span class="nc" id="L290">@Parcelize</span>
+<span class="nc" id="L291">data class AvailableOptions(</span>
+<span class="nc" id="L292">    @SerializedName(&quot;retirementOptions&quot;)</span>
+<span class="nc" id="L293">    val retirementOptions: List&lt;RetirementOption&gt;? = null,</span>
+
+<span class="nc" id="L295">    @SerializedName(&quot;maritalStatuses&quot;)</span>
+<span class="nc" id="L296">    val maritalStatuses: List&lt;MaritalStatus&gt;? = null,</span>
+
+<span class="nc" id="L298">    @SerializedName(&quot;survivorOptions&quot;)</span>
+<span class="nc" id="L299">    val survivorOptions: List&lt;SurvivorOptionConfig&gt;? = null,</span>
+
+<span class="nc" id="L301">    @SerializedName(&quot;expectedHours&quot;)</span>
+<span class="nc" id="L302">    val expectedHours: ExpectedHours? = null,</span>
+
+<span class="nc" id="L304">    @SerializedName(&quot;constraints&quot;)</span>
+<span class="nc" id="L305">    val constraints: List&lt;String&gt;? = null</span>
+<span class="nc" id="L306">) : Parcelable</span>
+
+<span class="nc" id="L308">@Parcelize</span>
+<span class="nc" id="L309">data class RetirementOption(</span>
+<span class="nc" id="L310">    @SerializedName(&quot;age&quot;)</span>
+<span class="nc" id="L311">    val age: Int? = null,</span>
+
+<span class="nc" id="L313">    @SerializedName(&quot;pensionType&quot;)</span>
+<span class="nc" id="L314">    val pensionType: String? = null,</span>
+
+<span class="nc" id="L316">    @SerializedName(&quot;label&quot;)</span>
+<span class="nc" id="L317">    val label: String? = null,</span>
+
+<span class="nc" id="L319">    @SerializedName(&quot;isEligible&quot;)</span>
+<span class="nc" id="L320">    val isEligible: Boolean? = null,</span>
+
+<span class="nc" id="L322">    @SerializedName(&quot;isLocked&quot;)</span>
+<span class="nc" id="L323">    val isLocked: Boolean? = null,</span>
+
+<span class="nc" id="L325">    @SerializedName(&quot;isDefault&quot;)</span>
+<span class="nc" id="L326">    val isDefault: Boolean? = null,</span>
+
+<span class="nc" id="L328">    @SerializedName(&quot;requirements&quot;)</span>
+<span class="nc" id="L329">    val requirements: String? = null,</span>
+
+<span class="nc" id="L331">    @SerializedName(&quot;estimatedMonthlyBenefit&quot;)</span>
+<span class="nc" id="L332">    val estimatedMonthlyBenefit: Double? = null</span>
+<span class="nc" id="L333">) : Parcelable</span>
+
+<span class="nc" id="L335">@Parcelize</span>
+<span class="nc" id="L336">data class MaritalStatus(</span>
+<span class="nc" id="L337">    @SerializedName(&quot;statusCode&quot;)</span>
+<span class="nc" id="L338">    val statusCode: String? = null,</span>
+
+<span class="nc" id="L340">    @SerializedName(&quot;label&quot;)</span>
+<span class="nc" id="L341">    val label: String? = null,</span>
+
+<span class="nc" id="L343">    @SerializedName(&quot;isDefault&quot;)</span>
+<span class="nc" id="L344">    val isDefault: Boolean? = null,</span>
+
+<span class="nc" id="L346">    @SerializedName(&quot;isLocked&quot;)</span>
+<span class="nc" id="L347">    val isLocked: Boolean? = null,</span>
+
+<span class="nc" id="L349">    @SerializedName(&quot;defaultSurvivorOption&quot;)</span>
+<span class="nc" id="L350">    val defaultSurvivorOption: String? = null</span>
+<span class="nc" id="L351">) : Parcelable</span>
+
+<span class="nc" id="L353">@Parcelize</span>
+<span class="nc" id="L354">data class SurvivorOptionConfig(</span>
+<span class="nc" id="L355">    @SerializedName(&quot;optionCode&quot;)</span>
+<span class="nc" id="L356">    val optionCode: String? = null,</span>
+
+<span class="nc" id="L358">    @SerializedName(&quot;optionName&quot;)</span>
+<span class="nc" id="L359">    val optionName: String? = null,</span>
+
+<span class="nc" id="L361">    @SerializedName(&quot;survivorPercentage&quot;)</span>
+<span class="nc" id="L362">    val survivorPercentage: Int? = null,</span>
+
+<span class="nc" id="L364">    @SerializedName(&quot;reductionFactor&quot;)</span>
+<span class="nc" id="L365">    val reductionFactor: Double? = null,</span>
+
+<span class="nc" id="L367">    @SerializedName(&quot;isDefault&quot;)</span>
+<span class="nc" id="L368">    val isDefault: Boolean? = null,</span>
+
+<span class="nc" id="L370">    @SerializedName(&quot;isSelected&quot;)</span>
+<span class="nc" id="L371">    val isSelected: Boolean? = null,</span>
+
+<span class="nc" id="L373">    @SerializedName(&quot;requiresSpouseConsent&quot;)</span>
+<span class="nc" id="L374">    val requiresSpouseConsent: Boolean? = null,</span>
+
+<span class="nc" id="L376">    @SerializedName(&quot;maritalRequirement&quot;)</span>
+<span class="nc" id="L377">    val maritalRequirement: String? = null,</span>
+
+<span class="nc" id="L379">    @SerializedName(&quot;distributionDescription&quot;)</span>
+<span class="nc" id="L380">    val distributionDescription: String? = null,</span>
+
+<span class="nc" id="L382">    @SerializedName(&quot;spouseConsentInfo&quot;)</span>
+<span class="nc" id="L383">    val spouseConsentInfo: SpouseConsentInfo? = null</span>
+
+<span class="nc" id="L385">) : Parcelable</span>
+
+<span class="nc" id="L387">@Parcelize</span>
+<span class="nc" id="L388">data class SpouseConsentInfo(</span>
+<span class="nc" id="L389">    @SerializedName(&quot;heading&quot;)</span>
+<span class="nc" id="L390">    val heading: String? = null,</span>
+
+<span class="nc" id="L392">    @SerializedName(&quot;note&quot;)</span>
+<span class="nc" id="L393">    val note: String? = null,</span>
+
+<span class="nc" id="L395">    @SerializedName(&quot;requiredDocuments&quot;)</span>
+<span class="nc" id="L396">    val requiredDocuments: List&lt;RequiredDocument&gt;? = null</span>
+<span class="nc" id="L397">) : Parcelable</span>
+
+<span class="nc" id="L399">@Parcelize</span>
+<span class="nc" id="L400">data class RequiredDocument(</span>
+<span class="nc" id="L401">    @SerializedName(&quot;name&quot;)</span>
+<span class="nc" id="L402">    val name: String? = null,</span>
+
+<span class="nc" id="L404">    @SerializedName(&quot;downloadUrl&quot;)</span>
+<span class="nc" id="L405">    val downloadUrl: String? = null</span>
+<span class="nc" id="L406">) : Parcelable</span>
+
+<span class="nc" id="L408">@Parcelize</span>
+<span class="nc" id="L409">data class ExpectedHours(</span>
+<span class="nc" id="L410">    @SerializedName(&quot;expectedHours&quot;)</span>
+<span class="nc" id="L411">    val expectedHours: Double? = null,</span>
+
+<span class="nc" id="L413">    @SerializedName(&quot;currentYearHours&quot;)</span>
+<span class="nc" id="L414">    val currentYearHours: Double? = null,</span>
+
+<span class="nc" id="L416">    @SerializedName(&quot;calculationBasis&quot;)</span>
+<span class="nc" id="L417">    val calculationBasis: String? = null,</span>
+
+<span class="nc" id="L419">    @SerializedName(&quot;isEditable&quot;)</span>
+<span class="nc" id="L420">    val isEditable: Boolean? = null,</span>
+
+<span class="nc" id="L422">    @SerializedName(&quot;minHours&quot;)</span>
+<span class="nc" id="L423">    val minHours: Int? = null,</span>
+
+<span class="nc" id="L425">    @SerializedName(&quot;maxHours&quot;)</span>
+<span class="nc" id="L426">    val maxHours: Int? = null</span>
+<span class="nc" id="L427">) : Parcelable</span>
+
+<span class="nc" id="L429">@Parcelize</span>
+<span class="nc" id="L430">data class CreditsByRateBreakdown(</span>
+<span class="nc" id="L431">    @SerializedName(&quot;planCreditGroups&quot;)</span>
+<span class="nc" id="L432">    val planCreditGroups: List&lt;PlanCreditGroup&gt;? = null,</span>
+
+<span class="nc" id="L434">    @SerializedName(&quot;totalCredits&quot;)</span>
+<span class="nc" id="L435">    val totalCredits: Double? = null,</span>
+
+<span class="nc" id="L437">    @SerializedName(&quot;totalMonthlyBenefit&quot;)</span>
+<span class="nc" id="L438">    val totalMonthlyBenefit: Double? = null</span>
+<span class="nc" id="L439">) : Parcelable</span>
+
+<span class="nc" id="L441">@Parcelize</span>
+<span class="nc" id="L442">data class PlanCreditGroup(</span>
+<span class="nc" id="L443">    @SerializedName(&quot;planId&quot;)</span>
+<span class="nc" id="L444">    val planId: String? = null,</span>
+
+<span class="nc" id="L446">    @SerializedName(&quot;planName&quot;)</span>
+<span class="nc" id="L447">    val planName: String? = null,</span>
+
+<span class="nc" id="L449">    @SerializedName(&quot;rateGroups&quot;)</span>
+<span class="nc" id="L450">    val rateGroups: List&lt;RateGroup&gt;? = null,</span>
+
+<span class="nc" id="L452">    @SerializedName(&quot;planTotalCredits&quot;)</span>
+<span class="nc" id="L453">    val planTotalCredits: Double? = null,</span>
+
+<span class="nc" id="L455">    @SerializedName(&quot;planTotalMonthlyBenefit&quot;)</span>
+<span class="nc" id="L456">    val planTotalMonthlyBenefit: Double? = null</span>
+<span class="nc" id="L457">) : Parcelable</span>
+
+<span class="nc" id="L459">@Parcelize</span>
+<span class="nc" id="L460">data class RateGroup(</span>
+<span class="nc" id="L461">    @SerializedName(&quot;ratePerCredit&quot;)</span>
+<span class="nc" id="L462">    val ratePerCredit: Double? = null,</span>
+
+<span class="nc" id="L464">    @SerializedName(&quot;rateLockStatus&quot;)</span>
+<span class="nc" id="L465">    val rateLockStatus: String? = null,</span>
+
+<span class="nc" id="L467">    @SerializedName(&quot;years&quot;)</span>
+<span class="nc" id="L468">    val years: List&lt;Int&gt;? = null,</span>
+
+<span class="nc" id="L470">    @SerializedName(&quot;totalCredits&quot;)</span>
+<span class="nc" id="L471">    val totalCredits: Double? = null,</span>
+
+<span class="nc" id="L473">    @SerializedName(&quot;monthlyBenefit&quot;)</span>
+<span class="nc" id="L474">    val monthlyBenefit: Double? = null,</span>
+
+<span class="nc" id="L476">    @SerializedName(&quot;creditType&quot;)</span>
+<span class="nc" id="L477">    val creditType: String? = null,</span>
+
+<span class="nc" id="L479">    @SerializedName(&quot;planId&quot;)</span>
+<span class="nc" id="L480">    val planId: String? = null,</span>
+
+<span class="nc" id="L482">    @SerializedName(&quot;planName&quot;)</span>
+<span class="nc" id="L483">    val planName: String? = null</span>
+<span class="nc" id="L484">) : Parcelable</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

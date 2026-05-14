@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LanguageListAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.languageTranslate.adapter</a> &gt; <span class="el_source">LanguageListAdapter.kt</span></div><h1>LanguageListAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.languageTranslate.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.data.remote.home.LanguageList
+import com.vivekahealth.vivekahealth.databinding.LanguageListBinding
+import java.util.*
+
+class LanguageListAdapter(private var onClick: (LanguageList) -&gt; Unit) : ListAdapter&lt;LanguageList, RecyclerView.ViewHolder&gt;(
+    LanguageListDiffCallback()
+) {
+
+    var selectedPosition: Int = -1
+    var lastSelected: Int = -1
+    var count: Int = 0
+    var currentYearPos: Int = 0
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return TypeViewHolder(
+            LanguageListBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            ),
+            onClick,
+            selectedPosition
+        )
+    }
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = getItem(position)
+
+        (holder as TypeViewHolder).binding.setClickListener {
+            onClick(item)
+        }
+        holder.binding.language = item
+    }
+
+    class TypeViewHolder(
+        val binding: LanguageListBinding,
+        private val onClick: (LanguageList) -&gt; Unit,
+        private var selectedPosition: Int
+    ) : RecyclerView.ViewHolder(binding.root)
+}
+
+<span class="nc" id="L51">private class LanguageListDiffCallback : DiffUtil.ItemCallback&lt;LanguageList&gt;() {</span>
+
+    override fun areItemsTheSame(oldItem: LanguageList, newItem: LanguageList): Boolean {
+<span class="nc" id="L54">        return oldItem == newItem</span>
+    }
+
+    override fun areContentsTheSame(oldItem: LanguageList, newItem: LanguageList): Boolean {
+<span class="nc" id="L58">        return oldItem.name == newItem.name</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

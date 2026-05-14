@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DisclaimerSignatureViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.enrollVTwo.legal</a> &gt; <span class="el_source">DisclaimerSignatureViewModel.kt</span></div><h1>DisclaimerSignatureViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.enrollVTwo.legal
+
+import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.view.View
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.data.remote.enroll.DocumentUploadSuccessEnroll
+import com.vivekahealth.vivekahealth.data.remote.enroll.OpenEnrollmentData
+import com.vivekahealth.vivekahealth.data.remote.login.GenericErrorResponse
+import com.vivekahealth.vivekahealth.data.remote.register.DataResponse
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.UploadedDocument
+import com.vivekahealth.vivekahealth.ui.guestHome.repository.GuestHomeRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import com.vivekahealth.vivekahealth.utils.remote.APIResponse
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
+import javax.inject.Inject
+
+<span class="nc" id="L39">class DisclaimerSignatureViewModel @Inject constructor(</span>
+<span class="nc" id="L40">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L41">    val homeRepository: HomeRepository,</span>
+<span class="nc" id="L42">    val guestHomeRepository: GuestHomeRepository</span>
+<span class="nc" id="L43">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L45">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L47">        get() = _navigateToBack</span>
+
+<span class="nc" id="L49">    private val _navigateToNext = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToNext: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L51">        get() = _navigateToNext</span>
+
+<span class="nc" id="L53">    var gson = Gson()</span>
+    private lateinit var job: Job
+<span class="nc" id="L55">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L57">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+    val showError: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
+<span class="nc" id="L60">        get() = _showError</span>
+<span class="nc" id="L61">    private val _showError = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L64">        callbacks.add(callback)</span>
+<span class="nc" id="L65">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L68">        callbacks.remove(callback)</span>
+<span class="nc" id="L69">    }</span>
+
+    fun onPrevClicked() {
+<span class="nc" id="L72">        singleClick {</span>
+<span class="nc" id="L73">            _navigateToBack.value = Event(Unit)</span>
+<span class="nc" id="L74">        }</span>
+<span class="nc" id="L75">    }</span>
+
+    fun onNextClicked() {
+<span class="nc" id="L78">        singleClick {</span>
+<span class="nc" id="L79">            _navigateToNext.value = Event(Unit) // Process the first click immediately</span>
+<span class="nc" id="L80">        }</span>
+<span class="nc" id="L81">    }</span>
+
+    private var debounceJob: Job? = null
+    private var isDebouncing = false
+<span class="nc" id="L85">    private val debounceInterval = 500L // Set your debounce interval in milliseconds</span>
+
+    fun singleClick(action: () -&gt; Unit) {
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (isDebouncing) return</span>
+<span class="nc" id="L89">        action()</span>
+<span class="nc" id="L90">        isDebouncing = true</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        debounceJob?.cancel()</span>
+<span class="nc" id="L92">        debounceJob = viewModelScope.launch {</span>
+<span class="nc" id="L93">            delay(debounceInterval)</span>
+<span class="nc" id="L94">            isDebouncing = false</span>
+<span class="nc" id="L95">        }</span>
+<span class="nc" id="L96">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L99">        super.onCleared()</span>
+<span class="nc" id="L100">        compositeDisposable.dispose()</span>
+<span class="nc" id="L101">    }</span>
+<span class="nc" id="L102">    var checkBox: Boolean = false</span>
+<span class="nc" id="L103">    var signed: Boolean = false</span>
+
+<span class="nc" id="L105">    private val _clearClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val clearClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L107">        get() = _clearClicked</span>
+
+<span class="nc" id="L109">    private val _check = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+    val check: LiveData&lt;Event&lt;Boolean&gt;&gt;
+<span class="nc" id="L111">        get() = _check</span>
+
+<span class="nc" id="L113">    var checkBoxErrorVisibility = View.GONE</span>
+<span class="nc" id="L114">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L116">            field = value</span>
+<span class="nc" id="L117">            callbacks.notifyChange(this, BR.checkBoxErrorVisibility)</span>
+<span class="nc" id="L118">        }</span>
+
+    fun ssnRadio() {
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        checkBox = !checkBox</span>
+
+<span class="nc" id="L123">        _check.value = Event(checkBox)</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        checkBoxErrorVisibility = if (signed) {</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">            if (checkBox) View.GONE else View.VISIBLE</span>
+        } else {
+<span class="nc" id="L127">            View.GONE</span>
+        }
+<span class="nc" id="L129">    }</span>
+
+<span class="nc" id="L131">    lateinit var signatureBitmap: Bitmap</span>
+
+<span class="nc" id="L133">    var currentDate: String = DateUtils.getCurrentLocalDateMonthName().toString()</span>
+
+<span class="nc" id="L135">    var currentNameFirst: String = &quot;&quot;</span>
+<span class="nc" id="L136">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L138">            field = value</span>
+<span class="nc" id="L139">            callbacks.notifyCallbacks(this, BR.currentNameFirst, null)</span>
+<span class="nc" id="L140">        }</span>
+<span class="nc" id="L141">    var currentNameLast: String = &quot;&quot;</span>
+<span class="nc" id="L142">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L144">            field = value</span>
+<span class="nc" id="L145">            callbacks.notifyCallbacks(this, BR.currentNameLast, null)</span>
+<span class="nc" id="L146">        }</span>
+
+<span class="nc" id="L148">    private val _navigateToUpload = MutableLiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt;()</span>
+    val navigateToUpload: LiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt;
+<span class="nc" id="L150">        get() = _navigateToUpload</span>
+
+    fun uploadSign(pic: File) {
+<span class="nc" id="L153">        val file: File = File(pic?.path)</span>
+
+<span class="nc" id="L155">        val filePart: MultipartBody.Part = MultipartBody.Part.createFormData(</span>
+<span class="nc" id="L156">            &quot;file&quot;,</span>
+<span class="nc" id="L157">            file.name,</span>
+<span class="nc" id="L158">            file.asRequestBody(&quot;image/*&quot;.toMediaTypeOrNull())</span>
+        )
+
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        viewModelScope.launch {</span>
+<span class="nc" id="L162">            compositeDisposable.add(</span>
+<span class="nc" id="L163">                homeRepository.uploadDoc(</span>
+<span class="nc" id="L164">                    filePart,</span>
+<span class="nc" id="L165">                    HelperUtils.fileName(Constants.Signature, currentNameFirst, currentNameLast),</span>
+<span class="nc" id="L166">                    &quot;52&quot;</span>
+                )
+<span class="nc" id="L168">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L169">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L170">                    .doOnSubscribe {</span>
+<span class="nc" id="L171">                        _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().loading()</span>
+<span class="nc" id="L172">                    }</span>
+<span class="nc" id="L173">                    .subscribe({ response -&gt;</span>
+<span class="nc" id="L174">                        _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().success(</span>
+<span class="nc" id="L175">                            response</span>
+                        )
+<span class="nc" id="L177">                    }, {</span>
+<span class="nc" id="L178">                        _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().error(</span>
+<span class="nc" id="L179">                            it.localizedMessage!!</span>
+                        )
+<span class="nc" id="L181">                    })</span>
+            )
+<span class="nc" id="L183">        }</span>
+<span class="nc" id="L184">    }</span>
+
+    fun uploadSignOpen(pic: File, openEnrollmentData: OpenEnrollmentData) {
+<span class="nc" id="L187">        val file: File = File(pic?.path)</span>
+
+<span class="nc" id="L189">        val filePart: MultipartBody.Part = MultipartBody.Part.createFormData(</span>
+<span class="nc" id="L190">            &quot;file&quot;,</span>
+<span class="nc" id="L191">            file.name,</span>
+<span class="nc" id="L192">            file.asRequestBody(&quot;image/*&quot;.toMediaTypeOrNull())</span>
+        )
+
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        viewModelScope.launch {</span>
+<span class="nc" id="L196">            compositeDisposable.add(</span>
+<span class="nc" id="L197">                guestHomeRepository.uploadOpenFile(</span>
+<span class="nc" id="L198">                    filePart,</span>
+<span class="nc" id="L199">                    52.toString()</span>
+                )
+<span class="nc" id="L201">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L202">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L203">                    .doOnSubscribe {</span>
+<span class="nc" id="L204">                        _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().loading()</span>
+<span class="nc" id="L205">                    }</span>
+<span class="nc" id="L206">                    .subscribe({</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">                        openEnrollmentData.subscriber?.signatureFileId = it.id</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">                        val list = openEnrollmentData.subscriber?.uploadedDocuments as ArrayList&lt;UploadedDocument&gt;</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">                        list.add(UploadedDocument(52, it.id?.toInt() ?: 0))</span>
+<span class="nc bnc" id="L210" title="All 2 branches missed.">                        openEnrollmentData.subscriber?.uploadedDocuments = list</span>
+
+<span class="nc" id="L212">                        callOpenEnrollment(openEnrollmentData)</span>
+<span class="nc" id="L213">                    }, {</span>
+<span class="nc" id="L214">                        _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().error(</span>
+<span class="nc" id="L215">                            it.localizedMessage!!</span>
+                        )
+<span class="nc" id="L217">                    })</span>
+            )
+<span class="nc" id="L219">        }</span>
+<span class="nc" id="L220">    }</span>
+
+    fun callOpenEnrollment(enrollment: OpenEnrollmentData) {
+<span class="nc bnc" id="L223" title="All 2 branches missed.">        viewModelScope.launch {</span>
+<span class="nc" id="L224">            compositeDisposable.add(</span>
+<span class="nc" id="L225">                guestHomeRepository.openEnrollMember(</span>
+<span class="nc" id="L226">                    enrollment</span>
+                )
+<span class="nc" id="L228">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L229">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L230">                    .doOnSubscribe {</span>
+<span class="nc" id="L231">                        _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().loading()</span>
+<span class="nc" id="L232">                    }</span>
+<span class="nc" id="L233">                    .subscribe({</span>
+<span class="nc" id="L234">                        val body = it.body()</span>
+<span class="nc bnc" id="L235" title="All 4 branches missed.">                        if (it.isSuccessful &amp;&amp; body != null) {</span>
+<span class="nc bnc" id="L236" title="All 8 branches missed.">                            if (it.body()?.code == 200) {</span>
+<span class="nc" id="L237">                                _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().success(</span>
+<span class="nc" id="L238">                                    body</span>
+                                )
+                            } else {
+<span class="nc" id="L241">                                _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().error(</span>
+<span class="nc bnc" id="L242" title="All 4 branches missed.">                                    it.body()?.message ?: Constants.APOLOGY_MESSAGE</span>
+                                )
+                            }
+                        } else {
+<span class="nc" id="L246">                            val errorMessage = try {</span>
+<span class="nc" id="L247">                                val errorResponse: GenericErrorResponse = gson.fromJson(</span>
+<span class="nc bnc" id="L248" title="All 2 branches missed.">                                    it.errorBody()?.string(),</span>
+<span class="nc" id="L249">                                    GenericErrorResponse::class.java</span>
+                                )
+<span class="nc" id="L251">                                errorResponse.getErrorMessage()</span>
+<span class="nc" id="L252">                            } catch (e: Exception) {</span>
+<span class="nc" id="L253">                                &quot;Enrollment submission failed. Please try again.&quot;</span>
+                            }
+<span class="nc" id="L255">                            _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().error(</span>
+<span class="nc" id="L256">                                errorMessage</span>
+                            )
+                        }
+<span class="nc" id="L259">                    }, {</span>
+<span class="nc" id="L260">                        _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().error(</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">                            it.localizedMessage ?: &quot;Enrollment submission failed. Please try again.&quot;</span>
+                        )
+<span class="nc" id="L263">                    })</span>
+            )
+<span class="nc" id="L265">        }</span>
+<span class="nc" id="L266">    }</span>
+
+    fun clearClicked() {
+<span class="nc" id="L269">        _clearClicked.value = Event(Unit)</span>
+<span class="nc" id="L270">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

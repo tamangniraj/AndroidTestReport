@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChatAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.helpFaq.customerCare.adapter</a> &gt; <span class="el_source">ChatAdapter.kt</span></div><h1>ChatAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.helpFaq.customerCare.adapter
+
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.data.local.home.ChatDataModel
+import com.vivekahealth.vivekahealth.data.remote.about.ChatBotMessage
+import com.vivekahealth.vivekahealth.databinding.*
+import com.vivekahealth.vivekahealth.utils.DateUtils
+
+class ChatAdapter(
+    private var onClick: (com.vivekahealth.vivekahealth.data.remote.about.Result, Long) -&gt; Unit,
+    private var onClickChips: (com.vivekahealth.vivekahealth.data.remote.about.Option, Long) -&gt; Unit
+) :
+    ListAdapter&lt;ChatDataModel, RecyclerView.ViewHolder&gt;(ChatDiffCallback()) {
+    var gson = Gson()
+    var overAllTranslated: Boolean = false
+    var languageToggled: ArrayList&lt;Int&gt; = arrayListOf()
+    private var lastSelectedViewHolder: RecyclerView.ViewHolder? = null
+    companion object {
+        const val CustomerCare = 1
+        const val User = 0
+    }
+
+    private inner class ViewUserViewHolder(
+        val binding: SingleChatClientBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(position: Int) {
+        }
+    }
+
+    private inner class ViewAdminViewHolder(
+        val binding: SingleChatCustomerCareBinding,
+        private val onClick: (com.vivekahealth.vivekahealth.data.remote.about.Result, Long) -&gt; Unit,
+        private val onClickChips: (com.vivekahealth.vivekahealth.data.remote.about.Option, Long) -&gt; Unit
+    ) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(position: Int) {
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        when (viewType) {
+            User -&gt; {
+                return ViewUserViewHolder(
+                    SingleChatClientBinding.inflate(
+                        LayoutInflater.from(parent.context),
+                        parent,
+                        false
+                    )
+                )
+            }
+            CustomerCare -&gt; {
+                return ViewAdminViewHolder(
+                    SingleChatCustomerCareBinding.inflate(
+                        LayoutInflater.from(parent.context),
+                        parent,
+                        false
+                    ),
+                    onClick,
+                    onClickChips
+                )
+            }
+
+            else -&gt; return ViewUserViewHolder(
+                SingleChatClientBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false
+                )
+            )
+        }
+    }
+
+    fun translated(translate: Boolean) {
+        overAllTranslated = translate
+        languageToggled.clear()
+        if (translate) {
+            val indices = currentList.indices.toList()
+            languageToggled.addAll(indices)
+        }
+        notifyDataSetChanged()
+    }
+
+    fun hideLoadingForLastSelected() {
+        lastSelectedViewHolder?.let { holder -&gt;
+            if (holder is ViewUserViewHolder) {
+                holder.binding.layoutLoading.root.visibility = View.GONE
+            }
+        }
+    }
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        var item = getItem(position)
+
+        var time = DateUtils.chatDate(item.createdOn)
+
+        if (position == 0 &amp;&amp; item.userId.isNullOrEmpty()) {
+            (holder as ViewUserViewHolder).binding.layoutLoading.root.visibility = View.VISIBLE
+            lastSelectedViewHolder = holder
+        } else {
+            hideLoadingForLastSelected()
+        }
+
+        if (item.userId.isNullOrEmpty()) {
+            (holder as ViewUserViewHolder).binding.chat = item
+            (holder as ViewUserViewHolder).binding.time = time
+        } else {
+            (holder as ViewAdminViewHolder).binding.chat = item
+            (holder as ViewAdminViewHolder).binding.time = time
+            if (item.autoReply &amp;&amp; item.messageContentType.equals(&quot;application/json&quot;, true)) {
+                holder.binding.textContentCCare.visibility = View.GONE
+                holder.binding.botList.visibility = View.VISIBLE
+                var action = item.actionsTaken?.let { it }
+                var adapter = ChatBotListAdapter(onClick = {
+                    onClick(it, item.selfId ?: 0)
+                }, onClickChips = { option -&gt;
+                        onClickChips(option, item.selfId ?: 0)
+                    }, canInteract = item.canInteract, actionsTaken = action)
+
+                var messageToggled = item.translatedMessage
+                messageToggled = if (overAllTranslated) {
+                    item.originalMessage
+                } else {
+                    item.translatedMessage
+                }
+                var value = gson.fromJson(messageToggled, ChatBotMessage::class.java)
+                holder.binding.botList.adapter = adapter
+                adapter.submitList(value.results)
+                holder.binding.overallTranslated = overAllTranslated
+                holder.binding.showTranslated = overAllTranslated
+                holder.binding.setClickListener {
+                    if (languageToggled.contains(position)) {
+                        languageToggled.remove(position)
+                        holder.binding.showTranslated = false
+                        val valueItem = gson.fromJson(
+                            item.translatedMessage,
+                            ChatBotMessage::class.java
+                        )
+                        holder.binding.botList.adapter = adapter
+                        adapter.submitList(valueItem.results)
+                    } else {
+                        languageToggled.add(position)
+                        holder.binding.showTranslated = true
+                        val valueItem = gson.fromJson(
+                            item.originalMessage,
+                            ChatBotMessage::class.java
+                        )
+                        holder.binding.botList.adapter = adapter
+
+                        adapter.submitList(valueItem.results)
+                    }
+                }
+            } else {
+                holder.binding.overallTranslated = overAllTranslated
+                holder.binding.showTranslated = overAllTranslated
+                holder.binding.setClickListener {
+                    if (languageToggled.contains(position)) {
+                        languageToggled.remove(position)
+                        holder.binding.showTranslated = false
+                    } else {
+                        languageToggled.add(position)
+                        holder.binding.showTranslated = true
+                    }
+                }
+                holder.binding.botList.visibility = View.GONE
+                holder.binding.textContentCCare.visibility = View.VISIBLE
+            }
+        }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        var item = getItem(position)
+
+        return if (item.userId.isNullOrEmpty()) {
+            User
+        } else {
+            CustomerCare
+        }
+    }
+}
+
+<span class="nc" id="L185">private class ChatDiffCallback : DiffUtil.ItemCallback&lt;ChatDataModel&gt;() {</span>
+
+    override fun areItemsTheSame(oldItem: ChatDataModel, newItem: ChatDataModel): Boolean {
+<span class="nc" id="L188">        return oldItem == newItem</span>
+    }
+
+    override fun areContentsTheSame(oldItem: ChatDataModel, newItem: ChatDataModel): Boolean {
+<span class="nc" id="L192">        return oldItem.selfId == newItem.selfId</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

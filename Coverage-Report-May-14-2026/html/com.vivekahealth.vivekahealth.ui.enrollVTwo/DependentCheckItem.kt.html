@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DependentCheckItem.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.enrollVTwo</a> &gt; <span class="el_source">DependentCheckItem.kt</span></div><h1>DependentCheckItem.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.enrollVTwo
+
+import com.vivekahealth.vivekahealth.capitalizeName
+import java.io.Serializable
+
+<span class="fc" id="L6">data class DependentCheckItem(</span>
+<span class="pc" id="L7">    val isCompleted: Boolean? = false,</span>
+<span class="pc" id="L8">    val title: String = &quot;&quot;,</span>
+<span class="fc" id="L9">    val firstName: String? = &quot;&quot;,</span>
+<span class="pc" id="L10">    val middleName: String? = &quot;&quot;,</span>
+<span class="pc" id="L11">    val lastName: String? = &quot;&quot;,</span>
+<span class="pc" id="L12">    val type: DependentType? = null,</span>
+<span class="pc" id="L13">    var marriageDate: String? = null,</span>
+<span class="pc" id="L14">    var gender: String? = null,</span>
+<span class="pc" id="L15">    var ssn: String? = null,</span>
+<span class="pc" id="L16">    var dob: String? = null,</span>
+<span class="pc" id="L17">    var insurance: String? = null,</span>
+<span class="pc" id="L18">    var employed: String? = null,</span>
+<span class="pc" id="L19">    var employer: String? = null,</span>
+<span class="pc" id="L20">    var spouseInsured: String? = null,</span>
+<span class="pc" id="L21">    var index: Int? = null,</span>
+<span class="pc" id="L22">    val uploadedList: MutableList&lt;UploadedDocument&gt;? = mutableListOf(),</span>
+<span class="pc" id="L23">    val previousInsurance: Boolean? = null,</span>
+<span class="pc" id="L24">    val isAffirmation: Boolean? = null,</span>
+<span class="pc" id="L25">    val signatureFileId: String? = null</span>
+<span class="fc" id="L26">) : Serializable {</span>
+<span class="pc" id="L27">    var nameWithTitle = &quot;&quot;</span>
+<span class="nc" id="L28">    var uploadedCount: Int ? = null</span>
+    fun updateNameWithTitle(details: String, child: String, spouse: String) {
+<span class="nc bnc" id="L30" title="All 8 branches missed.">        if (firstName?.isNotEmpty() == true) {</span>
+<span class="nc" id="L31">            nameWithTitle = &quot;${firstName.capitalizeName()} $details&quot;</span>
+        } else {
+<span class="nc bnc" id="L33" title="All 2 branches missed.">            if (type == DependentType.CHILD) {</span>
+<span class="nc" id="L34">                nameWithTitle = child</span>
+<span class="nc bnc" id="L35" title="All 2 branches missed.">            } else if (type == DependentType.SPOUSE) {</span>
+<span class="nc" id="L36">                nameWithTitle = &quot;$spouse $details&quot;</span>
+            } else {
+<span class="nc" id="L38">                nameWithTitle = title</span>
+            }
+        }
+<span class="nc" id="L41">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

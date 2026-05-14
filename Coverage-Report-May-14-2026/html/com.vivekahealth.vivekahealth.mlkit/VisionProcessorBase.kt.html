@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VisionProcessorBase.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.mlkit</a> &gt; <span class="el_source">VisionProcessorBase.kt</span></div><h1>VisionProcessorBase.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.mlkit
+import android.app.ActivityManager
+import android.content.Context
+import android.graphics.Bitmap
+import android.os.Build.VERSION_CODES
+import android.os.SystemClock
+import android.util.Log
+import android.widget.Toast
+import androidx.annotation.GuardedBy
+import androidx.annotation.RequiresApi
+import androidx.camera.core.ExperimentalGetImage
+import androidx.camera.core.ImageProxy
+import com.google.android.gms.tasks.OnFailureListener
+import com.google.android.gms.tasks.OnSuccessListener
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.TaskExecutors
+import com.google.android.gms.tasks.Tasks
+import com.google.android.odml.image.BitmapMlImageBuilder
+import com.google.android.odml.image.ByteBufferMlImageBuilder
+import com.google.android.odml.image.MediaMlImageBuilder
+import com.google.android.odml.image.MlImage
+import com.google.mlkit.common.MlKitException
+import com.google.mlkit.vision.common.InputImage
+
+import java.lang.Math.max
+import java.lang.Math.min
+import java.nio.ByteBuffer
+import java.util.Timer
+import java.util.TimerTask
+
+/**
+ * Abstract base class for ML Kit frame processors. Subclasses need to implement {@link
+ * #onSuccess(T, FrameMetadata, GraphicOverlay)} to define what they want to with the detection
+ * results and {@link #detectInImage(VisionImage)} to specify the detector object.
+ *
+ * @param &lt;T&gt; The type of the detected feature.
+ */
+
+const val isCameraLiveViewportEnabled = false
+const val shouldHideDetectionInfo = true
+
+<span class="nc" id="L42">abstract class VisionProcessorBase&lt;T&gt;(context: Context) :</span>
+    VisionImageProcessor {
+
+    companion object {
+        const val MANUAL_TESTING_LOG = &quot;LogTagForTest&quot;
+        private const val TAG = &quot;VisionProcessorBase&quot;
+    }
+
+    private var activityManager: ActivityManager =
+<span class="nc" id="L51">        context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager</span>
+<span class="nc" id="L52">    private val fpsTimer = Timer()</span>
+<span class="nc" id="L53">    private val executor = ScopedExecutor(TaskExecutors.MAIN_THREAD)</span>
+
+    // Whether this processor is already shut down
+    private var isShutdown = false
+
+    // Used to calculate latency, running in the same thread, no sync needed.
+    private var numRuns = 0
+    private var totalFrameMs = 0L
+    private var maxFrameMs = 0L
+<span class="nc" id="L62">    private var minFrameMs = Long.MAX_VALUE</span>
+    private var totalDetectorMs = 0L
+    private var maxDetectorMs = 0L
+<span class="nc" id="L65">    private var minDetectorMs = Long.MAX_VALUE</span>
+
+    // Frame count that have been processed so far in an one second interval to calculate FPS.
+    private var frameProcessedInOneSecondInterval = 0
+    private var framesPerSecond = 0
+
+    // To keep the latest images and its metadata.
+    @GuardedBy(&quot;this&quot;)
+    private var latestImage: ByteBuffer? = null
+
+    @GuardedBy(&quot;this&quot;)
+    private var latestImageMetaData: FrameMetadata? = null
+
+    // To keep the images and metadata in process.
+    @GuardedBy(&quot;this&quot;)
+    private var processingImage: ByteBuffer? = null
+
+    @GuardedBy(&quot;this&quot;)
+    private var processingMetaData: FrameMetadata? = null
+
+<span class="nc" id="L85">    init {</span>
+<span class="nc" id="L86">        fpsTimer.scheduleAtFixedRate(</span>
+<span class="nc" id="L87">            object : TimerTask() {</span>
+                override fun run() {
+<span class="nc" id="L89">                    framesPerSecond = frameProcessedInOneSecondInterval</span>
+<span class="nc" id="L90">                    frameProcessedInOneSecondInterval = 0</span>
+<span class="nc" id="L91">                }</span>
+            },
+<span class="nc" id="L93">            0,</span>
+<span class="nc" id="L94">            1000</span>
+        )
+<span class="nc" id="L96">    }</span>
+
+    // -----------------Code for processing single still image----------------------------------------
+    override fun processBitmap(bitmap: Bitmap?, graphicOverlay: GraphicOverlay) {
+<span class="nc" id="L100">        val frameStartMs = SystemClock.elapsedRealtime()</span>
+
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (isMlImageEnabled(graphicOverlay.context)) {</span>
+<span class="nc" id="L103">            val mlImage = BitmapMlImageBuilder(bitmap!!).build()</span>
+<span class="nc" id="L104">            requestDetectInImage(</span>
+<span class="nc" id="L105">                mlImage,</span>
+<span class="nc" id="L106">                graphicOverlay,</span>
+<span class="nc" id="L107">                /* originalCameraImage= */ null,</span>
+<span class="nc" id="L108">                /* shouldShowFps= */ false,</span>
+<span class="nc" id="L109">                frameStartMs</span>
+            )
+<span class="nc" id="L111">            mlImage.close()</span>
+<span class="nc" id="L112">            return</span>
+        }
+
+<span class="nc" id="L115">        requestDetectInImage(</span>
+<span class="nc" id="L116">            InputImage.fromBitmap(bitmap!!, 0),</span>
+<span class="nc" id="L117">            graphicOverlay,</span>
+<span class="nc" id="L118">            /* originalCameraImage= */ null,</span>
+<span class="nc" id="L119">            /* shouldShowFps= */ false,</span>
+<span class="nc" id="L120">            frameStartMs</span>
+        )
+<span class="nc" id="L122">    }</span>
+
+    // -----------------Code for processing live preview frame from Camera1 API-----------------------
+    @Synchronized
+    override fun processByteBuffer(
+        data: ByteBuffer?,
+        frameMetadata: FrameMetadata?,
+        graphicOverlay: GraphicOverlay
+    ) {
+<span class="nc" id="L131">        latestImage = data</span>
+<span class="nc" id="L132">        latestImageMetaData = frameMetadata</span>
+<span class="nc bnc" id="L133" title="All 4 branches missed.">        if (processingImage == null &amp;&amp; processingMetaData == null) {</span>
+<span class="nc" id="L134">            processLatestImage(graphicOverlay)</span>
+        }
+<span class="nc" id="L136">    }</span>
+
+    @Synchronized
+    private fun processLatestImage(graphicOverlay: GraphicOverlay) {
+<span class="nc" id="L140">        processingImage = latestImage</span>
+<span class="nc" id="L141">        processingMetaData = latestImageMetaData</span>
+<span class="nc" id="L142">        latestImage = null</span>
+<span class="nc" id="L143">        latestImageMetaData = null</span>
+<span class="nc bnc" id="L144" title="All 6 branches missed.">        if (processingImage != null &amp;&amp; processingMetaData != null &amp;&amp; !isShutdown) {</span>
+<span class="nc" id="L145">            processImage(processingImage!!, processingMetaData!!, graphicOverlay)</span>
+        }
+<span class="nc" id="L147">    }</span>
+
+    private fun processImage(
+        data: ByteBuffer,
+        frameMetadata: FrameMetadata,
+        graphicOverlay: GraphicOverlay
+    ) {
+<span class="nc" id="L154">        val frameStartMs = SystemClock.elapsedRealtime()</span>
+        // If live viewport is on (that is the underneath surface view takes care of the camera preview
+        // drawing), skip the unnecessary bitmap creation that used for the manual preview drawing.
+<span class="nc" id="L157">        val bitmap =</span>
+<span class="nc" id="L158">            if (isCameraLiveViewportEnabled) {</span>
+                null
+            } else {
+<span class="nc" id="L161">                BitmapUtils.getBitmap(data, frameMetadata)</span>
+            }
+
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        if (isMlImageEnabled(graphicOverlay.context)) {</span>
+<span class="nc" id="L165">            val mlImage =</span>
+<span class="nc" id="L166">                ByteBufferMlImageBuilder(</span>
+<span class="nc" id="L167">                    data,</span>
+<span class="nc" id="L168">                    frameMetadata.width,</span>
+<span class="nc" id="L169">                    frameMetadata.height,</span>
+<span class="nc" id="L170">                    MlImage.IMAGE_FORMAT_NV21</span>
+                )
+<span class="nc" id="L172">                    .setRotation(frameMetadata.rotation)</span>
+<span class="nc" id="L173">                    .build()</span>
+<span class="nc" id="L174">            requestDetectInImage(</span>
+<span class="nc" id="L175">                mlImage,</span>
+<span class="nc" id="L176">                graphicOverlay,</span>
+<span class="nc" id="L177">                bitmap, /* shouldShowFps= */</span>
+<span class="nc" id="L178">                true,</span>
+<span class="nc" id="L179">                frameStartMs</span>
+            )
+<span class="nc" id="L181">                .addOnSuccessListener(executor) { processLatestImage(graphicOverlay) }</span>
+
+            // This is optional. Java Garbage collection can also close it eventually.
+<span class="nc" id="L184">            mlImage.close()</span>
+<span class="nc" id="L185">            return</span>
+        }
+
+<span class="nc" id="L188">        requestDetectInImage(</span>
+<span class="nc" id="L189">            InputImage.fromByteBuffer(</span>
+<span class="nc" id="L190">                data,</span>
+<span class="nc" id="L191">                frameMetadata.width,</span>
+<span class="nc" id="L192">                frameMetadata.height,</span>
+<span class="nc" id="L193">                frameMetadata.rotation,</span>
+<span class="nc" id="L194">                InputImage.IMAGE_FORMAT_NV21</span>
+            ),
+<span class="nc" id="L196">            graphicOverlay,</span>
+<span class="nc" id="L197">            bitmap,</span>
+<span class="nc" id="L198">            /* shouldShowFps= */ true,</span>
+<span class="nc" id="L199">            frameStartMs</span>
+        )
+<span class="nc" id="L201">            .addOnSuccessListener(executor) { processLatestImage(graphicOverlay) }</span>
+<span class="nc" id="L202">    }</span>
+
+    // -----------------Code for processing live preview frame from CameraX API-----------------------
+    @RequiresApi(VERSION_CODES.LOLLIPOP)
+    @ExperimentalGetImage
+    override fun processImageProxy(image: ImageProxy, graphicOverlay: GraphicOverlay) {
+<span class="nc" id="L208">        val frameStartMs = SystemClock.elapsedRealtime()</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (isShutdown) {</span>
+<span class="nc" id="L210">            return</span>
+        }
+<span class="nc" id="L212">        var bitmap: Bitmap? = null</span>
+<span class="nc" id="L213">        if (!isCameraLiveViewportEnabled) {</span>
+<span class="nc" id="L214">            bitmap = BitmapUtils.getBitmap(image)</span>
+        }
+
+<span class="nc bnc" id="L217" title="All 2 branches missed.">        if (isMlImageEnabled(graphicOverlay.context)) {</span>
+<span class="nc" id="L218">            val mlImage =</span>
+<span class="nc" id="L219">                MediaMlImageBuilder(image.image!!).setRotation(image.imageInfo.rotationDegrees).build()</span>
+<span class="nc" id="L220">            requestDetectInImage(</span>
+<span class="nc" id="L221">                mlImage,</span>
+<span class="nc" id="L222">                graphicOverlay,</span>
+<span class="nc" id="L223">                /* originalCameraImage= */ bitmap,</span>
+<span class="nc" id="L224">                /* shouldShowFps= */ true,</span>
+<span class="nc" id="L225">                frameStartMs</span>
+            )
+                // When the image is from CameraX analysis use case, must call image.close() on received
+                // images when finished using them. Otherwise, new images may not be received or the camera
+                // may stall.
+                // Currently MlImage doesn't support ImageProxy directly, so we still need to call
+                // ImageProxy.close() here.
+<span class="nc" id="L232">                .addOnCompleteListener { image.close() }</span>
+
+<span class="nc" id="L234">            return</span>
+        }
+
+<span class="nc" id="L237">        requestDetectInImage(</span>
+<span class="nc" id="L238">            InputImage.fromMediaImage(image.image!!, image.imageInfo.rotationDegrees),</span>
+<span class="nc" id="L239">            graphicOverlay,</span>
+<span class="nc" id="L240">            /* originalCameraImage= */ bitmap,</span>
+<span class="nc" id="L241">            /* shouldShowFps= */ true,</span>
+<span class="nc" id="L242">            frameStartMs</span>
+        )
+            // When the image is from CameraX analysis use case, must call image.close() on received
+            // images when finished using them. Otherwise, new images may not be received or the camera
+            // may stall.
+<span class="nc" id="L247">            .addOnCompleteListener { image.close() }</span>
+<span class="nc" id="L248">    }</span>
+
+    // -----------------Common processing logic-------------------------------------------------------
+    private fun requestDetectInImage(
+        image: InputImage,
+        graphicOverlay: GraphicOverlay,
+        originalCameraImage: Bitmap?,
+        shouldShowFps: Boolean,
+        frameStartMs: Long
+    ): Task&lt;T&gt; {
+<span class="nc" id="L258">        return setUpListener(</span>
+<span class="nc" id="L259">            detectInImage(image),</span>
+<span class="nc" id="L260">            graphicOverlay,</span>
+<span class="nc" id="L261">            originalCameraImage,</span>
+<span class="nc" id="L262">            shouldShowFps,</span>
+<span class="nc" id="L263">            frameStartMs</span>
+        )
+    }
+
+    private fun requestDetectInImage(
+        image: MlImage,
+        graphicOverlay: GraphicOverlay,
+        originalCameraImage: Bitmap?,
+        shouldShowFps: Boolean,
+        frameStartMs: Long
+    ): Task&lt;T&gt; {
+<span class="nc" id="L274">        return setUpListener(</span>
+<span class="nc" id="L275">            detectInImage(image),</span>
+<span class="nc" id="L276">            graphicOverlay,</span>
+<span class="nc" id="L277">            originalCameraImage,</span>
+<span class="nc" id="L278">            shouldShowFps,</span>
+<span class="nc" id="L279">            frameStartMs</span>
+        )
+    }
+
+    private fun setUpListener(
+        task: Task&lt;T&gt;,
+        graphicOverlay: GraphicOverlay,
+        originalCameraImage: Bitmap?,
+        shouldShowFps: Boolean,
+        frameStartMs: Long
+    ): Task&lt;T&gt; {
+<span class="nc" id="L290">        val detectorStartMs = SystemClock.elapsedRealtime()</span>
+<span class="nc" id="L291">        return task</span>
+<span class="nc" id="L292">            .addOnSuccessListener(</span>
+<span class="nc" id="L293">                executor,</span>
+                OnSuccessListener { results: T -&gt;
+<span class="nc" id="L295">                    val endMs = SystemClock.elapsedRealtime()</span>
+<span class="nc" id="L296">                    val currentFrameLatencyMs = endMs - frameStartMs</span>
+<span class="nc" id="L297">                    val currentDetectorLatencyMs = endMs - detectorStartMs</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">                    if (numRuns &gt;= 500) {</span>
+<span class="nc" id="L299">                        resetLatencyStats()</span>
+                    }
+<span class="nc" id="L301">                    numRuns++</span>
+<span class="nc" id="L302">                    frameProcessedInOneSecondInterval++</span>
+<span class="nc" id="L303">                    totalFrameMs += currentFrameLatencyMs</span>
+<span class="nc" id="L304">                    maxFrameMs = max(currentFrameLatencyMs, maxFrameMs)</span>
+<span class="nc" id="L305">                    minFrameMs = min(currentFrameLatencyMs, minFrameMs)</span>
+<span class="nc" id="L306">                    totalDetectorMs += currentDetectorLatencyMs</span>
+<span class="nc" id="L307">                    maxDetectorMs = max(currentDetectorLatencyMs, maxDetectorMs)</span>
+<span class="nc" id="L308">                    minDetectorMs = min(currentDetectorLatencyMs, minDetectorMs)</span>
+
+                    // Only log inference info once per second. When frameProcessedInOneSecondInterval is
+                    // equal to 1, it means this is the first frame processed during the current second.
+<span class="nc bnc" id="L312" title="All 2 branches missed.">                    if (frameProcessedInOneSecondInterval == 1) {</span>
+<span class="nc" id="L313">                        Log.d(TAG, &quot;Num of Runs: $numRuns&quot;)</span>
+<span class="nc" id="L314">                        Log.d(</span>
+<span class="nc" id="L315">                            TAG,</span>
+                            &quot;Frame latency: max=&quot; +
+<span class="nc" id="L317">                                maxFrameMs +</span>
+                                &quot;, min=&quot; +
+<span class="nc" id="L319">                                minFrameMs +</span>
+                                &quot;, avg=&quot; +
+<span class="nc" id="L321">                                totalFrameMs / numRuns</span>
+                        )
+<span class="nc" id="L323">                        Log.d(</span>
+<span class="nc" id="L324">                            TAG,</span>
+                            &quot;Detector latency: max=&quot; +
+<span class="nc" id="L326">                                maxDetectorMs +</span>
+                                &quot;, min=&quot; +
+<span class="nc" id="L328">                                minDetectorMs +</span>
+                                &quot;, avg=&quot; +
+<span class="nc" id="L330">                                totalDetectorMs / numRuns</span>
+                        )
+<span class="nc" id="L332">                        val mi = ActivityManager.MemoryInfo()</span>
+<span class="nc" id="L333">                        activityManager.getMemoryInfo(mi)</span>
+<span class="nc" id="L334">                        val availableMegs: Long = mi.availMem / 0x100000L</span>
+<span class="nc" id="L335">                        Log.d(TAG, &quot;Memory available in system: $availableMegs MB&quot;)</span>
+                    }
+<span class="nc" id="L337">                    graphicOverlay.clear()</span>
+<span class="nc bnc" id="L338" title="All 2 branches missed.">                    if (originalCameraImage != null) {</span>
+<span class="nc" id="L339">                        graphicOverlay.add(CameraImageGraphic(graphicOverlay, originalCameraImage))</span>
+                    }
+
+<span class="nc" id="L342">                    this@VisionProcessorBase.onSuccessOriginal(</span>
+<span class="nc" id="L343">                        results,</span>
+<span class="nc" id="L344">                        graphicOverlay,</span>
+<span class="nc" id="L345">                        originalCameraImage</span>
+                    )
+
+<span class="nc" id="L348">                    if (!shouldHideDetectionInfo) {</span>
+                        graphicOverlay.add(
+                            InferenceInfoGraphic(
+                                graphicOverlay,
+                                currentFrameLatencyMs,
+                                currentDetectorLatencyMs,
+                                if (shouldShowFps) framesPerSecond else null
+                            )
+                        )
+                    }
+<span class="nc" id="L358">                    graphicOverlay.postInvalidate()</span>
+<span class="nc" id="L359">                }</span>
+            )
+<span class="nc" id="L361">            .addOnFailureListener(</span>
+<span class="nc" id="L362">                executor,</span>
+                OnFailureListener { e: Exception -&gt;
+<span class="nc" id="L364">                    graphicOverlay.clear()</span>
+<span class="nc" id="L365">                    graphicOverlay.postInvalidate()</span>
+<span class="nc" id="L366">                    val error = &quot;Failed to process. Error: &quot; + e.localizedMessage</span>
+<span class="nc" id="L367">                    Toast.makeText(</span>
+<span class="nc" id="L368">                        graphicOverlay.context,</span>
+                        &quot;&quot;&quot;
+<span class="nc" id="L370">          $error</span>
+<span class="nc" id="L371">          Cause: ${e.cause}</span>
+<span class="nc" id="L372">                        &quot;&quot;&quot;.trimIndent(),</span>
+<span class="nc" id="L373">                        Toast.LENGTH_SHORT</span>
+                    )
+<span class="nc" id="L375">                        .show()</span>
+<span class="nc" id="L376">                    Log.d(TAG, error)</span>
+<span class="nc" id="L377">                    e.printStackTrace()</span>
+<span class="nc" id="L378">                    this@VisionProcessorBase.onFailure(e)</span>
+<span class="nc" id="L379">                }</span>
+            )
+    }
+
+    override fun stop() {
+<span class="nc" id="L384">        executor.shutdown()</span>
+<span class="nc" id="L385">        isShutdown = true</span>
+<span class="nc" id="L386">        resetLatencyStats()</span>
+<span class="nc" id="L387">        fpsTimer.cancel()</span>
+<span class="nc" id="L388">    }</span>
+
+    private fun resetLatencyStats() {
+<span class="nc" id="L391">        numRuns = 0</span>
+<span class="nc" id="L392">        totalFrameMs = 0</span>
+<span class="nc" id="L393">        maxFrameMs = 0</span>
+<span class="nc" id="L394">        minFrameMs = Long.MAX_VALUE</span>
+<span class="nc" id="L395">        totalDetectorMs = 0</span>
+<span class="nc" id="L396">        maxDetectorMs = 0</span>
+<span class="nc" id="L397">        minDetectorMs = Long.MAX_VALUE</span>
+<span class="nc" id="L398">    }</span>
+
+    protected abstract fun detectInImage(image: InputImage): Task&lt;T&gt;
+
+    protected open fun detectInImage(image: MlImage): Task&lt;T&gt; {
+<span class="nc" id="L403">        return Tasks.forException(</span>
+<span class="nc" id="L404">            MlKitException(</span>
+<span class="nc" id="L405">                &quot;MlImage is currently not demonstrated for this feature&quot;,</span>
+<span class="nc" id="L406">                MlKitException.INVALID_ARGUMENT</span>
+            )
+        )
+    }
+
+    protected abstract fun onSuccessOriginal(
+        results: T,
+        graphicOverlay: GraphicOverlay,
+        bitmap: Bitmap?
+    )
+
+    protected abstract fun onFailure(e: Exception)
+
+    protected open fun isMlImageEnabled(context: Context?): Boolean {
+<span class="nc" id="L420">        return false</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

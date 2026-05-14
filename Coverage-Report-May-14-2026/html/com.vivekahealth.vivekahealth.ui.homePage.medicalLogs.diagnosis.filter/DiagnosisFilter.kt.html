@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DiagnosisFilter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.diagnosis.filter</a> &gt; <span class="el_source">DiagnosisFilter.kt</span></div><h1>DiagnosisFilter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.diagnosis.filter
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.lifecycle.ViewModelProvider
+import com.vivekahealth.vivekahealth.data.local.home.DiagnosisFilterData
+import com.vivekahealth.vivekahealth.data.local.home.DiagnosisRange
+import com.vivekahealth.vivekahealth.databinding.DiagnosisFilterFragmentBinding
+import com.vivekahealth.vivekahealth.di.Injectable
+import com.vivekahealth.vivekahealth.ui.BaseBottomSheetDialogFragment
+import com.vivekahealth.vivekahealth.utils.EventObserver
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import javax.inject.Inject
+
+<span class="nc" id="L17">class DiagnosisFilter : BaseBottomSheetDialogFragment(), Injectable {</span>
+
+    companion object {
+<span class="nc" id="L20">        fun newInstance() = DiagnosisFilter()</span>
+        const val TAG = &quot;DiagnosisFilterData&quot;
+    }
+
+<span class="nc" id="L24">    var filterListener: DiagnosisFilterListener? = null</span>
+
+<span class="nc" id="L26">    var filterOption: DiagnosisFilterData? = null</span>
+
+<span class="nc" id="L28">    var initialRange: DiagnosisRange ? = null</span>
+    fun setCallback(
+        filterListener: DiagnosisFilterListener,
+        filterOption: DiagnosisFilterData?,
+        range: DiagnosisRange
+    ) {
+<span class="nc" id="L34">        this.filterListener = filterListener</span>
+<span class="nc" id="L35">        this.filterOption = filterOption</span>
+<span class="nc" id="L36">        this.initialRange = range</span>
+<span class="nc" id="L37">    }</span>
+    private lateinit var binding: DiagnosisFilterFragmentBinding
+
+    private lateinit var viewModel: DiagnosisFilterViewModel
+<span class="nc" id="L41">    var sentfilter = false</span>
+
+<span class="nc" id="L43">    @Inject</span>
+<span class="nc" id="L44">    lateinit var viewModelFactory: ViewModelProvider.Factory</span>
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+<span class="nc" id="L51">        binding = DiagnosisFilterFragmentBinding.inflate(inflater, container, false)</span>
+
+<span class="nc" id="L53">        return binding.root</span>
+    }
+    override fun onCreate(savedInstanceState: Bundle?) {
+<span class="nc" id="L56">        super.onCreate(savedInstanceState)</span>
+<span class="nc" id="L57">    }</span>
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+<span class="nc" id="L60">        super.onActivityCreated(savedInstanceState)</span>
+<span class="nc" id="L61">        viewModel = ViewModelProvider(this, viewModelFactory).get(</span>
+<span class="nc" id="L62">            DiagnosisFilterViewModel::class.java</span>
+        )
+
+<span class="nc" id="L65">        binding.viewModel = viewModel</span>
+
+<span class="nc" id="L67">        viewModel.minRange = filterOption!!.min</span>
+<span class="nc" id="L68">        viewModel.maxRange = filterOption!!.max</span>
+<span class="nc" id="L69">        viewModel.rangeMin = HelperUtils.floor(initialRange!!.min.toDouble())</span>
+<span class="nc" id="L70">        viewModel.rangeMax = HelperUtils.floor(initialRange!!.max.toDouble())</span>
+
+<span class="nc" id="L72">        val list: MutableList&lt;Float&gt; = emptyArray&lt;Float&gt;().toMutableList()</span>
+<span class="nc" id="L73">        list.add(viewModel.minRange)</span>
+<span class="nc" id="L74">        list.add(viewModel.maxRange)</span>
+<span class="nc" id="L75">        viewModel.rangeValue = list</span>
+<span class="nc" id="L76">        binding.rangeSlider.values = list</span>
+
+<span class="nc" id="L78">        binding.rangeSlider.valueFrom = initialRange!!.min</span>
+<span class="nc" id="L79">        binding.rangeSlider.valueTo = initialRange!!.max</span>
+
+<span class="nc" id="L81">        binding.rangeSlider.setValues(viewModel.rangeValue[0], viewModel.rangeValue[1])</span>
+
+<span class="nc" id="L83">        viewModel.range = HelperUtils.floor(viewModel.rangeValue[0].toDouble()) + &quot;-&quot; + HelperUtils.floor(</span>
+<span class="nc" id="L84">            viewModel.rangeValue[1].toDouble()</span>
+        )
+
+<span class="nc" id="L87">        viewModel.navigateToClear.observe(</span>
+<span class="nc" id="L88">            viewLifecycleOwner,</span>
+<span class="nc" id="L89">            EventObserver {</span>
+<span class="nc" id="L90">                viewModel.minRange = initialRange!!.min</span>
+<span class="nc" id="L91">                viewModel.maxRange = initialRange!!.max</span>
+<span class="nc" id="L92">                binding.rangeSlider.valueFrom = initialRange!!.min</span>
+<span class="nc" id="L93">                binding.rangeSlider.valueTo = initialRange!!.max</span>
+<span class="nc" id="L94">                val list: MutableList&lt;Float&gt; = emptyArray&lt;Float&gt;().toMutableList()</span>
+<span class="nc" id="L95">                list.add(viewModel.minRange)</span>
+<span class="nc" id="L96">                list.add(viewModel.maxRange)</span>
+<span class="nc" id="L97">                binding.rangeSlider.values = list</span>
+<span class="nc" id="L98">                viewModel.range = HelperUtils.floor(viewModel.minRange.toDouble()) + &quot;-&quot; + HelperUtils.floor(</span>
+<span class="nc" id="L99">                    viewModel.maxRange.toDouble()</span>
+                )
+
+<span class="nc" id="L102">                binding.rangeSlider.setValues(viewModel.minRange, viewModel.maxRange)</span>
+
+//
+<span class="nc" id="L105">            }</span>
+        )
+
+<span class="nc" id="L108">        viewModel.navigateToValues.observe(</span>
+<span class="nc" id="L109">            viewLifecycleOwner,</span>
+<span class="nc" id="L110">            EventObserver {</span>
+<span class="nc" id="L111">                viewModel.range = HelperUtils.floor(it[0].toDouble()).toString() + &quot;-&quot; + HelperUtils.floor(</span>
+<span class="nc" id="L112">                    it[1].toDouble()</span>
+                ).toString()
+
+<span class="nc" id="L115">                viewModel.rangeValue = it</span>
+<span class="nc" id="L116">                viewModel.minRange = it[0]</span>
+<span class="nc" id="L117">                viewModel.maxRange = it[1]</span>
+<span class="nc" id="L118">            }</span>
+        )
+<span class="nc" id="L120">        viewModel.navigateToPres.observe(</span>
+<span class="nc" id="L121">            viewLifecycleOwner,</span>
+<span class="nc" id="L122">            EventObserver {</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">                filterListener?.onClose()</span>
+<span class="nc" id="L124">            }</span>
+        )
+<span class="nc" id="L126">        viewModel.navigateToDocFilter.observe(</span>
+<span class="nc" id="L127">            viewLifecycleOwner,</span>
+<span class="nc" id="L128">            EventObserver {</span>
+<span class="nc bnc" id="L129" title="All 6 branches missed.">                filterListener?.takeIf { viewModel.rangeValue.size &gt;= 2 }</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">                    ?.apply(DiagnosisFilterData(viewModel.rangeValue[0], viewModel.rangeValue[1]))</span>
+<span class="nc" id="L131">            }</span>
+        )
+<span class="nc" id="L133">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

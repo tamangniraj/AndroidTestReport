@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CardsSection.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.pension.ui.component</a> &gt; <span class="el_source">CardsSection.kt</span></div><h1>CardsSection.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.pension.ui.component
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vivekahealth.vivekahealth.FirebaseTags
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.pension.ui.PensionComposeActivity
+import com.vivekahealth.vivekahealth.pension.ui.viewmodel.PensionViewModel
+import com.vivekahealth.vivekahealth.utils.LanguageUtils
+
+@Composable
+fun CardsSection(
+    viewModel: PensionViewModel,
+    isOffline: Boolean
+<span class="pc bpc" id="L27" title="4 of 14 branches missed.">) {</span>
+<span class="fc" id="L28">    val context = LocalContext.current</span>
+
+    // Observe summary data from database (single source of truth)
+<span class="fc" id="L31">    val summaryDataFromDb by viewModel.summaryImpactDataFromDb.collectAsStateWithLifecycle()</span>
+
+    // Only show if we have summary data from database
+<span class="pc bpc" id="L34" title="2 of 4 branches missed.">    summaryDataFromDb?.let { summaryData -&gt;</span>
+<span class="nc" id="L35">        Column(</span>
+<span class="nc" id="L36">            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)</span>
+        ) {
+<span class="nc" id="L38">            Spacer(modifier = Modifier.height(16.dp))</span>
+
+<span class="nc" id="L40">            Text(</span>
+<span class="nc" id="L41">                stringResource(R.string.pension),</span>
+<span class="nc" id="L42">                fontSize = 16.sp,</span>
+<span class="nc" id="L43">                fontWeight = FontWeight.SemiBold,</span>
+<span class="nc" id="L44">                modifier = Modifier.padding(bottom = 16.dp)</span>
+            )
+
+<span class="nc" id="L47">            SummaryImpactCard(</span>
+<span class="nc" id="L48">                data = summaryData,</span>
+<span class="nc" id="L49">                theme = getTealTheme(),</span>
+<span class="nc" id="L50">                isOffline = isOffline,</span>
+<span class="nc" id="L51">                onClick = {</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">                    if (summaryData.showPensionDetails == true) {</span>
+                        // Get current language code
+<span class="nc" id="L54">                        val currentLanguage = LanguageUtils.getCurrentLanguageCode(context)</span>
+
+                        // Create intent with language code
+<span class="nc" id="L57">                        val intent = LanguageUtils.createIntentWithLanguage(</span>
+<span class="nc" id="L58">                            context,</span>
+<span class="nc" id="L59">                            PensionComposeActivity::class.java,</span>
+<span class="nc" id="L60">                            currentLanguage</span>
+                        )
+
+<span class="nc" id="L63">                        context.startActivity(intent)</span>
+
+<span class="nc" id="L65">                        viewModel.logEvent(FirebaseTags.PENSION_SUMMARY_IMPACT_CLICK)</span>
+                    }
+<span class="nc" id="L67">                }</span>
+            )
+<span class="nc" id="L69">        }</span>
+<span class="nc" id="L70">    }</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

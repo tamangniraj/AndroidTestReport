@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>YearTilesAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.benefit.adapter</a> &gt; <span class="el_source">YearTilesAdapter.kt</span></div><h1>YearTilesAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.benefit.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.data.remote.home.workBenefit.workLog.BenefitsLogo
+import com.vivekahealth.vivekahealth.data.remote.home.workBenefit.workLog.WorkLog
+import com.vivekahealth.vivekahealth.databinding.YearTilesCellBinding
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.MonthCardUtils
+
+class YearTilesAdapter(
+    private var onClick: (Int, Int, Boolean) -&gt; Unit,
+    private var benefitsLogos: List&lt;BenefitsLogo&gt;?,
+    private var currentMonth: Int,
+    private var currentYear: Int
+) : ListAdapter&lt;WorkLog, RecyclerView.ViewHolder&gt;(
+    YearTilesDiffCallback()
+) {
+
+    var currentYearSelected = currentYear
+    var selectedPosition: Int = 0
+    var lastSelected: Int = currentMonth - 1
+    var count: Int = 0
+    var currentYearPos: Int = 0
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return YearTileViewHolder(
+            YearTilesCellBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            ),
+            onClick
+        )
+    }
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = getItem(position)
+        (holder as YearTileViewHolder).binding.setTileClick {
+            if (item.isSelected) {
+                // Do nothing if already selected
+                return@setTileClick
+            }
+            notifyItemChanged(selectedPosition)
+
+            if (lastSelected == -1) {
+                notifyItemChanged(itemCount - 1)
+
+                lastSelected = position
+            } else {
+                val lastItem = currentList.find { it.isSelected == true }
+                lastItem?.isSelected = false
+                notifyItemChanged(currentList.indexOf(lastItem))
+                lastSelected = position
+                item.isSelected = true
+            }
+
+            selectedPosition = position
+
+            onClick(item.month.toInt(), item.year.toInt(), item.addedItem)
+            notifyItemChanged(position)
+        }
+        holder.binding.month = item.month
+        holder.binding.hours = item.hoursWorked
+        holder.binding.premium = item.memberContribution
+        holder.binding.eligible = item.eligibilityStatus == &quot;ELIGIBLE&quot;
+        holder.binding.isFutureAddedMonth = isFutureMonthCard(item.year, item.month) &amp;&amp; item.addedItem
+        if (!item.employerDTOList.isNullOrEmpty()) {
+            holder.binding.employerName = item.employerDTOList.first().shopName ?: &quot;&quot;
+        }
+        item.employerDTOList?.let {
+            if (item.employerDTOList.isNotEmpty()) {
+                holder.binding.employerCount = (item.employerDTOList.count() - 1).toString()
+            } else {
+                holder.binding.employerCount = &quot;0&quot;
+            }
+        }
+        if ((item.month.isNotBlank()) &amp;&amp; item.year.isNotBlank()) {
+            holder.binding.clicked = item.month.toInt() == currentMonth &amp;&amp; item.year.toInt() == currentYearSelected
+        } else {
+            holder.binding.clicked = item.month.toInt() == currentMonth &amp;&amp; DateUtils.getCurrentYear() == currentYearSelected
+        }
+        holder.binding.clicked = item.isSelected
+        holder.binding.selected = item.isSelected
+        holder.binding.reason = item.inEligibilityReasons
+        val noMemberContribution = item.memberContribution == null || item.memberContribution == 0.0
+        val noHoursWorked = item.hoursWorked == null || item.hoursWorked == 0.0
+        holder.binding.hidePremium = noMemberContribution || !noHoursWorked
+
+        val eligible = item.eligibleBenefits?.map {
+            val benefitLogo = benefitsLogos?.first { benefitLogo -&gt; benefitLogo.type == it }
+            benefitLogo
+        }
+
+        val adapter = EligibleBenefitListAdapter(eligible?.size ?: 0)
+        holder.binding.benefitList.adapter = adapter
+        adapter.submitList(eligible?.take(5))
+    }
+
+    private fun isFutureMonthCard(year: String, month: String): Boolean {
+        return MonthCardUtils.isFutureMonthCard(
+            year,
+            month,
+            DateUtils.getCurrentYear(),
+            DateUtils.getCurrentMonthInt()
+        )
+    }
+
+    fun currentYear() {
+        val selected = currentList.indexOf(
+            currentList.find { item -&gt; item.year.toInt() == currentYearSelected &amp;&amp; item.month.toInt() == currentMonth }
+        )
+        notifyItemChanged(selected)
+    }
+    class YearTileViewHolder(
+        val binding: YearTilesCellBinding,
+        private val onClick: (Int, Int, Boolean) -&gt; Unit
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        //        var toggle = binding.clicked
+        init {
+
+//            binding.clicked = adapterPosition == count
+        }
+    }
+}
+
+<span class="nc" id="L134">private class YearTilesDiffCallback : DiffUtil.ItemCallback&lt;WorkLog&gt;() {</span>
+    override fun areItemsTheSame(oldItem: WorkLog, newItem: WorkLog): Boolean {
+<span class="nc" id="L136">        return oldItem == newItem</span>
+    }
+
+    override fun areContentsTheSame(oldItem: WorkLog, newItem: WorkLog): Boolean {
+<span class="nc bnc" id="L140" title="All 4 branches missed.">        return oldItem.month == newItem.month &amp;&amp; oldItem.year == newItem.year</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

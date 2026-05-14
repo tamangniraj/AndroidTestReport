@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RetrofitException.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils.remote</a> &gt; <span class="el_source">RetrofitException.kt</span></div><h1>RetrofitException.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils.remote
+
+import com.google.gson.Gson
+import com.google.gson.TypeAdapter
+import com.vivekahealth.vivekahealth.data.remote.ServerError
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Constants.APOLOGY_CHECK_CONNECTION
+import okhttp3.internal.readBomAsCharset
+import java.io.IOException
+import retrofit2.HttpException
+import retrofit2.Response
+import javax.net.ssl.SSLHandshakeException
+import kotlin.text.Charsets.UTF_8
+
+class RetrofitException
+<span class="fc" id="L16">private constructor(</span>
+    message: String?,
+<span class="pc" id="L18">    val code: String?,</span>
+    /**
+     * The request URL which produced the error.
+     */
+<span class="pc" id="L22">    val url: String?,</span>
+    /**
+     * Response object containing status code, headers, body, etc.
+     */
+<span class="fc" id="L26">    val response: Response&lt;*&gt;?,</span>
+    /**
+     * The event kind which triggered this error.
+     */
+<span class="fc" id="L30">    val kind: Kind,</span>
+<span class="fc" id="L31">    val exception: Throwable</span>
+<span class="fc" id="L32">) : RuntimeException(message, exception) {</span>
+
+    override fun toString(): String {
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">        return super.toString() + &quot; : &quot; + kind + &quot; : &quot; + url + &quot; : &quot; + response?.peekErrorBodyString()</span>
+    }
+
+    /**
+     * Identifies the event kind which triggered a [RetrofitException].
+     */
+    enum class Kind {
+        /**
+         * An [IOException] occurred while communicating to the server.
+         */
+<span class="fc" id="L45">        NETWORK,</span>
+
+        /**
+         * A non-200 HTTP status code was received from the server.
+         */
+<span class="fc" id="L50">        HTTP,</span>
+
+        /**
+         * An internal error occurred while attempting to execute a request. It is best practice to
+         * re-throw this exception so your application crashes.
+         */
+<span class="fc" id="L56">        UNEXPECTED</span>
+<span class="nc" id="L57">    }</span>
+
+    companion object {
+        private fun httpError(
+            url: String,
+            response: Response&lt;*&gt;?,
+            httpException: HttpException
+        ): RetrofitException {
+<span class="fc" id="L65">            var message = Constants.APOLOGY_MESSAGE</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">            val statusCode = response?.code()</span>
+
+<span class="pc bpc" id="L68" title="5 of 10 branches missed.">            if (response?.errorBody() != null &amp;&amp; response.errorBody()?.contentLength() != 0L) {</span>
+<span class="fc" id="L69">                try {</span>
+<span class="pc bpc" id="L70" title="2 of 4 branches missed.">                    val contentType = response.errorBody()?.contentType()?.subtype</span>
+<span class="pc bpc" id="L71" title="3 of 4 branches missed.">                    if (contentType == &quot;json&quot; || contentType == &quot;plain&quot;) {</span>
+<span class="fc" id="L72">                        val gson = Gson()</span>
+<span class="fc" id="L73">                        val adapter: TypeAdapter&lt;ServerError&gt; = gson.getAdapter(</span>
+<span class="fc" id="L74">                            ServerError::class.java</span>
+                        )
+<span class="fc" id="L76">                        val errorParser: ServerError = adapter.fromJson(</span>
+<span class="fc" id="L77">                            response.errorBody()!!.charStream()</span>
+                        )
+
+<span class="pc bpc" id="L80" title="3 of 4 branches missed.">                        message = errorParser.errorDescription</span>
+<span class="nc" id="L81">                            ?: errorParser.errorDetails</span>
+<span class="nc" id="L82">                            ?: message</span>
+<span class="nc bnc" id="L83" title="All 4 branches missed.">                    } else if (statusCode == 403) {</span>
+<span class="nc" id="L84">                        message = &quot;Access denied. You do not have permission to access this resource.&quot;</span>
+                    } else {
+<span class="nc" id="L86">                        message = &quot;Unexpected error format received from server.&quot;</span>
+                    }
+<span class="nc" id="L88">                } catch (e: Exception) {</span>
+                    // Fallback in case JSON parsing fails
+<span class="nc bnc" id="L90" title="All 4 branches missed.">                    message = if (statusCode == 403) {</span>
+<span class="nc" id="L91">                        &quot;Access denied. You do not have permission to access this resource.&quot;</span>
+                    } else {
+<span class="nc" id="L93">                        &quot;An error occurred but couldn't parse error details.&quot;</span>
+                    }
+                }
+            }
+
+<span class="fc" id="L98">            return RetrofitException(</span>
+<span class="fc" id="L99">                message,</span>
+<span class="fc" id="L100">                statusCode.toString(),</span>
+<span class="fc" id="L101">                url,</span>
+<span class="fc" id="L102">                response,</span>
+<span class="fc" id="L103">                Kind.HTTP,</span>
+<span class="fc" id="L104">                httpException</span>
+            )
+        }
+
+        private fun networkError(exception: IOException): RetrofitException {
+<span class="pc bpc" id="L109" title="1 of 6 branches missed.">            val message = if (exception.message?.contains(&quot;Unable to resolve host&quot;) == true) {</span>
+<span class="fc" id="L110">                APOLOGY_CHECK_CONNECTION</span>
+            } else {
+<span class="fc" id="L112">                exception.message</span>
+            }
+
+<span class="fc" id="L115">            return RetrofitException(message, null, null, null, Kind.NETWORK, exception)</span>
+        }
+
+        private fun unexpectedError(exception: Throwable): RetrofitException {
+<span class="fc" id="L119">            return RetrofitException(</span>
+<span class="fc" id="L120">                exception.message,</span>
+<span class="fc" id="L121">                null,</span>
+<span class="fc" id="L122">                null,</span>
+<span class="fc" id="L123">                null,</span>
+<span class="fc" id="L124">                Kind.UNEXPECTED,</span>
+<span class="fc" id="L125">                exception</span>
+            )
+        }
+
+        fun asRetrofitException(throwable: Throwable): RetrofitException {
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            if (throwable is RetrofitException) {</span>
+<span class="fc" id="L131">                return throwable</span>
+            }
+
+<span class="fc bfc" id="L134" title="All 2 branches covered.">            if (throwable is SSLHandshakeException) {</span>
+<span class="fc" id="L135">                return RetrofitException(</span>
+<span class="fc" id="L136">                    Constants.APOLOGY_CHECK_CONNECTION,</span>
+<span class="fc" id="L137">                    null,</span>
+<span class="fc" id="L138">                    null,</span>
+<span class="fc" id="L139">                    null,</span>
+<span class="fc" id="L140">                    Kind.NETWORK,</span>
+<span class="fc" id="L141">                    throwable</span>
+                )
+            }
+
+            // We had non-200 http error
+<span class="fc bfc" id="L146" title="All 2 branches covered.">            if (throwable is HttpException) {</span>
+<span class="fc" id="L147">                val response = throwable.response()</span>
+<span class="pc bpc" id="L148" title="3 of 6 branches missed.">                return httpError(response?.raw()?.request?.url.toString(), response, throwable)</span>
+            }
+            // A network error happened
+<span class="fc bfc" id="L151" title="All 2 branches covered.">            return if (throwable is IOException) {</span>
+<span class="fc" id="L152">                networkError(throwable)</span>
+            } else {
+<span class="fc" id="L154">                unexpectedError(throwable)</span>
+            }
+            // We don't know what happened. We need to simply convert to an unknown error
+        }
+    }
+}
+
+fun Response&lt;*&gt;.peekErrorBodyString(): String? {
+<span class="pc bpc" id="L162" title="2 of 4 branches missed.">    val peekSource = errorBody()?.source()?.peek()</span>
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">    return peekSource?.let {</span>
+<span class="pc bpc" id="L164" title="3 of 6 branches missed.">        val defaultCharset = errorBody()?.contentType()?.charset(UTF_8) ?: UTF_8</span>
+<span class="fc" id="L165">        val charset = it.readBomAsCharset(defaultCharset)</span>
+        // Use the line below in older versions of okhttp
+        // val charset = Util.bomAwareCharset(it, defaultCharset)
+<span class="fc" id="L168">        it.readString(charset)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

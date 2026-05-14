@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ZipAddViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.guestVerify.zip</a> &gt; <span class="el_source">ZipAddViewModel.kt</span></div><h1>ZipAddViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.guestVerify.zip
+
+import android.content.SharedPreferences
+import android.text.Editable
+import android.text.TextWatcher
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.data.local.guest.LoadingState
+import com.vivekahealth.vivekahealth.data.local.guest.UploadState
+import com.vivekahealth.vivekahealth.data.remote.guest.AdditionalVerification
+import com.vivekahealth.vivekahealth.data.remote.guest.CurrentFullAddress
+import com.vivekahealth.vivekahealth.data.remote.guest.ErrorDetail
+import com.vivekahealth.vivekahealth.data.remote.guest.IdentifyErrorResponse
+import com.vivekahealth.vivekahealth.data.remote.guest.UploadDetailsSendParams
+import com.vivekahealth.vivekahealth.data.remote.login.GenericErrorResponse
+import com.vivekahealth.vivekahealth.data.remote.register.DataResponse
+import com.vivekahealth.vivekahealth.ui.guestVerify.repository.GuestUploadRepository
+import com.vivekahealth.vivekahealth.utils.AddressChangedValidator
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.remote.APIResponse
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import okhttp3.ResponseBody
+
+<span class="nc" id="L39">class ZipAddViewModel @Inject constructor(</span>
+<span class="nc" id="L40">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L41">    var uploadRepository: GuestUploadRepository</span>
+
+<span class="nc" id="L43">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L45">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L47">        get() = _navigateToBack</span>
+
+<span class="nc" id="L49">    private val _navigateToNext = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToNext: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L51">        get() = _navigateToNext</span>
+
+<span class="nc" id="L53">    var zipExtension: String = &quot;&quot;</span>
+<span class="nc" id="L54">    var zipFirst: String = &quot;&quot;</span>
+
+<span class="nc" id="L56">    var gson = Gson()</span>
+    private lateinit var job: Job
+<span class="nc" id="L58">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L60">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L62">    var isFull: Boolean = false</span>
+
+<span class="nc" id="L64">    private val _zipChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val zipChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L66">        get() = _zipChanged</span>
+
+<span class="nc" id="L68">    var zip: String = &quot;&quot;</span>
+<span class="nc" id="L69">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L71">            field = value</span>
+<span class="nc" id="L72">            callbacks.notifyCallbacks(this, BR.zip, null)</span>
+<span class="nc" id="L73">        }</span>
+
+<span class="nc" id="L75">    @get:Bindable</span>
+<span class="nc" id="L76">    val zipTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L79">        }</span>
+
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L82">        }</span>
+
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L85">            _zipChanged.value = Event(s.toString())</span>
+<span class="nc" id="L86">        }</span>
+    }
+
+<span class="nc" id="L89">    private val _apartmentChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val apartmentChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L91">        get() = _apartmentChanged</span>
+<span class="nc" id="L92">    private val _addressChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val addressChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L94">        get() = _addressChanged</span>
+
+<span class="nc" id="L96">    private val _stateChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val stateChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L98">        get() = _stateChanged</span>
+
+<span class="nc" id="L100">    private val _cityChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+
+    val cityChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L103">        get() = _cityChanged</span>
+
+<span class="nc" id="L105">    var addressStreet: String = &quot;&quot;</span>
+<span class="nc" id="L106">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L108">            field = value</span>
+
+<span class="nc" id="L110">            callbacks.notifyCallbacks(this, BR.addressStreet, null)</span>
+<span class="nc" id="L111">        }</span>
+
+    var enableButton: Boolean = false
+<span class="nc" id="L114">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L116">            field = value</span>
+<span class="nc" id="L117">            callbacks.notifyCallbacks(this, BR.enableButton, null)</span>
+<span class="nc" id="L118">        }</span>
+
+<span class="nc" id="L120">    var state: String = &quot;&quot;</span>
+<span class="nc" id="L121">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L123">            field = value</span>
+<span class="nc" id="L124">            callbacks.notifyCallbacks(this, BR.state, null)</span>
+<span class="nc" id="L125">        }</span>
+
+<span class="nc" id="L127">    var apartment: String = &quot;&quot;</span>
+<span class="nc" id="L128">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L130">            field = value</span>
+<span class="nc" id="L131">            callbacks.notifyCallbacks(this, BR.apartment, null)</span>
+<span class="nc" id="L132">        }</span>
+
+<span class="nc" id="L134">    var city: String = &quot;&quot;</span>
+<span class="nc" id="L135">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L137">            field = value</span>
+<span class="nc" id="L138">            callbacks.notifyCallbacks(this, BR.city, null)</span>
+<span class="nc" id="L139">        }</span>
+
+<span class="nc" id="L141">    @get:Bindable</span>
+<span class="nc" id="L142">    val addressTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L145">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L147">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L149">            _addressChanged.value = Event(s.toString())</span>
+<span class="nc" id="L150">        }</span>
+    }
+
+<span class="nc" id="L153">    @get:Bindable</span>
+<span class="nc" id="L154">    val apartmentTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L157">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L159">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L161">            _apartmentChanged.value = Event(s.toString())</span>
+<span class="nc" id="L162">        }</span>
+    }
+
+<span class="nc" id="L165">    @get:Bindable</span>
+<span class="nc" id="L166">    val cityTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L169">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L171">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L173">            _cityChanged.value = Event(s.toString())</span>
+<span class="nc" id="L174">        }</span>
+    }
+
+    val showError: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
+<span class="nc" id="L178">        get() = _showError</span>
+<span class="nc" id="L179">    private val _showError = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+
+<span class="nc" id="L181">    private val _uploadState = MutableLiveData&lt;Event&lt;UploadState&gt;&gt;()</span>
+<span class="nc" id="L182">    val uploadState: LiveData&lt;Event&lt;UploadState&gt;&gt; get() = _uploadState</span>
+
+<span class="nc" id="L184">    private val _showAlternateAppAvailable = MutableLiveData&lt;Event&lt;DataResponse&gt;&gt;()</span>
+<span class="nc" id="L185">    val showAlternateAppAvailable: LiveData&lt;Event&lt;DataResponse&gt;&gt; get() = _showAlternateAppAvailable</span>
+
+    private var identifyDisposable: Disposable? = null
+
+    fun addPreviousZip(zipVal: String?) {
+<span class="nc bnc" id="L190" title="All 2 branches missed.">        zipVal?.let {</span>
+<span class="nc" id="L191">            val zips: List&lt;String&gt; = zipVal.split(&quot;-&quot;)</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">            if (zips[0].length == 5) {</span>
+<span class="nc" id="L193">                zipFirst = zips[0]</span>
+            }
+<span class="nc bnc" id="L195" title="All 2 branches missed.">            if (zips.size &gt; 1) {</span>
+<span class="nc" id="L196">                zipExtension = zips[1]</span>
+            }
+
+<span class="nc" id="L199">            zip = zipVal.replace(&quot;-&quot;, &quot;&quot;)</span>
+<span class="nc" id="L200">            _zipChanged.value = Event(it)</span>
+<span class="nc" id="L201">        }</span>
+<span class="nc" id="L202">    }</span>
+
+    fun updateZip(
+        zip: String,
+        token: String,
+        currentFullAddress: CurrentFullAddress?
+    ) {
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        viewModelScope.launch {</span>
+<span class="nc" id="L210">            compositeDisposable.add(</span>
+
+<span class="nc" id="L212">                uploadRepository.updateDetails(</span>
+<span class="nc" id="L213">                    token,</span>
+<span class="nc" id="L214">                    UploadDetailsSendParams(</span>
+<span class="nc" id="L215">                        additionalVerification = AdditionalVerification(</span>
+<span class="nc" id="L216">                            currentZip = zip.replace(&quot;-&quot;, &quot;&quot;),</span>
+<span class="nc" id="L217">                            currentFullAddress = currentFullAddress</span>
+                        )
+                    )
+<span class="nc" id="L220">                ).subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L221">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L222">                    .doOnSubscribe {</span>
+<span class="nc" id="L223">                        _uploadState.value = Event(UploadState.Loading(LoadingState.UPLOAD))</span>
+<span class="nc" id="L224">                    }</span>
+<span class="nc" id="L225">                    .subscribe({ result -&gt;</span>
+
+<span class="nc bnc" id="L227" title="All 2 branches missed.">                        if (result.isSuccessful) {</span>
+<span class="nc" id="L228">                            identify(token)</span>
+                        } else {
+<span class="nc" id="L230">                            val errorResponse: GenericErrorResponse = gson.fromJson(</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">                                result.errorBody()?.string(),</span>
+<span class="nc" id="L232">                                GenericErrorResponse::class.java</span>
+                            )
+
+<span class="nc" id="L235">                            _uploadState.value = Event(</span>
+<span class="nc" id="L236">                                UploadState.Error(errorResponse.getErrorMessage())</span>
+                            )
+                        }
+<span class="nc" id="L239">                    }, { error -&gt;</span>
+                        // Handling errors explicitly
+<span class="nc" id="L241">                        _uploadState.value = Event(</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">                            UploadState.Error(error.message ?: &quot;Something went wrong.&quot;)</span>
+                        )
+<span class="nc" id="L244">                    })</span>
+            )
+<span class="nc" id="L246">        }</span>
+<span class="nc" id="L247">    }</span>
+
+    fun setSelectedState(changedState: String) {
+<span class="nc" id="L250">        _stateChanged.value = Event(changedState)</span>
+<span class="nc" id="L251">        state = changedState</span>
+<span class="nc" id="L252">    }</span>
+
+    fun resetState() {
+<span class="nc" id="L255">        _uploadState.value = Event(UploadState.Idle)</span>
+<span class="nc" id="L256">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L259">        callbacks.add(callback)</span>
+<span class="nc" id="L260">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L263">        callbacks.remove(callback)</span>
+<span class="nc" id="L264">    }</span>
+
+    private var debounceJob: Job? = null
+    private var isDebouncing = false
+<span class="nc" id="L268">    private val debounceInterval = 500L // Set your debounce interval in milliseconds</span>
+
+    fun onNextClicked() {
+<span class="nc bnc" id="L271" title="All 2 branches missed.">        if (isDebouncing) return // Ignore clicks during debounce period</span>
+
+<span class="nc" id="L273">        _navigateToNext.value = Event(Unit) // Process the first click immediately</span>
+<span class="nc" id="L274">        isDebouncing = true // Start debounce</span>
+
+<span class="nc bnc" id="L276" title="All 2 branches missed.">        debounceJob?.cancel()</span>
+<span class="nc" id="L277">        debounceJob = viewModelScope.launch {</span>
+<span class="nc" id="L278">            delay(debounceInterval) // Wait for the debounce interval</span>
+<span class="nc" id="L279">            isDebouncing = false // Reset debounce state</span>
+<span class="nc" id="L280">        }</span>
+<span class="nc" id="L281">    }</span>
+
+    fun onPrevClicked() {
+<span class="nc" id="L284">        _navigateToBack.value = Event(Unit)</span>
+<span class="nc" id="L285">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L288">        super.onCleared()</span>
+<span class="nc" id="L289">        compositeDisposable.dispose()</span>
+<span class="nc" id="L290">    }</span>
+
+    fun checkEnableButton() {
+<span class="nc bnc" id="L293" title="All 2 branches missed.">        if (isFull) {</span>
+<span class="nc" id="L294">            enableButton = AddressChangedValidator.isAddressReadyGuest(</span>
+<span class="nc bnc" id="L295" title="All 2 branches missed.">                addressChanged = addressChanged.value?.peekContent(),</span>
+<span class="nc bnc" id="L296" title="All 2 branches missed.">                cityChanged = cityChanged.value?.peekContent(),</span>
+<span class="nc bnc" id="L297" title="All 2 branches missed.">                state = stateChanged.value?.peekContent(),</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">                zipChanged = zipChanged.value?.peekContent()</span>
+            )
+        } else {
+<span class="nc bnc" id="L301" title="All 2 branches missed.">            enableButton = AddressChangedValidator.isValidZip(zipChanged.value?.peekContent())</span>
+        }
+<span class="nc" id="L303">    }</span>
+
+    fun verify(token: String) {
+<span class="nc" id="L306">        viewModelFactory {</span>
+<span class="nc" id="L307">            compositeDisposable.add(</span>
+<span class="nc" id="L308">                uploadRepository.verify(token)</span>
+<span class="nc" id="L309">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L310">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L311">                    .doOnSubscribe {</span>
+<span class="nc" id="L312">                        _uploadState.value = Event(UploadState.Loading(LoadingState.VERIFY))</span>
+<span class="nc" id="L313">                    }.subscribe({</span>
+<span class="nc bnc" id="L314" title="All 2 branches missed.">                        if (it.isSuccessful) {</span>
+<span class="nc" id="L315">                            identify(token)</span>
+                        } else {
+<span class="nc" id="L317">                            val errorResponse: GenericErrorResponse = gson.fromJson(</span>
+<span class="nc bnc" id="L318" title="All 2 branches missed.">                                it.errorBody()?.string(),</span>
+<span class="nc" id="L319">                                GenericErrorResponse::class.java</span>
+                            )
+<span class="nc" id="L321">                            _uploadState.value = Event(</span>
+<span class="nc" id="L322">                                UploadState.Error(errorResponse.getErrorMessage())</span>
+                            )
+                        }
+<span class="nc" id="L325">                    }, {</span>
+                            error -&gt;
+
+<span class="nc" id="L328">                        _uploadState.value = Event(</span>
+<span class="nc" id="L329">                            UploadState.Error(error)</span>
+                        )
+<span class="nc" id="L331">                    })</span>
+            )
+<span class="nc" id="L333">        }</span>
+<span class="nc" id="L334">    }</span>
+
+    fun identify(token: String) {
+<span class="nc" id="L337">        viewModelFactory {</span>
+<span class="nc bnc" id="L338" title="All 2 branches missed.">            identifyDisposable?.let {</span>
+<span class="nc" id="L339">                compositeDisposable.delete(it)</span>
+            }
+<span class="nc" id="L341">            identifyDisposable = uploadRepository.identify(token)</span>
+<span class="nc" id="L342">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L343">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L344">                .doOnSubscribe {</span>
+<span class="nc" id="L345">                    _uploadState.value = Event(UploadState.Loading(LoadingState.IDENTIFY))</span>
+<span class="nc" id="L346">                }.subscribe({</span>
+<span class="nc bnc" id="L347" title="All 2 branches missed.">                    if (it.isSuccessful) {</span>
+<span class="nc bnc" id="L348" title="All 2 branches missed.">                        it.body()?.let { responseBody -&gt;</span>
+<span class="nc" id="L349">                            when (responseBody.code) {</span>
+<span class="nc bnc" id="L350" title="All 4 branches missed.">                                200 -&gt; _uploadState.value = Event(UploadState.Success())</span>
+<span class="nc" id="L351">                                else -&gt; handleError(responseBody.error)</span>
+                            }
+<span class="nc" id="L353">                        }</span>
+                    } else {
+<span class="nc bnc" id="L355" title="All 2 branches missed.">                        if (it.code() == 403) {</span>
+<span class="nc" id="L356">                            _uploadState.value = Event(UploadState.Error(&quot;&quot;))</span>
+<span class="nc" id="L357">                            handleAlternateAppAvailable(it.errorBody())</span>
+                        } else {
+<span class="nc" id="L359">                            handleErrorResponse(it.errorBody())</span>
+                        }
+                    }
+<span class="nc" id="L362">                }, {</span>
+                        error -&gt;
+<span class="nc" id="L364">                    _uploadState.value = Event(</span>
+<span class="nc" id="L365">                        UploadState.Error(error)</span>
+                    )
+<span class="nc" id="L367">                })</span>
+<span class="nc" id="L368">            compositeDisposable.add(identifyDisposable!!)</span>
+<span class="nc" id="L369">        }</span>
+<span class="nc" id="L370">    }</span>
+
+    private fun handleError(error: ErrorDetail?) {
+<span class="nc bnc" id="L373" title="All 14 branches missed.">        when (error?.error) {</span>
+<span class="nc" id="L374">            &quot;SENT_TO_CUSTOMER_SUPPORT&quot; -&gt; _uploadState.value = Event(UploadState.CustomerSupport)</span>
+            &quot;NO_MATCH&quot; -&gt; {
+<span class="nc" id="L376">                when {</span>
+<span class="nc bnc" id="L377" title="All 2 branches missed.">                    error.requireCurrentZip -&gt; _uploadState.value = Event(UploadState.NoMatchAddZip)</span>
+<span class="nc bnc" id="L378" title="All 2 branches missed.">                    error.requireCurrentAddress -&gt; _uploadState.value = Event(</span>
+<span class="nc" id="L379">                        UploadState.NoMatchAddAddress</span>
+                    )
+<span class="nc" id="L381">                    else -&gt; _uploadState.value = Event(UploadState.Error(error.errorDescription))</span>
+                }
+            }
+            &quot;MULTIPLE_MATCH&quot; -&gt; {
+<span class="nc" id="L385">                when {</span>
+<span class="nc bnc" id="L386" title="All 2 branches missed.">                    error.requireCurrentZip -&gt; _uploadState.value = Event(UploadState.AddZip)</span>
+<span class="nc bnc" id="L387" title="All 2 branches missed.">                    error.requireCurrentAddress -&gt; _uploadState.value = Event(</span>
+<span class="nc" id="L388">                        UploadState.AddAddress</span>
+                    )
+
+<span class="nc" id="L391">                    else -&gt; _uploadState.value = Event(UploadState.Error(error.errorDescription))</span>
+                }
+            }
+<span class="nc bnc" id="L394" title="All 4 branches missed.">            else -&gt; _uploadState.value = Event(UploadState.Error(error?.errorDescription ?: &quot;&quot;))</span>
+        }
+<span class="nc" id="L396">    }</span>
+
+    private fun handleErrorResponse(errorBody: ResponseBody?) {
+<span class="nc" id="L399">        try {</span>
+<span class="nc" id="L400">            val errorResponse: IdentifyErrorResponse = gson.fromJson(</span>
+<span class="nc bnc" id="L401" title="All 2 branches missed.">                errorBody?.string(),</span>
+<span class="nc" id="L402">                IdentifyErrorResponse::class.java</span>
+            )
+<span class="nc" id="L404">            _uploadState.value = Event(</span>
+<span class="nc" id="L405">                UploadState.Error(</span>
+<span class="nc bnc" id="L406" title="All 6 branches missed.">                    errorResponse.error?.errorDescription ?: errorResponse.message ?: &quot;&quot;</span>
+                )
+            )
+<span class="nc" id="L409">        } catch (e: Exception) {</span>
+<span class="nc" id="L410">            _uploadState.value = Event(UploadState.Error(&quot;HTTP Status 404 – Not Found&quot;))</span>
+        }
+<span class="nc" id="L412">    }</span>
+
+    private fun handleAlternateAppAvailable(errorBody: ResponseBody?) {
+<span class="nc" id="L415">        val errorResponse: DataResponse? = gson.fromJson(</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">            errorBody?.string(),</span>
+<span class="nc" id="L417">            DataResponse::class.java</span>
+        )
+<span class="nc bnc" id="L419" title="All 2 branches missed.">        errorResponse?.let {</span>
+<span class="nc" id="L420">            _showAlternateAppAvailable.value = Event(it)</span>
+<span class="nc" id="L421">        }</span>
+<span class="nc" id="L422">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

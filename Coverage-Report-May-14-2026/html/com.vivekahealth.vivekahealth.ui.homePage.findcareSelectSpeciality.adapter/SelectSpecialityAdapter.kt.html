@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SelectSpecialityAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality.adapter</a> &gt; <span class="el_source">SelectSpecialityAdapter.kt</span></div><h1>SelectSpecialityAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.databinding.ActivityRecentSpecialityBinding
+
+class SelectSpecialityAdapter(
+    private var onClick: (
+        com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality
+        .selectSpecialityRecentModel.Value
+    ) -&gt; Unit
+) :
+    ListAdapter&lt;com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality.selectSpecialityRecentModel
+        .Value, RecyclerView.ViewHolder&gt;(BenefitBubbleDiffCallback1()) {
+
+    var selectedPosition: Int = 0
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return MemberViewHolder(
+            ActivityRecentSpecialityBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            ),
+            onClick,
+            selectedPosition
+        )
+    }
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val member = getItem(position)
+
+        (holder as MemberViewHolder).binding.setClickListener {
+          /*  notifyItemChanged(selectedPosition)
+
+            Timber.d(itemCount.toString())
+            onClick(member)
+            selectedPosition = position
+
+            notifyItemChanged(position)*/
+        }
+
+        holder.binding.recentSpecialityName.setText(member.speciality)
+    }
+
+    class MemberViewHolder(
+        val binding: ActivityRecentSpecialityBinding,
+        private val onClick: (
+            com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality.selectSpecialityRecentModel.Value
+        ) -&gt; Unit,
+        private var selectedPosition: Int
+    ) : RecyclerView.ViewHolder(binding.root)
+}
+
+<span class="nc" id="L61">private class BenefitBubbleDiffCallback1 : DiffUtil.ItemCallback&lt;com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality.selectSpecialityRecentModel.Value&gt;() {</span>
+
+    override fun areItemsTheSame(
+        oldItem: com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality.selectSpecialityRecentModel.Value,
+        newItem: com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality.selectSpecialityRecentModel.Value
+    ): Boolean {
+<span class="nc" id="L67">        return oldItem == newItem</span>
+    }
+
+    override fun areContentsTheSame(
+        oldItem: com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality.selectSpecialityRecentModel.Value,
+        newItem: com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality.selectSpecialityRecentModel.Value
+    ): Boolean {
+<span class="nc" id="L74">        return oldItem == newItem</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

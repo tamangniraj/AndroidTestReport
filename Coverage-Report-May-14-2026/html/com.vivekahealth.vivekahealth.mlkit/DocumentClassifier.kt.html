@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocumentClassifier.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.mlkit</a> &gt; <span class="el_source">DocumentClassifier.kt</span></div><h1>DocumentClassifier.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.mlkit
+
+import android.content.Context
+import android.graphics.Bitmap
+import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.DataType
+import timber.log.Timber
+import java.io.FileInputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.MappedByteBuffer
+import java.nio.channels.FileChannel
+import kotlin.math.min
+
+<span class="nc" id="L15">class DocumentClassifier(private val context: Context) {</span>
+
+    private var interpreter: Interpreter? = null
+    private var inputHeight = 0
+    private var inputWidth = 0
+    private var numChannels = 0
+    private var numClasses = 0
+    private lateinit var inputDataType: DataType
+
+<span class="nc" id="L24">    private val labels = listOf(&quot;Insurance&quot;, &quot;SSN&quot;, &quot;Other&quot;)</span>
+
+    fun loadModel() {
+<span class="nc" id="L27">        val modelBuffer = loadModelFile(&quot;insurance_ssn_other/document_classifier_quantized.tflite&quot;)</span>
+<span class="nc" id="L28">        val options = Interpreter.Options().apply {</span>
+<span class="nc" id="L29">            numThreads = 4</span>
+<span class="nc" id="L30">        }</span>
+<span class="nc" id="L31">        interpreter = Interpreter(modelBuffer, options).also { interp -&gt;</span>
+<span class="nc" id="L32">            val inputTensor = interp.getInputTensor(0)</span>
+<span class="nc" id="L33">            val inputShape = inputTensor.shape() // [1, 224, 224, 3]</span>
+<span class="nc" id="L34">            inputDataType = inputTensor.dataType() // UINT8</span>
+<span class="nc" id="L35">            inputHeight = inputShape[1] // 224</span>
+<span class="nc" id="L36">            inputWidth = inputShape[2] // 224</span>
+<span class="nc" id="L37">            numChannels = inputShape[3] // 3</span>
+
+<span class="nc" id="L39">            val outputTensor = interp.getOutputTensor(0)</span>
+<span class="nc" id="L40">            numClasses = outputTensor.shape()[1] // 3</span>
+<span class="nc" id="L41">        }</span>
+<span class="nc" id="L42">    }</span>
+
+    private fun loadModelFile(modelPath: String): MappedByteBuffer {
+<span class="nc" id="L45">        val assetFileDescriptor = context.assets.openFd(modelPath)</span>
+<span class="nc" id="L46">        val inputStream = FileInputStream(assetFileDescriptor.fileDescriptor)</span>
+<span class="nc" id="L47">        val fileChannel = inputStream.channel</span>
+<span class="nc" id="L48">        return fileChannel.map(</span>
+<span class="nc" id="L49">            FileChannel.MapMode.READ_ONLY,</span>
+<span class="nc" id="L50">            assetFileDescriptor.startOffset,</span>
+<span class="nc" id="L51">            assetFileDescriptor.declaredLength</span>
+        )
+    }
+
+    private fun centerCropToSquare(bitmap: Bitmap): Bitmap {
+<span class="nc" id="L56">        val size = min(bitmap.width, bitmap.height)</span>
+<span class="nc" id="L57">        val x = (bitmap.width - size) / 2</span>
+<span class="nc" id="L58">        val y = (bitmap.height - size) / 2</span>
+<span class="nc" id="L59">        return Bitmap.createBitmap(bitmap, x, y, size, size)</span>
+    }
+
+    private fun convertBitmapToByteBuffer(bitmap: Bitmap): ByteBuffer {
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        val bytesPerChannel = if (inputDataType == DataType.UINT8) 1 else 4</span>
+<span class="nc" id="L64">        val byteBuffer = ByteBuffer.allocateDirect(</span>
+<span class="nc" id="L65">            bytesPerChannel * inputHeight * inputWidth * numChannels</span>
+        )
+<span class="nc" id="L67">        byteBuffer.order(ByteOrder.nativeOrder())</span>
+
+<span class="nc" id="L69">        val pixels = IntArray(inputHeight * inputWidth)</span>
+<span class="nc" id="L70">        bitmap.getPixels(pixels, 0, inputWidth, 0, 0, inputWidth, inputHeight)</span>
+
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        for (pixel in pixels) {</span>
+<span class="nc" id="L73">            val r = (pixel shr 16 and 0xFF)</span>
+<span class="nc" id="L74">            val g = (pixel shr 8 and 0xFF)</span>
+<span class="nc" id="L75">            val b = (pixel and 0xFF)</span>
+
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            if (inputDataType == DataType.UINT8) {</span>
+<span class="nc" id="L78">                byteBuffer.put(r.toByte())</span>
+<span class="nc" id="L79">                byteBuffer.put(g.toByte())</span>
+<span class="nc" id="L80">                byteBuffer.put(b.toByte())</span>
+            } else {
+<span class="nc" id="L82">                byteBuffer.putFloat(r / 255.0f)</span>
+<span class="nc" id="L83">                byteBuffer.putFloat(g / 255.0f)</span>
+<span class="nc" id="L84">                byteBuffer.putFloat(b / 255.0f)</span>
+            }
+        }
+<span class="nc" id="L87">        return byteBuffer</span>
+    }
+
+    fun classify(bitmap: Bitmap): List&lt;ClassificationResult&gt; {
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        val interpreter = this.interpreter ?: return emptyList()</span>
+<span class="nc" id="L92">        val croppedBitmap = centerCropToSquare(bitmap)</span>
+<span class="nc" id="L93">        val resizedBitmap = Bitmap.createScaledBitmap(croppedBitmap, inputWidth, inputHeight, true)</span>
+<span class="nc" id="L94">        val inputBuffer = convertBitmapToByteBuffer(resizedBitmap)</span>
+
+<span class="nc" id="L96">        return try {</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">            if (inputDataType == DataType.UINT8) {</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                val outputArray = Array(1) { ByteArray(numClasses) }</span>
+<span class="nc" id="L99">                interpreter.run(inputBuffer, outputArray)</span>
+
+<span class="nc" id="L101">                val results = mutableListOf&lt;ClassificationResult&gt;()</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                for (i in 0 until numClasses) {</span>
+<span class="nc" id="L103">                    val confidence = (outputArray[0][i].toInt() and 0xFF) / 255.0f</span>
+<span class="nc" id="L104">                    results.add(</span>
+<span class="nc bnc" id="L105" title="All 6 branches missed.">                        ClassificationResult(i, labels.getOrElse(i) { &quot;Unknown&quot; }, confidence)</span>
+                    )
+                }
+<span class="nc" id="L108">                results.sortedByDescending { it.confidence }</span>
+            } else {
+<span class="nc bnc" id="L110" title="All 2 branches missed.">                val outputArray = Array(1) { FloatArray(numClasses) }</span>
+<span class="nc" id="L111">                interpreter.run(inputBuffer, outputArray)</span>
+
+<span class="nc" id="L113">                val results = mutableListOf&lt;ClassificationResult&gt;()</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">                for (i in 0 until numClasses) {</span>
+<span class="nc" id="L115">                    results.add(</span>
+<span class="nc" id="L116">                        ClassificationResult(</span>
+<span class="nc" id="L117">                            i,</span>
+<span class="nc bnc" id="L118" title="All 6 branches missed.">                            labels.getOrElse(i) { &quot;Unknown&quot; },</span>
+<span class="nc" id="L119">                            outputArray[0][i]</span>
+                        )
+                    )
+                }
+<span class="nc" id="L123">                results.sortedByDescending { it.confidence }</span>
+            }
+<span class="nc" id="L125">        } catch (e: Exception) {</span>
+<span class="nc" id="L126">            Timber.e(e, &quot;Classification failed&quot;)</span>
+<span class="nc" id="L127">            emptyList()</span>
+        }
+    }
+
+    fun close() {
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        interpreter?.close()</span>
+<span class="nc" id="L133">    }</span>
+
+<span class="nc" id="L135">    data class ClassificationResult(</span>
+<span class="nc" id="L136">        val index: Int, // 0=Insurance, 1=SSN, 2=Other</span>
+<span class="nc" id="L137">        val label: String, // &quot;Insurance&quot;, &quot;SSN&quot;, or &quot;Other&quot;</span>
+<span class="nc" id="L138">        val confidence: Float // 0.0 to 1.0</span>
+    )
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

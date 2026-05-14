@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MemberInfo.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.remote.home</a> &gt; <span class="el_source">MemberInfo.kt</span></div><h1>MemberInfo.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.remote.home
+
+import androidx.recyclerview.widget.DiffUtil
+import androidx.room.Embedded
+import androidx.room.Entity
+import androidx.room.Ignore
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverters
+import com.google.gson.annotations.SerializedName
+import com.vivekahealth.vivekahealth.data.local.home.QuickItem
+import com.vivekahealth.vivekahealth.data.local.typeConverter.VivekaTypeConverters
+
+@Entity(tableName = &quot;member_info&quot;)
+@TypeConverters(VivekaTypeConverters::class)
+<span class="pc bpc" id="L15" title="24 of 58 branches missed.">data class MemberInfo(</span>
+
+<span class="pc" id="L17">    @PrimaryKey</span>
+    @SerializedName(&quot;selfId&quot;)
+<span class="pc" id="L19">    var selfId: String = &quot;&quot;,</span>
+<span class="pc" id="L20">    @SerializedName(&quot;clientId&quot;)</span>
+<span class="pc" id="L21">    var clientId: String? = null,</span>
+
+<span class="fc" id="L23">    @SerializedName(&quot;firstName&quot;)</span>
+<span class="fc" id="L24">    var firstName: String? = null,</span>
+
+<span class="pc" id="L26">    @SerializedName(&quot;lastName&quot;)</span>
+<span class="pc" id="L27">    var lastName: String? = null,</span>
+
+<span class="pc" id="L29">    @SerializedName(&quot;middleName&quot;)</span>
+<span class="pc" id="L30">    var middleName: String? = null,</span>
+<span class="pc" id="L31">    @SerializedName(&quot;phoneNumber&quot;)</span>
+<span class="pc" id="L32">    var phoneNumber: String? = &quot;&quot;,</span>
+<span class="fc" id="L33">    @SerializedName(&quot;birthDate&quot;)</span>
+<span class="fc" id="L34">    var birthDate: String? = null,</span>
+<span class="pc" id="L35">    var dateOfMarriage: String? = &quot;&quot;,</span>
+<span class="fc" id="L36">    @SerializedName(&quot;memberRelationship&quot;)</span>
+<span class="fc" id="L37">    var memberRelationship: String? = null,</span>
+<span class="pc" id="L38">    @SerializedName(&quot;sharingDetails&quot;)</span>
+    @TypeConverters(VivekaTypeConverters::class)
+<span class="pc" id="L40">    var sharingDetails: ArrayList&lt;SharingDetails&gt;? = arrayListOf(),</span>
+<span class="pc" id="L41">    @SerializedName(&quot;gender&quot;)</span>
+<span class="pc" id="L42">    var gender: String? = null,</span>
+
+<span class="pc" id="L44">    @SerializedName(&quot;suffix&quot;)</span>
+<span class="pc" id="L45">    var suffix: String? = null,</span>
+
+<span class="pc" id="L47">    @SerializedName(&quot;relationDesc&quot;)</span>
+<span class="pc" id="L48">    var relationDesc: String? = null,</span>
+
+<span class="pc" id="L50">    @SerializedName(&quot;email&quot;)</span>
+<span class="pc" id="L51">    var email: String? = null,</span>
+
+<span class="pc" id="L53">    @SerializedName(&quot;fullName&quot;)</span>
+<span class="pc" id="L54">    var fullName: String? = null,</span>
+
+<span class="pc" id="L56">    @SerializedName(&quot;hasAvatar&quot;)</span>
+<span class="pc" id="L57">    var hasAvatar: String = &quot;&quot;,</span>
+
+<span class="pc" id="L59">    @SerializedName(&quot;hipaaNumber&quot;)</span>
+<span class="pc" id="L60">    var hipaaNumber: String? = null,</span>
+
+<span class="pc" id="L62">    @SerializedName(&quot;ssn&quot;)</span>
+<span class="pc" id="L63">    var ssn: String? = &quot;&quot;,</span>
+<span class="pc" id="L64">    @SerializedName(&quot;eligible&quot;)</span>
+<span class="pc" id="L65">    var isEligible: Boolean = false,</span>
+
+<span class="pc" id="L67">    @SerializedName(&quot;eligibilityStatus&quot;)</span>
+<span class="pc" id="L68">    var eligibilityStatus: String? = null,</span>
+<span class="pc" id="L69">    @SerializedName(&quot;dependents&quot;)</span>
+    @TypeConverters(VivekaTypeConverters::class)
+<span class="pc" id="L71">    var dependentsArrayList: ArrayList&lt;MemberInfo&gt;? = arrayListOf(),</span>
+<span class="pc" id="L72">    @SerializedName(&quot;insured&quot;)</span>
+    @TypeConverters(VivekaTypeConverters::class)
+<span class="pc" id="L74">    var insured: MemberInfo? = null,</span>
+
+<span class="pc" id="L76">    @SerializedName(&quot;skipTour&quot;)</span>
+<span class="pc" id="L77">    var skipTour: String? = null,</span>
+<span class="pc" id="L78">    @Embedded(prefix = &quot;MemberAddress&quot;)</span>
+    @SerializedName(&quot;workAddress&quot;)
+<span class="pc" id="L80">    var workAddress: MemberAddress? = null,</span>
+<span class="pc" id="L81">    @SerializedName(&quot;skipFacebook&quot;)</span>
+<span class="pc" id="L82">    var skipFacebook: String? = null,</span>
+
+<span class="pc" id="L84">    @SerializedName(&quot;links&quot;)</span>
+    @TypeConverters(VivekaTypeConverters::class)
+<span class="pc" id="L86">    var links: ArrayList&lt;String&gt;? = null,</span>
+<span class="pc" id="L87">    @Embedded(prefix = &quot;AllowChangeAvatar_&quot;)</span>
+    @SerializedName(&quot;allowChangeAvatar&quot;)
+<span class="pc" id="L89">    var allowChangeAvatar: AllowChangeAvatar? = null,</span>
+
+<span class="pc" id="L91">    @SerializedName(&quot;optInEdd&quot;)</span>
+<span class="pc" id="L92">    var optInEdd: Boolean = false,</span>
+
+<span class="pc" id="L94">    var countryCode: String? = &quot;&quot;,</span>
+
+<span class="pc" id="L96">    var selfieMandatorySwitch: Boolean = true,</span>
+
+<span class="pc" id="L98">    @Embedded(prefix = &quot;MemberAddress_&quot;)</span>
+    @SerializedName(&quot;homeAddress&quot;)
+<span class="pc" id="L100">    var homeAddress: MemberAddress? = null,</span>
+
+<span class="pc" id="L102">    @SerializedName(&quot;maritalStatus&quot;)</span>
+<span class="pc" id="L103">    var maritalStatus: String? = null,</span>
+<span class="pc" id="L104">    var isSelected: Boolean = false,</span>
+
+<span class="pc" id="L106">    var syncDate: String? = null,</span>
+
+<span class="pc" id="L108">    @SerializedName(&quot;initialLoginComplete&quot;)</span>
+<span class="pc" id="L109">    var initialLoginComplete: Boolean = false,</span>
+<span class="pc" id="L110">    @SerializedName(&quot;employeeRole&quot;)</span>
+<span class="pc" id="L111">    var employeeRole: String? = &quot;&quot;,</span>
+<span class="pc" id="L112">    @SerializedName(&quot;employeeStatus&quot;)</span>
+<span class="pc" id="L113">    var employeeStatus: String? = &quot;&quot;,</span>
+<span class="pc" id="L114">    var memberAdditionInReview: Boolean = false,</span>
+<span class="pc" id="L115">    var registrationType: String? = &quot;&quot;,</span>
+<span class="pc" id="L116">    var hideProfileFromHome: Boolean = false,</span>
+<span class="pc" id="L117">    var steerToFullRegistration: Boolean = false,</span>
+<span class="pc" id="L118">    @SerializedName(&quot;spouseFirstName&quot;)</span>
+<span class="pc" id="L119">    var spouseFirstName: String? = null,</span>
+<span class="pc" id="L120">    @SerializedName(&quot;spouseLastName&quot;)</span>
+<span class="pc" id="L121">    var spouseLastName: String? = null,</span>
+<span class="pc" id="L122">    var demographicUpdatePending: Boolean = false,</span>
+
+<span class="fc" id="L124">    var isInsured: Boolean = true,</span>
+<span class="pc" id="L125">    var avatarInReview: Boolean = false,</span>
+<span class="fc" id="L126">    val divorceDate: String? = null,</span>
+
+<span class="fc" id="L128">    val fullNameType2: String? = null,</span>
+<span class="fc" id="L129">    val languagePreference: String? = null,</span>
+<span class="fc" id="L130">    val sharingEnabled: Boolean? = null,</span>
+<span class="fc" id="L131">    val username: String? = &quot;&quot;,</span>
+<span class="fc" id="L132">    val usernameType: String? = &quot;&quot;,</span>
+<span class="pc" id="L133">    var relatedId: String? = &quot;&quot;,</span>
+<span class="pc" id="L134">    var displayName: String? = &quot;&quot;,</span>
+<span class="pc" id="L135">    var loggedInId: String = &quot;&quot;,</span>
+<span class="pc" id="L136">    var addDependentDisabled: Boolean? = null,</span>
+<span class="pc" id="L137">    var hideHoursSummary: Boolean? = null,</span>
+<span class="fc" id="L138">    var isDummy: Boolean = false,</span>
+<span class="pc" id="L139">    @SerializedName(&quot;shouldEnroll&quot;)</span>
+<span class="pc" id="L140">    var shouldEnroll: Boolean? = null,</span>
+
+<span class="pc" id="L142">    @SerializedName(&quot;enrollmentStatus&quot;)</span>
+<span class="pc" id="L143">    var enrollmentStatus: Int? = null,</span>
+
+<span class="pc" id="L145">    @SerializedName(&quot;collectMissingGenderDuringEnrollment&quot;)</span>
+<span class="pc" id="L146">    var collectMissingGenderDuringEnrollment: Boolean? = null</span>
+
+<span class="fc" id="L148">) {</span>
+<span class="nc" id="L149">    @Ignore var startDate: String? = null</span>
+
+<span class="nc" id="L151">    @Ignore var endDate: String ? = null</span>
+
+<span class="pc" id="L153">    @Ignore var diagnosisList: ArrayList&lt;QuickItem&gt; ? = ArrayList()</span>
+
+<span class="pc" id="L155">    @Ignore var prescriptionList: ArrayList&lt;QuickItem&gt; ? = ArrayList()</span>
+
+<span class="nc" id="L157">    @Ignore var expanded: Boolean? = null</span>
+}
+
+<span class="fc" id="L160">data class MemberInfoShare(</span>
+<span class="pc" id="L161">    var selfId: String = &quot;&quot;,</span>
+<span class="pc" id="L162">    var firstName: String? = null,</span>
+<span class="pc" id="L163">    var lastName: String? = null,</span>
+<span class="pc" id="L164">    var memberRelationship: String? = null,</span>
+<span class="pc" id="L165">    var sharingDetails: ArrayList&lt;SharingDetails&gt;? = arrayListOf(),</span>
+<span class="pc" id="L166">    var hasAvatar: String = &quot;false&quot;,</span>
+<span class="pc" id="L167">    var birthDate: String ? = null</span>
+<span class="fc" id="L168">) {</span>
+<span class="nc" id="L169">    var startDate: String? = null</span>
+
+<span class="nc" id="L171">    var endDate: String ? = null</span>
+
+<span class="fc" id="L173">    var diagnosisList: ArrayList&lt;QuickItem&gt; ? = ArrayList()</span>
+
+<span class="fc" id="L175">    var prescriptionList: ArrayList&lt;QuickItem&gt; ? = ArrayList()</span>
+
+<span class="nc" id="L177">    var expanded: Boolean? = null</span>
+
+<span class="nc" id="L179">    var facilityEnable: Boolean ? = null</span>
+<span class="nc" id="L180">    var prescriptionEnable: Boolean ? = null</span>
+<span class="nc" id="L181">    var professionalEnable: Boolean ? = null</span>
+}
+
+object MemberDiff : DiffUtil.ItemCallback&lt;MemberInfo&gt;() {
+    override fun areItemsTheSame(oldItem: MemberInfo, newItem: MemberInfo) =
+<span class="nc" id="L186">        oldItem.selfId == newItem.selfId</span>
+
+<span class="nc" id="L188">    override fun areContentsTheSame(oldItem: MemberInfo, newItem: MemberInfo) = oldItem == newItem</span>
+}
+
+object MemberDiffShare : DiffUtil.ItemCallback&lt;MemberInfoShare&gt;() {
+    override fun areItemsTheSame(oldItem: MemberInfoShare, newItem: MemberInfoShare) =
+<span class="nc" id="L193">        oldItem.selfId == newItem.selfId</span>
+
+<span class="nc" id="L195">    override fun areContentsTheSame(oldItem: MemberInfoShare, newItem: MemberInfoShare) = oldItem == newItem</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

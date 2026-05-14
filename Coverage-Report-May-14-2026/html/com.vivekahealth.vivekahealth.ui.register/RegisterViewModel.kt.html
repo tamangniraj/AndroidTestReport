@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegisterViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.register</a> &gt; <span class="el_source">RegisterViewModel.kt</span></div><h1>RegisterViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.register
+
+import android.content.SharedPreferences
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.Event
+import javax.inject.Inject
+
+<span class="fc" id="L13">class RegisterViewModel @Inject constructor(private val preferences: SharedPreferences) :</span>
+<span class="fc" id="L14">    ViewModel(), Observable {</span>
+
+<span class="nc" id="L16">    internal lateinit var registerNavigator: RegisterNavigator</span>
+
+<span class="pc" id="L18">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="fc" id="L19">    private val _endVideoLive = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+
+<span class="fc" id="L21">    var memberID: String = &quot;&quot;</span>
+<span class="fc" id="L22">    var email: String = &quot;&quot;</span>
+
+    fun closeRegWiz() {
+<span class="nc" id="L25">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L26">        regEdit.putString(Constants.TimeStampReg, DateUtils.getCurrentDate())</span>
+<span class="nc" id="L27">        regEdit.apply()</span>
+<span class="nc" id="L28">    }</span>
+
+    fun savePhone() {
+<span class="nc" id="L31">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L34">        callbacks.remove(callback)</span>
+<span class="nc" id="L35">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L38">        callbacks.add(callback)</span>
+<span class="nc" id="L39">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

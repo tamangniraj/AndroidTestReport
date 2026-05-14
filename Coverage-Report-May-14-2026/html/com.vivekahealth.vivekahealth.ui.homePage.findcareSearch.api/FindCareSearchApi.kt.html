@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FindCareSearchApi.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.api</a> &gt; <span class="el_source">FindCareSearchApi.kt</span></div><h1>FindCareSearchApi.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.api
+
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityModel.BillingCodePriceResponse
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityModel.BillingData
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityModel.Specialties
+import io.reactivex.Single
+import retrofit2.http.*
+
+interface FindCareSearchApi {
+
+    // finally found this one
+    /**
+     * displayPrice is added,
+     * since this function is already used in various places, for now default is true, so that it will be compatible
+     * for new places, the display price will be used as false
+     */
+<span class="nc" id="L17">    @GET(&quot;provider/v2/searchSpecialtyAndProcedures&quot;)</span>
+    fun getFindCareSearchList(
+        @Query(&quot;searchText&quot;) searchText: String,
+        @Query(&quot;memberId&quot;) memberId: String,
+        @Query(&quot;latitude&quot;) latitude: String,
+        @Query(&quot;longitude&quot;) longitude: String,
+        @Query(&quot;providerType&quot;)providerType: String,
+        @Query(&quot;radius&quot;) lastDistance: String,
+        @Query(&quot;searchScope&quot;) searchScope: String?,
+<span class="nc" id="L26">        @Query(&quot;displayPrice&quot;) displayPrice: Boolean ? = true</span>
+    ): Single&lt;Specialties&gt;
+
+    // new pricing request
+    @POST(&quot;provider/v1/billingCodePricingDetails&quot;)
+    fun getPricingDetailsViaBillingCode(
+        @Body billingData: BillingData,
+        @Query(&quot;latitude&quot;) latitude: String,
+        @Query(&quot;longitude&quot;) longitude: String,
+        @Query(&quot;radius&quot;) lastDistance: String
+    ): Single&lt;BillingCodePriceResponse&gt;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

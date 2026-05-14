@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DialogWindowContext.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils</a> &gt; <span class="el_source">DialogWindowContext.kt</span></div><h1>DialogWindowContext.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils
+
+import android.content.Context
+import android.content.ContextWrapper
+import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
+import androidx.fragment.app.DialogFragment
+
+/**
+ * Returns a Context whose WindowManager injects the dialog's own window token into every
+ * WindowManager.LayoutParams before calling addView().
+ *
+ * Why this is needed:
+ *   SingleDateAndTimePickerDialog (and similar libraries) use
+ *   WindowManager.LayoutParams.TYPE_APPLICATION_PANEL, which is a sub-window that anchors
+ *   to a parent window via its token.  When the caller is a BottomSheetDialogFragment the
+ *   natural context (requireActivity / requireContext) carries the *activity* window token,
+ *   so the panel anchors to the activity window and appears BEHIND the dialog.  Overriding
+ *   the token with the dialog's decorView.windowToken anchors the panel to the dialog window
+ *   instead, making it appear above.
+ */
+fun DialogFragment.dialogWindowContext(): Context {
+<span class="nc bnc" id="L24" title="All 6 branches missed.">    val decorView: View = dialog?.window?.decorView</span>
+<span class="nc" id="L25">        ?: return requireActivity() // fallback if dialog isn't attached yet</span>
+
+<span class="nc" id="L27">    val baseWm = requireActivity().getSystemService(Context.WINDOW_SERVICE) as WindowManager</span>
+
+<span class="nc" id="L29">    val patchedWm = object : WindowManager by baseWm {</span>
+        override fun addView(view: View, params: ViewGroup.LayoutParams) {
+<span class="nc bnc" id="L31" title="All 4 branches missed.">            (params as? WindowManager.LayoutParams)?.token = decorView.windowToken</span>
+<span class="nc" id="L32">            baseWm.addView(view, params)</span>
+<span class="nc" id="L33">        }</span>
+    }
+
+<span class="nc" id="L36">    return object : ContextWrapper(requireActivity()) {</span>
+        override fun getSystemService(name: String): Any? =
+<span class="nc bnc" id="L38" title="All 2 branches missed.">            if (name == Context.WINDOW_SERVICE) {</span>
+<span class="nc" id="L39">                patchedWm</span>
+            } else {
+<span class="nc" id="L41">                super.getSystemService(name)</span>
+<span class="nc" id="L42">            }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

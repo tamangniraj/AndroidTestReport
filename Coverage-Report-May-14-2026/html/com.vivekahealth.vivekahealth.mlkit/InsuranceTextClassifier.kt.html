@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InsuranceTextClassifier.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.mlkit</a> &gt; <span class="el_source">InsuranceTextClassifier.kt</span></div><h1>InsuranceTextClassifier.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.mlkit
+
+import android.content.Context
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import org.tensorflow.lite.Interpreter
+import timber.log.Timber
+import java.io.FileInputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.MappedByteBuffer
+import java.nio.channels.FileChannel
+
+<span class="nc" id="L14">data class TextClassificationResult(</span>
+<span class="nc" id="L15">    val label: String, // &quot;Insurance&quot; or &quot;Other&quot;</span>
+<span class="nc" id="L16">    val confidence: Float // 0.0 - 1.0 (always the winning class confidence)</span>
+)
+
+<span class="nc" id="L19">class InsuranceTextClassifier(private val context: Context) {</span>
+
+    private var interpreter: Interpreter? = null
+<span class="nc" id="L22">    private var wordIndex: Map&lt;String, Int&gt; = emptyMap()</span>
+<span class="nc" id="L23">    private var maxSequenceLength: Int = 200</span>
+<span class="nc" id="L24">    private var oovIndex: Int = 1</span>
+
+<span class="nc" id="L26">    init {</span>
+<span class="nc" id="L27">        loadTokenizer()</span>
+<span class="nc" id="L28">        loadModel()</span>
+<span class="nc" id="L29">    }</span>
+
+    private fun loadTokenizer() {
+<span class="nc" id="L32">        val json = context.assets.open(&quot;insurance_other/tokenizer_config.json&quot;)</span>
+<span class="nc bnc" id="L33" title="All 2 branches missed.">            .bufferedReader().use { it.readText() }</span>
+
+<span class="nc" id="L35">        val type = object : TypeToken&lt;Map&lt;String, Any&gt;&gt;() {}.type</span>
+<span class="nc" id="L36">        val config: Map&lt;String, Any&gt; = Gson().fromJson(json, type)</span>
+
+        // Gson parses word_index values as Double → cast to Int
+<span class="nc" id="L39">        @Suppress(&quot;UNCHECKED_CAST&quot;)</span>
+<span class="nc bnc" id="L40" title="All 4 branches missed.">        val rawWordIndex = config[&quot;word_index&quot;] as? Map&lt;String, Double&gt; ?: emptyMap()</span>
+<span class="nc" id="L41">        wordIndex = rawWordIndex.mapValues { it.value.toInt() }</span>
+
+<span class="nc bnc" id="L43" title="All 4 branches missed.">        maxSequenceLength = (config[&quot;max_sequence_length&quot;] as? Double)?.toInt() ?: 200</span>
+<span class="nc bnc" id="L44" title="All 6 branches missed.">        oovIndex = wordIndex[config[&quot;oov_token&quot;] as? String ?: &quot;&lt;OOV&gt;&quot;] ?: 1</span>
+<span class="nc" id="L45">    }</span>
+
+    private fun loadModel() {
+<span class="nc" id="L48">        val modelBuffer = loadModelFile(&quot;insurance_other/insurance_classifier_quant.tflite&quot;)</span>
+<span class="nc" id="L49">        val options = Interpreter.Options().apply {</span>
+<span class="nc" id="L50">            numThreads = 4</span>
+<span class="nc" id="L51">        }</span>
+<span class="nc" id="L52">        interpreter = Interpreter(modelBuffer, options)</span>
+<span class="nc" id="L53">    }</span>
+
+    private fun loadModelFile(modelPath: String): MappedByteBuffer {
+<span class="nc" id="L56">        val assetFileDescriptor = context.assets.openFd(modelPath)</span>
+<span class="nc" id="L57">        val inputStream = FileInputStream(assetFileDescriptor.fileDescriptor)</span>
+<span class="nc" id="L58">        val fileChannel = inputStream.channel</span>
+<span class="nc" id="L59">        return fileChannel.map(</span>
+<span class="nc" id="L60">            FileChannel.MapMode.READ_ONLY,</span>
+<span class="nc" id="L61">            assetFileDescriptor.startOffset,</span>
+<span class="nc" id="L62">            assetFileDescriptor.declaredLength</span>
+        )
+    }
+
+    private fun tokenize(text: String): FloatArray {
+<span class="nc" id="L67">        val cleaned = text.lowercase()</span>
+<span class="nc" id="L68">            .replace(Regex(&quot;[^a-z0-9\\s]&quot;), &quot;&quot;)</span>
+<span class="nc" id="L69">            .trim()</span>
+
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        val words = cleaned.split(Regex(&quot;\\s+&quot;)).filter { it.isNotEmpty() }</span>
+
+<span class="nc" id="L73">        val tokens = FloatArray(maxSequenceLength) // zero-padded</span>
+<span class="nc" id="L74">        val length = minOf(words.size, maxSequenceLength)</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        for (i in 0 until length) {</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">            tokens[i] = (wordIndex[words[i]] ?: oovIndex).toFloat()</span>
+        }
+<span class="nc" id="L78">        return tokens</span>
+    }
+
+    fun classify(ocrText: String): TextClassificationResult? {
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        val interpreter = this.interpreter ?: return null</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (ocrText.isBlank()) return null</span>
+
+<span class="nc" id="L85">        return try {</span>
+<span class="nc" id="L86">            val tokens = tokenize(ocrText)</span>
+
+<span class="nc" id="L88">            val inputBuffer = ByteBuffer.allocateDirect(maxSequenceLength * 4)</span>
+<span class="nc" id="L89">            inputBuffer.order(ByteOrder.nativeOrder())</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            for (token in tokens) {</span>
+<span class="nc" id="L91">                inputBuffer.putFloat(token)</span>
+            }
+
+<span class="nc bnc" id="L94" title="All 2 branches missed.">            val outputArray = Array(1) { FloatArray(1) }</span>
+<span class="nc" id="L95">            interpreter.run(inputBuffer, outputArray)</span>
+
+<span class="nc" id="L97">            val score = outputArray[0][0]</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">            if (score &gt; 0.5f) {</span>
+<span class="nc" id="L99">                TextClassificationResult(&quot;Insurance&quot;, score)</span>
+            } else {
+<span class="nc" id="L101">                TextClassificationResult(&quot;Other&quot;, 1f - score)</span>
+            }
+<span class="nc" id="L103">        } catch (e: Exception) {</span>
+<span class="nc" id="L104">            Timber.e(e, &quot;Text classification failed&quot;)</span>
+<span class="nc" id="L105">            null</span>
+        }
+    }
+
+    fun close() {
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        interpreter?.close()</span>
+<span class="nc" id="L111">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

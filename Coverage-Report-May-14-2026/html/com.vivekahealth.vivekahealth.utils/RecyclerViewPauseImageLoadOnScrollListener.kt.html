@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RecyclerViewPauseImageLoadOnScrollListener.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils</a> &gt; <span class="el_source">RecyclerViewPauseImageLoadOnScrollListener.kt</span></div><h1>RecyclerViewPauseImageLoadOnScrollListener.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils
+
+import androidx.recyclerview.widget.RecyclerView
+
+<span class="nc" id="L5">class RecyclerViewPauseImageLoadOnScrollListener(</span>
+<span class="nc" id="L6">    pauseScrollConfiguration: ImageLoadingScrollConfiguration? = ImageLoadingScrollConfiguration.PAUSE_ON_SETTLING,</span>
+<span class="nc" id="L7">    private val mExternalListener: RecyclerView.OnScrollListener?</span>
+<span class="nc" id="L8">) : RecyclerView.OnScrollListener() {</span>
+    private var stopped = false
+    private var mPauseOnDragging = false
+<span class="nc" id="L11">    private var pauseOnSettling = true</span>
+
+<span class="nc" id="L13">    init {</span>
+<span class="nc bnc" id="L14" title="All 5 branches missed.">        when (pauseScrollConfiguration) {</span>
+            ImageLoadingScrollConfiguration.PAUSE_ON_SETTLING -&gt; {
+<span class="nc" id="L16">                mPauseOnDragging = false</span>
+<span class="nc" id="L17">                pauseOnSettling = true</span>
+            }
+
+            ImageLoadingScrollConfiguration.PAUSE_ON_DRAGGING -&gt; {
+<span class="nc" id="L21">                mPauseOnDragging = true</span>
+<span class="nc" id="L22">                pauseOnSettling = false</span>
+            }
+
+            else -&gt; {
+<span class="nc" id="L26">                mPauseOnDragging = false</span>
+<span class="nc" id="L27">                pauseOnSettling = false</span>
+            }
+        }
+<span class="nc" id="L30">    }</span>
+
+    companion object {
+        @JvmStatic
+        fun getPauseScrollListener(recyclerViewScrollListener: RecyclerView.OnScrollListener?): RecyclerView.OnScrollListener {
+<span class="nc" id="L35">            return RecyclerViewPauseImageLoadOnScrollListener(</span>
+<span class="nc" id="L36">                ImageLoadingScrollConfiguration.PAUSE_ON_SETTLING,</span>
+<span class="nc" id="L37">                recyclerViewScrollListener</span>
+            )
+<span class="nc" id="L39">        }</span>
+    }
+
+    override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        mExternalListener?.onScrolled(recyclerView, dx, dy)</span>
+<span class="nc" id="L44">    }</span>
+
+    override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+<span class="nc bnc" id="L47" title="All 4 branches missed.">        when (newState) {</span>
+            RecyclerView.SCROLL_STATE_IDLE -&gt; {
+<span class="nc" id="L49">                GlideApp.with(recyclerView).resumeRequests()</span>
+<span class="nc" id="L50">                stopped = false</span>
+            }
+
+            RecyclerView.SCROLL_STATE_DRAGGING -&gt; {
+<span class="nc bnc" id="L54" title="All 2 branches missed.">                if (mPauseOnDragging) {</span>
+<span class="nc" id="L55">                    GlideApp.with(recyclerView).pauseRequests()</span>
+<span class="nc" id="L56">                    stopped = true</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">                } else if (stopped) {</span>
+<span class="nc" id="L58">                    GlideApp.with(recyclerView).resumeRequests()</span>
+<span class="nc" id="L59">                    stopped = false</span>
+                }
+            }
+
+            RecyclerView.SCROLL_STATE_SETTLING -&gt; {
+<span class="nc bnc" id="L64" title="All 2 branches missed.">                if (pauseOnSettling) {</span>
+<span class="nc" id="L65">                    GlideApp.with(recyclerView).pauseRequests()</span>
+<span class="nc" id="L66">                    stopped = true</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">                } else if (stopped) {</span>
+<span class="nc" id="L68">                    GlideApp.with(recyclerView).resumeRequests()</span>
+<span class="nc" id="L69">                    stopped = false</span>
+                }
+            }
+        }
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        mExternalListener?.onScrollStateChanged(recyclerView, newState)</span>
+<span class="nc" id="L74">    }</span>
+}
+
+/*
+* Please use this config for setting up the scroll listener as per your requirement.
+* PAUSE_ON_DRAGGING - Use this if you want to pause image loading requests on user dragging the recyclerview.
+* PAUSE_ON_SETTLING - Use this if you want to pause image loading requests on setting callback the recyclerview.
+*/
+enum class ImageLoadingScrollConfiguration {
+<span class="nc" id="L83">    PAUSE_ON_DRAGGING,</span>
+<span class="nc" id="L84">    PAUSE_ON_SETTLING</span>
+<span class="nc" id="L85">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

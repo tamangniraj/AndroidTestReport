@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PensionRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.pension.data.repository</a> &gt; <span class="el_source">PensionRepository.kt</span></div><h1>PensionRepository.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.pension.data.repository
+
+import com.google.gson.Gson
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import com.vivekahealth.vivekahealth.pension.data.local.dao.PensionConfigDao
+import com.vivekahealth.vivekahealth.pension.data.local.dao.SummaryImpactDao
+import com.vivekahealth.vivekahealth.pension.data.local.dao.WorkHistoryDao
+import com.vivekahealth.vivekahealth.pension.data.local.entity.PensionConfigEntity
+import com.vivekahealth.vivekahealth.pension.data.local.entity.SummaryImpactEntity
+import com.vivekahealth.vivekahealth.pension.data.local.entity.WorkHistoryEntity
+import com.vivekahealth.vivekahealth.pension.data.model.PensionEstimateRequest
+import com.vivekahealth.vivekahealth.pension.data.model.PensionEstimateResponse
+import com.vivekahealth.vivekahealth.pension.data.model.PensionMemberResponse
+import com.vivekahealth.vivekahealth.pension.data.model.WorkHistorySummary
+import com.vivekahealth.vivekahealth.pension.data.model.SummaryImpactData
+import com.vivekahealth.vivekahealth.pension.data.model.UserData
+import com.vivekahealth.vivekahealth.pension.service.PensionService
+import com.vivekahealth.vivekahealth.pension.data.model.AvailableOptions
+import com.vivekahealth.vivekahealth.pension.data.model.RetirementOption
+import com.vivekahealth.vivekahealth.pension.data.model.SurvivorOptionConfig
+import io.reactivex.Single
+import okhttp3.ResponseBody
+import retrofit2.Response
+import timber.log.Timber
+
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+<span class="nc" id="L34">class PensionRepository @Inject constructor(</span>
+<span class="nc" id="L35">    private val pensionService: PensionService,</span>
+<span class="nc" id="L36">    private val summaryImpactDao: SummaryImpactDao,</span>
+<span class="nc" id="L37">    private val workHistoryDao: WorkHistoryDao,</span>
+<span class="nc" id="L38">    private val pensionConfigDao: PensionConfigDao</span>
+) {
+    // Create a separate Gson instance that doesn't exclude final fields
+    // (Kotlin data class properties are final by default)
+<span class="nc" id="L42">    private val gson: Gson = com.google.gson.GsonBuilder()</span>
+<span class="nc" id="L43">        .excludeFieldsWithModifiers(</span>
+<span class="nc" id="L44">            java.lang.reflect.Modifier.TRANSIENT,</span>
+<span class="nc" id="L45">            java.lang.reflect.Modifier.STATIC</span>
+        )
+<span class="nc" id="L47">        .create()</span>
+
+<span class="nc" id="L49">    private val _userData = MutableStateFlow(UserData())</span>
+<span class="nc" id="L50">    val userData: StateFlow&lt;UserData&gt; = _userData.asStateFlow()</span>
+
+<span class="nc" id="L52">    private val _hasPensionData = MutableStateFlow(false)</span>
+<span class="nc" id="L53">    val hasPensionData: StateFlow&lt;Boolean&gt; = _hasPensionData.asStateFlow()</span>
+
+    fun getPensionMemberData(memberId: String): Single&lt;Response&lt;PensionMemberResponse&gt;&gt; {
+<span class="nc" id="L56">        return pensionService.getPensionApi().getPensionMemberData(memberId)</span>
+    }
+
+    fun updatePensionData(response: PensionMemberResponse) {
+<span class="nc" id="L60">        val currentData = _userData.value</span>
+<span class="nc" id="L61">        val newData = currentData.copy(</span>
+<span class="nc" id="L62">            pensionMemberResponse = response</span>
+        )
+<span class="nc" id="L64">        _userData.value = newData</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        _hasPensionData.value = response.memberId != null</span>
+<span class="nc" id="L66">    }</span>
+
+    fun updateRetirementAge(retirementAge: RetirementOption) {
+<span class="nc" id="L69">        val currentData = _userData.value</span>
+<span class="nc" id="L70">        val newData = currentData.copy(</span>
+<span class="nc" id="L71">            selectedRetirementAge = retirementAge</span>
+        )
+<span class="nc" id="L73">        _userData.value = newData</span>
+<span class="nc" id="L74">    }</span>
+
+    fun updateExpectedHours(hours: String) {
+<span class="nc" id="L77">        _userData.value = _userData.value.copy(expectedHours = hours)</span>
+<span class="nc" id="L78">    }</span>
+
+    fun updateSurvivorBenefit(benefit: SurvivorOptionConfig?) {
+<span class="nc" id="L81">        _userData.value = _userData.value.copy(selectedSurvivorBenefit = benefit)</span>
+<span class="nc" id="L82">    }</span>
+
+    fun clearPensionData() {
+<span class="nc" id="L85">        _userData.value = UserData()</span>
+<span class="nc" id="L86">        _hasPensionData.value = false</span>
+<span class="nc" id="L87">    }</span>
+
+    // Single Source of Truth - SummaryImpactData from Database
+    fun getSummaryImpactData(memberId: String): Flow&lt;SummaryImpactData?&gt; {
+<span class="nc" id="L91">        return summaryImpactDao.getSummaryImpactByMemberId(memberId)</span>
+<span class="nc" id="L92">            .map { entity -&gt; entity?.toSummaryImpactData() }</span>
+    }
+
+    suspend fun saveSummaryImpactData(memberId: String, data: SummaryImpactData) {
+<span class="nc" id="L96">        val entity = SummaryImpactEntity.fromSummaryImpactData(memberId, data)</span>
+<span class="nc" id="L97">        summaryImpactDao.insertSummaryImpact(entity)</span>
+<span class="nc" id="L98">    }</span>
+
+    suspend fun deleteSummaryImpactData(memberId: String) {
+<span class="nc" id="L101">        summaryImpactDao.deleteSummaryImpactByMemberId(memberId)</span>
+<span class="nc" id="L102">    }</span>
+
+    // Work History methods
+    fun getWorkHistorySummary(memberId: String): Single&lt;WorkHistorySummary&gt; {
+<span class="nc" id="L106">        return pensionService.getPensionApi().getWorkHistorySummary(memberId)</span>
+    }
+
+    fun getWorkHistoryFromDb(memberId: String): Flow&lt;WorkHistorySummary?&gt; {
+<span class="nc" id="L110">        return workHistoryDao.getWorkHistoryByMemberId(memberId)</span>
+<span class="nc" id="L111">            .map { entity -&gt; entity?.toWorkHistorySummary() }</span>
+    }
+
+    suspend fun getWorkHistoryFromDbOnce(memberId: String): WorkHistorySummary? {
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        return workHistoryDao.getWorkHistoryByMemberIdOnce(memberId)?.toWorkHistorySummary()</span>
+    }
+
+    suspend fun saveWorkHistory(memberId: String, data: WorkHistorySummary) {
+<span class="nc" id="L119">        val entity = WorkHistoryEntity.fromWorkHistorySummary(memberId, data)</span>
+<span class="nc" id="L120">        workHistoryDao.insertWorkHistory(entity)</span>
+<span class="nc" id="L121">    }</span>
+
+    suspend fun deleteWorkHistory(memberId: String) {
+<span class="nc" id="L124">        workHistoryDao.deleteWorkHistoryByMemberId(memberId)</span>
+<span class="nc" id="L125">    }</span>
+
+    suspend fun getWorkHistoryFetchedTime(memberId: String): Long? {
+<span class="nc" id="L128">        return workHistoryDao.getFetchedTime(memberId)</span>
+    }
+
+    // Pension Config methods
+    fun getPensionConfig(memberId: String): Single&lt;PensionEstimateResponse&gt; {
+<span class="nc" id="L133">        return pensionService.getPensionApi().getPensionConfig(memberId)</span>
+    }
+
+    fun getPensionEstimate(
+        memberId: String,
+        request: PensionEstimateRequest
+    ): Single&lt;retrofit2.Response&lt;PensionEstimateResponse&gt;&gt; {
+<span class="nc" id="L140">        return pensionService.getPensionApi().getPensionEstimate(memberId, request)</span>
+    }
+
+    fun getPensionConfigFromDb(memberId: String): Flow&lt;AvailableOptions?&gt; {
+<span class="nc" id="L144">        return pensionConfigDao.getPensionConfigByMemberId(memberId)</span>
+<span class="nc" id="L145">            .map { entity -&gt;</span>
+                entity?.let {
+                    gson.fromJson&lt;AvailableOptions&gt;(
+                        it.availableOptions,
+                        AvailableOptions::class.java
+                    )
+                }
+            }
+    }
+
+<span class="nc" id="L155">    suspend fun getPensionConfigFromDbOnce(memberId: String): AvailableOptions ? {</span>
+<span class="nc" id="L156">        val entity = pensionConfigDao.getPensionConfigByMemberIdSync(memberId)</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        return entity?.let {</span>
+<span class="nc" id="L158">            gson.fromJson&lt;AvailableOptions&gt;(it.availableOptions, AvailableOptions::class.java)</span>
+        }
+    }
+
+    suspend fun savePensionConfig(memberId: String, availableOptions: AvailableOptions) {
+<span class="nc" id="L163">        val json = gson.toJson(availableOptions)</span>
+<span class="nc" id="L164">        val entity = PensionConfigEntity(</span>
+<span class="nc" id="L165">            memberId = memberId,</span>
+<span class="nc" id="L166">            availableOptions = json,</span>
+<span class="nc" id="L167">            lastUpdated = System.currentTimeMillis()</span>
+        )
+<span class="nc" id="L169">        pensionConfigDao.insertPensionConfig(entity)</span>
+<span class="nc" id="L170">        Timber.d(&quot;Pension config saved to database for memberId: $memberId&quot;)</span>
+<span class="nc" id="L171">    }</span>
+
+    suspend fun deletePensionConfig(memberId: String) {
+<span class="nc" id="L174">        pensionConfigDao.deletePensionConfigByMemberId(memberId)</span>
+<span class="nc" id="L175">    }</span>
+
+    // Download Pension Application
+    fun downloadPensionApplication(memberId: String): Single&lt;ResponseBody&gt; {
+<span class="nc" id="L179">        return pensionService.getPensionApi().downloadPensionApplication(memberId)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

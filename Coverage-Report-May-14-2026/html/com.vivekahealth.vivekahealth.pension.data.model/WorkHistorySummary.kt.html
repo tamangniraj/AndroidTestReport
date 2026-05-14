@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WorkHistorySummary.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.pension.data.model</a> &gt; <span class="el_source">WorkHistorySummary.kt</span></div><h1>WorkHistorySummary.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.pension.data.model
+
+import com.google.gson.annotations.SerializedName
+
+<span class="fc" id="L5">data class WorkHistorySummary(</span>
+<span class="pc" id="L6">    @SerializedName(&quot;memberId&quot;)</span>
+    val memberId: Long,
+
+<span class="pc" id="L9">    @SerializedName(&quot;memberName&quot;)</span>
+    val memberName: String,
+
+<span class="fc" id="L12">    @SerializedName(&quot;plans&quot;)</span>
+    val plans: List&lt;PlanDetail&gt;,
+
+<span class="fc" id="L15">    @SerializedName(&quot;totalCreditsAllPlans&quot;)</span>
+    val totalCreditsAllPlans: Double,
+
+<span class="fc" id="L18">    @SerializedName(&quot;totalVestingAllPlans&quot;)</span>
+    val totalVestingAllPlans: Double,
+
+<span class="fc" id="L21">    @SerializedName(&quot;totalForfeitedAllPlans&quot;)</span>
+    val totalForfeitedAllPlans: Double,
+
+<span class="pc" id="L24">    @SerializedName(&quot;vestingStatusMessage&quot;)</span>
+    val vestingStatusMessage: String
+)
+
+<span class="fc" id="L28">data class PlanDetail(</span>
+<span class="pc" id="L29">    @SerializedName(&quot;planId&quot;)</span>
+    val planId: String,
+
+<span class="pc" id="L32">    @SerializedName(&quot;planName&quot;)</span>
+    val planName: String,
+
+<span class="pc" id="L35">    @SerializedName(&quot;yearGroups&quot;)</span>
+    val yearGroups: List&lt;YearGroup&gt;,
+
+<span class="fc" id="L38">    @SerializedName(&quot;totalCredits&quot;)</span>
+    val totalCredits: Double,
+
+<span class="fc" id="L41">    @SerializedName(&quot;totalVesting&quot;)</span>
+    val totalVesting: Double,
+
+<span class="fc" id="L44">    @SerializedName(&quot;totalForfeited&quot;)</span>
+    val totalForfeited: Double,
+
+<span class="pc" id="L47">    @SerializedName(&quot;isVested&quot;)</span>
+    val isVested: Boolean,
+
+<span class="pc" id="L50">    @SerializedName(&quot;planRules&quot;)</span>
+    val planRules: PlanRules
+)
+
+<span class="pc" id="L54">data class YearGroup(</span>
+<span class="pc" id="L55">    @SerializedName(&quot;startYear&quot;)</span>
+    val startYear: Int,
+
+<span class="pc" id="L58">    @SerializedName(&quot;endYear&quot;)</span>
+    val endYear: Int,
+
+<span class="pc" id="L61">    @SerializedName(&quot;period&quot;)</span>
+    val period: String,
+
+<span class="fc" id="L64">    @SerializedName(&quot;yearCount&quot;)</span>
+    val yearCount: Int,
+
+<span class="pc" id="L67">    @SerializedName(&quot;groupType&quot;)</span>
+    val groupType: String,
+
+<span class="fc" id="L70">    @SerializedName(&quot;totalCredits&quot;)</span>
+    val totalCredits: Double,
+
+<span class="fc" id="L73">    @SerializedName(&quot;totalVesting&quot;)</span>
+    val totalVesting: Double,
+
+<span class="fc" id="L76">    @SerializedName(&quot;totalForfeited&quot;)</span>
+    val totalForfeited: Double,
+
+<span class="pc" id="L79">    @SerializedName(&quot;isVested&quot;)</span>
+    val isVested: Boolean,
+
+<span class="pc" id="L82">    @SerializedName(&quot;singleYear&quot;)</span>
+    val singleYear: Boolean,
+
+<span class="pc" id="L85">    @SerializedName(&quot;forfeitureExplanation&quot;)</span>
+    val forfeitureExplanation: String,
+
+<span class="pc" id="L88">    @SerializedName(&quot;note&quot;)</span>
+<span class="nc" id="L89">    var note: Notes ? = null</span>
+<span class="nc" id="L90">)</span>
+
+<span class="nc" id="L92">data class Notes(</span>
+<span class="nc" id="L93">    @SerializedName(&quot;title&quot;)</span>
+<span class="nc" id="L94">    val title: String ? = &quot;&quot;,</span>
+
+<span class="nc" id="L96">    @SerializedName(&quot;text&quot;)</span>
+<span class="nc" id="L97">    val text: String ? = &quot;&quot;</span>
+<span class="nc" id="L98">)</span>
+
+<span class="fc" id="L100">data class PlanRules(</span>
+<span class="pc" id="L101">    @SerializedName(&quot;planId&quot;)</span>
+    val planId: String,
+
+<span class="pc" id="L104">    @SerializedName(&quot;planShortName&quot;)</span>
+    val planShortName: String,
+
+<span class="pc" id="L107">    @SerializedName(&quot;planName&quot;)</span>
+    val planName: String,
+
+<span class="pc" id="L110">    @SerializedName(&quot;breakThresholdHours&quot;)</span>
+    val breakThresholdHours: Int,
+
+<span class="pc" id="L113">    @SerializedName(&quot;vestingYearsPreCutoff&quot;)</span>
+    val vestingYearsPreCutoff: Int,
+
+<span class="pc" id="L116">    @SerializedName(&quot;vestingYearsPostCutoff&quot;)</span>
+    val vestingYearsPostCutoff: Int,
+
+<span class="pc" id="L119">    @SerializedName(&quot;vestingCutoffDate&quot;)</span>
+    val vestingCutoffDate: String,
+
+<span class="pc" id="L122">    @SerializedName(&quot;ruleDescriptions&quot;)</span>
+    val ruleDescriptions: List&lt;String&gt;
+)
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

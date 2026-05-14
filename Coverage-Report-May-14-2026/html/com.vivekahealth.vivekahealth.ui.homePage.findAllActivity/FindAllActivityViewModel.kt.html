@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FindAllActivityViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findAllActivity</a> &gt; <span class="el_source">FindAllActivityViewModel.kt</span></div><h1>FindAllActivityViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findAllActivity
+
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.DoctorResponseNew
+import com.vivekahealth.vivekahealth.ui.homePage.findCareSelectSpecialityActivity.BaseViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.findCareSelectSpecialityActivity.RetrofitClient
+import com.vivekahealth.vivekahealth.ui.homePage.findCareSelectSpecialityActivity.SelectSpecialityVerifyNavigator
+import java.util.ArrayList
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+
+<span class="nc" id="L14">class FindAllActivityViewModel : BaseViewModel&lt;SelectSpecialityVerifyNavigator&gt;() {</span>
+    private var mutableSignup: MutableLiveData&lt;DoctorResponseNew&gt;? = null
+    private var selectrecent: MutableLiveData&lt;DoctorResponseNew&gt;? = null
+<span class="nc" id="L17">    private val TAG = &quot;VerifyLoginViewModel&quot;</span>
+
+    //   var ValueList1: ArrayList&lt;SpecialityAll&gt; = ArrayList()
+<span class="nc" id="L20">    var tempListFlat: ArrayList&lt;Any&gt; = arrayListOf()</span>
+<span class="nc" id="L21">    var ValueListfind: ArrayList&lt;DoctorResponseNew&gt; = ArrayList()</span>
+<span class="nc" id="L22">    var ValueList11: ArrayList&lt;DoctorResponseNew&gt; = ArrayList()</span>
+<span class="nc" id="L23">    var tempListFlat1: ArrayList&lt;Any&gt; = arrayListOf()</span>
+
+<span class="nc" id="L25">    var tempListFlat11: ArrayList&lt;Any&gt; = arrayListOf()</span>
+<span class="nc" id="L26">    var ValueList111: ArrayList&lt;String&gt; = ArrayList()</span>
+
+    fun getProviderList(
+        latitude: String,
+        longitude: String,
+        pageNo: String,
+        pageSize: String,
+        speciality: String,
+        searchText: String,
+        memberId: String,
+        searchType: String,
+        taxonomyGroup: String,
+        locationType: String,
+        providerType: String,
+        lastDistance: String,
+        codeType: String,
+        codeValue: String
+    ): LiveData&lt;DoctorResponseNew&gt; {
+<span class="nc" id="L44">        mutableSignup = MutableLiveData()</span>
+<span class="nc" id="L45">        getProviderLists(</span>
+<span class="nc" id="L46">            latitude, longitude, pageNo, pageSize, speciality, searchText, memberId, searchType, taxonomyGroup,</span>
+<span class="nc" id="L47">            locationType, providerType, lastDistance, codeType, codeValue</span>
+        )
+<span class="nc" id="L49">        return mutableSignup!!</span>
+    }
+
+    private fun getProviderLists(
+        latitude: String,
+        longitude: String,
+        pageNo: String,
+        pageSize: String,
+        speciality: String,
+        searchText: String,
+        memberId: String,
+        searchType: String,
+        taxonomyGroup: String,
+        locationType: String,
+        providerType: String,
+        lastDistance: String,
+        codeType: String,
+        codeValue: String
+    ) {
+<span class="nc" id="L68">        val call: Call&lt;DoctorResponseNew&gt; = RetrofitClient.getApi()!!.getAllProviderList(</span>
+<span class="nc" id="L69">            latitude, longitude,</span>
+<span class="nc" id="L70">            pageNo, pageSize,</span>
+<span class="nc" id="L71">            speciality, searchText, memberId, searchType, taxonomyGroup,</span>
+<span class="nc" id="L72">            locationType, providerType, &quot;10&quot;, codeType, codeValue</span>
+        )
+<span class="nc" id="L74">        call.enqueue(object : Callback&lt;DoctorResponseNew&gt; {</span>
+            override fun onResponse(
+                call: Call&lt;DoctorResponseNew&gt;,
+                response: Response&lt;DoctorResponseNew&gt;
+            ) {
+<span class="nc" id="L79">                try {</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">                    mutableSignup?.value = response.body()</span>
+<span class="nc" id="L81">                } catch (e: Exception) {</span>
+                }
+<span class="nc" id="L83">            }</span>
+
+            override fun onFailure(call: Call&lt;DoctorResponseNew&gt;, t: Throwable) {
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                getNavigator()?.onError(&quot;Email or Password Invalid&quot;)</span>
+                //  Log.d(TAG, &quot;onFailure: ${t.localizedMessage}&quot;)
+<span class="nc" id="L88">            }</span>
+        })
+<span class="nc" id="L90">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

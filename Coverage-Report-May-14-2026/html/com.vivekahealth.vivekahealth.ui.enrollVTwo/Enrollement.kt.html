@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Enrollement.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.enrollVTwo</a> &gt; <span class="el_source">Enrollement.kt</span></div><h1>Enrollement.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.enrollVTwo
+
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import java.io.Serializable
+
+<span class="fc" id="L6">data class Enrollment(</span>
+<span class="pc" id="L7">    val isAddDependent: Boolean,</span>
+<span class="pc" id="L8">    val childCount: Int = 1,</span>
+<span class="pc" id="L9">    var addSpouse: Boolean = false,</span>
+<span class="pc" id="L10">    var addChild: Boolean = false,</span>
+<span class="pc" id="L11">    val currentDependentList: ArrayList&lt;DependentCheckItem&gt; = arrayListOf(),</span>
+<span class="pc" id="L12">    val primaryFName: String,</span>
+<span class="pc" id="L13">    val primaryLName: String,</span>
+<span class="pc bpc" id="L14" title="1 of 2 branches missed.">    val lastEnrollmentDate: String = DateUtils.getCurrentDate() ?: &quot;&quot;,</span>
+<span class="pc" id="L15">    val subscriberGender: String? = null</span>
+<span class="fc" id="L16">) : Serializable {</span>
+
+    fun findChildByIndex(index: Int?): DependentCheckItem? {
+<span class="fc bfc" id="L19" title="All 4 branches covered.">        return currentDependentList.find {</span>
+<span class="fc bfc" id="L20" title="All 2 branches covered.">            it.type == DependentType.CHILD &amp;&amp;</span>
+<span class="fc bfc" id="L21" title="All 2 branches covered.">                it.index == index</span>
+        }
+    }
+
+    fun findChilds(): List&lt;DependentCheckItem&gt;? {
+<span class="fc" id="L26">        return currentDependentList.filter {</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">            it.type == DependentType.CHILD</span>
+        }
+    }
+
+    fun findPrimary(): DependentCheckItem? {
+<span class="fc bfc" id="L32" title="All 4 branches covered.">        return currentDependentList.find {</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">            it.type == DependentType.PRIMARY</span>
+        }
+    }
+
+    fun findSpouse(): DependentCheckItem? {
+<span class="fc bfc" id="L38" title="All 4 branches covered.">        return currentDependentList.find {</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">            it.type == DependentType.SPOUSE</span>
+        }
+    }
+
+    fun prepareList(): ArrayList&lt;DependentCheckItem&gt; {
+<span class="fc" id="L44">        val updatedList = ArrayList&lt;DependentCheckItem&gt;()</span>
+
+        // === self ===
+<span class="pc bpc" id="L47" title="2 of 6 branches missed.">        val previousSelf = currentDependentList.find { it.type == DependentType.PRIMARY }</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        val selfItem = previousSelf ?: DependentCheckItem(</span>
+<span class="fc" id="L49">            title = &quot;Primary Details&quot;,</span>
+<span class="fc" id="L50">            type = DependentType.PRIMARY,</span>
+<span class="fc" id="L51">            firstName = primaryFName,</span>
+<span class="fc" id="L52">            lastName = primaryLName</span>
+        )
+<span class="fc" id="L54">        updatedList.add((selfItem))</span>
+
+        // === SPOUSE ===
+<span class="pc bpc" id="L57" title="2 of 6 branches missed.">        val previousSpouseItem = currentDependentList.find { it.type == DependentType.SPOUSE }</span>
+
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (addSpouse) {</span>
+            // Reuse existing spouse item or create new one
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            val spouseItem = previousSpouseItem</span>
+<span class="fc" id="L62">                ?: DependentCheckItem(</span>
+<span class="fc" id="L63">                    title = &quot;Spouse Details&quot;,</span>
+<span class="fc" id="L64">                    type = DependentType.SPOUSE</span>
+                )
+<span class="fc" id="L66">            updatedList.add(spouseItem)</span>
+        }
+
+        // === CHILDREN ===
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        val previousChildren = currentDependentList.filter { it.type == DependentType.CHILD }</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (addChild) {</span>
+<span class="fc" id="L72">            val childrenToKeep = previousChildren.take(childCount)</span>
+
+            // Add new children if needed
+<span class="fc" id="L75">            val newChildren = (childrenToKeep.size + 1..childCount).map { index -&gt;</span>
+<span class="fc" id="L76">                DependentCheckItem(</span>
+<span class="fc" id="L77">                    title = &quot;Child $index Details&quot;,</span>
+<span class="fc" id="L78">                    type = DependentType.CHILD,</span>
+<span class="fc" id="L79">                    index = index</span>
+<span class="fc" id="L80">                )</span>
+            }
+
+<span class="fc" id="L83">            updatedList.addAll(childrenToKeep + newChildren)</span>
+        }
+
+<span class="fc" id="L86">        currentDependentList.clear()</span>
+<span class="fc" id="L87">        currentDependentList.addAll(updatedList)</span>
+<span class="fc" id="L88">        return currentDependentList</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

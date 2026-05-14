@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProjectionSummaryCard.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.pension.ui.component</a> &gt; <span class="el_source">ProjectionSummaryCard.kt</span></div><h1>ProjectionSummaryCard.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.pension.ui.component
+
+import android.annotation.SuppressLint
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.pension.ui.tagged
+import com.vivekahealth.vivekahealth.pension.ui.viewmodel.PensionViewModel
+
+@SuppressLint(&quot;DefaultLocale&quot;)
+@Composable
+fun ProjectionSummaryCard(
+    yearsToRetirement: Int?,
+    additionalCreditsExpected: Double?,
+    totalProjectedCredits: Double?,
+<span class="nc bnc" id="L31" title="All 2 branches missed.">    infoMessage: String? = null,</span>
+<span class="nc bnc" id="L32" title="All 2 branches missed.">    errorMessage: String? = null,</span>
+<span class="nc bnc" id="L33" title="All 2 branches missed.">    isCalculateEnabled: Boolean = true,</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">    isLoading: Boolean = false,</span>
+    onCalculateClick: () -&gt; Unit,
+<span class="nc bnc" id="L36" title="All 2 branches missed.">    viewModel: PensionViewModel? = null</span>
+<span class="nc bnc" id="L37" title="All 42 branches missed.">) {</span>
+<span class="nc" id="L38">    Column(</span>
+<span class="nc" id="L39">        modifier = Modifier</span>
+<span class="nc" id="L40">            .fillMaxWidth()</span>
+<span class="nc" id="L41">            .background(Color.White)</span>
+<span class="nc" id="L42">            .padding(16.dp)</span>
+<span class="nc" id="L43">            .tagged(&quot;Projection Summary Card&quot;)</span>
+    ) {
+<span class="nc" id="L45">        Column(</span>
+<span class="nc" id="L46">            Modifier</span>
+<span class="nc" id="L47">                .background(</span>
+<span class="nc" id="L48">                    colorResource(R.color.primaryUltraLight),</span>
+<span class="nc" id="L49">                    shape = RoundedCornerShape(8.dp)</span>
+                )
+<span class="nc" id="L51">                .border(</span>
+<span class="nc" id="L52">                    1.dp,</span>
+<span class="nc" id="L53">                    colorResource(R.color.primaryLight),</span>
+<span class="nc" id="L54">                    shape = RoundedCornerShape(8.dp)</span>
+                )
+<span class="nc" id="L56">                .padding(12.dp)</span>
+        ) {
+// Header
+<span class="nc" id="L59">            Text(</span>
+<span class="nc" id="L60">                text = stringResource(R.string.projection_summary),</span>
+<span class="nc" id="L61">                style = MaterialTheme.typography.titleMedium,</span>
+<span class="nc" id="L62">                fontWeight = FontWeight.SemiBold,</span>
+<span class="nc" id="L63">                color = Color.Black,</span>
+<span class="nc" id="L64">                modifier = Modifier.padding(bottom = 16.dp)</span>
+            )
+
+<span class="nc" id="L67">            var formattedYear = &quot;&quot;</span>
+
+<span class="nc bnc" id="L69" title="All 2 branches missed.">            yearsToRetirement?.let {</span>
+<span class="nc" id="L70">                val years = it.coerceAtLeast(0)</span>
+<span class="nc" id="L71">                formattedYear = stringResource(R.string.years, years)</span>
+<span class="nc" id="L72">            }</span>
+            // Summary Items
+<span class="nc" id="L74">            SummaryRow(</span>
+<span class="nc" id="L75">                label = stringResource(R.string.years_to_retirement),</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                value = if (isLoading) &quot;&quot; else formattedYear,</span>
+<span class="nc" id="L77">                viewType = &quot;Retirement&quot;</span>
+            )
+
+<span class="nc" id="L80">            Spacer(modifier = Modifier.height(8.dp))</span>
+
+<span class="nc" id="L82">            var formattedAdditionCredit = &quot;&quot;</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">            additionalCreditsExpected?.let {</span>
+<span class="nc" id="L84">                formattedAdditionCredit = formatCreditValue(it)</span>
+<span class="nc" id="L85">            }</span>
+
+<span class="nc" id="L87">            SummaryRow(</span>
+<span class="nc" id="L88">                label = stringResource(R.string.additional_credits_expected),</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">                value = if (isLoading) &quot;&quot; else formattedAdditionCredit,</span>
+<span class="nc" id="L90">                viewType = &quot;Additional&quot;</span>
+            )
+
+<span class="nc" id="L93">            Spacer(modifier = Modifier.height(8.dp))</span>
+
+<span class="nc" id="L95">            var formattedTotalProjected = &quot;&quot;</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            totalProjectedCredits?.let {</span>
+<span class="nc" id="L97">                formattedTotalProjected = formatCreditValue(it)</span>
+<span class="nc" id="L98">            }</span>
+
+<span class="nc" id="L100">            SummaryRow(</span>
+<span class="nc" id="L101">                label = stringResource(R.string.total_projected_credits),</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                value = if (isLoading) &quot;&quot; else formattedTotalProjected,</span>
+<span class="nc" id="L103">                viewType = &quot;Total&quot;</span>
+            )
+
+<span class="nc" id="L106">            Spacer(</span>
+<span class="nc" id="L107">                modifier = Modifier.height(16.dp)</span>
+            )
+
+            // Info Message (if provided)
+<span class="nc bnc" id="L111" title="All 2 branches missed.">            infoMessage?.let { message -&gt;</span>
+<span class="nc" id="L112">                Spacer(modifier = Modifier.height(16.dp))</span>
+
+<span class="nc" id="L114">                InfoMessageRow(</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                    message = if (isLoading) &quot;&quot; else message,</span>
+<span class="nc" id="L116">                    isError = false</span>
+                )
+<span class="nc" id="L118">                Spacer(modifier = Modifier.height(12.dp))</span>
+<span class="nc" id="L119">            }</span>
+<span class="nc" id="L120">        }</span>
+
+        // Error Message (if provided)
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        errorMessage?.let { message -&gt;</span>
+<span class="nc bnc" id="L124" title="All 4 branches missed.">            if (message.isNotEmpty()) {</span>
+<span class="nc" id="L125">                Spacer(modifier = Modifier.height(4.dp))</span>
+
+<span class="nc" id="L127">                InfoMessageRow(</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                    message = if (isLoading) &quot;&quot; else message,</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">                    isError = !isLoading</span>
+                )
+            }
+<span class="nc" id="L132">        }</span>
+<span class="nc" id="L133">    }</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">}</span>
+
+@Composable
+private fun SummaryRow(
+    label: String,
+    value: String,
+    viewType: String,
+<span class="nc bnc" id="L141" title="All 2 branches missed.">    modifier: Modifier = Modifier</span>
+<span class="nc bnc" id="L142" title="All 30 branches missed.">) {</span>
+<span class="nc" id="L143">    Row(</span>
+<span class="nc" id="L144">        modifier = modifier</span>
+<span class="nc" id="L145">            .fillMaxWidth()</span>
+<span class="nc" id="L146">            .tagged(&quot;Summary Row $label&quot;),</span>
+<span class="nc" id="L147">        horizontalArrangement = Arrangement.SpaceBetween,</span>
+<span class="nc" id="L148">        verticalAlignment = Alignment.CenterVertically</span>
+    ) {
+<span class="nc" id="L150">        Text(</span>
+<span class="nc" id="L151">            text = label,</span>
+<span class="nc" id="L152">            style = MaterialTheme.typography.bodyMedium,</span>
+<span class="nc" id="L153">            color = Color(0xFF606060),</span>
+<span class="nc" id="L154">            modifier = Modifier.weight(1f),</span>
+<span class="nc" id="L155">            fontSize = 16.sp</span>
+        )
+<span class="nc" id="L157">        Text(</span>
+<span class="nc" id="L158">            text = value,</span>
+<span class="nc" id="L159">            style = MaterialTheme.typography.bodyMedium,</span>
+<span class="nc" id="L160">            fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L161">            color = Color.Black,</span>
+<span class="nc" id="L162">            modifier = Modifier.tagged(&quot;Summary Row Value $viewType&quot;)</span>
+        )
+<span class="nc" id="L164">    }</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">}</span>
+
+@Composable
+private fun InfoMessageRow(
+    message: String,
+    isError: Boolean,
+<span class="nc bnc" id="L171" title="All 2 branches missed.">    modifier: Modifier = Modifier</span>
+<span class="nc bnc" id="L172" title="All 24 branches missed.">) {</span>
+<span class="nc" id="L173">    Row(</span>
+<span class="nc" id="L174">        modifier = modifier.fillMaxWidth(),</span>
+<span class="nc" id="L175">        verticalAlignment = Alignment.CenterVertically</span>
+    ) {
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        if (isError) {</span>
+<span class="nc" id="L178">            Icon(</span>
+<span class="nc" id="L179">                imageVector = Icons.Outlined.Info,</span>
+<span class="nc" id="L180">                contentDescription = null,</span>
+<span class="nc" id="L181">                tint = Color(0xFFE53E3E),</span>
+<span class="nc" id="L182">                modifier = Modifier</span>
+<span class="nc" id="L183">                    .size(16.dp)</span>
+            )
+
+<span class="nc" id="L186">            Spacer(modifier = Modifier.width(8.dp))</span>
+        }
+
+<span class="nc" id="L189">        Text(</span>
+<span class="nc" id="L190">            text = message,</span>
+<span class="nc" id="L191">            style = MaterialTheme.typography.bodySmall,</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">            color = if (isError) Color(0xFFE53E3E) else colorResource(R.color.colorPrimary),</span>
+<span class="nc" id="L193">            lineHeight = 16.sp</span>
+        )
+<span class="nc" id="L195">    }</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">}</span>
+
+@Preview
+@Composable
+<span class="nc bnc" id="L200" title="All 6 branches missed.">fun ProjectionSummaryPreview() {</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">    MaterialTheme {</span>
+<span class="nc bnc" id="L202" title="All 8 branches missed.">        ProjectionSummaryCard(</span>
+<span class="nc" id="L203">            yearsToRetirement = 7,</span>
+<span class="nc" id="L204">            additionalCreditsExpected = 5.0,</span>
+<span class="nc" id="L205">            totalProjectedCredits = 10.0,</span>
+<span class="nc" id="L206">            infoMessage = &quot;* Need more work time for pension eligibility&quot;,</span>
+<span class="nc" id="L207">            errorMessage = &quot;4.0 credits forfeited due to work breaks (1999-2010)&quot;,</span>
+<span class="nc" id="L208">            onCalculateClick = {</span>
+                // Handle calculate action
+<span class="nc" id="L210">                println(&quot;Calculate button clicked&quot;)</span>
+<span class="nc" id="L211">            }</span>
+<span class="nc" id="L212">        )</span>
+<span class="nc" id="L213">    }</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

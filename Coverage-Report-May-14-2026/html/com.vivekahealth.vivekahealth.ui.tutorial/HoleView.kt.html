@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HoleView.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.tutorial</a> &gt; <span class="el_source">HoleView.kt</span></div><h1>HoleView.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.tutorial
+
+import android.annotation.TargetApi
+import android.content.Context
+import android.graphics.Canvas
+import android.os.Build
+import android.util.AttributeSet
+import android.view.View
+
+class HoleView : View {
+
+    private var mDrawer: HoleDrawer? = null
+
+<span class="nc" id="L14">    constructor(context: Context) : super(context) {</span>
+<span class="nc" id="L15">        init(context, null, 0, 0)</span>
+<span class="nc" id="L16">    }</span>
+
+<span class="fc" id="L18">    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {</span>
+<span class="fc" id="L19">        init(context, attrs, 0, 0)</span>
+<span class="fc" id="L20">    }</span>
+
+<span class="nc" id="L22">    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(</span>
+<span class="nc" id="L23">        context,</span>
+<span class="nc" id="L24">        attrs,</span>
+<span class="nc" id="L25">        defStyleAttr</span>
+    ) {
+<span class="nc" id="L27">        init(context, attrs, defStyleAttr, 0)</span>
+<span class="nc" id="L28">    }</span>
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    constructor(
+        context: Context,
+        attrs: AttributeSet?,
+        defStyleAttr: Int,
+        defStyleRes: Int
+<span class="nc" id="L36">    ) : super(</span>
+<span class="nc" id="L37">        context,</span>
+<span class="nc" id="L38">        attrs,</span>
+<span class="nc" id="L39">        defStyleAttr,</span>
+<span class="nc" id="L40">        defStyleRes</span>
+    ) {
+<span class="nc" id="L42">        init(context, attrs, defStyleAttr, defStyleRes)</span>
+<span class="nc" id="L43">    }</span>
+
+    private fun init(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) {
+<span class="fc" id="L46">        setWillNotDraw(false)</span>
+<span class="fc" id="L47">    }</span>
+
+    fun setDrawer(drawer: HoleDrawer) {
+<span class="fc" id="L50">        mDrawer = drawer</span>
+<span class="fc" id="L51">        invalidate()</span>
+<span class="fc" id="L52">    }</span>
+
+    override fun onDraw(canvas: Canvas) {
+<span class="fc" id="L55">        super.onDraw(canvas)</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        mDrawer?.let { drawer -&gt;</span>
+<span class="fc" id="L57">            drawer.draw(canvas, width, height)</span>
+<span class="fc" id="L58">        }</span>
+<span class="fc" id="L59">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

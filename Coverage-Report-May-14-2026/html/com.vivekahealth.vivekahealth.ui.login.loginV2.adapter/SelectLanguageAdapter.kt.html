@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SelectLanguageAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.login.loginV2.adapter</a> &gt; <span class="el_source">SelectLanguageAdapter.kt</span></div><h1>SelectLanguageAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.login.loginV2.adapter
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.util.TypedValue
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import android.widget.Filter
+import android.widget.Filterable
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.databinding.LanguageRowBinding
+
+class SelectLanguageAdapter(
+    context: Context,
+    private val languageList: ArrayList&lt;SelectLanguageItem&gt;,
+    private var onLangClick: (String) -&gt; Unit
+) :
+    RecyclerView.Adapter&lt;SelectLanguageViewHolder&gt;(), Filterable {
+    private val currentLocale = context.resources.configuration.locale.language
+    private val originalList = languageList
+    private var filteredList = languageList
+
+    private val searchFilter: Filter = object : Filter() {
+        override fun performFiltering(input: CharSequence): FilterResults {
+            val query = input.toString().lowercase().trim()
+
+            val filteredList = if (input.isEmpty()) {
+                originalList
+            } else {
+                originalList.filter {
+                    it.originalTitle.lowercase().contains(query)
+                }
+            }
+            return FilterResults().apply { values = filteredList }
+        }
+
+        @SuppressLint(&quot;NotifyDataSetChanged&quot;)
+        @Suppress(&quot;UNCHECKED_CAST&quot;)
+        override fun publishResults(input: CharSequence, results: FilterResults) {
+            (results.values as ArrayList&lt;SelectLanguageItem&gt;).also {
+                filteredList = it
+                notifyDataSetChanged()
+            }
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SelectLanguageViewHolder {
+        val binding = LanguageRowBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return SelectLanguageViewHolder(binding)
+    }
+
+    override fun getItemCount(): Int {
+        return filteredList.size
+    }
+
+    override fun onBindViewHolder(holder: SelectLanguageViewHolder, position: Int) {
+        with(filteredList[position]) {
+            holder.bindItem(this, currentLocale)
+            holder.binding.root.setOnClickListener {
+                onLangClick(this.languageCode)
+            }
+        }
+    }
+
+    override fun getFilter(): Filter {
+        return searchFilter
+    }
+}
+
+class SelectLanguageViewHolder(val binding: LanguageRowBinding) :
+    RecyclerView.ViewHolder(binding.root) {
+    fun bindItem(item: SelectLanguageItem, currentLocale: String) {
+        binding.translatedTextView.text = item.translatedTitle
+        binding.originalTextView.text = item.originalTitle
+        if (item.languageCode == currentLocale) {
+            binding.root.setBackgroundColor(binding.root.context.getColor(R.color.colorAccent))
+        } else {
+            val outValue = TypedValue()
+            binding.root.context.theme
+                .resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
+            binding.root.setBackgroundResource(outValue.resourceId)
+        }
+    }
+}
+
+<span class="fc" id="L87">data class SelectLanguageItem(</span>
+<span class="fc" id="L88">    val translatedTitle: String,</span>
+<span class="fc" id="L89">    val originalTitle: String,</span>
+<span class="fc" id="L90">    val languageCode: String</span>
+)
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

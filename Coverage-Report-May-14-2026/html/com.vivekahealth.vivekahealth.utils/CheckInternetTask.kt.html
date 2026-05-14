@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CheckInternetTask.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils</a> &gt; <span class="el_source">CheckInternetTask.kt</span></div><h1>CheckInternetTask.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils
+
+import com.vivekahealth.vivekahealth.BuildConfig
+import com.vivekahealth.vivekahealth.ui.homePage.HomePageViewModel
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
+
+<span class="nc" id="L9">class CheckInternetTask(private val viewModel: HomePageViewModel) {</span>
+
+    fun execute() {
+        // Perform the background task on a new thread
+<span class="nc" id="L13">        kotlin.concurrent.thread {</span>
+<span class="nc" id="L14">            val result = try {</span>
+<span class="nc" id="L15">                val url = URL(BuildConfig.SERVER_URL)</span>
+<span class="nc" id="L16">                val connection = url.openConnection() as HttpURLConnection</span>
+<span class="nc" id="L17">                connection.connectTimeout = 10000 // Set connection timeout to 3000 milliseconds</span>
+<span class="nc" id="L18">                connection.connect()</span>
+
+                // Check if the response code indicates success
+<span class="nc bnc" id="L21" title="All 2 branches missed.">                if (connection.responseCode == HttpURLConnection.HTTP_OK) {</span>
+<span class="nc" id="L22">                    false</span>
+                } else {
+<span class="nc" id="L24">                    true</span>
+                }
+<span class="nc" id="L26">            } catch (e: IOException) {</span>
+<span class="nc" id="L27">                true</span>
+            }
+
+            // Update UI on the main thread
+<span class="nc" id="L31">            viewModel._isInternetConnected.postValue(result)</span>
+<span class="nc" id="L32">        }</span>
+<span class="nc" id="L33">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

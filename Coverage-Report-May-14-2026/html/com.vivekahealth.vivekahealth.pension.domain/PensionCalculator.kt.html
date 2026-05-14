@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PensionCalculator.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.pension.domain</a> &gt; <span class="el_source">PensionCalculator.kt</span></div><h1>PensionCalculator.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.pension.domain
+
+import com.vivekahealth.vivekahealth.pension.data.model.PensionMemberResponse
+import com.vivekahealth.vivekahealth.pension.data.model.SummaryImpactData
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+<span class="fc" id="L10">class PensionCalculator @Inject constructor() {</span>
+
+    companion object {
+        const val EXPECTED_HOURS_BASE = 1500.0
+    }
+
+    /**
+     * Calculates summary impact data from pension data
+     */
+    fun mapSummaryImpactData(pensionMemberResponse: PensionMemberResponse?): SummaryImpactData {
+<span class="fc" id="L20">        var totalCredit = 0.0</span>
+<span class="fc" id="L21">        var creditKept = 0.0</span>
+<span class="fc" id="L22">        var creditsLost = 0.0</span>
+
+<span class="fc bfc" id="L24" title="All 2 branches covered.">        pensionMemberResponse?.let {</span>
+<span class="fc" id="L25">            totalCredit = it.totalCredits</span>
+<span class="fc" id="L26">            creditsLost = it.totalForfeited</span>
+<span class="fc" id="L27">            creditKept = it.totalCredits - it.totalForfeited</span>
+<span class="fc" id="L28">        }</span>
+
+        // hard coded value for credits kept and credit lost,
+        // no proper logic found for this
+<span class="fc" id="L32">        return SummaryImpactData(</span>
+<span class="fc" id="L33">            totalCreditsEarned = totalCredit,</span>
+<span class="fc" id="L34">            creditsKept = creditKept,</span>
+<span class="fc" id="L35">            creditsLost = creditsLost,</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">            date = DateUtils.getSystemDateTimeAsString() ?: &quot;&quot;,</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">            isEligibleForPensionBenefits = pensionMemberResponse?.isEligibleForPensionBenefits,</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">            showPensionDetails = pensionMemberResponse?.showPensionDetails</span>
+        )
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

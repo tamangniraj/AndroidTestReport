@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProcedureList.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityprofile.responce</a> &gt; <span class="el_source">ProcedureList.java</span></div><h1>ProcedureList.java</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityprofile.responce;
+
+import java.util.Comparator;
+
+public class ProcedureList implements Comparable&lt;ProcedureList&gt; {
+    public String getCodeValue() {
+<span class="nc" id="L7">        return codeValue;</span>
+    }
+
+    public void setCodeValue(String codeValue) {
+<span class="nc" id="L11">        this.codeValue = codeValue;</span>
+<span class="nc" id="L12">    }</span>
+
+
+
+    public String getShortDesc() {
+<span class="nc" id="L17">        return shortDesc;</span>
+    }
+
+    public void setShortDesc(String shortDesc) {
+<span class="nc" id="L21">        this.shortDesc = shortDesc;</span>
+<span class="nc" id="L22">    }</span>
+
+    public String getLongDesc() {
+<span class="nc" id="L25">        return longDesc;</span>
+    }
+
+    public void setLongDesc(String longDesc) {
+<span class="nc" id="L29">        this.longDesc = longDesc;</span>
+<span class="nc" id="L30">    }</span>
+
+    private String codeValue;
+
+    public int getAllowedAmount() {
+<span class="nc" id="L35">        return allowedAmount;</span>
+    }
+
+    public void setAllowedAmount(int allowedAmount) {
+<span class="nc" id="L39">        this.allowedAmount = allowedAmount;</span>
+<span class="nc" id="L40">    }</span>
+
+    private int allowedAmount;
+    private String shortDesc;
+    private String longDesc;
+
+<span class="nc" id="L46">    public ProcedureList(String codeValue, int allowedAmount, String shortDesc, String longDesc) {</span>
+<span class="nc" id="L47">        this.codeValue = codeValue;</span>
+<span class="nc" id="L48">        this.allowedAmount = allowedAmount;</span>
+<span class="nc" id="L49">        this.shortDesc = shortDesc;</span>
+<span class="nc" id="L50">        this.longDesc = longDesc;</span>
+<span class="nc" id="L51">    }</span>
+
+    @Override
+    public int compareTo(ProcedureList procedureList) {
+<span class="nc" id="L55">        return 0;</span>
+    }
+
+
+/*
+    @Override
+    public int compareTo(ProcedureList procedureList) {
+        return this.na;
+    }
+*/
+
+<span class="nc" id="L66">    public static Comparator&lt;ProcedureList&gt; acending_order = new Comparator&lt;ProcedureList&gt;() {</span>
+
+        public int compare(ProcedureList s1, ProcedureList s2) {
+
+<span class="nc" id="L70">            String  rollno1 = s1.getShortDesc();</span>
+<span class="nc" id="L71">            String  rollno2 = s2.getShortDesc();</span>
+
+            /*For ascending order*/
+<span class="nc" id="L74">            return rollno1.compareTo(rollno2);</span>
+
+            /*For descending order*/
+            //rollno2-rollno1;
+        }};
+
+<span class="nc" id="L80">    public static Comparator&lt;ProcedureList&gt; decending_order = new Comparator&lt;ProcedureList&gt;() {</span>
+
+        public int compare(ProcedureList s1, ProcedureList s2) {
+
+<span class="nc" id="L84">            String  rollno1 = s1.getShortDesc();</span>
+<span class="nc" id="L85">            String  rollno2 = s2.getShortDesc();</span>
+
+            /*For ascending order*/
+<span class="nc" id="L88">            return rollno2.compareTo(rollno1);</span>
+
+            /*For descending order*/
+            //rollno2-rollno1;
+        }};
+
+
+<span class="nc" id="L95">    public static Comparator&lt;ProcedureList&gt; decending_orderPrice = new Comparator&lt;ProcedureList&gt;() {</span>
+
+        public int compare(ProcedureList s1, ProcedureList s2) {
+
+<span class="nc" id="L99">            int price1 = s1.getAllowedAmount();</span>
+<span class="nc" id="L100">            int price2 = s2.getAllowedAmount();</span>
+
+            /*For ascending order*/
+<span class="nc" id="L103">            return price1-price2;</span>
+
+            /*For descending order*/
+            //rollno2-rollno1;
+        }};
+<span class="nc" id="L108">    public static Comparator&lt;ProcedureList&gt; acending_orderPrice = new Comparator&lt;ProcedureList&gt;() {</span>
+
+        public int compare(ProcedureList s1, ProcedureList s2) {
+
+<span class="nc" id="L112">            int price1 = s1.getAllowedAmount();</span>
+<span class="nc" id="L113">            int price2 = s2.getAllowedAmount();</span>
+
+            /*For ascending order*/
+<span class="nc" id="L116">            return price2-price1;</span>
+
+            /*For descending order*/
+            //rollno2-rollno1;
+        }};
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

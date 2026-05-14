@@ -1,0 +1,515 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccountDetailsViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.accountsDetails</a> &gt; <span class="el_source">AccountDetailsViewModel.kt</span></div><h1>AccountDetailsViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.accountsDetails
+
+import android.content.SharedPreferences
+import android.net.Uri
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.viewModelScope
+import com.vivekahealth.vivekahealth.data.remote.about.PendingStatus
+import com.vivekahealth.vivekahealth.data.remote.enroll.DocumentUploadSuccessEnroll
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.data.remote.register.DataResponse
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.remote.APIResponse
+import com.vivekahealth.vivekahealth.utils.thread.ThreadUtils
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
+import okhttp3.MultipartBody
+import org.apache.commons.lang3.StringUtils
+import java.io.File
+import java.util.Locale
+import javax.inject.Inject
+
+<span class="fc" id="L36">class AccountDetailsViewModel @Inject constructor(</span>
+<span class="fc" id="L37">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L38">    private val homeRepository: HomeRepository</span>
+<span class="fc" id="L39">) : ViewModel(), Observable {</span>
+
+<span class="fc" id="L41">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L43">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="pc" id="L45">    var currentCacheTime = System.currentTimeMillis().toString()</span>
+
+<span class="nc" id="L47">    var uriImage: Uri? = null</span>
+<span class="nc" id="L48">    lateinit var filePart: MultipartBody.Part</span>
+
+<span class="nc" id="L50">    var memberInfoDb =</span>
+<span class="fc" id="L51">        homeRepository.getMemberSid(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="pc" id="L52">            .filterNotNull().asLiveData()</span>
+<span class="nc" id="L53">    var clientInfoDb =</span>
+<span class="fc" id="L54">        homeRepository.getClientDetail(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="pc" id="L55">            .filterNotNull().asLiveData()</span>
+<span class="fc" id="L56">    private val _navigateToChangeProfile = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToChangeProfile: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L58">        get() = _navigateToChangeProfile</span>
+
+<span class="fc" id="L60">    private val _navigateToChangeProfileDependent = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToChangeProfileDependent: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L62">        get() = _navigateToChangeProfileDependent</span>
+<span class="fc" id="L63">    private val _navigateToChangeEmail = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToChangeEmail: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L65">        get() = _navigateToChangeEmail</span>
+<span class="fc" id="L66">    private val _navigateToChangePhone = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToChangePhone: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L68">        get() = _navigateToChangePhone</span>
+
+<span class="fc" id="L70">    private val _navigateToMaritalStatus = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToMaritalStatus: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L72">        get() = _navigateToMaritalStatus</span>
+<span class="fc" id="L73">    private val _navigateToChangeAddress = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToChangeAddress: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L75">        get() = _navigateToChangeAddress</span>
+
+<span class="pc" id="L77">    var countryList: ArrayList&lt;String&gt; = arrayListOf()</span>
+<span class="fc" id="L78">    var memberInfo: MemberInfo = MemberInfo()</span>
+<span class="nc" id="L79">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L81">            field = value</span>
+<span class="nc" id="L82">            callbacks.notifyCallbacks(this, BR.memberInfo, null)</span>
+<span class="nc" id="L83">        }</span>
+
+    var loading: Boolean = false
+<span class="fc" id="L86">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L88">            field = value</span>
+<span class="nc" id="L89">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L90">        }</span>
+
+<span class="fc" id="L92">    var name: String = &quot;&quot;</span>
+<span class="fc" id="L93">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L95">            field = value</span>
+<span class="fc" id="L96">            callbacks.notifyCallbacks(this, BR.name, null)</span>
+<span class="fc" id="L97">        }</span>
+
+    private lateinit var picFile: File
+<span class="fc" id="L100">    var email: String = &quot;&quot;</span>
+<span class="fc" id="L101">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L103">            field = value</span>
+<span class="fc" id="L104">            callbacks.notifyCallbacks(this, BR.email, null)</span>
+<span class="fc" id="L105">        }</span>
+
+<span class="fc" id="L107">    var phoneNumber: String = &quot;&quot;</span>
+<span class="fc" id="L108">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L110">            field = value</span>
+<span class="fc" id="L111">            callbacks.notifyCallbacks(this, BR.phoneNumber, null)</span>
+<span class="fc" id="L112">        }</span>
+
+<span class="fc" id="L114">    var address: String = &quot;&quot;</span>
+<span class="fc" id="L115">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L117">            field = value</span>
+<span class="fc" id="L118">            callbacks.notifyCallbacks(this, BR.address, null)</span>
+<span class="fc" id="L119">        }</span>
+
+<span class="fc" id="L121">    var martialStat: String = &quot;&quot;</span>
+<span class="fc" id="L122">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L124">            field = value</span>
+<span class="fc" id="L125">            callbacks.notifyCallbacks(this, BR.martialStat, null)</span>
+<span class="fc" id="L126">        }</span>
+
+<span class="fc" id="L128">    var family: String = &quot;&quot;</span>
+<span class="fc" id="L129">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L131">            field = value</span>
+<span class="fc" id="L132">            callbacks.notifyCallbacks(this, BR.family, null)</span>
+<span class="fc" id="L133">        }</span>
+
+    var addressPending: Boolean = false
+<span class="nc" id="L136">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L138">            field = value</span>
+<span class="nc" id="L139">            callbacks.notifyCallbacks(this, BR.addressPending, null)</span>
+<span class="nc" id="L140">        }</span>
+    var maritalPending: Boolean = false
+<span class="nc" id="L142">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L144">            field = value</span>
+<span class="nc" id="L145">            callbacks.notifyCallbacks(this, BR.maritalPending, null)</span>
+<span class="nc" id="L146">        }</span>
+    var hasAvatar: Boolean = false
+<span class="nc" id="L148">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L150">            field = value</span>
+<span class="fc" id="L151">            callbacks.notifyCallbacks(this, BR.hasAvatar, null)</span>
+<span class="fc" id="L152">        }</span>
+
+<span class="fc" id="L154">    private var dependentOrdered: ArrayList&lt;MemberInfo&gt; = arrayListOf()</span>
+<span class="fc" id="L155">    private val _navigateToUpload = MutableLiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt;()</span>
+    val navigateToUpload: LiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt;
+<span class="nc" id="L157">        get() = _navigateToUpload</span>
+
+<span class="fc" id="L159">    private val _statusUpdate = MutableLiveData&lt;Event&lt;PendingStatus&gt;&gt;()</span>
+
+<span class="fc" id="L161">    private val _navigateToRemove = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+    val navigateToRemove: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
+<span class="nc" id="L163">        get() = _navigateToRemove</span>
+
+<span class="fc" id="L165">    init {</span>
+<span class="fc" id="L166">        viewModelScope.launch {</span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">            if (homeRepository.getMemberSid(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="fc" id="L168">                .firstOrNull() == null</span>
+            ) {
+<span class="nc" id="L170">                compositeDisposable.add(</span>
+<span class="nc" id="L171">                    homeRepository.getMember()</span>
+<span class="nc" id="L172">                        .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L173">                        .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L174">                        .subscribe({</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">                            if (!Constants.IS_OFFLINE) {</span>
+<span class="nc" id="L176">                                homeRepository.insertMember(it)</span>
+                            }
+<span class="nc" id="L178">                        }, {</span>
+<span class="nc" id="L179">                        })</span>
+                )
+            }
+<span class="fc" id="L182">        }</span>
+<span class="fc" id="L183">    }</span>
+
+    fun loadData(memberInfo: MemberInfo) {
+<span class="fc" id="L186">        val member = memberInfo</span>
+
+<span class="fc" id="L188">        var callingCode = &quot;&quot;</span>
+<span class="fc" id="L189">        var numberPhone = &quot;&quot;</span>
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">        member.phoneNumber?.let { number -&gt;</span>
+<span class="fc" id="L191">            numberPhone = number</span>
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">            member.countryCode?.let {</span>
+<span class="fc" id="L193">                callingCode = it</span>
+<span class="fc" id="L194">            }</span>
+        }
+
+<span class="fc" id="L197">        hasAvatar = memberInfo.hasAvatar.toBooleanStrict()</span>
+
+<span class="fc" id="L199">        name = member.lastName + &quot;, &quot; + member.firstName</span>
+<span class="fc bfc" id="L200" title="All 2 branches covered.">        member.email?.let {</span>
+<span class="fc" id="L201">            email = it</span>
+<span class="fc" id="L202">        }</span>
+
+<span class="pc bpc" id="L204" title="3 of 4 branches missed.">        address = member.homeAddress?.fullAddress() ?: &quot;&quot;</span>
+
+<span class="fc" id="L206">        phoneNumber = &quot;$callingCode $numberPhone&quot;</span>
+
+<span class="fc bfc" id="L208" title="All 2 branches covered.">        member.maritalStatus?.let {</span>
+<span class="fc" id="L209">            martialStat = it</span>
+<span class="fc" id="L210">        }</span>
+<span class="fc" id="L211">        var dependentList = &quot;&quot;</span>
+
+<span class="fc" id="L213">        createDependentList()</span>
+<span class="pc bpc" id="L214" title="2 of 4 branches missed.">        if (dependentOrdered.isNotEmpty()) {</span>
+<span class="nc bnc" id="L215" title="All 6 branches missed.">            for (list in dependentOrdered.filter { !it.hideProfileFromHome &amp;&amp; !it.memberAdditionInReview }) {</span>
+<span class="nc bnc" id="L216" title="All 4 branches missed.">                dependentList = if (dependentList.isNotBlank()) {</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">                    if (dependentOrdered.indexOf(list) != dependentOrdered.size - 1) {</span>
+<span class="nc" id="L218">                        dependentList + &quot;, &quot; + list.firstName</span>
+                    } else {
+<span class="nc" id="L220">                        dependentList + &quot; and &quot; + list.firstName</span>
+                    }
+                } else {
+<span class="nc" id="L223">                    list.firstName.toString()</span>
+                }
+            }
+        }
+
+<span class="fc" id="L228">        family = dependentList</span>
+<span class="fc" id="L229">    }</span>
+
+    fun getStatus() {
+<span class="nc" id="L232">        ThreadUtils.runOnUiThread {</span>
+<span class="nc" id="L233">            compositeDisposable.add(</span>
+<span class="nc" id="L234">                homeRepository.getPendingStatus(</span>
+<span class="nc" id="L235">                    preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+                )
+<span class="nc" id="L237">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L238">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L239">                    .doOnSubscribe {</span>
+<span class="nc" id="L240">                    }</span>
+<span class="nc" id="L241">                    .subscribe({</span>
+<span class="nc" id="L242">                        maritalPending = it.maritalStatusPending</span>
+<span class="nc" id="L243">                        addressPending = it.addressUpdatePending</span>
+
+<span class="nc" id="L245">                        _statusUpdate.value = Event(it)</span>
+<span class="nc" id="L246">                    }, {</span>
+<span class="nc" id="L247">                    })</span>
+            )
+<span class="nc" id="L249">        }</span>
+<span class="nc" id="L250">    }</span>
+
+    private fun createDependentList() {
+<span class="fc" id="L253">        dependentOrdered.clear()</span>
+
+<span class="pc bpc" id="L255" title="1 of 2 branches missed.">        memberInfo.dependentsArrayList?.let { it1 -&gt;</span>
+
+<span class="pc bpc" id="L257" title="1 of 2 branches missed.">            memberInfo.dependentsArrayList?.sortByDescending {</span>
+                DateUtils.stringServerDateToDate(
+                    it.birthDate.toString()
+                )
+            }
+
+<span class="pc bpc" id="L263" title="1 of 2 branches missed.">            memberInfo.dependentsArrayList?.reverse()</span>
+
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">            for (member in it1) {</span>
+<span class="nc bnc" id="L266" title="All 2 branches missed.">                if (StringUtils.equalsIgnoreCase(member.memberRelationship, &quot;Spouse&quot;)) {</span>
+<span class="nc" id="L267">                    dependentOrdered.add(0, member)</span>
+                } else {
+<span class="nc" id="L269">                    dependentOrdered.add(member)</span>
+                }
+            }
+<span class="fc" id="L272">        }</span>
+<span class="fc" id="L273">    }</span>
+
+    fun getCode(countryName: String) =
+<span class="nc bnc" id="L276" title="All 4 branches missed.">        Locale.getISOCountries().find { Locale(&quot;&quot;, it).displayCountry == countryName }</span>
+
+    fun getCodeHash(countryName: String): String? {
+        // Get all country codes in a string array.
+<span class="nc" id="L280">        val isoCountryCodes = Locale.getAvailableLocales()</span>
+
+        // Iterate through all country codes:
+<span class="nc bnc" id="L283" title="All 2 branches missed.">        for (code in isoCountryCodes) {</span>
+            // Create a locale using each country code // Get country name for each code.
+
+<span class="nc bnc" id="L286" title="All 2 branches missed.">            if (code.displayName.equals(countryName)) {</span>
+<span class="nc" id="L287">                return code.country</span>
+            }
+        }
+
+<span class="nc" id="L291">        return &quot;1&quot;</span>
+    }
+
+    fun getCountryCode(countryName: String): String {
+<span class="fc" id="L295">        val isoCountryCodes: Array&lt;String&gt; = Locale.getISOCountries()</span>
+<span class="fc bfc" id="L296" title="All 2 branches covered.">        for (code in isoCountryCodes) {</span>
+<span class="fc" id="L297">            val locale = Locale(&quot;&quot;, code)</span>
+<span class="fc bfc" id="L298" title="All 2 branches covered.">            if (countryName.equals(locale.displayCountry, ignoreCase = true)) {</span>
+<span class="fc" id="L299">                return code</span>
+            }
+        }
+<span class="fc" id="L302">        return &quot;1&quot;</span>
+    }
+
+    fun getCountryDialCode(code: String): String {
+<span class="nc" id="L306">        var countryDialCode = &quot;&quot;</span>
+<span class="nc bnc" id="L307" title="All 2 branches missed.">        for (i in countryList.indices) {</span>
+<span class="nc" id="L308">            val arrDial = countryList[i].split(&quot;,&quot;.toRegex()).toTypedArray()</span>
+<span class="nc bnc" id="L309" title="All 4 branches missed.">            if (arrDial[1].trim { it &lt;= ' ' } == code.trim()) {</span>
+<span class="nc" id="L310">                countryDialCode = arrDial[0]</span>
+<span class="nc" id="L311">                break</span>
+            }
+        }
+<span class="nc" id="L314">        return countryDialCode</span>
+    }
+
+    fun changeProfilePic() {
+<span class="fc" id="L318">        _navigateToChangeProfile.value = Event(Unit)</span>
+<span class="fc" id="L319">    }</span>
+
+    fun familyPicChange() {
+<span class="fc" id="L322">        _navigateToChangeProfileDependent.value = Event(Unit)</span>
+<span class="fc" id="L323">    }</span>
+
+    fun phoneChange() {
+<span class="fc" id="L326">        _navigateToChangePhone.value = Event(Unit)</span>
+<span class="fc" id="L327">    }</span>
+
+    fun emailChange() {
+<span class="fc" id="L330">        _navigateToChangeEmail.value = Event(Unit)</span>
+<span class="fc" id="L331">    }</span>
+
+    fun addressChange() {
+<span class="fc" id="L334">        _navigateToChangeAddress.value = Event(Unit)</span>
+<span class="fc" id="L335">    }</span>
+
+    fun martialStatChange() {
+<span class="fc" id="L338">        _navigateToMaritalStatus.value = Event(Unit)</span>
+<span class="fc" id="L339">    }</span>
+
+    fun uploadPicture(pic: File) {
+<span class="nc" id="L342">        picFile = pic</span>
+//
+//        val filePart: MultipartBody.Part = MultipartBody.Part.createFormData(
+//            &quot;file&quot;,
+//
+//          pic.name,
+//            RequestBody.create(&quot;image/*&quot;.toMediaTypeOrNull(), pic)
+//        )
+
+<span class="nc" id="L351">        ThreadUtils.runOnUiThread {</span>
+<span class="nc" id="L352">            compositeDisposable.add(</span>
+<span class="nc" id="L353">                homeRepository.uploadProfile(memberInfo.selfId, filePart)</span>
+<span class="nc" id="L354">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L355">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L356">                    .doOnSubscribe {</span>
+<span class="nc" id="L357">                        loading = true</span>
+<span class="nc" id="L358">                        _navigateToUpload.value =</span>
+<span class="nc" id="L359">                            APIResponse&lt;DocumentUploadSuccessEnroll&gt;().loading()</span>
+<span class="nc" id="L360">                    }</span>
+<span class="nc" id="L361">                    .subscribe({</span>
+<span class="nc" id="L362">                        loading = false</span>
+<span class="nc" id="L363">                        preferences.edit().remove(&quot;uri${memberInfo.selfId}&quot;).apply()</span>
+<span class="nc" id="L364">                        _navigateToUpload.value =</span>
+<span class="nc" id="L365">                            APIResponse&lt;DocumentUploadSuccessEnroll&gt;().success(</span>
+<span class="nc" id="L366">                                it</span>
+                            )
+
+<span class="nc" id="L369">                        currentCacheTime = System.currentTimeMillis().toString()</span>
+<span class="nc" id="L370">                    }, {</span>
+<span class="nc" id="L371">                        loading = false</span>
+
+<span class="nc" id="L373">                        _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().error(</span>
+<span class="nc" id="L374">                            it.localizedMessage!!</span>
+                        )
+<span class="nc" id="L376">                    })</span>
+            )
+<span class="nc" id="L378">        }</span>
+<span class="nc" id="L379">    }</span>
+//    fun removeDependent(){
+// //
+// //
+//
+//
+//        ThreadUtils.runOnUiThread(Runnable {
+//
+//            compositeDisposable.add(
+//                homeRepository.removeDependent(memberInfo.selfId)
+//                    .subscribeOn(Schedulers.io())
+//                    .observeOn(AndroidSchedulers.mainThread())
+//                    .doOnSubscribe {
+//
+//                        loading = true
+//                        _navigateToRemove.value = APIResponse&lt;SuccessResponse&gt;().loading()
+//                    }
+//                    .subscribe({
+//
+//
+//
+//
+//                        loading = false
+//
+//                        _navigateToRemove.value =  APIResponse&lt;SuccessResponse&gt;().success(it)
+//
+//
+//                    }, {
+//                        loading = false
+//
+//                        _navigateToRemove .value =  APIResponse&lt;SuccessResponse&gt;().error(it.localizedMessage!!)
+//
+//
+//                    })
+//            )
+//        })
+//
+//    }
+
+    fun removePicture() {
+//
+//
+
+<span class="nc" id="L422">        ThreadUtils.runOnUiThread {</span>
+<span class="nc" id="L423">            compositeDisposable.add(</span>
+<span class="nc" id="L424">                homeRepository.removeAvatar(memberInfo.selfId)</span>
+<span class="nc" id="L425">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L426">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L427">                    .doOnSubscribe {</span>
+<span class="nc" id="L428">                        loading = true</span>
+<span class="nc" id="L429">                        _navigateToRemove.value = APIResponse&lt;DataResponse&gt;().loading()</span>
+<span class="nc" id="L430">                    }</span>
+<span class="nc" id="L431">                    .subscribe({</span>
+<span class="nc" id="L432">                        loading = false</span>
+
+<span class="nc" id="L434">                        _navigateToRemove.value = APIResponse&lt;DataResponse&gt;().success(it)</span>
+<span class="nc" id="L435">                    }, {</span>
+<span class="nc" id="L436">                        loading = false</span>
+
+<span class="nc" id="L438">                        _navigateToRemove.value = APIResponse&lt;DataResponse&gt;().error(</span>
+<span class="nc" id="L439">                            it.localizedMessage!!</span>
+                        )
+<span class="nc" id="L441">                    })</span>
+            )
+<span class="nc" id="L443">        }</span>
+<span class="nc" id="L444">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L447">        callbacks.add(callback)</span>
+<span class="nc" id="L448">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L451">        callbacks.remove(callback)</span>
+<span class="nc" id="L452">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L455">        super.onCleared()</span>
+<span class="nc" id="L456">        compositeDisposable.dispose()</span>
+<span class="nc" id="L457">    }</span>
+
+<span class="fc" id="L459">    private val _tutorialsAdded = MutableLiveData(false)</span>
+    val tutorialsAdded: LiveData&lt;Boolean&gt;
+<span class="nc" id="L461">        get() = _tutorialsAdded</span>
+
+<span class="fc" id="L463">    private val _showTutorial = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val showTutorial: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L465">        get() = _showTutorial</span>
+
+    private var addedAddressAndMaritalTut = false
+    private var addedDependentTut = false
+    private var addedOtherTutorial = false
+<span class="nc" id="L470">    var tutorialShown = false</span>
+    fun addAddressAnMaritalTutorial() {
+<span class="nc" id="L472">        addedAddressAndMaritalTut = true</span>
+<span class="nc" id="L473">        showTutorialIfConditionMatched()</span>
+<span class="nc" id="L474">    }</span>
+
+    fun addDependentTutorial() {
+<span class="nc" id="L477">        addedDependentTut = true</span>
+<span class="nc" id="L478">        showTutorialIfConditionMatched()</span>
+<span class="nc" id="L479">    }</span>
+
+    fun addOtherTutorial() {
+<span class="nc" id="L482">        addedOtherTutorial = true</span>
+<span class="nc" id="L483">        updateTutorialAdditionStatus()</span>
+<span class="nc" id="L484">    }</span>
+
+    private fun updateTutorialAdditionStatus() {
+<span class="nc bnc" id="L487" title="All 6 branches missed.">        _tutorialsAdded.value = addedAddressAndMaritalTut &amp;&amp; addedDependentTut &amp;&amp; addedOtherTutorial</span>
+<span class="nc" id="L488">    }</span>
+
+    private fun showTutorialIfConditionMatched() {
+<span class="nc bnc" id="L491" title="All 2 branches missed.">        if (!preferences.getBoolean(</span>
+<span class="nc" id="L492">                Constants.SHOWN_ACC_DET_TUT_FOR_SESSION,</span>
+<span class="nc" id="L493">                false</span>
+<span class="nc bnc" id="L494" title="All 6 branches missed.">            ) &amp;&amp; !tutorialShown &amp;&amp; addedAddressAndMaritalTut &amp;&amp; addedDependentTut</span>
+        ) {
+<span class="nc" id="L496">            _showTutorial.value = Event(Unit)</span>
+<span class="nc" id="L497">            tutorialShown = true</span>
+<span class="nc" id="L498">            preferences.edit().putBoolean(Constants.SHOWN_ACC_DET_TUT_FOR_SESSION, true).apply()</span>
+        }
+<span class="nc" id="L500">    }</span>
+
+    fun dontShowTutorial() {
+<span class="nc" id="L503">        preferences.edit().putBoolean(memberInfo.selfId + &quot;accountDetailTutorialShown&quot;, true)</span>
+<span class="nc" id="L504">            .apply()</span>
+<span class="nc" id="L505">    }</span>
+
+    fun resetTutorial() {
+<span class="nc" id="L508">        _tutorialsAdded.value = false</span>
+<span class="nc" id="L509">    }</span>
+
+    fun shouldShowTutorial(): Boolean {
+<span class="nc bnc" id="L512" title="All 2 branches missed.">        return !preferences.getBoolean(memberInfo.selfId + &quot;accountDetailTutorialShown&quot;, false)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

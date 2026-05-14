@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VivekaTypeConverters.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.local.typeConverter</a> &gt; <span class="el_source">VivekaTypeConverters.kt</span></div><h1>VivekaTypeConverters.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.local.typeConverter
+
+import androidx.room.TypeConverter
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import com.vivekahealth.vivekahealth.data.remote.home.*
+import com.vivekahealth.vivekahealth.data.remote.home.more.ClientMenuConfig
+import com.vivekahealth.vivekahealth.data.remote.home.workBenefit.workLog.WorkBenefitV2
+import java.util.*
+import kotlin.collections.ArrayList
+
+<span class="fc" id="L12">class VivekaTypeConverters {</span>
+
+<span class="pc" id="L14">    var gson = Gson()</span>
+
+    @TypeConverter
+    fun stringToValues(data: String?): List&lt;ValueInsurance&gt;? {
+<span class="fc bfc" id="L18" title="All 2 branches covered.">        if (data == null) {</span>
+<span class="fc" id="L19">            return null</span>
+        }
+<span class="fc" id="L21">        val listType = object : TypeToken&lt;List&lt;ValueInsurance&gt;&gt;() {}.type</span>
+
+<span class="fc" id="L23">        return gson.fromJson(data, listType)</span>
+    }
+
+    @TypeConverter
+    fun stringToMobileNavigationSectionVisibility(data: String?): List&lt;MobileNavigationSectionVisibilityItem&gt;? {
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        if (data == null) {</span>
+<span class="fc" id="L29">            return null</span>
+        }
+<span class="fc" id="L31">        val listType = object : TypeToken&lt;List&lt;MobileNavigationSectionVisibilityItem&gt;&gt;() {}.type</span>
+
+<span class="fc" id="L33">        return gson.fromJson(data, listType)</span>
+    }
+
+    @TypeConverter
+    fun mobileNavigationSectionVisibilityToString(
+        benefit: List&lt;MobileNavigationSectionVisibilityItem&gt;?
+    ): String? {
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (benefit == null) {</span>
+<span class="fc" id="L41">            return null</span>
+        }
+
+<span class="fc" id="L44">        return gson.toJson(benefit)</span>
+    }
+
+    @TypeConverter
+    fun valuesToString(benefit: List&lt;ValueInsurance&gt;): String {
+<span class="fc" id="L49">        return gson.toJson(benefit)</span>
+    }
+
+    @TypeConverter
+    fun stringToClaimsQuickViewList(data: String?): List&lt;ClaimsQuickView&gt;? {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (data == null) {</span>
+<span class="fc" id="L55">            return null</span>
+        }
+<span class="fc" id="L57">        val listType = object : TypeToken&lt;List&lt;ClaimsQuickView&gt;&gt;() {}.type</span>
+
+<span class="fc" id="L59">        return gson.fromJson(data, listType)</span>
+    }
+
+    @TypeConverter
+    fun cardQuickViewDTOListToString(benefit: List&lt;ClaimsQuickView&gt;?): String ? {
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (benefit == null) {</span>
+<span class="fc" id="L65">            return null</span>
+        }
+
+<span class="fc" id="L68">        return gson.toJson(benefit)</span>
+    }
+
+    @TypeConverter
+    fun stringToDiagnosisHistoryQuickViewList(data: String?): List&lt;DiagnosisHistoryQuickView&gt;? {
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        if (data == null) {</span>
+<span class="fc" id="L74">            return null</span>
+        }
+<span class="fc" id="L76">        val listType = object : TypeToken&lt;List&lt;DiagnosisHistoryQuickView&gt;&gt;() {}.type</span>
+
+<span class="fc" id="L78">        return gson.fromJson(data, listType)</span>
+    }
+
+    @TypeConverter
+    fun diagnosisHistoryQuickViewListToString(benefit: List&lt;DiagnosisHistoryQuickView&gt;?): String? {
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (benefit == null) {</span>
+<span class="fc" id="L84">            return null</span>
+        }
+<span class="fc" id="L86">        return gson.toJson(benefit)</span>
+    }
+
+    @TypeConverter
+    fun stringToLabResultQuickViewList(data: String?): List&lt;LabResultQuickView&gt;? {
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        if (data == null) {</span>
+<span class="fc" id="L92">            return null</span>
+        }
+<span class="fc" id="L94">        val listType = object : TypeToken&lt;List&lt;LabResultQuickView&gt;&gt;() {}.type</span>
+
+<span class="fc" id="L96">        return gson.fromJson(data, listType)</span>
+    }
+
+    @TypeConverter
+    fun labResultQuickViewListToString(benefit: List&lt;LabResultQuickView&gt;?): String? {
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        if (benefit == null) {</span>
+<span class="fc" id="L102">            return null</span>
+        }
+<span class="fc" id="L104">        return gson.toJson(benefit)</span>
+    }
+
+    @TypeConverter
+    fun stringToPrescriptionQuickViewList(data: String?): List&lt;PrescriptionQuickView&gt;? {
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (data == null) {</span>
+<span class="fc" id="L110">            return null</span>
+        }
+<span class="fc" id="L112">        val listType = object : TypeToken&lt;List&lt;PrescriptionQuickView&gt;&gt;() {}.type</span>
+
+<span class="fc" id="L114">        return gson.fromJson(data, listType)</span>
+    }
+
+    @TypeConverter
+    fun prescriptionQuickViewListToString(benefit: List&lt;PrescriptionQuickView&gt;?): String? {
+<span class="fc bfc" id="L119" title="All 2 branches covered.">        if (benefit == null) {</span>
+<span class="fc" id="L120">            return null</span>
+        }
+<span class="fc" id="L122">        return gson.toJson(benefit)</span>
+    }
+
+    @TypeConverter
+    fun stringToInsuranceCardQuickViewDTOList(data: String?): ArrayList&lt;InsuranceCardQuickViewDTO&gt;? {
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (data == null) {</span>
+<span class="fc" id="L128">            return null</span>
+        }
+<span class="fc" id="L130">        val listType = object : TypeToken&lt;ArrayList&lt;InsuranceCardQuickViewDTO&gt;&gt;() {}.type</span>
+
+<span class="fc" id="L132">        return gson.fromJson(data, listType)</span>
+    }
+
+    @TypeConverter
+    fun insuranceCardQuickViewDTOListToString(benefit: ArrayList&lt;InsuranceCardQuickViewDTO&gt;?): String? {
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (benefit == null) {</span>
+<span class="fc" id="L138">            return null</span>
+        }
+<span class="fc" id="L140">        return gson.toJson(benefit)</span>
+    }
+
+    @TypeConverter
+    fun stringToDependentsArrayList(data: String?): ArrayList&lt;MemberInfo&gt;? {
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        if (data == null) {</span>
+<span class="fc" id="L146">            return null</span>
+        }
+<span class="fc" id="L148">        val listType = object : TypeToken&lt;ArrayList&lt;MemberInfo&gt;&gt;() {}.type</span>
+
+<span class="fc" id="L150">        return gson.fromJson(data, listType)</span>
+    }
+
+    @TypeConverter
+    fun dependentsArrayListToString(members: ArrayList&lt;MemberInfo&gt;?): String ? {
+<span class="fc bfc" id="L155" title="All 2 branches covered.">        if (members == null) {</span>
+<span class="fc" id="L156">            return null</span>
+        }
+<span class="fc" id="L158">        return gson.toJson(members)</span>
+    }
+
+    @TypeConverter
+    fun stringToInsured(data: String?): MemberInfo? {
+<span class="fc bfc" id="L163" title="All 2 branches covered.">        if (data == null) {</span>
+<span class="fc" id="L164">            return null</span>
+        }
+<span class="fc" id="L166">        val listType = object : TypeToken&lt;MemberInfo&gt;() {}.type</span>
+
+<span class="fc" id="L168">        return gson.fromJson(data, listType)</span>
+    }
+
+    @TypeConverter
+    fun insuredToString(members: MemberInfo?): String? {
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        if (members == null) return null</span>
+<span class="fc" id="L174">        return gson.toJson(members).toString()</span>
+    }
+
+    @TypeConverter
+    fun linksToInsured(data: String?): ArrayList&lt;String&gt;? {
+<span class="fc bfc" id="L179" title="All 2 branches covered.">        if (data == null) {</span>
+<span class="fc" id="L180">            return null</span>
+        }
+<span class="fc" id="L182">        val listType = object : TypeToken&lt;ArrayList&lt;String&gt;?&gt;() {}.type</span>
+
+<span class="fc" id="L184">        return gson.fromJson(data, listType)</span>
+    }
+
+    @TypeConverter
+    fun linksToString(members: ArrayList&lt;String&gt;?): String? {
+<span class="fc bfc" id="L189" title="All 2 branches covered.">        if (members == null) return null</span>
+<span class="fc" id="L190">        return gson.toJson(members)</span>
+    }
+
+    @TypeConverter
+    fun homeAddressToString(members: MemberAddress): String {
+<span class="fc" id="L195">        return gson.toJson(members)</span>
+    }
+
+    @TypeConverter
+    fun homeAddressToData(data: String?): MemberAddress? {
+<span class="fc bfc" id="L200" title="All 2 branches covered.">        if (data == null) {</span>
+<span class="fc" id="L201">            return null</span>
+        }
+<span class="fc" id="L203">        val listType = object : TypeToken&lt;MemberAddress&gt;() {}.type</span>
+
+<span class="fc" id="L205">        return gson.fromJson(data, listType)</span>
+    }
+
+    @TypeConverter
+    fun allowChangeAvatarToString(members: AllowChangeAvatar?): String {
+<span class="fc" id="L210">        return gson.toJson(members)</span>
+    }
+
+    @TypeConverter
+    fun allowChangeAvatarToData(data: String?): AllowChangeAvatar? {
+<span class="fc bfc" id="L215" title="All 2 branches covered.">        if (data == null) {</span>
+<span class="fc" id="L216">            return null</span>
+        }
+<span class="fc" id="L218">        val listType = object : TypeToken&lt;AllowChangeAvatar&gt;() {}.type</span>
+
+<span class="fc" id="L220">        return gson.fromJson(data, listType)</span>
+    }
+
+    @TypeConverter
+    fun sharingDetailsArrayList(data: String?): ArrayList&lt;SharingDetails&gt;? {
+<span class="fc bfc" id="L225" title="All 2 branches covered.">        if (data == null) {</span>
+<span class="fc" id="L226">            return null</span>
+        }
+<span class="fc" id="L228">        val listType = object : TypeToken&lt;ArrayList&lt;SharingDetails&gt;&gt;() {}.type</span>
+
+<span class="fc" id="L230">        return gson.fromJson(data, listType)</span>
+    }
+
+    @TypeConverter
+    fun sharingDetailsToString(members: ArrayList&lt;SharingDetails&gt;?): String? {
+<span class="fc bfc" id="L235" title="All 2 branches covered.">        if (members == null) return null</span>
+
+<span class="fc" id="L237">        return gson.toJson(members)</span>
+    }
+
+    @TypeConverter
+    fun stringToClientMenuConfig(data: String?): List&lt;ClientMenuConfig&gt;? {
+<span class="fc bfc" id="L242" title="All 2 branches covered.">        if (data == null) {</span>
+<span class="fc" id="L243">            return null</span>
+        }
+<span class="fc" id="L245">        val listType = object : TypeToken&lt;List&lt;ClientMenuConfig&gt;&gt;() {}.type</span>
+
+<span class="fc" id="L247">        return gson.fromJson(data, listType)</span>
+    }
+
+    @TypeConverter
+    fun clientMenuConfigToString(
+        activeMenus: List&lt;ClientMenuConfig&gt;?
+    ): String? {
+<span class="fc bfc" id="L254" title="All 2 branches covered.">        if (activeMenus == null) return null</span>
+
+<span class="fc" id="L256">        return gson.toJson(activeMenus)</span>
+    }
+
+    @TypeConverter
+    fun stringToWorkBenefitV2(data: String?): WorkBenefitV2? {
+<span class="fc bfc" id="L261" title="All 2 branches covered.">        if (data == null) {</span>
+<span class="fc" id="L262">            return null</span>
+        }
+<span class="fc" id="L264">        val type = object : TypeToken&lt;WorkBenefitV2&gt;() {}.type</span>
+<span class="fc" id="L265">        return gson.fromJson(data, type)</span>
+    }
+
+    @TypeConverter
+    fun workBenefitV2ToString(workBenefitV2: WorkBenefitV2?): String? {
+<span class="fc bfc" id="L270" title="All 2 branches covered.">        if (workBenefitV2 == null) {</span>
+<span class="fc" id="L271">            return null</span>
+        }
+<span class="fc" id="L273">        return gson.toJson(workBenefitV2)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

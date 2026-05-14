@@ -1,0 +1,656 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SharedViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.enrollVTwo</a> &gt; <span class="el_source">SharedViewModel.kt</span></div><h1>SharedViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.enrollVTwo
+
+import android.content.res.Resources
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.local.enroll.DocumentItem
+import com.vivekahealth.vivekahealth.data.local.enroll.ListDoc
+import com.vivekahealth.vivekahealth.data.local.enroll.RelationshipType
+import com.vivekahealth.vivekahealth.data.local.enroll.RootDocumentResponse
+import com.vivekahealth.vivekahealth.data.remote.enroll.EnrollMember
+import com.vivekahealth.vivekahealth.data.remote.enroll.Person
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.disposables.CompositeDisposable
+import java.text.SimpleDateFormat
+import java.util.Locale
+import javax.inject.Inject
+
+<span class="nc" id="L22">class SharedViewModel @Inject constructor(private val resources: Resources) : ViewModel() {</span>
+
+<span class="nc" id="L24">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L26">    var index: Int? = null</span>
+<span class="nc" id="L27">    var reqDocs: RootDocumentResponse? = null</span>
+
+    // subscriber data
+<span class="nc" id="L30">    var dob: String? = null</span>
+<span class="nc" id="L31">    var primaryFirstName: String? = null</span>
+<span class="nc" id="L32">    var primaryLastName: String? = null</span>
+<span class="nc" id="L33">    var memberId: String? = null</span>
+<span class="nc" id="L34">    var ssn: String? = null</span>
+<span class="nc" id="L35">    var requestMissingGender: Boolean ? = false</span>
+
+    fun findRequiredDocument(type: Int, primary: Boolean?, spouse: String?): List&lt;DocumentItem&gt; {
+<span class="nc" id="L38">        val baseList =</span>
+<span class="nc bnc" id="L39" title="All 14 branches missed.">            reqDocs?.documentList?.find { it.relationshipType == type }?.documents ?: emptyList()</span>
+
+<span class="nc bnc" id="L41" title="All 4 branches missed.">        return if (type == RelationshipType.PRIMARY.code &amp;&amp; primary == true</span>
+        ) {
+<span class="nc" id="L43">            val extraItems = listOf(</span>
+<span class="nc" id="L44">                DocumentItem(</span>
+<span class="nc" id="L45">                    53,</span>
+<span class="nc" id="L46">                    false,</span>
+<span class="nc" id="L47">                    true,</span>
+<span class="nc" id="L48">                    &quot;Proof of Previous Insurance&quot;,</span>
+<span class="nc" id="L49">                    resources.getString(R.string.proof_of_previous_insurance)</span>
+                )
+            )
+<span class="nc" id="L52">            baseList + extraItems</span>
+<span class="nc bnc" id="L53" title="All 4 branches missed.">        } else if (type == RelationshipType.SPOUSE.code &amp;&amp; spouse == &quot;true&quot;) {</span>
+<span class="nc" id="L54">            val extraItems = listOf(</span>
+<span class="nc" id="L55">                DocumentItem(</span>
+<span class="nc" id="L56">                    501,</span>
+<span class="nc" id="L57">                    false,</span>
+<span class="nc" id="L58">                    true,</span>
+<span class="nc" id="L59">                    &quot;Front of Insurance Card&quot;,</span>
+<span class="nc" id="L60">                    resources.getString(R.string.front_of_insurance_card)</span>
+                ),
+<span class="nc" id="L62">                DocumentItem(</span>
+<span class="nc" id="L63">                    502,</span>
+<span class="nc" id="L64">                    false,</span>
+<span class="nc" id="L65">                    true,</span>
+<span class="nc" id="L66">                    &quot;Back of Insurance Card&quot;,</span>
+<span class="nc" id="L67">                    resources.getString(R.string.back_of_insurance_card)</span>
+                )
+            )
+<span class="nc" id="L70">            baseList + extraItems</span>
+        } else {
+<span class="nc" id="L72">            baseList</span>
+        }
+    }
+
+<span class="nc" id="L76">    private val _isLoading = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+<span class="nc" id="L77">    val isLoading: LiveData&lt;Event&lt;Boolean&gt;&gt; get() = _isLoading</span>
+
+<span class="nc" id="L79">    private val _appTitle = MutableLiveData&lt;String?&gt;()</span>
+<span class="nc" id="L80">    val appTitle: LiveData&lt;String?&gt; get() = _appTitle</span>
+
+    fun updateTitle(title: String) {
+<span class="nc" id="L83">        _appTitle.value = title</span>
+<span class="nc" id="L84">    }</span>
+
+<span class="nc" id="L86">    private val _enrollmentData = MutableLiveData&lt;Enrollment&gt;()</span>
+<span class="nc" id="L87">    val enrollmentData: LiveData&lt;Enrollment&gt; get() = _enrollmentData</span>
+
+    /** Re-emits the current enrollment data so observers re-run (e.g. after reqDocs is loaded). */
+    fun refreshEnrollmentData() {
+<span class="nc" id="L91">        _enrollmentData.value = _enrollmentData.value</span>
+<span class="nc" id="L92">    }</span>
+
+    // step 0
+    fun updateSubscriberGender(gender: String) {
+<span class="nc" id="L96">        val currentData = _enrollmentData.value</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (currentData != null) {</span>
+<span class="nc" id="L98">            _enrollmentData.value = currentData.copy(subscriberGender = gender)</span>
+        } else {
+<span class="nc" id="L100">            _enrollmentData.value = Enrollment(</span>
+<span class="nc" id="L101">                isAddDependent = false,</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                primaryFName = primaryFirstName ?: &quot;&quot;,</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                primaryLName = primaryLastName ?: &quot;&quot;,</span>
+<span class="nc" id="L104">                subscriberGender = gender</span>
+            )
+        }
+<span class="nc" id="L107">    }</span>
+
+    // step 1
+    fun updateAddDependent(boolean: Boolean) {
+<span class="nc" id="L111">        val currentData = _enrollmentData.value</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        if (currentData != null) {</span>
+            // Copy and update the value
+<span class="nc" id="L114">            _enrollmentData.value = currentData.copy(isAddDependent = boolean)</span>
+        } else {
+            // Create a new object and set the value
+<span class="nc" id="L117">            _enrollmentData.value = Enrollment(</span>
+<span class="nc" id="L118">                isAddDependent = boolean,</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">                primaryFName = primaryFirstName ?: &quot;&quot;,</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">                primaryLName = primaryLastName ?: &quot;&quot;</span>
+            )
+        }
+<span class="nc" id="L123">    }</span>
+
+    // step 2
+    // _enrollmentData is guaranteed to have a value when updateSpouseChildrenCount is called,
+    fun updateSpouseChildrenCount(addSpouse: Boolean, addChild: Boolean, count: Int) {
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        val childCount = if (addChild) count else 1</span>
+<span class="nc" id="L129">        val currentData = _enrollmentData.value</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (currentData != null) {</span>
+            // to prepare list
+<span class="nc" id="L132">            currentData.prepareList()</span>
+
+<span class="nc" id="L134">            _enrollmentData.value =</span>
+<span class="nc" id="L135">                currentData.copy(</span>
+<span class="nc" id="L136">                    addSpouse = addSpouse,</span>
+<span class="nc" id="L137">                    addChild = addChild,</span>
+<span class="nc" id="L138">                    childCount = childCount</span>
+                )
+        }
+<span class="nc" id="L141">    }</span>
+
+    // spouse Name
+    fun updateSpouseName(firstName: String, lastName: String) {
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L147">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">            if (it.type == DependentType.SPOUSE) {</span>
+<span class="nc" id="L149">                it.copy(firstName = firstName, lastName = lastName)</span>
+            } else {
+<span class="nc" id="L151">                it</span>
+<span class="nc" id="L152">            }</span>
+        }
+<span class="nc" id="L154">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L155">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L157">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L158">    }</span>
+
+    fun updateMarriageDate(marriageDate: String) {
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L163">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">            if (it.type == DependentType.SPOUSE) {</span>
+<span class="nc" id="L165">                it.copy(marriageDate = marriageDate)</span>
+            } else {
+<span class="nc" id="L167">                it</span>
+<span class="nc" id="L168">            }</span>
+        }
+<span class="nc" id="L170">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L171">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L173">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L174">    }</span>
+
+    fun updateSpouseGender(genderSpouse: String) {
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L179">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">            if (it.type == DependentType.SPOUSE) {</span>
+<span class="nc" id="L181">                it.copy(gender = genderSpouse)</span>
+            } else {
+<span class="nc" id="L183">                it</span>
+<span class="nc" id="L184">            }</span>
+        }
+<span class="nc" id="L186">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L187">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L189">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L190">    }</span>
+
+    fun updateSpouseSSN(ssn: String) {
+<span class="nc bnc" id="L193" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L195">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">            if (it.type == DependentType.SPOUSE) {</span>
+<span class="nc" id="L197">                it.copy(ssn = ssn)</span>
+            } else {
+<span class="nc" id="L199">                it</span>
+<span class="nc" id="L200">            }</span>
+        }
+<span class="nc" id="L202">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L203">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L205">        _enrollmentData.value = updatedEnrollment</span>
+
+<span class="nc" id="L207">        checkChild(ssn)</span>
+<span class="nc" id="L208">    }</span>
+
+    fun updateSpouseDob(dateOfBirthSpouse: String) {
+<span class="nc bnc" id="L211" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L213">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">            if (it.type == DependentType.SPOUSE) {</span>
+<span class="nc" id="L215">                it.copy(dob = dateOfBirthSpouse)</span>
+            } else {
+<span class="nc" id="L217">                it</span>
+<span class="nc" id="L218">            }</span>
+        }
+<span class="nc" id="L220">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L221">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L223">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L224">    }</span>
+
+    fun updateInsuranceGender(provideInsuranceSpouse: String) {
+<span class="nc bnc" id="L227" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L229">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">            if (it.type == DependentType.SPOUSE) {</span>
+<span class="nc" id="L231">                it.copy(insurance = provideInsuranceSpouse)</span>
+            } else {
+<span class="nc" id="L233">                it</span>
+<span class="nc" id="L234">            }</span>
+        }
+<span class="nc" id="L236">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L237">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L239">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L240">    }</span>
+
+    fun updateSpouseEmployed(spouseEmployed: String, spouseEmployerName: String) {
+<span class="nc bnc" id="L243" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L245">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">            if (it.type == DependentType.SPOUSE) {</span>
+<span class="nc" id="L247">                it.copy(employed = spouseEmployed, employer = spouseEmployerName)</span>
+            } else {
+<span class="nc" id="L249">                it</span>
+<span class="nc" id="L250">            }</span>
+        }
+<span class="nc" id="L252">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L253">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L255">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L256">    }</span>
+
+    fun updateHealthInsuranceGender(spouseInsured: String) {
+<span class="nc bnc" id="L259" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L261">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">            if (it.type == DependentType.SPOUSE) {</span>
+<span class="nc" id="L263">                it.copy(spouseInsured = spouseInsured)</span>
+            } else {
+<span class="nc" id="L265">                it</span>
+<span class="nc" id="L266">            }</span>
+        }
+<span class="nc" id="L268">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L269">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L271">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L272">    }</span>
+
+    fun updatePrimaryCompleteRequireDocument() {
+<span class="nc bnc" id="L275" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L277">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">            if (it.type == DependentType.PRIMARY) {</span>
+<span class="nc" id="L279">                it.copy(isCompleted = true)</span>
+            } else {
+<span class="nc" id="L281">                it</span>
+<span class="nc" id="L282">            }</span>
+        }
+<span class="nc" id="L284">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L285">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L287">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L288">    }</span>
+
+    fun updateSpouseCompleteRequireDocument() {
+<span class="nc bnc" id="L291" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L293">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L294" title="All 2 branches missed.">            if (it.type == DependentType.SPOUSE) {</span>
+<span class="nc" id="L295">                it.copy(isCompleted = true)</span>
+            } else {
+<span class="nc" id="L297">                it</span>
+<span class="nc" id="L298">            }</span>
+        }
+<span class="nc" id="L300">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L301">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L303">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L304">    }</span>
+
+    fun updateChildName(firstName: String, lastName: String) {
+<span class="nc bnc" id="L307" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L309">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L310" title="All 4 branches missed.">            if (it.index == index &amp;&amp; it.type == DependentType.CHILD) {</span>
+<span class="nc" id="L311">                it.copy(firstName = firstName, lastName = lastName)</span>
+            } else {
+<span class="nc" id="L313">                it</span>
+<span class="nc" id="L314">            }</span>
+        }
+<span class="nc" id="L316">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L317">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L319">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L320">    }</span>
+
+    fun updateChildGender(genderSpouse: String) {
+<span class="nc bnc" id="L323" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L325">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L326" title="All 4 branches missed.">            if (it.index == index &amp;&amp; it.type == DependentType.CHILD) {</span>
+<span class="nc" id="L327">                it.copy(gender = genderSpouse)</span>
+            } else {
+<span class="nc" id="L329">                it</span>
+<span class="nc" id="L330">            }</span>
+        }
+<span class="nc" id="L332">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L333">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L335">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L336">    }</span>
+
+    fun updateChildDob(dobChild: String) {
+<span class="nc bnc" id="L339" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L341">        val dateFormat = SimpleDateFormat(&quot;yyyy-MM-dd&quot;, Locale.getDefault())</span>
+
+<span class="nc" id="L343">        val childAgeInYear = DateUtils.getDateDiff(</span>
+<span class="nc" id="L344">            dateFormat,</span>
+<span class="nc" id="L345">            dobChild,</span>
+<span class="nc" id="L346">            DateUtils.getCurrentDateServer()</span>
+        )
+
+<span class="nc bnc" id="L349" title="All 2 branches missed.">        val isNowMinor = childAgeInYear &lt; 1</span>
+
+<span class="nc" id="L351">        val updatedList = currentEnrollment.currentDependentList.map { dependent -&gt;</span>
+<span class="nc bnc" id="L352" title="All 4 branches missed.">            if (dependent.index == index &amp;&amp; dependent.type == DependentType.CHILD) {</span>
+<span class="nc bnc" id="L353" title="All 2 branches missed.">                val updatedDependent = if (dependent.dob != null) {</span>
+<span class="nc bnc" id="L354" title="All 2 branches missed.">                    val wasMinor = DateUtils.getDateDiff(</span>
+<span class="nc" id="L355">                        dateFormat,</span>
+<span class="nc" id="L356">                        dependent.dob,</span>
+<span class="nc" id="L357">                        DateUtils.getCurrentDateServer()</span>
+<span class="nc" id="L358">                    ) &lt; 1</span>
+
+<span class="nc bnc" id="L360" title="All 4 branches missed.">                    val changedFromMinorToAdult = wasMinor &amp;&amp; !isNowMinor</span>
+
+<span class="nc bnc" id="L362" title="All 2 branches missed.">                    if (changedFromMinorToAdult) {</span>
+<span class="nc" id="L363">                        dependent.copy(dob = dobChild, isCompleted = false)</span>
+                    } else {
+<span class="nc" id="L365">                        dependent.copy(dob = dobChild)</span>
+                    }
+                } else {
+<span class="nc" id="L368">                    dependent.copy(dob = dobChild)</span>
+                }
+<span class="nc" id="L370">                updatedDependent</span>
+            } else {
+<span class="nc" id="L372">                dependent</span>
+<span class="nc" id="L373">            }</span>
+        }
+<span class="nc" id="L375">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L376">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L378">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L379">    }</span>
+
+    fun updateChildSSN(ssn: String) {
+<span class="nc bnc" id="L382" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L384">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L385" title="All 4 branches missed.">            if (it.index == index &amp;&amp; it.type == DependentType.CHILD) {</span>
+<span class="nc" id="L386">                it.copy(ssn = ssn)</span>
+            } else {
+<span class="nc" id="L388">                it</span>
+<span class="nc" id="L389">            }</span>
+        }
+<span class="nc" id="L391">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L392">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L394">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L395">    }</span>
+
+    fun updateChildEmployed(spouseEmployed: String, spouseEmployerName: String) {
+<span class="nc bnc" id="L398" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L400">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L401" title="All 4 branches missed.">            if (it.index == index &amp;&amp; it.type == DependentType.CHILD) {</span>
+<span class="nc" id="L402">                it.copy(employed = spouseEmployed, employer = spouseEmployerName)</span>
+            } else {
+<span class="nc" id="L404">                it</span>
+<span class="nc" id="L405">            }</span>
+        }
+<span class="nc" id="L407">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L408">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L410">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L411">    }</span>
+
+    fun updateChildCompleteRequireDocument() {
+<span class="nc bnc" id="L414" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L416">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L417" title="All 4 branches missed.">            if (it.index == index &amp;&amp; it.type == DependentType.CHILD) {</span>
+<span class="nc" id="L418">                it.copy(isCompleted = true)</span>
+            } else {
+<span class="nc" id="L420">                it</span>
+<span class="nc" id="L421">            }</span>
+        }
+<span class="nc" id="L423">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L424">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L426">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L427">    }</span>
+
+    fun updateDependentIsCompleted(data: DependentCheckItem?, isCompleted: Boolean) {
+<span class="nc bnc" id="L430" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+<span class="nc" id="L431">        val updatedList = currentEnrollment.currentDependentList.map { dependent -&gt;</span>
+<span class="nc bnc" id="L432" title="All 8 branches missed.">            if (dependent.type == data?.type &amp;&amp; dependent.index == data?.index) {</span>
+<span class="nc" id="L433">                dependent.copy(isCompleted = isCompleted)</span>
+            } else {
+<span class="nc" id="L435">                dependent</span>
+<span class="nc" id="L436">            }</span>
+        }
+<span class="nc" id="L438">        _enrollmentData.value = currentEnrollment.copy(</span>
+<span class="nc" id="L439">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L441">    }</span>
+
+    fun updateUploadStatus(data: DependentCheckItem?, currentItem: ListDoc, uploadedFileId: String) {
+<span class="nc bnc" id="L444" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L446">        val updatedList = currentEnrollment.currentDependentList.map { dependent -&gt;</span>
+
+<span class="nc bnc" id="L448" title="All 8 branches missed.">            if (dependent.type == data?.type &amp;&amp; dependent.index == data?.index) {</span>
+<span class="nc bnc" id="L449" title="All 2 branches missed.">                val uploadedList = (dependent.uploadedList ?: mutableListOf()).apply {</span>
+<span class="nc bnc" id="L450" title="All 2 branches missed.">                    val index = this.indexOfFirst { it.fileTypeId == currentItem.id }</span>
+
+                    // No upload for the file type; add
+<span class="nc bnc" id="L453" title="All 2 branches missed.">                    if (index == -1) {</span>
+<span class="nc" id="L454">                        add(UploadedDocument(currentItem.id, uploadedFileId.toInt()))</span>
+                    } else {
+                        // Upload exists; update
+<span class="nc" id="L457">                        this[index] = UploadedDocument(currentItem.id, uploadedFileId.toInt())</span>
+                    }
+<span class="nc" id="L459">                }</span>
+<span class="nc" id="L460">                dependent.copy(uploadedList = uploadedList)</span>
+            } else {
+<span class="nc" id="L462">                dependent</span>
+<span class="nc" id="L463">            }</span>
+        }
+
+<span class="nc" id="L466">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L467">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L469">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L470">    }</span>
+
+    fun updatePrimaryPreviousInsurance(continueCoverage: Boolean?) {
+<span class="nc bnc" id="L473" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L475">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L476" title="All 2 branches missed.">            if (it.type == DependentType.PRIMARY) {</span>
+<span class="nc" id="L477">                it.copy(previousInsurance = continueCoverage)</span>
+            } else {
+<span class="nc" id="L479">                it</span>
+<span class="nc" id="L480">            }</span>
+        }
+<span class="nc" id="L482">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L483">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L485">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L486">    }</span>
+
+    fun updateLegalSpouseAff(id: String) {
+<span class="nc bnc" id="L489" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L491">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L492" title="All 2 branches missed.">            if (it.type == DependentType.SPOUSE) {</span>
+<span class="nc bnc" id="L493" title="All 2 branches missed.">                val uploadedList = (it.uploadedList ?: mutableListOf()).apply {</span>
+<span class="nc bnc" id="L494" title="All 2 branches missed.">                    val index = this.indexOfFirst { it.fileTypeId == 52 }</span>
+<span class="nc bnc" id="L495" title="All 2 branches missed.">                    if (index == -1) {</span>
+<span class="nc" id="L496">                        add(UploadedDocument(52, id.toInt()))</span>
+                    } else {
+<span class="nc" id="L498">                        this[index] = UploadedDocument(52, id.toInt())</span>
+                    }
+<span class="nc" id="L500">                }</span>
+<span class="nc" id="L501">                it.copy(uploadedList = uploadedList, isAffirmation = true, signatureFileId = id)</span>
+            } else {
+<span class="nc" id="L503">                it</span>
+<span class="nc" id="L504">            }</span>
+        }
+<span class="nc" id="L506">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L507">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L509">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L510">    }</span>
+
+    fun updateLegalPrimaryAff(id: String) {
+<span class="nc bnc" id="L513" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L515">        val updatedList = currentEnrollment.currentDependentList.map {</span>
+<span class="nc bnc" id="L516" title="All 2 branches missed.">            if (it.type == DependentType.PRIMARY) {</span>
+<span class="nc bnc" id="L517" title="All 2 branches missed.">                val uploadedList = (it.uploadedList ?: mutableListOf()).apply {</span>
+<span class="nc bnc" id="L518" title="All 2 branches missed.">                    val index = this.indexOfFirst { it.fileTypeId == 52 }</span>
+<span class="nc bnc" id="L519" title="All 2 branches missed.">                    if (index == -1) {</span>
+<span class="nc" id="L520">                        add(UploadedDocument(52, id.toInt()))</span>
+                    } else {
+<span class="nc" id="L522">                        this[index] = UploadedDocument(52, id.toInt())</span>
+                    }
+<span class="nc" id="L524">                }</span>
+<span class="nc" id="L525">                it.copy(uploadedList = uploadedList, isAffirmation = true, signatureFileId = id)</span>
+            } else {
+<span class="nc" id="L527">                it</span>
+<span class="nc" id="L528">            }</span>
+        }
+<span class="nc" id="L530">        val updatedEnrollment = currentEnrollment.copy(</span>
+<span class="nc" id="L531">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L533">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L534">    }</span>
+
+<span class="nc" id="L536">    var loading = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+
+    fun setEnrollmentData(data: String) {
+<span class="nc bnc" id="L539" title="All 2 branches missed.">        Gson().fromJson(data, Enrollment::class.java)?.let {</span>
+<span class="nc" id="L540">            _enrollmentData.value = it</span>
+<span class="nc" id="L541">        }</span>
+<span class="nc" id="L542">    }</span>
+
+    /**
+     * MOB-3859 If the child has the same ssn as the spouse,
+     * clear the ssn and make the child as incomplete
+     */
+    fun updateDependentDetails(
+        type: DependentType,
+        childIndex: Int?,
+        firstName: String,
+        lastName: String,
+        dob: String,
+        gender: String,
+        ssn: String
+    ) {
+<span class="nc bnc" id="L557" title="All 2 branches missed.">        val currentEnrollment = _enrollmentData.value ?: return</span>
+<span class="nc" id="L558">        val updatedList = currentEnrollment.currentDependentList.map { item -&gt;</span>
+<span class="nc" id="L559">            when {</span>
+<span class="nc bnc" id="L560" title="All 4 branches missed.">                type == DependentType.SPOUSE &amp;&amp; item.type == DependentType.SPOUSE -&gt;</span>
+<span class="nc" id="L561">                    item.copy(</span>
+<span class="nc" id="L562">                        firstName = firstName,</span>
+<span class="nc" id="L563">                        lastName = lastName,</span>
+<span class="nc" id="L564">                        dob = dob,</span>
+<span class="nc" id="L565">                        gender = gender,</span>
+<span class="nc" id="L566">                        ssn = ssn</span>
+                    )
+<span class="nc bnc" id="L568" title="All 6 branches missed.">                type == DependentType.CHILD &amp;&amp; item.type == DependentType.CHILD &amp;&amp; item.index == childIndex -&gt;</span>
+<span class="nc" id="L569">                    item.copy(</span>
+<span class="nc" id="L570">                        firstName = firstName,</span>
+<span class="nc" id="L571">                        lastName = lastName,</span>
+<span class="nc" id="L572">                        dob = dob,</span>
+<span class="nc" id="L573">                        gender = gender,</span>
+<span class="nc" id="L574">                        ssn = ssn</span>
+                    )
+<span class="nc" id="L576">                else -&gt; item</span>
+<span class="nc" id="L577">            }</span>
+        }
+<span class="nc" id="L579">        _enrollmentData.value = currentEnrollment.copy(</span>
+<span class="nc" id="L580">            currentDependentList = ArrayList(updatedList)</span>
+        )
+<span class="nc" id="L582">    }</span>
+
+    fun checkChild(ssnDash: String) {
+<span class="nc" id="L585">        val ssn = ssnDash.replace(&quot;-&quot;, &quot;&quot;)</span>
+<span class="nc bnc" id="L586" title="All 2 branches missed.">        val current = _enrollmentData.value ?: return</span>
+
+<span class="nc" id="L588">        val updatedChildren = current.currentDependentList.map { dependent -&gt;</span>
+<span class="nc bnc" id="L589" title="All 6 branches missed.">            if (dependent.type == DependentType.CHILD &amp;&amp; dependent.ssn?.replace(&quot;-&quot;, &quot;&quot;) == ssn) {</span>
+                // Mark child as incomplete and clear SSN
+<span class="nc" id="L591">                dependent.copy(ssn = null, isCompleted = false)</span>
+            } else {
+<span class="nc" id="L593">                dependent</span>
+<span class="nc" id="L594">            }</span>
+        }
+
+<span class="nc" id="L597">        val updatedEnrollment = current.copy(</span>
+<span class="nc" id="L598">            currentDependentList = ArrayList(updatedChildren)</span>
+        )
+
+<span class="nc" id="L601">        _enrollmentData.value = updatedEnrollment</span>
+<span class="nc" id="L602">    }</span>
+    fun createEnrollment() {
+<span class="nc" id="L604">        _enrollmentData.value = Enrollment(</span>
+<span class="nc" id="L605">            isAddDependent = false,</span>
+<span class="nc bnc" id="L606" title="All 2 branches missed.">            primaryFName = primaryFirstName ?: &quot;&quot;,</span>
+<span class="nc bnc" id="L607" title="All 2 branches missed.">            primaryLName = primaryLastName ?: &quot;&quot;,</span>
+<span class="nc" id="L608">            subscriberGender = &quot;&quot;</span>
+        )
+<span class="nc" id="L610">    }</span>
+}
+
+fun Enrollment.toEnrollMember(memId: String): EnrollMember {
+<span class="nc" id="L614">    val spouse = this.findSpouse()</span>
+<span class="nc" id="L615">    val primary = this.findPrimary()</span>
+<span class="nc" id="L616">    val childs = this.findChilds()</span>
+
+<span class="nc" id="L618">    return EnrollMember(</span>
+<span class="nc" id="L619">        subscriber = Person(</span>
+<span class="nc" id="L620">            memberId = memId,</span>
+<span class="nc bnc" id="L621" title="All 4 branches missed.">            healthInsuranceAvailable = if (primary?.previousInsurance != null) primary.previousInsurance.toString() else &quot;&quot;, // step1</span>
+<span class="nc bnc" id="L622" title="All 2 branches missed.">            signatureFileId = primary?.signatureFileId,</span>
+<span class="nc bnc" id="L623" title="All 2 branches missed.">            uploadedDocuments = primary?.uploadedList,</span>
+<span class="nc" id="L624">            gender = this.subscriberGender // step 0</span>
+        ),
+<span class="nc bnc" id="L626" title="All 2 branches missed.">        spouse = spouse?.let {</span>
+<span class="nc" id="L627">            Person(</span>
+<span class="nc" id="L628">                firstName = it.firstName, // step1</span>
+<span class="nc" id="L629">                lastName = it.lastName, // step1</span>
+<span class="nc" id="L630">                dateOfMarriage = it.marriageDate, // step2</span>
+<span class="nc" id="L631">                gender = it.gender, // step3</span>
+<span class="nc" id="L632">                dateOfBirth = it.dob, // step4</span>
+<span class="nc" id="L633">                ssn = it.ssn, // step 5</span>
+<span class="nc" id="L634">                provideInsurance = it.insurance, // step 6</span>
+<span class="nc" id="L635">                selfEmployed = it.employed, // step 7</span>
+<span class="nc" id="L636">                employerName = it.employer, // step 7</span>
+<span class="nc" id="L637">                healthInsuranceAvailable = it.spouseInsured, // step 8</span>
+<span class="nc" id="L638">                signatureFileId = it.signatureFileId,</span>
+<span class="nc" id="L639">                uploadedDocuments = it.uploadedList</span>
+<span class="nc" id="L640">            )</span>
+        },
+<span class="nc bnc" id="L642" title="All 4 branches missed.">        children = childs?.map { child -&gt;</span>
+<span class="nc" id="L643">            Person(</span>
+<span class="nc" id="L644">                firstName = child.firstName, // step 1</span>
+<span class="nc" id="L645">                lastName = child.lastName, // step 1</span>
+<span class="nc" id="L646">                gender = child.gender, // step 2</span>
+<span class="nc" id="L647">                dateOfBirth = child.dob, // step 3</span>
+<span class="nc" id="L648">                ssn = child.ssn, // step 4</span>
+<span class="nc" id="L649">                selfEmployed = child.employed, // step 5</span>
+<span class="nc" id="L650">                provideInsurance = child.spouseInsured,</span>
+<span class="nc" id="L651">                uploadedDocuments = child.uploadedList</span>
+<span class="nc" id="L652">            )</span>
+<span class="nc" id="L653">        }?.toCollection(ArrayList()) ?: arrayListOf()</span>
+    )
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

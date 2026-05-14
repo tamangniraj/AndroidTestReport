@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FingerPrintHandler.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils</a> &gt; <span class="el_source">FingerPrintHandler.kt</span></div><h1>FingerPrintHandler.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils
+
+import android.content.Context
+import android.content.SharedPreferences
+import android.hardware.fingerprint.FingerprintManager
+import android.os.Build
+import android.os.CancellationSignal
+import androidx.annotation.RequiresApi
+
+@RequiresApi(api = Build.VERSION_CODES.M)
+<span class="nc" id="L11">class FingerPrintHandler(</span>
+<span class="nc" id="L12">    private val mContext: Context,</span>
+<span class="nc" id="L13">    private val mSharedPreferences: SharedPreferences,</span>
+    listener: IAuthenticateListener
+) :
+<span class="nc" id="L16">    FingerprintManager.AuthenticationCallback() {</span>
+    private val mCancellationSignal: CancellationSignal?
+    private val mListener: IAuthenticateListener
+
+<span class="nc" id="L20">    init {</span>
+<span class="nc" id="L21">        mListener = listener</span>
+<span class="nc" id="L22">        mCancellationSignal = CancellationSignal()</span>
+<span class="nc" id="L23">    }</span>
+
+    fun startAuth(
+        fingerprintManager: FingerprintManager,
+        cryptoObject: FingerprintManager.CryptoObject?
+    ) {
+<span class="nc" id="L29">        fingerprintManager.authenticate(cryptoObject, mCancellationSignal, 0, this, null)</span>
+<span class="nc" id="L30">    }</span>
+
+    override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+//        Toast.makeText(mContext, errString, Toast.LENGTH_SHORT).show();
+<span class="nc" id="L34">    }</span>
+
+    override fun onAuthenticationHelp(helpCode: Int, helpString: CharSequence) {
+//        Toast.makeText(mContext, helpString, Toast.LENGTH_SHORT).show();
+<span class="nc" id="L38">    }</span>
+
+    override fun onAuthenticationSucceeded(result: FingerprintManager.AuthenticationResult) {
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.M) {</span>
+<span class="nc" id="L42">            val cipher = result.cryptoObject.cipher</span>
+<span class="nc" id="L43">            val encoded =</span>
+<span class="nc" id="L44">                mSharedPreferences.getString(Constants.KEY_PASSWORD, &quot;Re-register&quot;)</span>
+<span class="nc" id="L45">            val decoded = HelperFingerAuth.decryptString(encoded, cipher)</span>
+<span class="nc" id="L46">            mListener.onAuthenticate(decoded)</span>
+        }
+<span class="nc" id="L48">    }</span>
+
+    override fun onAuthenticationFailed() {
+<span class="nc" id="L51">        mListener.onAuthenticateFail()</span>
+<span class="nc" id="L52">    }</span>
+
+    fun cancel() {
+<span class="nc" id="L55">        try {</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">            mCancellationSignal?.cancel()</span>
+<span class="nc" id="L57">        } catch (e: NullPointerException) {</span>
+<span class="nc" id="L58">            e.printStackTrace()</span>
+        }
+<span class="nc" id="L60">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

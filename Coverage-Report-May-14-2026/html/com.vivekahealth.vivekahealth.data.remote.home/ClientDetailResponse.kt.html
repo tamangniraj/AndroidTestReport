@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClientDetailResponse.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.remote.home</a> &gt; <span class="el_source">ClientDetailResponse.kt</span></div><h1>ClientDetailResponse.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.remote.home
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverters
+import com.vivekahealth.vivekahealth.data.local.typeConverter.VivekaTypeConverters
+import com.vivekahealth.vivekahealth.data.remote.home.more.ClientMenuConfig
+
+@Entity(tableName = &quot;client_detail&quot;)
+@TypeConverters(VivekaTypeConverters::class)
+<span class="pc bpc" id="L11" title="25 of 60 branches missed.">data class ClientDetailResponse(</span>
+<span class="fc" id="L12">    @PrimaryKey</span>
+<span class="fc" id="L13">    var selfID: String = &quot;&quot;,</span>
+<span class="pc" id="L14">    var id: Long = 0,</span>
+<span class="pc" id="L15">    @TypeConverters(VivekaTypeConverters::class)</span>
+<span class="pc" id="L16">    var activeCustomMenus: List&lt;ClientMenuConfig&gt;? = null,</span>
+<span class="pc" id="L17">    var activeCustomSubMenus: List&lt;ClientMenuConfig&gt;? = null,</span>
+<span class="pc" id="L18">    var address1: String? = null,</span>
+<span class="pc" id="L19">    var address2: String? = null,</span>
+<span class="pc" id="L20">    var advancedEOBDisclaimerText: String? = null,</span>
+<span class="pc" id="L21">    var authorizedPersonPosition: String? = null,</span>
+<span class="pc" id="L22">    var benefitDisclaimerText: String? = null,</span>
+<span class="pc" id="L23">    var benefitDisclaimerTextV2: String? = null,</span>
+<span class="pc" id="L24">    var cardsOnlyIfEligibleSwitch: Boolean = true,</span>
+<span class="pc" id="L25">    var city: String? = null,</span>
+<span class="pc" id="L26">    var clientLogo: String? = null,</span>
+<span class="pc" id="L27">    var clientLogoUrl: String? = null,</span>
+<span class="pc" id="L28">    var clientName: String? = null,</span>
+<span class="pc" id="L29">    var customContactInfo: String? = null,</span>
+<span class="pc" id="L30">    var disclaimerText: String? = null,</span>
+<span class="pc" id="L31">    var disclaimerTextUrl: String? = null,</span>
+<span class="pc" id="L32">    var ein: String? = null,</span>
+<span class="pc" id="L33">    var eligibleIndicatorSwitch: Boolean? = null,</span>
+<span class="pc" id="L34">    var email: String? = null,</span>
+<span class="pc" id="L35">    var fax: String? = null,</span>
+<span class="pc" id="L36">    var findDoctorSwitch: Boolean? = null,</span>
+<span class="pc" id="L37">    var firstName: String? = null,</span>
+<span class="pc" id="L38">    var hasHours: Boolean? = null,</span>
+<span class="pc" id="L39">    var hasHoursbank: Boolean? = null,</span>
+<span class="pc" id="L40">    var hipaaLabel: String? = null,</span>
+<span class="pc" id="L41">    var keyword: String? = null,</span>
+<span class="pc" id="L42">    var lastName: String? = null,</span>
+<span class="pc" id="L43">    var lastUpdatedOn: String? = null,</span>
+<span class="pc" id="L44">    var medicalClaimsSwitch: Boolean? = null,</span>
+<span class="pc" id="L45">    var medicalHistorySwitch: Boolean? = null,</span>
+<span class="pc" id="L46">    var middleName: String? = null,</span>
+<span class="fc" id="L47">    @TypeConverters(VivekaTypeConverters::class)</span>
+<span class="fc" id="L48">    val mobileNavigationSectionVisibility: List&lt;MobileNavigationSectionVisibilityItem&gt;? = null,</span>
+<span class="pc" id="L49">    var providerDialogueSwitch: Boolean? = null,</span>
+<span class="pc" id="L50">    var shortName: String? = null,</span>
+<span class="pc" id="L51">    var showBenefitScreen: Boolean = false,</span>
+<span class="pc" id="L52">    var showClaimPaidAmountMissingText: Boolean? = null,</span>
+<span class="pc" id="L53">    var showGuardianNurse: Boolean = false,</span>
+<span class="pc" id="L54">    var showHtmlBasedFindADoc: Boolean = false,</span>
+<span class="pc" id="L55">    var showPaperlessMail: Boolean = false,</span>
+<span class="pc" id="L56">    var showPaydForm: Boolean = false,</span>
+<span class="pc" id="L57">    var showPreferredRadiologists: Boolean = false,</span>
+<span class="pc" id="L58">    var showPriceComparison: Boolean = false,</span>
+<span class="pc" id="L59">    var showRewards: Boolean = false,</span>
+<span class="pc" id="L60">    var showSaveMoney: Boolean = false,</span>
+<span class="pc" id="L61">    var showTelemedicine: Boolean = false,</span>
+<span class="pc" id="L62">    var state: String? = null,</span>
+<span class="pc" id="L63">    var telephone: String? = null,</span>
+<span class="pc" id="L64">    var termsAndConditionText: String? = null,</span>
+<span class="pc" id="L65">    var termsAndConditionTextUrl: String? = null,</span>
+<span class="pc" id="L66">    var useThirdPartyProviderSearch: Boolean = false,</span>
+<span class="pc" id="L67">    var weburl: String? = null,</span>
+<span class="pc" id="L68">    var workHoursSwitch: Boolean? = null,</span>
+<span class="pc" id="L69">    var zip: String? = null,</span>
+<span class="pc" id="L70">    var hasUnionCard: Boolean = false,</span>
+<span class="pc" id="L71">    var addDependentDisabled: Boolean? = null,</span>
+<span class="pc" id="L72">    var addressUpdateDisabled: Boolean? = null,</span>
+<span class="pc" id="L73">    var chatDisabled: Boolean? = null,</span>
+<span class="pc" id="L74">    var hideHoursSummary: Boolean? = null,</span>
+<span class="pc" id="L75">    var isSsnRequired: Boolean? = null,</span>
+<span class="pc" id="L76">    var surveyEnabled: Boolean? = null</span>
+<span class="fc" id="L77">)</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

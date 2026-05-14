@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RequiredDocumentsViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.enroll.fragments.uploadDocuments</a> &gt; <span class="el_source">RequiredDocumentsViewModel.kt</span></div><h1>RequiredDocumentsViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.enroll.fragments.uploadDocuments
+
+import android.content.SharedPreferences
+import android.content.res.Resources
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.local.enroll.ListDoc
+import com.vivekahealth.vivekahealth.data.remote.enroll.DocumentUploadSuccessEnroll
+import com.vivekahealth.vivekahealth.data.remote.enroll.EnrollMember
+import com.vivekahealth.vivekahealth.data.remote.enroll.Person
+import com.vivekahealth.vivekahealth.ui.enroll.NextClickListener
+import com.vivekahealth.vivekahealth.ui.enroll.repository.EnrollRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Coroutines
+import com.vivekahealth.vivekahealth.utils.DocumentType
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import com.vivekahealth.vivekahealth.utils.remote.APIResponse
+import com.vivekahealth.vivekahealth.utils.thread.ThreadUtils
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import java.io.File
+import javax.inject.Inject
+import kotlinx.coroutines.Job
+import okhttp3.MultipartBody
+import org.apache.commons.lang3.StringUtils
+
+<span class="nc" id="L34">class RequiredDocumentsViewModel @Inject constructor(</span>
+<span class="nc" id="L35">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L36">    private val enrollRepository: EnrollRepository,</span>
+<span class="nc" id="L37">    private val resources: Resources</span>
+<span class="nc" id="L38">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L40">    internal lateinit var nextClickListener: NextClickListener</span>
+
+<span class="nc" id="L42">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L44">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="nc" id="L45">    lateinit var filePart: MultipartBody.Part</span>
+
+<span class="nc" id="L47">    var gson = Gson()</span>
+
+<span class="nc" id="L49">    var docList: ArrayList&lt;ListDoc&gt; = arrayListOf()</span>
+<span class="nc" id="L50">    var user = EnrollMember()</span>
+<span class="nc" id="L51">    var child = Person()</span>
+<span class="nc" id="L52">    var docPerson = ArrayList&lt;Person&gt;()</span>
+
+<span class="nc" id="L54">    var currentItem: ListDoc = ListDoc()</span>
+<span class="nc" id="L55">    var currentPerson: Person = Person()</span>
+<span class="nc" id="L56">    var currentDoc: String = &quot;&quot;</span>
+<span class="nc" id="L57">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L59">        get() = _navigateToBack</span>
+<span class="nc" id="L60">    private val _navigateToNext = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToNext: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L62">        get() = _navigateToNext</span>
+
+<span class="nc" id="L64">    private val _dataRetrieved = MutableLiveData&lt;Event&lt;EnrollMember&gt;&gt;()</span>
+    val dataRetrieved: LiveData&lt;Event&lt;EnrollMember&gt;&gt;
+<span class="nc" id="L66">        get() = _dataRetrieved</span>
+
+<span class="nc" id="L68">    private val _listCreated = MutableLiveData&lt;Event&lt;ArrayList&lt;ListDoc&gt;&gt;&gt;()</span>
+    val listCreated: LiveData&lt;Event&lt;ArrayList&lt;ListDoc&gt;&gt;&gt;
+<span class="nc" id="L70">        get() = _listCreated</span>
+    private lateinit var job: Job
+
+<span class="nc" id="L73">    private val _navigateToUpload = MutableLiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt;()</span>
+    val navigateToUpload: LiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt;
+<span class="nc" id="L75">        get() = _navigateToUpload</span>
+
+<span class="nc" id="L77">    init {</span>
+<span class="nc" id="L78">    }</span>
+    fun getEnrollFromShared() {
+//        job = Coroutines.ioToMainThread(
+//                {
+
+//                    val turnsType = object : TypeToken&lt;ArrayList&lt;Person&gt;&gt;() {}.type
+
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (!StringUtils.equals(preferences.getString(Constants.enroll, &quot;&quot;), &quot;&quot;)) {</span>
+<span class="nc" id="L86">            user = gson.fromJson(</span>
+<span class="nc" id="L87">                preferences.getString(Constants.enroll, &quot;&quot;),</span>
+<span class="nc" id="L88">                EnrollMember::class.java</span>
+            )
+<span class="nc" id="L90">            _dataRetrieved.value = Event(user)</span>
+        }
+
+//                },
+//                {
+//                }
+//        )
+<span class="nc" id="L97">    }</span>
+
+    fun setDocumentName(id: String, fileName: String) {
+<span class="nc" id="L100">        job = Coroutines.ioToMainThread(</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">            {</span>
+<span class="nc" id="L102">                when {</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                    currentPerson == user.subscriber -&gt; {</span>
+<span class="nc" id="L104">                        when {</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">                            currentItem.id == 3 -&gt; {</span>
+<span class="nc" id="L106">                                user.subscriber!!.ssnCardFileId = id</span>
+                            }
+<span class="nc bnc" id="L108" title="All 2 branches missed.">                            currentItem.id == 1 -&gt; {</span>
+<span class="nc" id="L109">                                user.subscriber!!.licenseFrontFileId = id</span>
+                            }
+<span class="nc bnc" id="L111" title="All 2 branches missed.">                            currentItem.id == 2 -&gt; {</span>
+<span class="nc" id="L112">                                user.subscriber!!.licenseBackFileId = id</span>
+                            }
+<span class="nc bnc" id="L114" title="All 2 branches missed.">                            currentItem.id == 4 -&gt; {</span>
+<span class="nc" id="L115">                                user.subscriber!!.continueCoverageFileId = id</span>
+<span class="nc" id="L116">                                user.subscriber!!.continueCoverageFileName = fileName</span>
+                            }
+                        }
+                    }
+<span class="nc bnc" id="L120" title="All 2 branches missed.">                    currentPerson == user.spouse -&gt; {</span>
+<span class="nc" id="L121">                        when {</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">                            currentItem.id == 3 -&gt; {</span>
+<span class="nc" id="L123">                                user.spouse!!.ssnCardFileId = id</span>
+                            }
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                            currentItem.id == 1 -&gt; {</span>
+<span class="nc" id="L126">                                user.spouse!!.licenseFrontFileId = id</span>
+                            }
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                            currentItem.id == 2 -&gt; {</span>
+<span class="nc" id="L129">                                user.spouse!!.licenseBackFileId = id</span>
+                            }
+<span class="nc bnc" id="L131" title="All 2 branches missed.">                            currentItem.id == 5 -&gt; {</span>
+<span class="nc" id="L132">                                user.spouse!!.marriageCertificateFileId = id</span>
+<span class="nc" id="L133">                                user.spouse!!.marriageCertificateFileName = fileName</span>
+                            }
+<span class="nc bnc" id="L135" title="All 2 branches missed.">                            fileName.contains(</span>
+<span class="nc" id="L136">                                resources.getString(R.string.front_of_insurance),</span>
+<span class="nc" id="L137">                                true</span>
+                            ) -&gt; {
+<span class="nc" id="L139">                                user.spouse!!.spouseInsuranceFrontViewFileId = id</span>
+<span class="nc" id="L140">                                user.spouse!!.spouseInsuranceFrontViewFileName = fileName</span>
+                            }
+<span class="nc bnc" id="L142" title="All 2 branches missed.">                            fileName.contains(resources.getString(R.string.back_of_insurance), true) -&gt; {</span>
+<span class="nc" id="L143">                                user.spouse!!.spouseInsuranceBackViewFileId = id</span>
+<span class="nc" id="L144">                                user.spouse!!.spouseInsuranceBackViewFileName = fileName</span>
+                            }
+                        }
+                    }
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                    user.children.contains(currentPerson) -&gt; {</span>
+<span class="nc" id="L149">                        val index = user.children.indexOf(currentPerson)</span>
+<span class="nc" id="L150">                        when {</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">                            currentItem.id == 6 -&gt; {</span>
+<span class="nc" id="L152">                                user.children[index].birthCertificateFileId = id</span>
+<span class="nc" id="L153">                                user.children[index].birthCertificateFileName = fileName</span>
+                            }
+<span class="nc bnc" id="L155" title="All 2 branches missed.">                            currentItem.id == 3 -&gt; {</span>
+<span class="nc" id="L156">                                user.children[index].ssnCardFileId = id</span>
+                            }
+                        }
+                    }
+                }
+<span class="nc" id="L161">            },</span>
+            {
+<span class="nc" id="L163">                val regString = gson.toJson(user)</span>
+<span class="nc" id="L164">                val regEdit = preferences.edit()</span>
+<span class="nc" id="L165">                regEdit.putString(Constants.enroll, regString)</span>
+<span class="nc" id="L166">                regEdit.apply()</span>
+
+<span class="nc" id="L168">                var index = docList.indexOf(currentItem)</span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">                if (index != -1) {</span>
+<span class="nc" id="L170">                    currentItem.uploaded = true</span>
+
+<span class="nc" id="L172">                    val updatedItems = docList.toMutableList().apply { this[index] = currentItem }</span>
+
+<span class="nc" id="L174">                    docList.clear()</span>
+<span class="nc" id="L175">                    docList.addAll(updatedItems)</span>
+
+<span class="nc" id="L177">                    _listCreated.value = Event(docList)</span>
+                }
+<span class="nc" id="L179">            }</span>
+        )
+<span class="nc" id="L181">    }</span>
+    fun uploadPicture(pic: File, currentDoc: ListDoc) {
+<span class="nc" id="L183">        val file: File = pic</span>
+//
+//        val filePart: MultipartBody.Part = MultipartBody.Part.createFormData(
+//            &quot;file&quot;,
+//
+//          pic.name,
+//            RequestBody.create(&quot;image/*&quot;.toMediaTypeOrNull(), pic)
+//        )
+
+<span class="nc" id="L192">        ThreadUtils.runOnUiThread(</span>
+            Runnable {
+<span class="nc" id="L194">                compositeDisposable.add(</span>
+<span class="nc" id="L195">                    enrollRepository.uploadDoc(</span>
+<span class="nc" id="L196">                        filePart,</span>
+<span class="nc" id="L197">                        HelperUtils.fileName(</span>
+<span class="nc" id="L198">                            currentDoc.docName!!.FileName,</span>
+<span class="nc" id="L199">                            currentPerson.firstName.toString(),</span>
+<span class="nc" id="L200">                            currentPerson.lastName.toString()</span>
+                        )
+                    )
+<span class="nc" id="L203">                        .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L204">                        .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L205">                        .doOnSubscribe {</span>
+<span class="nc" id="L206">                            _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().loading()</span>
+<span class="nc" id="L207">                        }</span>
+<span class="nc" id="L208">                        .subscribe({</span>
+<span class="nc" id="L209">                            saveUser()</span>
+
+<span class="nc" id="L211">                            _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().success(</span>
+<span class="nc" id="L212">                                it</span>
+                            )
+<span class="nc" id="L214">                        }, {</span>
+<span class="nc" id="L215">                            _navigateToUpload.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().error(</span>
+<span class="nc" id="L216">                                it.localizedMessage!!</span>
+                            )
+<span class="nc" id="L218">                        })</span>
+                )
+<span class="nc" id="L220">            }</span>
+        )
+<span class="nc" id="L222">    }</span>
+
+    fun createDocList() {
+<span class="nc" id="L225">        job = Coroutines.ioToMainThread(</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">            {</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">                user.subscriber?.let {</span>
+//                    resources.getString(R.string.front_driver_liscence)
+//                    resources.getString(R.string.back_of_drivers_licence)
+//                    resources.getString(R.string.social_security_card)
+//                    resources.getString(R.string.proof_of_previous_insurance)
+//                    resources.getString(R.string.social_security_card)
+//                    resources.getString(R.string.marriage_certificate)
+//                    resources.getString(R.string.birth_certificate)
+
+<span class="nc" id="L236">                    docList.add(</span>
+<span class="nc" id="L237">                        ListDoc(</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">                            user.subscriber!!.licenseFrontFileId!!.isNotBlank(),</span>
+<span class="nc" id="L239">                            DocumentType.FrontDriverLicence,</span>
+<span class="nc" id="L240">                            it,</span>
+<span class="nc" id="L241">                            1</span>
+                        )
+                    )
+<span class="nc" id="L244">                    docList.add(</span>
+<span class="nc" id="L245">                        ListDoc(</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">                            user.subscriber!!.licenseBackFileId!!.isNotBlank(),</span>
+<span class="nc" id="L247">                            DocumentType.BackDriverLicence,</span>
+<span class="nc" id="L248">                            it,</span>
+<span class="nc" id="L249">                            2</span>
+                        )
+                    )
+<span class="nc" id="L252">                    docList.add(</span>
+<span class="nc" id="L253">                        ListDoc(</span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">                            user.subscriber!!.ssnCardFileId!!.isNotBlank(),</span>
+<span class="nc" id="L255">                            DocumentType.Ssn,</span>
+<span class="nc" id="L256">                            it,</span>
+<span class="nc" id="L257">                            3</span>
+                        )
+                    )
+<span class="nc bnc" id="L260" title="All 2 branches missed.">                    if (preferences.getString(Constants.ContinueCoverage, &quot;&quot;).equals(&quot;true&quot;, true)) {</span>
+<span class="nc" id="L261">                        docList.add(</span>
+<span class="nc" id="L262">                            ListDoc(</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">                                user.subscriber!!.continueCoverageFileId!!.isNotBlank(),</span>
+<span class="nc" id="L264">                                DocumentType.ContinueCoverage,</span>
+<span class="nc" id="L265">                                it,</span>
+<span class="nc" id="L266">                                4</span>
+                            )
+                        )
+                    }
+<span class="nc" id="L270">                }</span>
+
+<span class="nc bnc" id="L272" title="All 2 branches missed.">                if (preferences.getString(Constants.maritalStatus, &quot;&quot;).equals(</span>
+<span class="nc" id="L273">                        &quot;married&quot;,</span>
+<span class="nc" id="L274">                        ignoreCase = true</span>
+                    )
+                ) {
+<span class="nc bnc" id="L277" title="All 8 branches missed.">                    if (user.spouse?.firstName?.isBlank() == false) {</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">                        user.spouse?.let {</span>
+<span class="nc" id="L279">                            docList.add(</span>
+<span class="nc" id="L280">                                ListDoc(</span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">                                    user.spouse!!.marriageCertificateFileId!!.isNotBlank(),</span>
+<span class="nc" id="L282">                                    DocumentType.MarriageCertificate,</span>
+<span class="nc" id="L283">                                    it,</span>
+<span class="nc" id="L284">                                    5</span>
+                                )
+                            )
+
+<span class="nc" id="L288">                            docList.add(</span>
+<span class="nc" id="L289">                                ListDoc(</span>
+<span class="nc bnc" id="L290" title="All 2 branches missed.">                                    user.spouse!!.licenseFrontFileId!!.isNotEmpty(),</span>
+<span class="nc" id="L291">                                    DocumentType.FrontDriverLicence,</span>
+<span class="nc" id="L292">                                    it,</span>
+<span class="nc" id="L293">                                    1</span>
+                                )
+                            )
+<span class="nc" id="L296">                            docList.add(</span>
+<span class="nc" id="L297">                                ListDoc(</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">                                    user.spouse!!.licenseBackFileId!!.isNotEmpty(),</span>
+<span class="nc" id="L299">                                    DocumentType.BackDriverLicence,</span>
+<span class="nc" id="L300">                                    it,</span>
+<span class="nc" id="L301">                                    2</span>
+                                )
+                            )
+<span class="nc" id="L304">                            docList.add(</span>
+<span class="nc" id="L305">                                ListDoc(</span>
+<span class="nc bnc" id="L306" title="All 2 branches missed.">                                    user.spouse!!.ssnCardFileId!!.isNotEmpty(),</span>
+<span class="nc" id="L307">                                    DocumentType.Ssn,</span>
+<span class="nc" id="L308">                                    it,</span>
+<span class="nc" id="L309">                                    3</span>
+                                )
+                            )
+
+<span class="nc bnc" id="L313" title="All 2 branches missed.">                            if (StringUtils.endsWithIgnoreCase(</span>
+<span class="nc" id="L314">                                    it.healthInsuranceAvailable,</span>
+<span class="nc" id="L315">                                    &quot;true&quot;</span>
+                                )
+                            ) {
+//                                docList.add(ListDoc(false, &quot;Front of Insurance Card&quot;, it))
+//                                docList.add(ListDoc(false, &quot;Back of Insurance Card&quot;, it))
+                            }
+<span class="nc" id="L321">                        }</span>
+                    }
+                }
+
+<span class="nc bnc" id="L325" title="All 2 branches missed.">                user.children.isNotEmpty().let {</span>
+<span class="nc bnc" id="L326" title="All 2 branches missed.">                    for (child in user.children) {</span>
+<span class="nc" id="L327">                        docList.add(</span>
+<span class="nc" id="L328">                            ListDoc(</span>
+<span class="nc bnc" id="L329" title="All 2 branches missed.">                                child.birthCertificateFileId!!.isNotEmpty(),</span>
+<span class="nc" id="L330">                                DocumentType.BirtCertificate,</span>
+<span class="nc" id="L331">                                child,</span>
+<span class="nc" id="L332">                                6,</span>
+<span class="nc" id="L333">                                child.ssnOptional</span>
+                            )
+                        )
+<span class="nc" id="L336">                        docList.add(</span>
+<span class="nc" id="L337">                            ListDoc(</span>
+<span class="nc bnc" id="L338" title="All 2 branches missed.">                                child.ssnCardFileId!!.isNotEmpty(),</span>
+<span class="nc" id="L339">                                DocumentType.Ssn,</span>
+<span class="nc" id="L340">                                child,</span>
+<span class="nc" id="L341">                                3,</span>
+<span class="nc" id="L342">                                child.ssnOptional</span>
+                            )
+                        )
+                    }
+<span class="nc" id="L346">                }</span>
+<span class="nc" id="L347">            },</span>
+            {
+<span class="nc" id="L349">                _listCreated.value = Event(docList)</span>
+<span class="nc" id="L350">            }</span>
+        )
+<span class="nc" id="L352">    }</span>
+
+    fun checkIfAllComplete(): Boolean {
+<span class="nc" id="L355">        return docList.all {</span>
+<span class="nc bnc" id="L356" title="All 4 branches missed.">            if (!it.uploaded &amp;&amp; it.optional) {</span>
+<span class="nc" id="L357">                true</span>
+            } else {
+<span class="nc" id="L359">                it.uploaded</span>
+<span class="nc" id="L360">            }</span>
+        }
+    }
+
+    fun onPrevClicked() {
+<span class="nc" id="L365">        _navigateToBack.value = Event(Unit)</span>
+<span class="nc" id="L366">    }</span>
+    fun onNextClicked() {
+<span class="nc" id="L368">        _navigateToNext.value = Event(Unit)</span>
+<span class="nc" id="L369">    }</span>
+
+    fun saveUser() {
+<span class="nc" id="L372">        val regString = gson.toJson(user)</span>
+<span class="nc" id="L373">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L374">        regEdit.putString(Constants.enroll, regString)</span>
+<span class="nc" id="L375">        regEdit.apply()</span>
+<span class="nc" id="L376">    }</span>
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L378">        callbacks.add(callback)</span>
+<span class="nc" id="L379">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L382">        callbacks.remove(callback)</span>
+<span class="nc" id="L383">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L386">        super.onCleared()</span>
+<span class="nc" id="L387">        compositeDisposable.dispose()</span>
+<span class="nc" id="L388">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

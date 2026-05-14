@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HomeModule.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.home.di</a> &gt; <span class="el_source">HomeModule.kt</span></div><h1>HomeModule.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.home.di
+
+import android.content.Context
+import android.content.SharedPreferences
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.continueEnrollment.ContinuePreviousEnrollmentV2Fragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.start.StartEnrollmentDialog
+import com.vivekahealth.vivekahealth.ui.homePage.home.HomeFragment
+import com.vivekahealth.vivekahealth.ui.homePage.service.HomeService
+import com.vivekahealth.vivekahealth.ui.homePage.surveys.NewSurveyAvailableFragment
+import com.vivekahealth.vivekahealth.ui.homePage.surveys.SplashScreenFragment
+import dagger.Module
+import dagger.Provides
+import dagger.android.ContributesAndroidInjector
+import okhttp3.OkHttpClient
+
+<span class="nc" id="L17">@Module</span>
+abstract class HomeModule {
+
+    @ContributesAndroidInjector
+    abstract fun contributesHomeFragment(): HomeFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeStartEnrollment(): StartEnrollmentDialog
+
+    @ContributesAndroidInjector
+    abstract fun contributeContinuePreviousEnrollmentV2(): ContinuePreviousEnrollmentV2Fragment
+
+    @ContributesAndroidInjector
+    abstract fun contributesSplashScreenFragment(): SplashScreenFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributesNewSurveyAvailable(): NewSurveyAvailableFragment
+
+    companion object {
+        @JvmStatic
+        @Provides
+        fun provideHomeService(
+            gson: Gson,
+            builder: OkHttpClient.Builder,
+            sharedPreferences: SharedPreferences,
+            context: Context
+<span class="nc" id="L43">        ): HomeService = HomeService(</span>
+<span class="nc" id="L44">            context = context,</span>
+<span class="nc" id="L45">            gson = gson,</span>
+<span class="nc" id="L46">            builder = builder,</span>
+<span class="nc" id="L47">            preferences = sharedPreferences</span>
+<span class="nc" id="L48">        )</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

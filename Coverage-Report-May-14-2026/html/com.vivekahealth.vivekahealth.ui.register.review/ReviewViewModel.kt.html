@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReviewViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.register.review</a> &gt; <span class="el_source">ReviewViewModel.kt</span></div><h1>ReviewViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.register.review
+
+import android.content.SharedPreferences
+import android.text.Editable
+import android.text.TextWatcher
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.data.remote.register.RegisterUser
+import com.vivekahealth.vivekahealth.data.remote.register.DataResponse
+import com.vivekahealth.vivekahealth.ui.enroll.repository.EnrollRepository
+import com.vivekahealth.vivekahealth.utils.*
+import com.vivekahealth.vivekahealth.utils.remote.APIResponse
+import io.reactivex.disposables.CompositeDisposable
+import javax.inject.Inject
+import kotlinx.coroutines.Job
+import org.apache.commons.lang3.StringUtils
+
+<span class="nc" id="L24">class ReviewViewModel @Inject constructor(</span>
+<span class="nc" id="L25">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L26">    private val enrollRepository: EnrollRepository</span>
+<span class="nc" id="L27">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L29">    internal lateinit var uploadDocCallback: ReviewCallback</span>
+//    internal lateinit var nextClickListener: NextClickListener
+
+<span class="nc" id="L32">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L34">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L36">    var gson = Gson()</span>
+<span class="nc" id="L37">    var user = RegisterUser()</span>
+    private lateinit var job: Job
+<span class="nc" id="L39">    var errorMessage: String = &quot;&quot;</span>
+
+    var showErrorDate: Boolean = false
+<span class="nc" id="L42">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L44">            field = value</span>
+<span class="nc" id="L45">            callbacks.notifyCallbacks(this, BR.showErrorDate, null)</span>
+<span class="nc" id="L46">        }</span>
+
+<span class="nc" id="L48">    var selected: String = &quot;&quot;</span>
+<span class="nc" id="L49">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L51">            field = value</span>
+<span class="nc" id="L52">            callbacks.notifyCallbacks(this, BR.selected, null)</span>
+<span class="nc" id="L53">        }</span>
+<span class="nc" id="L54">    var calIsGone: Boolean = true</span>
+<span class="nc" id="L55">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L57">            field = value</span>
+<span class="nc" id="L58">            callbacks.notifyCallbacks(this, BR.calIsGone, null)</span>
+<span class="nc" id="L59">        }</span>
+
+<span class="nc" id="L61">    private val _emailChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+
+    val emailChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L64">        get() = _emailChanged</span>
+
+    val navigateToClose: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L67">        get() = _navigateToClose</span>
+<span class="nc" id="L68">    private val _navigateToClose = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+
+    fun close() {
+<span class="nc" id="L71">        _navigateToClose.value = Event(Unit)</span>
+<span class="nc" id="L72">    }</span>
+
+<span class="nc" id="L74">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L76">        get() = _navigateToBack</span>
+
+<span class="nc" id="L78">    private val _openWheelOK = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val openWheelOK: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L80">        get() = _openWheelOK</span>
+
+<span class="nc" id="L82">    private val _openWheel = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val openWheel: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L84">        get() = _openWheel</span>
+
+<span class="nc" id="L86">    var ssnOrMember: Boolean = true</span>
+
+<span class="nc" id="L88">    var gender: String = &quot;&quot;</span>
+
+<span class="nc" id="L90">    var genderFull: String = &quot;&quot;</span>
+<span class="nc" id="L91">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L93">            field = value</span>
+<span class="nc" id="L94">            callbacks.notifyCallbacks(this, BR.genderFull, null)</span>
+<span class="nc" id="L95">        }</span>
+
+<span class="nc" id="L97">    var backEnable: Boolean = true</span>
+
+    val nameClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L100">        get() = _nameClicked</span>
+<span class="nc" id="L101">    private val _nameClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val ssnClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L103">        get() = _ssnClicked</span>
+<span class="nc" id="L104">    private val _ssnClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val emailClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L106">        get() = _emailClicked</span>
+<span class="nc" id="L107">    private val _emailClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+
+    val dobClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L110">        get() = _dobClicked</span>
+<span class="nc" id="L111">    private val _dobClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+
+    val genderClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L114">        get() = _genderClicked</span>
+<span class="nc" id="L115">    private val _genderClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+
+    val nameChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L118">        get() = _nameChanged</span>
+<span class="nc" id="L119">    private val _nameChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+<span class="nc" id="L120">    private val _maleClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val maleClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L122">        get() = _maleClicked</span>
+
+<span class="nc" id="L124">    private val _femaleClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val femaleClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L126">        get() = _femaleClicked</span>
+
+    val showError: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
+<span class="nc" id="L129">        get() = _showError</span>
+
+<span class="nc" id="L131">    private val _showError = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+
+<span class="nc" id="L133">    private val _ssnChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+
+    val ssnChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L136">        get() = _ssnChanged</span>
+
+<span class="nc" id="L138">    private val _memberChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val memberChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L140">        get() = _memberChanged</span>
+
+<span class="nc" id="L142">    private val _ssnRadio = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val ssnRadio: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L144">        get() = _ssnRadio</span>
+<span class="nc" id="L145">    private val _idRadio = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val idRadio: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L147">        get() = _idRadio</span>
+
+<span class="nc" id="L149">    var ssn: String = &quot;&quot;</span>
+<span class="nc" id="L150">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L152">            field = value</span>
+<span class="nc" id="L153">            callbacks.notifyCallbacks(this, BR.ssn, null)</span>
+<span class="nc" id="L154">        }</span>
+
+<span class="nc" id="L156">    var memberId: String = &quot;&quot;</span>
+<span class="nc" id="L157">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L159">            field = value</span>
+<span class="nc" id="L160">            callbacks.notifyCallbacks(this, BR.memberId, null)</span>
+<span class="nc" id="L161">        }</span>
+
+<span class="nc" id="L163">    private val _ssnChangedPrev = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val ssnChangedPrev: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L165">        get() = _ssnChangedPrev</span>
+
+<span class="nc" id="L167">    private val _idChangedPrev = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val idChangedPrev: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L169">        get() = _idChangedPrev</span>
+
+<span class="nc" id="L171">    private val _datePrev = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val datePrev: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L173">        get() = _datePrev</span>
+<span class="nc" id="L174">    private val _dateComplete = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val dateComplete: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L176">        get() = _dateComplete</span>
+<span class="nc" id="L177">    var lastName: String = &quot;&quot;</span>
+<span class="nc" id="L178">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L180">            field = value</span>
+
+<span class="nc" id="L182">            callbacks.notifyCallbacks(this, BR.lastName, null)</span>
+<span class="nc" id="L183">        }</span>
+
+<span class="nc" id="L185">    var firstName: String = &quot;&quot;</span>
+<span class="nc" id="L186">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L188">            field = value</span>
+<span class="nc" id="L189">            callbacks.notifyCallbacks(this, BR.firstName, null)</span>
+<span class="nc" id="L190">        }</span>
+
+<span class="nc" id="L192">    var email: String = &quot;&quot;</span>
+<span class="nc" id="L193">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L195">            field = value</span>
+<span class="nc" id="L196">            callbacks.notifyCallbacks(this, BR.email, null)</span>
+<span class="nc" id="L197">        }</span>
+
+    fun maleClicked() {
+<span class="nc" id="L200">        _maleClicked.value = Event(Unit)</span>
+<span class="nc" id="L201">    }</span>
+    fun femaleClicked() {
+<span class="nc" id="L203">        _femaleClicked.value = Event(Unit)</span>
+<span class="nc" id="L204">    }</span>
+
+<span class="nc" id="L206">    var dobDate: String = &quot;&quot;</span>
+<span class="nc" id="L207">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L209">            field = value</span>
+<span class="nc" id="L210">            callbacks.notifyCallbacks(this, BR.dob, null)</span>
+<span class="nc" id="L211">        }</span>
+<span class="nc" id="L212">    var dob: String = &quot;&quot;</span>
+<span class="nc" id="L213">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L215">            field = value</span>
+<span class="nc" id="L216">            callbacks.notifyCallbacks(this, BR.dob, null)</span>
+<span class="nc" id="L217">        }</span>
+
+    var showSsn: Boolean = false
+<span class="nc" id="L220">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L222">            field = value</span>
+<span class="nc" id="L223">            callbacks.notifyCallbacks(this, BR.showSsn, null)</span>
+<span class="nc" id="L224">        }</span>
+
+    var showMemberId: Boolean = false
+<span class="nc" id="L227">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L229">            field = value</span>
+<span class="nc" id="L230">            callbacks.notifyCallbacks(this, BR.showMemberId, null)</span>
+<span class="nc" id="L231">        }</span>
+
+    fun memberIdRadio() {
+<span class="nc" id="L234">        showMemberId = true</span>
+<span class="nc" id="L235">        showSsn = false</span>
+<span class="nc" id="L236">        _idRadio.value = Event(Unit)</span>
+<span class="nc" id="L237">    }</span>
+
+    fun ssnRadio() {
+<span class="nc" id="L240">        showSsn = true</span>
+<span class="nc" id="L241">        showMemberId = false</span>
+<span class="nc" id="L242">        _ssnRadio.value = Event(Unit)</span>
+<span class="nc" id="L243">    }</span>
+
+    fun loadData() {
+<span class="nc" id="L246">        job = Coroutines.ioToMainThread(</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">            {</span>
+<span class="nc bnc" id="L248" title="All 2 branches missed.">                if (!StringUtils.equals(preferences.getString(Constants.register, &quot;&quot;), &quot;&quot;)) {</span>
+<span class="nc" id="L249">                    user = gson.fromJson(</span>
+<span class="nc" id="L250">                        preferences.getString(Constants.register, &quot;&quot;),</span>
+<span class="nc" id="L251">                        RegisterUser::class.java</span>
+                    )
+                }
+<span class="nc" id="L254">            },</span>
+            {
+<span class="nc" id="L256">                user.usernameType = &quot;1&quot;</span>
+<span class="nc" id="L257">                user.electronic_documents = &quot;false&quot;</span>
+<span class="nc" id="L258">                user.overrideOldRegistration = &quot;false&quot;</span>
+
+<span class="nc" id="L260">                firstName = user.firstName.toString()</span>
+<span class="nc" id="L261">                lastName = user.lastName.toString()</span>
+<span class="nc" id="L262">                email = user.email.toString()</span>
+
+<span class="nc bnc" id="L264" title="All 2 branches missed.">                if (user.gender.toString().equals(&quot;M&quot;, ignoreCase = true)) {</span>
+<span class="nc" id="L265">                    genderFull = &quot;Male&quot;</span>
+<span class="nc" id="L266">                    _maleClicked.value = Event(Unit)</span>
+                } else {
+<span class="nc" id="L268">                    genderFull = &quot;Female&quot;</span>
+<span class="nc" id="L269">                    _femaleClicked.value = Event(Unit)</span>
+                }
+
+<span class="nc" id="L272">                dob = ActivityUtils.convertDateToFormat(</span>
+<span class="nc" id="L273">                    DateUtils.stringServerDateToDate(user.dob.toString()),</span>
+<span class="nc" id="L274">                    &quot;MMddyyyy&quot;</span>
+                )
+
+<span class="nc" id="L277">                dob = DateUtils.Convert(user.dob)</span>
+<span class="nc" id="L278">                ssn = user.ssn.toString()</span>
+<span class="nc" id="L279">                _ssnChangedPrev.value = Event(user.ssn.toString())</span>
+<span class="nc bnc" id="L280" title="All 4 branches missed.">                if (ssn.isNotEmpty()) {</span>
+<span class="nc" id="L281">                    showSsn = true</span>
+                }
+<span class="nc bnc" id="L283" title="All 2 branches missed.">                user.hipaaNumber?.let {</span>
+<span class="nc" id="L284">                    memberId = it</span>
+<span class="nc" id="L285">                }</span>
+<span class="nc" id="L286">                _idChangedPrev.value = Event(user.hipaaNumber.toString())</span>
+
+<span class="nc bnc" id="L288" title="All 8 branches missed.">                if (memberId.isNotEmpty() &amp;&amp; ssn.isEmpty()) {</span>
+<span class="nc" id="L289">                    showMemberId = true</span>
+                }
+<span class="nc" id="L291">                _datePrev.value = Event(user.dob.toString())</span>
+
+//                .substring(0, 2) + &quot;-&quot; + user.ssn?.substring(3, 4) +&quot;-&quot; + user.ssn?.substring(5, 8)
+<span class="nc" id="L294">            }</span>
+        )
+<span class="nc" id="L296">    }</span>
+
+<span class="nc" id="L298">    @get:Bindable</span>
+<span class="nc" id="L299">    val ssnTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L302">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L304">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L306">            _ssnChanged.value = Event(s.toString())</span>
+<span class="nc" id="L307">        }</span>
+    }
+
+<span class="nc" id="L310">    @get:Bindable</span>
+<span class="nc" id="L311">    val memberTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L314">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L316">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L318">            _memberChanged.value = Event(s.toString())</span>
+<span class="nc" id="L319">        }</span>
+    }
+
+<span class="nc" id="L322">    @get:Bindable</span>
+<span class="nc" id="L323">    val nameTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L326">        }</span>
+
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L329">        }</span>
+
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L332">            _nameChanged.value = Event(s.toString())</span>
+<span class="nc" id="L333">        }</span>
+    }
+
+<span class="nc" id="L336">    @get:Bindable</span>
+<span class="nc" id="L337">    val emailTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L340">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L342">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L344">            _emailChanged.value = Event(s.toString())</span>
+<span class="nc" id="L345">        }</span>
+    }
+
+<span class="nc" id="L348">    @get:Bindable</span>
+<span class="nc" id="L349">    val dateTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L352">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L354">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L356">            _dateComplete.value = Event(s.toString())</span>
+<span class="nc" id="L357">        }</span>
+    }
+
+    fun onBackClicked() {
+<span class="nc" id="L361">        _navigateToBack.value = Event(Unit)</span>
+<span class="nc" id="L362">    }</span>
+
+    fun onReviewClicked() {
+<span class="nc" id="L365">    }</span>
+
+    fun onEnroll() {
+<span class="nc" id="L368">    }</span>
+
+    fun setMember() {
+<span class="nc" id="L371">        user.hipaaNumber = memberId</span>
+
+<span class="nc" id="L373">        val regString = gson.toJson(user)</span>
+<span class="nc" id="L374">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L375">        regEdit.putString(Constants.Registration, regString)</span>
+<span class="nc" id="L376">        regEdit.apply()</span>
+<span class="nc" id="L377">    }</span>
+    fun setSsn() {
+<span class="nc" id="L379">        user.ssn = ssn</span>
+
+<span class="nc" id="L381">        val regString = gson.toJson(user)</span>
+<span class="nc" id="L382">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L383">        regEdit.putString(Constants.Registration, regString)</span>
+<span class="nc" id="L384">        regEdit.apply()</span>
+<span class="nc" id="L385">    }</span>
+    fun setDob() {
+<span class="nc" id="L387">        user.dob = dobDate</span>
+
+<span class="nc" id="L389">        val regString = gson.toJson(user)</span>
+<span class="nc" id="L390">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L391">        regEdit.putString(Constants.Registration, regString)</span>
+<span class="nc" id="L392">        regEdit.apply()</span>
+<span class="nc" id="L393">    }</span>
+    fun setName() {
+<span class="nc" id="L395">        user.firstName = firstName</span>
+<span class="nc" id="L396">        user.lastName = lastName</span>
+
+<span class="nc" id="L398">        val regString = gson.toJson(user)</span>
+<span class="nc" id="L399">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L400">        regEdit.putString(Constants.Registration, regString)</span>
+<span class="nc" id="L401">        regEdit.apply()</span>
+<span class="nc" id="L402">    }</span>
+
+    fun setEmail() {
+<span class="nc" id="L405">        user.email = email</span>
+
+<span class="nc" id="L407">        val regString = gson.toJson(user)</span>
+<span class="nc" id="L408">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L409">        regEdit.putString(Constants.Registration, regString)</span>
+<span class="nc" id="L410">        regEdit.apply()</span>
+<span class="nc" id="L411">    }</span>
+    fun setGender() {
+<span class="nc" id="L413">        user.gender = gender</span>
+
+<span class="nc" id="L415">        val regString = gson.toJson(user)</span>
+<span class="nc" id="L416">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L417">        regEdit.putString(Constants.Registration, regString)</span>
+<span class="nc" id="L418">        regEdit.apply()</span>
+<span class="nc" id="L419">    }</span>
+
+    fun onSsnClicked() {
+<span class="nc" id="L422">        _ssnClicked.value = Event(Unit)</span>
+<span class="nc" id="L423">    }</span>
+    fun onDobClicked() {
+<span class="nc" id="L425">        _dobClicked.value = Event(Unit)</span>
+<span class="nc" id="L426">    }</span>
+    fun onNameClicked() {
+<span class="nc" id="L428">        _nameClicked.value = Event(Unit)</span>
+<span class="nc" id="L429">    }</span>
+    fun onEmailClicked() {
+<span class="nc" id="L431">        _emailClicked.value = Event(Unit)</span>
+<span class="nc" id="L432">    }</span>
+    fun onGenderClicked() {
+<span class="nc" id="L434">        _genderClicked.value = Event(Unit)</span>
+<span class="nc" id="L435">    }</span>
+
+    fun calClicked() {
+<span class="nc" id="L438">        calIsGone = false</span>
+<span class="nc" id="L439">        _openWheel.value = Event(Unit)</span>
+<span class="nc" id="L440">    }</span>
+    fun calOkClicked() {
+<span class="nc" id="L442">        calIsGone = true</span>
+<span class="nc" id="L443">        _openWheelOK.value = Event(Unit)</span>
+<span class="nc" id="L444">    }</span>
+
+    fun keyboardClicked() {
+<span class="nc bnc" id="L447" title="All 2 branches missed.">        if (!calIsGone) {</span>
+<span class="nc" id="L448">            calIsGone = true</span>
+        }
+<span class="nc" id="L450">    }</span>
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L452">        callbacks.add(callback)</span>
+<span class="nc" id="L453">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L456">        callbacks.remove(callback)</span>
+<span class="nc" id="L457">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L460">        super.onCleared()</span>
+<span class="nc" id="L461">        compositeDisposable.dispose()</span>
+<span class="nc" id="L462">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

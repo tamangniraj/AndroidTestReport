@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PensionMemberResponse.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.pension.data.model</a> &gt; <span class="el_source">PensionMemberResponse.kt</span></div><h1>PensionMemberResponse.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.pension.data.model
+
+<span class="fc" id="L3">data class PensionMemberResponse(</span>
+<span class="pc" id="L4">    val id: String? = null,</span>
+<span class="pc" id="L5">    val memberId: String? = null,</span>
+<span class="pc" id="L6">    val firstName: String? = null,</span>
+<span class="pc" id="L7">    val lastName: String? = null,</span>
+<span class="pc" id="L8">    val middleInitial: String? = null,</span>
+<span class="pc" id="L9">    val gender: String? = null,</span>
+<span class="pc" id="L10">    val dateOfBirth: String? = null,</span>
+<span class="pc" id="L11">    val age: Int = 0,</span>
+<span class="pc" id="L12">    val hireDate: String? = null,</span>
+<span class="pc" id="L13">    val email: String? = null,</span>
+<span class="pc" id="L14">    val phone: String? = null,</span>
+<span class="pc" id="L15">    val address: Address? = null,</span>
+<span class="pc" id="L16">    val maritalStatus: String? = null,</span>
+<span class="pc" id="L17">    val spouseInfo: SpouseInfo? = null,</span>
+<span class="pc" id="L18">    val memberStatus: String? = null,</span>
+<span class="pc" id="L19">    val isWorkingRetiree: Boolean = false,</span>
+<span class="pc" id="L20">    val plans: List&lt;String&gt; = emptyList(),</span>
+<span class="pc" id="L21">    val retirementDate: String? = null,</span>
+<span class="fc" id="L22">    val totalCredits: Double = 0.0,</span>
+<span class="pc" id="L23">    val totalVesting: Double = 0.0,</span>
+<span class="fc" id="L24">    val totalForfeited: Double = 0.0,</span>
+<span class="fc" id="L25">    val isEligibleForPensionBenefits: Boolean ? = null,</span>
+<span class="fc" id="L26">    val showPensionDetails: Boolean = true</span>
+<span class="fc" id="L27">)</span>
+
+<span class="nc" id="L29">data class Address(</span>
+<span class="nc" id="L30">    val street: String? = null,</span>
+<span class="nc" id="L31">    val street2: String? = null,</span>
+<span class="nc" id="L32">    val city: String? = null,</span>
+<span class="nc" id="L33">    val state: String? = null,</span>
+<span class="nc" id="L34">    val zip: String? = null,</span>
+<span class="nc" id="L35">    val country: String? = null</span>
+<span class="nc" id="L36">)</span>
+
+<span class="nc" id="L38">data class SpouseInfo(</span>
+<span class="nc" id="L39">    val firstName: String? = null,</span>
+<span class="nc" id="L40">    val lastName: String? = null,</span>
+<span class="nc" id="L41">    val dateOfBirth: String? = null</span>
+<span class="nc" id="L42">)</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

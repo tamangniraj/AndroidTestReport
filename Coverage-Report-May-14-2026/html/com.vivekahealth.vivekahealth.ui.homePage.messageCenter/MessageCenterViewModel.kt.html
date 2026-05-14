@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MessageCenterViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.messageCenter</a> &gt; <span class="el_source">MessageCenterViewModel.kt</span></div><h1>MessageCenterViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.messageCenter
+
+import android.content.SharedPreferences
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import com.vivekahealth.vivekahealth.data.local.home.more.MenuType
+import com.vivekahealth.vivekahealth.data.remote.home.messageCenter.MessageCenterData
+import com.vivekahealth.vivekahealth.data.remote.home.messageCenter.MessageCenterList
+import com.vivekahealth.vivekahealth.data.remote.home.more.ClientMenuConfig
+import com.vivekahealth.vivekahealth.ui.guestHome.repository.GuestHomeRepository
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.repository.MedicalLogsRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.AnalyticsRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.PageType
+import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import timber.log.Timber
+
+<span class="fc" id="L29">enum class NotificationType(val value: Int) {</span>
+<span class="fc" id="L30">    DOCUMENT(3),</span>
+<span class="fc" id="L31">    DOCUMENT_ALT(5),</span>
+<span class="fc" id="L32">    CUSTOMER_CARE(4),</span>
+<span class="fc" id="L33">    BENEFIT(8);</span>
+
+    companion object {
+<span class="pc bpc" id="L36" title="1 of 8 branches missed.">        fun fromValue(value: Int?) = entries.find { it.value == value }</span>
+    }
+<span class="fc" id="L38">}</span>
+
+sealed class NotificationNavEvent {
+<span class="fc" id="L41">    object ToBenefit : NotificationNavEvent()</span>
+<span class="fc" id="L42">    object ToCustomerCare : NotificationNavEvent()</span>
+<span class="fc" id="L43">    object ToDocuments : NotificationNavEvent()</span>
+<span class="pc" id="L44">    data class ToDynamicMenu(val menuTypeId: String, val menuName: String) : NotificationNavEvent()</span>
+    data class ShowDialog(val title: String, val message: String) : NotificationNavEvent()
+    data class ShowGuestDialog(val title: String, val message: String) : NotificationNavEvent()
+}
+
+<span class="fc" id="L49">class MessageCenterViewModel @javax.inject.Inject constructor(</span>
+<span class="fc" id="L50">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L51">    private val medicalLogsRepository: MedicalLogsRepository,</span>
+<span class="fc" id="L52">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L53">    private val analyticsRepository: AnalyticsRepository,</span>
+<span class="fc" id="L54">    private val guestHomeRepository: GuestHomeRepository</span>
+<span class="fc" id="L55">) : ViewModel(), Observable {</span>
+<span class="fc" id="L56">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L58">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="nc" id="L59">    var isLastPage = false</span>
+<span class="nc" id="L60">    var isScrolling = false</span>
+<span class="pc" id="L61">    var sourcePage = &quot;&quot;</span>
+<span class="pc" id="L62">    var notificationList: ArrayList&lt;MessageCenterData&gt; = arrayListOf()</span>
+    var data: Boolean = false
+<span class="fc" id="L64">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L66">            field = value</span>
+<span class="nc" id="L67">            callbacks.notifyCallbacks(this, BR.data, null)</span>
+<span class="nc" id="L68">        }</span>
+<span class="fc" id="L69">    var reason: String = &quot;&quot;</span>
+<span class="nc" id="L70">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L72">            field = value</span>
+<span class="nc" id="L73">            callbacks.notifyCallbacks(this, BR.reason, null)</span>
+<span class="nc" id="L74">        }</span>
+    var loading: Boolean = false
+<span class="fc" id="L76">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L78">            field = value</span>
+<span class="fc" id="L79">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="fc" id="L80">        }</span>
+<span class="pc" id="L81">    var page: Int = 1</span>
+<span class="fc" id="L82">    private val _notificationListGenerated = MutableLiveData&lt;Event&lt;ArrayList&lt;MessageCenterData&gt;&gt;&gt;()</span>
+    val notificationListGenerated: LiveData&lt;Event&lt;ArrayList&lt;MessageCenterData&gt;&gt;&gt;
+<span class="fc" id="L84">        get() = _notificationListGenerated</span>
+
+<span class="fc" id="L86">    private val _navigationEvent = MutableLiveData&lt;Event&lt;NotificationNavEvent&gt;&gt;()</span>
+<span class="fc" id="L87">    val navigationEvent: LiveData&lt;Event&lt;NotificationNavEvent&gt;&gt; get() = _navigationEvent</span>
+
+    fun onNotificationClicked(item: MessageCenterData) {
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        if (preferences.getBoolean(Constants.IS_GUEST, false)) {</span>
+<span class="fc" id="L91">            _navigationEvent.value = Event(</span>
+<span class="pc bpc" id="L92" title="2 of 4 branches missed.">                NotificationNavEvent.ShowGuestDialog(item.title.orEmpty(), item.message.orEmpty())</span>
+            )
+<span class="fc" id="L94">            return</span>
+        }
+<span class="pc bpc" id="L96" title="1 of 7 branches missed.">        when (NotificationType.fromValue(item.notificationType)) {</span>
+            NotificationType.DOCUMENT, NotificationType.DOCUMENT_ALT -&gt; {
+<span class="pc bpc" id="L98" title="4 of 10 branches missed.">                val faqMenu = activeCustomSubMenus?.find { it.menuTypeId == MenuType.DOCUMENT_ST_LOIS.id }</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">                _navigationEvent.value = if (faqMenu != null) {</span>
+<span class="fc" id="L100">                    Event(</span>
+<span class="fc" id="L101">                        NotificationNavEvent.ToDynamicMenu(</span>
+<span class="pc bpc" id="L102" title="2 of 4 branches missed.">                            faqMenu.menuTypeId?.toString().orEmpty(),</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">                            faqMenu.menuName.orEmpty()</span>
+                        )
+                    )
+                } else {
+<span class="fc" id="L107">                    Event(NotificationNavEvent.ToDocuments)</span>
+                }
+            }
+<span class="fc" id="L110">            NotificationType.CUSTOMER_CARE -&gt; _navigationEvent.value = Event(</span>
+<span class="fc" id="L111">                NotificationNavEvent.ToCustomerCare</span>
+            )
+<span class="fc" id="L113">            NotificationType.BENEFIT -&gt; _navigationEvent.value = Event(</span>
+<span class="fc" id="L114">                NotificationNavEvent.ToBenefit</span>
+            )
+<span class="fc" id="L116">            null -&gt; _navigationEvent.value = Event(</span>
+<span class="pc bpc" id="L117" title="2 of 4 branches missed.">                NotificationNavEvent.ShowDialog(item.title.orEmpty(), item.message.orEmpty())</span>
+            )
+        }
+<span class="fc" id="L120">    }</span>
+<span class="pc" id="L121">    var clientInfoDb =</span>
+<span class="pc" id="L122">        homeRepository.getClientDetail(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()).asLiveData()</span>
+<span class="nc" id="L123">    var activeCustomSubMenus: List&lt;ClientMenuConfig&gt;? = null</span>
+    fun getNotificationList() {
+<span class="fc" id="L125">        val isGuestLogin = preferences.getBoolean(Constants.IS_GUEST, false)</span>
+<span class="fc" id="L126">        var messageCenterList: Single&lt;MessageCenterList&gt;</span>
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">        if (!isGuestLogin) {</span>
+<span class="fc" id="L128">            messageCenterList = homeRepository.getNotifications(</span>
+<span class="fc" id="L129">                preferences.getString(Constants.MEMBER_ID, &quot;&quot;).toString(),</span>
+<span class="fc" id="L130">                page</span>
+            )
+        } else {
+<span class="nc" id="L133">            messageCenterList = guestHomeRepository.getGuestNotifications(page, 10)</span>
+        }
+<span class="fc" id="L135">        compositeDisposable.add(</span>
+<span class="fc" id="L136">            messageCenterList</span>
+<span class="fc" id="L137">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L138">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L139">                .doOnSubscribe {</span>
+<span class="fc" id="L140">                    loading = true</span>
+<span class="fc" id="L141">                }</span>
+<span class="pc" id="L142">                .subscribe({</span>
+<span class="nc" id="L143">                    Timber.d(it.toString())</span>
+<span class="nc" id="L144">                    loading = false</span>
+
+<span class="nc" id="L146">                    page++</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">                    notificationList.addAll(it.values ?: arrayListOf())</span>
+<span class="nc" id="L148">                    data = notificationList.isEmpty()</span>
+<span class="nc bnc" id="L149" title="All 6 branches missed.">                    isLastPage = it.paging?.totalPages == page</span>
+
+<span class="nc" id="L151">                    _notificationListGenerated.value = Event(notificationList)</span>
+<span class="pc" id="L152">                }, {</span>
+<span class="nc" id="L153">                    Timber.d(it.toString())</span>
+<span class="nc" id="L154">                    loading = false</span>
+<span class="nc" id="L155">                })</span>
+        )
+<span class="fc" id="L157">    }</span>
+    fun setupClientCustomMenu(
+        menu: List&lt;ClientMenuConfig&gt;?
+    ) {
+<span class="fc" id="L161">        activeCustomSubMenus = menu</span>
+<span class="fc" id="L162">    }</span>
+
+    fun getLogView() {
+<span class="nc" id="L165">        val isGuestLogin = preferences.getBoolean(Constants.IS_GUEST, false)</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        if (isGuestLogin) { return }</span>
+<span class="nc" id="L167">        compositeDisposable.add(</span>
+<span class="nc" id="L168">            analyticsRepository.getLogPageView(</span>
+<span class="nc" id="L169">                preferences.getString(</span>
+<span class="nc" id="L170">                    &quot;memberID&quot;,</span>
+<span class="nc" id="L171">                    &quot;&quot;</span>
+<span class="nc" id="L172">                ).toString(),</span>
+<span class="nc" id="L173">                PageType.MESSAGE_CENTER.pageName,</span>
+<span class="nc" id="L174">                sourcePage</span>
+            )
+<span class="nc" id="L176">                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).doOnSubscribe {</span>
+<span class="nc" id="L177">                }.subscribe({</span>
+<span class="nc" id="L178">                }, {</span>
+<span class="nc" id="L179">                })</span>
+        )
+<span class="nc" id="L181">    }</span>
+
+    override fun onCleared() {
+<span class="fc" id="L184">        super.onCleared()</span>
+<span class="fc" id="L185">        compositeDisposable.dispose()</span>
+<span class="fc" id="L186">    }</span>
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L188">        callbacks.remove(callback)</span>
+<span class="nc" id="L189">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="fc" id="L192">        callbacks.add(callback)</span>
+<span class="fc" id="L193">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

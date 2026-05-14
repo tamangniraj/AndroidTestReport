@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SurveyAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.surveys</a> &gt; <span class="el_source">SurveyAdapter.kt</span></div><h1>SurveyAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.surveys
+
+import android.content.res.Resources
+import android.graphics.Rect
+import android.util.TypedValue
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.databinding.SurveyItemBinding
+
+class SurveyAdapter(private var onClick: (SurveyData) -&gt; Unit) :
+    ListAdapter&lt;SurveyData, RecyclerView.ViewHolder&gt;(SurveyListDiffCallback) {
+
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int
+    ): RecyclerView.ViewHolder {
+        return SurveyViewHolder(
+            SurveyItemBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            ),
+            onClick
+        )
+    }
+
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int
+    ) {
+        val item = getItem(position)
+
+        (holder as SurveyViewHolder).binding.setClickListener {
+            onClick(item)
+        }
+        holder.binding.survey = item
+    }
+
+    class SurveyViewHolder(
+        val binding: SurveyItemBinding,
+        private val onClick: (SurveyData) -&gt; Unit
+    ) : RecyclerView.ViewHolder(binding.root)
+}
+
+object SurveyListDiffCallback : DiffUtil.ItemCallback&lt;SurveyData&gt;() {
+    override fun areItemsTheSame(
+        oldItem: SurveyData,
+        newItem: SurveyData
+    ): Boolean {
+<span class="nc" id="L54">        return oldItem == newItem</span>
+    }
+
+    override fun areContentsTheSame(
+        oldItem: SurveyData,
+        newItem: SurveyData
+    ): Boolean {
+<span class="nc" id="L61">        return oldItem.title == newItem.title</span>
+    }
+}
+
+<span class="nc" id="L65">public class SurveyItemSpaceDecoration(</span>
+<span class="nc" id="L66">    private val itemSpacing: Float,</span>
+<span class="nc" id="L67">    private val startEndSpacing: Float,</span>
+<span class="nc" id="L68">    private val resources: Resources</span>
+<span class="nc" id="L69">) : RecyclerView.ItemDecoration() {</span>
+
+    override fun getItemOffsets(
+        outRect: Rect,
+        view: View,
+        parent: RecyclerView,
+        state: RecyclerView.State
+    ) {
+<span class="nc" id="L77">        val displayMetrics = resources.displayMetrics</span>
+
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (parent.getChildAdapterPosition(view) == 0) {</span>
+<span class="nc" id="L80">            outRect.top = TypedValue.applyDimension(</span>
+<span class="nc" id="L81">                TypedValue.COMPLEX_UNIT_DIP,</span>
+<span class="nc" id="L82">                startEndSpacing,</span>
+<span class="nc" id="L83">                displayMetrics</span>
+<span class="nc" id="L84">            ).toInt()</span>
+        }
+
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        if (parent.getChildAdapterPosition(view) == state.itemCount - 1) {</span>
+<span class="nc" id="L88">            outRect.bottom = TypedValue.applyDimension(</span>
+<span class="nc" id="L89">                TypedValue.COMPLEX_UNIT_DIP,</span>
+<span class="nc" id="L90">                startEndSpacing,</span>
+<span class="nc" id="L91">                displayMetrics</span>
+<span class="nc" id="L92">            ).toInt()</span>
+        } else {
+<span class="nc" id="L94">            outRect.bottom = TypedValue.applyDimension(</span>
+<span class="nc" id="L95">                TypedValue.COMPLEX_UNIT_DIP,</span>
+<span class="nc" id="L96">                itemSpacing,</span>
+<span class="nc" id="L97">                displayMetrics</span>
+<span class="nc" id="L98">            ).toInt()</span>
+        }
+<span class="nc" id="L100">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShareBenefitAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.shareBenefit.adapter</a> &gt; <span class="el_source">ShareBenefitAdapter.kt</span></div><h1>ShareBenefitAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.shareBenefit.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.databinding.SingleDependentViewBinding
+import timber.log.Timber
+
+class ShareBenefitAdapter(
+    private var onClick: (MemberInfo) -&gt; Unit,
+    private var onError: (MemberInfo) -&gt; Unit
+) : ListAdapter&lt;MemberInfo, RecyclerView.ViewHolder&gt;(
+    BenefitBubbleDiffCallback()
+) {
+
+    var selectedPosition: Int = 0
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return MemberViewHolder(
+            SingleDependentViewBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            ),
+            onClick,
+            selectedPosition
+        )
+    }
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val member = getItem(position)
+
+        (holder as MemberViewHolder).binding.setClickListener {
+            if ((member.hasAvatar.equals(&quot;true&quot;, true) || !member.selfieMandatorySwitch) &amp;&amp; !member.avatarInReview &amp;&amp; !member.memberAdditionInReview &amp;&amp; !member.birthDate.isNullOrBlank() &amp;&amp; !member.gender.isNullOrBlank() &amp;&amp; !member.gender.equals(
+                    &quot;U&quot;,
+                    true
+                ) &amp;&amp; !member.ssn.isNullOrBlank()
+            ) {
+                notifyItemChanged(selectedPosition)
+
+//
+//            holder.binding.imageView.setImageResource(R.drawable.button_green)
+
+                Timber.d(itemCount.toString())
+                onClick(member)
+
+                selectedPosition = position
+
+                notifyItemChanged(position)
+            } else {
+                notifyItemChanged(selectedPosition)
+                selectedPosition = position
+                notifyItemChanged(position)
+                onError(member)
+            }
+        }
+
+//        holder.binding.ssnButton.isSelected = member.isSelected
+
+        holder.binding.member = member
+    }
+    class MemberViewHolder(
+        val binding: SingleDependentViewBinding,
+        private val onClick: (MemberInfo) -&gt; Unit,
+        private var selectedPosition: Int
+    ) : RecyclerView.ViewHolder(binding.root)
+}
+
+<span class="nc" id="L75">private class BenefitBubbleDiffCallback : DiffUtil.ItemCallback&lt;MemberInfo&gt;() {</span>
+
+    override fun areItemsTheSame(oldItem: MemberInfo, newItem: MemberInfo): Boolean {
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        return oldItem.isSelected == newItem.isSelected</span>
+    }
+
+    override fun areContentsTheSame(oldItem: MemberInfo, newItem: MemberInfo): Boolean {
+<span class="nc" id="L82">        return oldItem == newItem</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

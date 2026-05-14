@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HomeBubbleAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.home.adapter</a> &gt; <span class="el_source">HomeBubbleAdapter.kt</span></div><h1>HomeBubbleAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.home.adapter
+
+import android.content.Context
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.databinding.AddDependentBubbleBinding
+import com.vivekahealth.vivekahealth.databinding.SingleRowBubbleBinding
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+
+private const val MEMBER_ITEM = 0
+private const val ADD_ITEM = 1
+
+class HomeBubbleAdapter(
+    private var onClick: (MemberInfo) -&gt; Unit,
+    private var onAddDependent: (MemberInfo) -&gt; Unit,
+    private var switchUser: (MemberInfo) -&gt; Unit
+) : ListAdapter&lt;MemberInfo, RecyclerView.ViewHolder&gt;(
+    MemberDiffCallback()
+) {
+
+    var currentTimeMills: String ? = null
+
+    var selectedPosition: Int = 0
+    lateinit var context: Context
+
+    var isSsnRequired: Boolean = false
+
+    override fun getItemViewType(position: Int): Int {
+        return if (getItem(position).isDummy) {
+            ADD_ITEM
+        } else {
+            MEMBER_ITEM
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        context = parent.context
+
+        return if (viewType == MEMBER_ITEM) {
+            MemberViewHolder(
+                SingleRowBubbleBinding.inflate(
+                    LayoutInflater.from(context),
+                    parent,
+                    false
+                ),
+                onClick,
+                onAddDependent,
+                selectedPosition
+            )
+        } else {
+            AddDependentViewHolder(
+                AddDependentBubbleBinding.inflate(
+                    LayoutInflater.from(context),
+                    parent,
+                    false
+                )
+            )
+        }
+    }
+
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val member = getItem(position)
+        if (holder is MemberViewHolder) {
+            holder.binding.member = member
+
+            holder.binding.setClickListener {
+                val previousPosition = selectedPosition
+
+                // Only update if selection actually changed
+                if (previousPosition != position) {
+                    selectedPosition = position
+
+                    // Use payload-based updates for better performance
+                    notifyItemChanged(previousPosition, &quot;selection_changed&quot;)
+                    notifyItemChanged(selectedPosition, &quot;selection_changed&quot;)
+
+                    // Clear image asynchronously to avoid blocking UI
+                    holder.binding.imageBubble.post {
+                        Glide.with(context).clear(holder.binding.imageBubble)
+                    }
+                }
+
+                onClick(member)
+            }
+
+            if (member.selfieMandatorySwitch) {
+                holder.binding.showEnroll =
+                    (
+                    member.birthDate.isNullOrBlank() || member.gender.isNullOrBlank() || (
+                        isSsnRequired &amp;&amp; HelperUtils.checkIfInfant(
+                            member.ssn,
+                            member.birthDate
+                        )
+                        ) || !member.hasAvatar.equals(
+                        &quot;true&quot;,
+                        true
+                    )
+                    ) &amp;&amp; position != itemCount - 1 &amp;&amp; !member.memberRelationship.toString()
+                    .equals(
+                        &quot;insured&quot;,
+                        true
+                    )
+                if (!(
+                    member.birthDate.isNullOrBlank() || member.gender.isNullOrBlank() || (
+                        isSsnRequired &amp;&amp; HelperUtils.checkIfInfant(
+                                member.ssn,
+                                member.birthDate
+                            )
+                        ) || !member.hasAvatar.equals(
+                            &quot;true&quot;,
+                            true
+                        )
+                    ) &amp;&amp; position != itemCount - 1
+                ) {
+                    holder.binding.showSwitcher =
+                        member.selfId.equals(member.loggedInId) &amp;&amp; member.selfId.isNotEmpty()
+                }
+            } else {
+                holder.binding.showEnroll =
+                    (
+                    member.birthDate.isNullOrBlank() || member.gender.isNullOrBlank() || (
+                        isSsnRequired &amp;&amp; HelperUtils.checkIfInfant(
+                            member.ssn,
+                            member.birthDate
+                        )
+                        )
+                    ) &amp;&amp; position != itemCount - 1 &amp;&amp; !member.memberRelationship.toString()
+                    .equals(
+                        &quot;insured&quot;,
+                        true
+                    )
+                if (!(
+                    member.birthDate.isNullOrBlank() || member.gender.isNullOrBlank() || (
+                        isSsnRequired &amp;&amp; HelperUtils.checkIfInfant(
+                                member.ssn,
+                                member.birthDate
+                            )
+                        )
+                    ) &amp;&amp; position != itemCount - 1
+                ) {
+                    holder.binding.showSwitcher =
+                        member.selfId.equals(member.loggedInId) &amp;&amp; member.selfId.isNotEmpty()
+                }
+            }
+
+            holder.binding.showSwitcher =
+                member.selfId.equals(member.loggedInId) &amp;&amp; member.selfId.isNotEmpty()
+
+            holder.binding.switcher.setOnClickListener {
+                switchUser(member)
+            }
+
+            holder.binding.clicked = member.isSelected
+
+            holder.binding.currentTime = currentTimeMills.toString()
+
+            if (member.isDummy) {
+                holder.binding.addGone = !member.isInsured
+                holder.binding.isAdd = true
+            } else {
+                holder.binding.hasImage = member.hasAvatar.toBooleanStrict()
+
+                holder.binding.isAdd = false
+            }
+        } else if (holder is AddDependentViewHolder) {
+            holder.binding.root.setOnClickListener {
+                onAddDependent(member)
+            }
+        }
+    }
+
+    class MemberViewHolder(
+        val binding: SingleRowBubbleBinding,
+        private val onClick: (MemberInfo) -&gt; Unit,
+        private val onAddDependent: (MemberInfo) -&gt; Unit,
+        private var selectedPosition: Int
+    ) : RecyclerView.ViewHolder(binding.root)
+
+    class AddDependentViewHolder(
+        val binding: AddDependentBubbleBinding
+    ) : RecyclerView.ViewHolder(binding.root)
+}
+
+<span class="fc" id="L193">private class MemberDiffCallback : DiffUtil.ItemCallback&lt;MemberInfo&gt;() {</span>
+
+    override fun areItemsTheSame(oldItem: MemberInfo, newItem: MemberInfo): Boolean {
+<span class="fc" id="L196">        return oldItem.selfId == newItem.selfId</span>
+    }
+
+    override fun areContentsTheSame(oldItem: MemberInfo, newItem: MemberInfo): Boolean {
+<span class="fc" id="L200">        return oldItem == newItem</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoginMainModule.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.login.di</a> &gt; <span class="el_source">LoginMainModule.kt</span></div><h1>LoginMainModule.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.login.di
+
+import com.vivekahealth.vivekahealth.di.ActivityScope
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.enrollmentEnd.di.SuccessEnrollModule
+import com.vivekahealth.vivekahealth.ui.guestRegister.password.di.GuestPasswordModule
+import com.vivekahealth.vivekahealth.ui.login.LoginActivity
+import com.vivekahealth.vivekahealth.ui.login.continueSignUp.di.ContinueEnrollModule
+import com.vivekahealth.vivekahealth.ui.login.continueSignUpReg.di.ContinueRegModule
+import com.vivekahealth.vivekahealth.ui.login.enrollmentPending.di.SuccessModule
+import com.vivekahealth.vivekahealth.ui.login.login.di.LoginModule
+import com.vivekahealth.vivekahealth.ui.login.loginV2.di.LoginV2Module
+import com.vivekahealth.vivekahealth.ui.login.successReg.di.RegSuccessModule
+import com.vivekahealth.vivekahealth.ui.register.disclaimerQuick.di.QuickModule
+import com.vivekahealth.vivekahealth.ui.register.step1.di.PhoneModule
+import com.vivekahealth.vivekahealth.ui.register.step3.di.EmailModule
+import com.vivekahealth.vivekahealth.ui.resetPassword.di.ResetPasswordModule
+import dagger.Module
+import dagger.android.ContributesAndroidInjector
+
+<span class="nc" id="L20">@Module</span>
+abstract class LoginMainModule {
+
+    @ActivityScope
+    @ContributesAndroidInjector(
+        modules = [LoginV2Module::class, EmailModule::class, PhoneModule::class, LoginModule::class, ResetPasswordModule::class, ContinueEnrollModule::class, ContinueRegModule::class, SuccessModule::class, RegSuccessModule::class, QuickModule::class, SuccessEnrollModule::class, ResetPasswordModule::class, GuestPasswordModule::class]
+    )
+    abstract fun contributesLoginActivity(): LoginActivity
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

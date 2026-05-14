@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StartEnrollmentDialog.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.enrollVTwo.start</a> &gt; <span class="el_source">StartEnrollmentDialog.kt</span></div><h1>StartEnrollmentDialog.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.enrollVTwo.start
+
+import android.content.Context
+import android.os.Bundle
+import android.os.SystemClock
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.lifecycle.ViewModelProvider
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.local.enroll.DocumentItem
+import com.vivekahealth.vivekahealth.data.local.enroll.DocumentItemPlus
+import com.vivekahealth.vivekahealth.data.local.enroll.RelationshipType
+import com.vivekahealth.vivekahealth.data.local.enroll.RootDocumentResponse
+import com.vivekahealth.vivekahealth.databinding.StartEnrollmentDialogBinding
+import com.vivekahealth.vivekahealth.di.Injectable
+import com.vivekahealth.vivekahealth.ui.BaseDialogFragment
+import com.vivekahealth.vivekahealth.utils.remote.Status
+import javax.inject.Inject
+
+class StartEnrollmentDialog : BaseDialogFragment(), Injectable {
+    companion object {
+
+        private const val ARG_MEMBER_ID = &quot;arg_member_id&quot;
+        private const val ARG_IS_REJECTED = &quot;arg_rejected&quot;
+
+        fun newInstance(memberId: String, isRejected: Boolean): StartEnrollmentDialog {
+            val dialog = StartEnrollmentDialog()
+            val args = Bundle()
+            args.putString(ARG_MEMBER_ID, memberId)
+            args.putBoolean(ARG_IS_REJECTED, isRejected)
+            dialog.arguments = args
+            return dialog
+        }
+    }
+
+    private val memberId: String? by lazy {
+        arguments?.getString(ARG_MEMBER_ID)
+    }
+
+    private val isRejected: Boolean? by lazy {
+        arguments?.getBoolean(ARG_IS_REJECTED)
+    }
+
+    private lateinit var binding: StartEnrollmentDialogBinding
+
+    private var startEnrollmentListener: StartEnrollmentListener? = null
+
+    private val adapter = RequiredDocumentAdapter()
+
+    fun setCallback(verifyIdentityListener: StartEnrollmentListener) {
+        this.startEnrollmentListener = verifyIdentityListener
+    }
+
+    private lateinit var viewModel: StartEnrollmentViewModel
+
+    @Inject
+    lateinit var viewModelFactory: ViewModelProvider.Factory
+
+    private lateinit var rootDocumentResponse: RootDocumentResponse
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        binding = StartEnrollmentDialogBinding.inflate(inflater, container, false)
+
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        viewModel = ViewModelProvider(this, viewModelFactory).get(
+            StartEnrollmentViewModel::class.java
+        )
+
+        memberId?.let {
+            viewModel.startEnrollment(it)
+        }
+
+        binding.textViewTitle.text = if (isRejected == true) {
+            getString(R.string.your_enrollment_was_not_approved)
+        } else {
+            getString(R.string.almost_there)
+        }
+
+        binding.tvText.visibility = if (isRejected == true) View.VISIBLE else View.GONE
+        binding.tvText.text = if (isRejected == true) {
+            getString(R.string.there_was_issue_with_the_documents_you_submitted)
+        } else {
+            getString(R.string.almost_there)
+        }
+
+        binding.txtSecondDesc.visibility = if (isRejected == true) View.VISIBLE else View.GONE
+        binding.txtSecondDesc.text = if (isRejected == true) {
+            getString(R.string.to_continue_please_review_your)
+        } else {
+            getString(R.string.insturction_enrooment)
+        }
+
+        viewModel.startSession.observe(viewLifecycleOwner) {
+            when (it.status) {
+                Status.LOADING -&gt; {
+                    binding.proceed.isEnabled = false
+                    binding.progressBar.visibility = View.VISIBLE
+                }
+
+                Status.SUCCESS -&gt; {
+                    binding.proceed.isEnabled = true
+                    binding.progressBar.visibility = View.GONE
+                    val combinedDocuments = mutableListOf&lt;DocumentItemPlus&gt;()
+                    val requiredDocuments = it.data?.documentList ?: emptyList()
+                    val predicate: (DocumentItem) -&gt; Boolean =
+                        { document -&gt; document.documentType == 103 || document.documentType == 104 }
+                    val primary =
+                        requiredDocuments.find { it.relationshipType == RelationshipType.PRIMARY.code }
+                    val spouse =
+                        requiredDocuments.find { it.relationshipType == RelationshipType.SPOUSE.code }
+                    val child =
+                        requiredDocuments.find { it.relationshipType == RelationshipType.CHILD.code }
+
+                    if (primary != null) {
+                        val primaryDocuments =
+                            primary.documents.filterNot { it.uploaded }.toMutableList()
+                        // If primary has any of driver's license front or driver's license back
+                        if (primaryDocuments.any(predicate)) {
+                            primaryDocuments.removeAll(predicate)
+                            primaryDocuments += DocumentItem(
+                                42,
+                                false,
+                                true,
+                                &quot;Driver's License&quot;,
+                                getString(R.string.drivers_license)
+                            )
+                        }
+                        combinedDocuments += primaryDocuments.map {
+                            it.toDocumentPlus(
+                                RelationshipType.PRIMARY
+                            )
+                        }
+                    }
+                    if (spouse != null) {
+                        val spouseDocuments =
+                            spouse.documents.filterNot { it.uploaded }.toMutableList()
+                        // If spouse has any of driver's license front or driver's license back
+                        if (spouseDocuments.any(predicate)) {
+                            spouseDocuments.removeAll(predicate)
+                            spouseDocuments += DocumentItem(
+                                42,
+                                false,
+                                true,
+                                &quot;Driver's License&quot;,
+                                getString(R.string.drivers_license)
+                            )
+                        }
+                        combinedDocuments += spouseDocuments.map {
+                            it.toDocumentPlus(
+                                RelationshipType.SPOUSE
+                            )
+                        }
+                    }
+                    if (child != null) {
+                        // Exclude already-uploaded documents
+                        combinedDocuments += child.documents.filterNot { it.uploaded }.map {
+                            it.toDocumentPlus(
+                                RelationshipType.CHILD
+                            )
+                        }
+                    }
+
+                    // Group required documents by document type
+                    val grouped = combinedDocuments.groupBy { it.translatedDocumentName }
+
+                    val data = grouped.map {
+                        val iconResId = when (it.value[0].documentType) {
+                            71 -&gt; R.drawable.ssn_card
+                            42 -&gt; R.drawable.drivers_license
+                            50 -&gt; R.drawable.wedding_rings
+                            51 -&gt; R.drawable.child_dependent
+                            else -&gt; R.drawable.document_ic
+                        }
+                        RequiredDocumentRowData(
+                            documentName = it.key,
+                            iconResId = iconResId,
+                            dependentsText = getName(it.value, requireContext())
+                        )
+                    }
+                    binding.gatherTheseDocuments.text = getString(
+                        R.string.gather_these_documents,
+                        grouped.size
+                    )
+                    binding.documentCards.adapter = adapter
+                    adapter.submitList(data)
+                    rootDocumentResponse = it.data ?: RootDocumentResponse(emptyList())
+
+                    binding.documentCards.visibility = if (isRejected == true) {
+                        View.GONE
+                    } else {
+                        View.VISIBLE
+                    }
+                    binding.youCanTakePhotos.visibility = if (isRejected == true) {
+                        View.GONE
+                    } else {
+                        View.VISIBLE
+                    }
+                    binding.gatherTheseDocuments.visibility = if (isRejected == true) {
+                        View.GONE
+                    } else {
+                        View.VISIBLE
+                    }
+                }
+
+                Status.ERROR -&gt; {
+                    binding.proceed.isEnabled = true
+                    binding.progressBar.visibility = View.GONE
+
+                    val err = it.error.equals(
+                        &quot;Unable to proceed. Please check your internet connection and try again later.&quot;
+                    )
+                    if (err) {
+                        startEnrollmentListener?.onError(
+                            &quot;You are offline. Some features may not be available.&quot;
+                        )
+                    } else {
+                        startEnrollmentListener?.onError(it.error ?: &quot;&quot;)
+                    }
+                }
+            }
+        }
+
+        binding.proceed.setOnClickListenerDebounced {
+            startEnrollmentListener?.onProceed(rootDocumentResponse)
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setStyle(STYLE_NORMAL, R.style.CustomBottomSheetDialogTheme)
+        isCancelable = false
+    }
+
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+    }
+}
+
+<span class="nc" id="L252">fun View.setOnClickListenerDebounced(debounceTime: Long = 600L, action: (View) -&gt; Unit) {</span>
+<span class="nc" id="L253">    this.setOnClickListener(object : View.OnClickListener {</span>
+        private var lastClickTime: Long = 0
+
+        override fun onClick(v: View) {
+<span class="nc bnc" id="L257" title="All 2 branches missed.">            if (SystemClock.elapsedRealtime() - lastClickTime &lt; debounceTime) {</span>
+<span class="nc" id="L258">                return</span>
+            }
+<span class="nc" id="L260">            lastClickTime = SystemClock.elapsedRealtime()</span>
+<span class="nc" id="L261">            action(v)</span>
+<span class="nc" id="L262">        }</span>
+    })
+<span class="nc" id="L264">}</span>
+
+fun getName(values: List&lt;DocumentItemPlus&gt;, context: Context): String {
+<span class="nc" id="L267">    val relationshipTypes = values.map { it.relationshipType }</span>
+
+<span class="nc" id="L269">    return when (relationshipTypes) {</span>
+<span class="nc bnc" id="L270" title="All 2 branches missed.">        listOf(RelationshipType.PRIMARY, RelationshipType.SPOUSE) -&gt; {</span>
+<span class="nc" id="L271">            context.getString(R.string.for_you_and_your_spouse)</span>
+        }
+
+<span class="nc bnc" id="L274" title="All 2 branches missed.">        listOf(RelationshipType.SPOUSE, RelationshipType.CHILD) -&gt; {</span>
+<span class="nc" id="L275">            context.getString(R.string.for_your_spouse_and_each_child)</span>
+        }
+
+<span class="nc bnc" id="L278" title="All 2 branches missed.">        listOf(RelationshipType.PRIMARY, RelationshipType.CHILD) -&gt; context.getString(</span>
+<span class="nc" id="L279">            R.string.for_you_and_each_child</span>
+        )
+
+<span class="nc bnc" id="L282" title="All 2 branches missed.">        listOf(RelationshipType.PRIMARY) -&gt; context.getString(R.string.for_you)</span>
+
+<span class="nc bnc" id="L284" title="All 2 branches missed.">        listOf(RelationshipType.SPOUSE) -&gt; {</span>
+<span class="nc" id="L285">            context.getString(R.string.if_you_re_adding_a_spouse)</span>
+        }
+
+<span class="nc bnc" id="L288" title="All 2 branches missed.">        listOf(RelationshipType.CHILD) -&gt; {</span>
+<span class="nc" id="L289">            context.getString(R.string.for_each_child_dependent)</span>
+        }
+
+<span class="nc bnc" id="L292" title="All 2 branches missed.">        listOf(</span>
+<span class="nc" id="L293">            RelationshipType.PRIMARY,</span>
+<span class="nc" id="L294">            RelationshipType.SPOUSE,</span>
+<span class="nc" id="L295">            RelationshipType.CHILD</span>
+<span class="nc" id="L296">        ) -&gt; {</span>
+<span class="nc" id="L297">            context.getString(R.string.for_you_your_spouse_and_each_child)</span>
+        }
+
+        else -&gt; {
+<span class="nc" id="L301">            &quot;&quot;</span>
+        }
+    }
+}
+
+// Adapter data model
+<span class="nc" id="L307">data class RequiredDocumentRowData(</span>
+<span class="nc" id="L308">    val documentName: String,</span>
+<span class="nc" id="L309">    val iconResId: Int,</span>
+<span class="nc" id="L310">    val dependentsText: String</span>
+)
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AppUpdateViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.appUpdate</a> &gt; <span class="el_source">AppUpdateViewModel.kt</span></div><h1>AppUpdateViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.appUpdate
+
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.utils.Event
+import javax.inject.Inject
+
+<span class="fc" id="L13">class AppUpdateViewModel @Inject constructor() : ViewModel(), Observable {</span>
+
+<span class="fc" id="L15">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L18">        callbacks.add(callback)</span>
+<span class="nc" id="L19">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L22">        callbacks.remove(callback)</span>
+<span class="nc" id="L23">    }</span>
+
+<span class="fc" id="L25">    private val _goToPlayStore = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val goToPlayStore: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L27">        get() = _goToPlayStore</span>
+
+<span class="fc" id="L29">    private val _dismissDialog = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val dismissDialog: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L31">        get() = _dismissDialog</span>
+
+    var appUpdateAvailable: Boolean = false
+<span class="fc" id="L34">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L36">            field = value</span>
+<span class="fc" id="L37">            callbacks.notifyCallbacks(this, BR.appUpdateAvailable, null)</span>
+<span class="fc" id="L38">        }</span>
+
+<span class="fc" id="L40">    var appVersion: String = &quot;&quot;</span>
+<span class="fc" id="L41">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L43">            field = value</span>
+<span class="fc" id="L44">            callbacks.notifyCallbacks(this, BR.appVersion, null)</span>
+<span class="fc" id="L45">        }</span>
+    fun onNoThankYouClick() {
+<span class="fc" id="L47">        _dismissDialog.value = Event(Unit)</span>
+<span class="fc" id="L48">    }</span>
+
+    fun onUpdateAppClick() {
+<span class="fc" id="L51">        _goToPlayStore.value = Event(Unit)</span>
+<span class="fc" id="L52">    }</span>
+
+    fun onGreatClick() {
+<span class="fc" id="L55">        _dismissDialog.value = Event(Unit)</span>
+<span class="fc" id="L56">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

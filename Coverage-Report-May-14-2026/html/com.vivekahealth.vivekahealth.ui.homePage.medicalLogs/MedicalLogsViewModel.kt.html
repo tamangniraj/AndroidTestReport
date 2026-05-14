@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MedicalLogsViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.medicalLogs</a> &gt; <span class="el_source">MedicalLogsViewModel.kt</span></div><h1>MedicalLogsViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.medicalLogs
+
+import android.content.SharedPreferences
+import android.content.res.Resources
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.viewModelScope
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.repository.MedicalLogsRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.remote.NetworkMessage
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.launch
+import org.apache.commons.lang3.StringUtils
+import retrofit2.HttpException
+import javax.inject.Inject
+
+<span class="nc" id="L29">class MedicalLogsViewModel @Inject constructor(</span>
+<span class="nc" id="L30">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L31">    private val medicalLogsRepository: MedicalLogsRepository,</span>
+<span class="nc" id="L32">    private val homeRepository: HomeRepository,</span>
+<span class="nc" id="L33">    private val resources: Resources</span>
+<span class="nc" id="L34">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L36">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="nc" id="L37">    var configDb =</span>
+<span class="nc" id="L38">        homeRepository.getClientDetail(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="nc" id="L39">            .asLiveData()</span>
+<span class="nc" id="L40">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="nc" id="L41">    var eligibleBubbleMemberList: ArrayList&lt;MemberInfo&gt; = ArrayList()</span>
+
+<span class="nc" id="L43">    var currentCacheTime = System.currentTimeMillis().toString()</span>
+
+<span class="nc" id="L45">    var memberInfo = MemberInfo()</span>
+
+<span class="nc" id="L47">    var currentMember = MemberInfo()</span>
+<span class="nc" id="L48">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L50">            field = value</span>
+<span class="nc" id="L51">            callbacks.notifyCallbacks(this, BR.currentMember, null)</span>
+<span class="nc" id="L52">        }</span>
+<span class="nc" id="L53">    var bubbleMemberList: ArrayList&lt;MemberInfo&gt; = ArrayList()</span>
+<span class="nc" id="L54">    var currentMissing = listOf&lt;String&gt;()</span>
+
+    var noSelfie: Boolean = false
+<span class="nc" id="L57">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L59">            field = value</span>
+<span class="nc" id="L60">            callbacks.notifyCallbacks(this, BR.noSelfie, null)</span>
+<span class="nc" id="L61">        }</span>
+<span class="nc" id="L62">    private val _serverError = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val serverError: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L64">        get() = _serverError</span>
+
+<span class="nc" id="L66">    var currentPage = resources.getString(R.string.all)</span>
+
+<span class="nc" id="L68">    private val _bubbleListGenerated = MutableLiveData&lt;Event&lt;List&lt;MemberInfo&gt;&gt;&gt;()</span>
+    val bubbleListGenerated: LiveData&lt;Event&lt;List&lt;MemberInfo&gt;&gt;&gt;
+<span class="nc" id="L70">        get() = _bubbleListGenerated</span>
+<span class="nc" id="L71">    private val _showPicker = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val showPicker: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L73">        get() = _showPicker</span>
+<span class="nc" id="L74">    var type: String = &quot;1,3,4,6,7&quot;</span>
+    var loading: Boolean = false
+<span class="nc" id="L76">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L78">            field = value</span>
+<span class="nc" id="L79">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L80">        }</span>
+<span class="nc" id="L81">    var VALUES = arrayListOf&lt;String&gt;()</span>
+<span class="nc" id="L82">    val VALUESTYPE = arrayListOf(&quot;1,3,4,6,7&quot;, &quot;3,4&quot;, &quot;1&quot;, &quot;6&quot;, &quot;3,4,6&quot;)</span>
+
+<span class="nc" id="L84">    var listForHomeBubbleAdapter: List&lt;MemberInfo&gt; = listOf()</span>
+
+<span class="nc" id="L86">    var memberInfoDb =</span>
+<span class="nc" id="L87">        homeRepository.getMemberSid(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()).asLiveData()</span>
+
+<span class="nc" id="L89">    var memberListArray: ArrayList&lt;MemberInfo&gt; = ArrayList()</span>
+
+<span class="nc" id="L91">    var reason: String = &quot;&quot;</span>
+<span class="nc" id="L92">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L94">            field = value</span>
+<span class="nc" id="L95">            callbacks.notifyCallbacks(this, BR.reason, null)</span>
+<span class="nc" id="L96">        }</span>
+
+    var noData: Boolean = false
+<span class="nc" id="L99">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L101">            field = value</span>
+<span class="nc" id="L102">            callbacks.notifyCallbacks(this, BR.noData, null)</span>
+<span class="nc" id="L103">        }</span>
+    var demoGraphicsUpdateShow: Boolean = false
+<span class="nc" id="L105">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L107">            field = value</span>
+<span class="nc" id="L108">            callbacks.notifyCallbacks(this, BR.demoGraphicsUpdateShow, null)</span>
+<span class="nc" id="L109">        }</span>
+
+<span class="nc" id="L111">    fun setSelectedMember(memberInfo: MemberInfo, showPicker: Boolean = true) {</span>
+<span class="nc" id="L112">        val index = bubbleMemberList.indexOf(memberInfo)</span>
+
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        for (item in bubbleMemberList) {</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">            if (bubbleMemberList.indexOf(item) == index) {</span>
+<span class="nc" id="L116">                bubbleMemberList[index].apply {</span>
+<span class="nc" id="L117">                    isSelected = true</span>
+<span class="nc" id="L118">                }</span>
+            } else {
+<span class="nc" id="L120">                bubbleMemberList[bubbleMemberList.indexOf(item)].apply {</span>
+<span class="nc" id="L121">                    isSelected = false</span>
+<span class="nc" id="L122">                }</span>
+            }
+        }
+
+        // This method checks if the user is eligible or not and views is shown accordingly
+<span class="nc" id="L127">        checkAccess(memberInfo, showPicker)</span>
+<span class="nc" id="L128">    }</span>
+
+    var displayNew: Boolean = false
+<span class="nc" id="L131">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L133">            field = value</span>
+<span class="nc" id="L134">            callbacks.notifyCallbacks(this, BR.displayNew, null)</span>
+<span class="nc" id="L135">        }</span>
+
+    fun checkNewAvailable() {
+        // Get the current member ID
+<span class="nc bnc" id="L139" title="All 2 branches missed.">        val memberId = preferences.getString(&quot;memberID&quot;, &quot;&quot;) ?: &quot;&quot;</span>
+
+        // Create a unique key for this user
+<span class="nc" id="L142">        val userSpecificKey = &quot;${memberId}_$PREF_IMMUNIZATION_TAB_CLICKED&quot;</span>
+
+        // Check if this user has clicked the immunization tab before
+<span class="nc" id="L145">        val hasClickedImmunizationTab = preferences.getBoolean(userSpecificKey, false)</span>
+
+        // Display &quot;NEW&quot; indicator only if this user hasn't clicked the immunization tab yet
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        displayNew = !hasClickedImmunizationTab</span>
+<span class="nc" id="L149">    }</span>
+
+    /**
+     * Hide the &quot;NEW&quot; indicator when the user clicks the immunization tab.
+     * This saves the state to SharedPreferences per user (memberID).
+     */
+    fun hideNew() {
+        // Get the current member ID
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        val memberId = preferences.getString(&quot;memberID&quot;, &quot;&quot;) ?: &quot;&quot;</span>
+
+        // Create a unique key for this user
+<span class="nc" id="L160">        val userSpecificKey = &quot;${memberId}_$PREF_IMMUNIZATION_TAB_CLICKED&quot;</span>
+
+        // Save to SharedPreferences that this user has clicked the immunization tab
+<span class="nc" id="L163">        preferences.edit().putBoolean(userSpecificKey, true).apply()</span>
+
+        // Hide the &quot;NEW&quot; indicator
+<span class="nc" id="L166">        displayNew = false</span>
+<span class="nc" id="L167">    }</span>
+
+    companion object {
+        // SharedPreferences key for tracking if user has clicked immunization tab
+        private const val PREF_IMMUNIZATION_TAB_CLICKED = &quot;immunization_tab_clicked&quot;
+    }
+
+    // use this value to display visibility for the lottie in medical_log_fragment
+
+    fun checkAccess(
+        memberInfo: MemberInfo,
+        showPicker: Boolean
+    ) {
+<span class="nc bnc" id="L180" title="All 2 branches missed.">        if (bubbleMemberList.any { memberInfo.selfId == it.selfId }) {</span>
+<span class="nc bnc" id="L181" title="All 4 branches missed.">            val member = bubbleMemberList.find { it.selfId == memberInfo.selfId }</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">            val index = bubbleMemberList.indexOf(member ?: 0)</span>
+<span class="nc" id="L183">            val selectedMember = bubbleMemberList[index]</span>
+<span class="nc" id="L184">            val selectedMemberInfoList =</span>
+<span class="nc" id="L185">                memberListArray.filter { it.selfId == selectedMember.selfId }</span>
+
+<span class="nc bnc" id="L187" title="All 4 branches missed.">            if (selectedMemberInfoList.isEmpty() &amp;&amp; memberInfo.selfId.toLong() &gt; 0) {</span>
+<span class="nc" id="L188">                noData = false</span>
+<span class="nc" id="L189">                var page = &quot;&quot;</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">                if (currentPage.equals(resources.getString(R.string.all), true)) {</span>
+<span class="nc" id="L191">                    page = resources.getString(R.string.medical_logs)</span>
+                } else {
+<span class="nc" id="L193">                    page = currentPage</span>
+                }
+<span class="nc" id="L195">                reason = resources.getString(</span>
+<span class="nc" id="L196">                    R.string.access_to_s_s_s_s_is_restricted_by_the_member,</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">                    (selectedMember.lastName ?: &quot;&quot;) + &quot;,&quot;,</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">                    selectedMember.firstName ?: &quot;&quot;,</span>
+<span class="nc" id="L199">                    resources.getString(R.string.medical_logs)</span>
+                )
+<span class="nc" id="L201">                _hasAccess.value = Event(false)</span>
+<span class="nc" id="L202">                return</span>
+            } else {
+<span class="nc" id="L204">                reason = &quot;&quot;</span>
+<span class="nc" id="L205">                noData = false</span>
+                //            getMessage(selectedMember)
+<span class="nc bnc" id="L207" title="All 2 branches missed.">                if (!memberInfo.hasAvatar.equals(</span>
+<span class="nc" id="L208">                        &quot;true&quot;,</span>
+<span class="nc" id="L209">                        true</span>
+<span class="nc bnc" id="L210" title="All 6 branches missed.">                    ) &amp;&amp; !memberInfo.avatarInReview &amp;&amp; memberInfo.selfieMandatorySwitch &amp;&amp; !memberInfo.memberRelationship.toString()</span>
+<span class="nc" id="L211">                        .equals(</span>
+<span class="nc" id="L212">                                &quot;insured&quot;,</span>
+<span class="nc" id="L213">                                true</span>
+<span class="nc bnc" id="L214" title="All 6 branches missed.">                            ) &amp;&amp; !memberInfo.memberAdditionInReview &amp;&amp; memberInfo.selfId.toLong() &gt; 0 &amp;&amp; !memberInfo.demographicUpdatePending</span>
+                ) {
+<span class="nc bnc" id="L216" title="All 2 branches missed.">                    if (showPicker) {</span>
+<span class="nc" id="L217">                        _showPicker.value = Event(Unit)</span>
+                    }
+<span class="nc" id="L219">                    _hasAccess.value = Event(false)</span>
+<span class="nc" id="L220">                    return</span>
+                }
+<span class="nc" id="L222">                _hasAccess.value = Event(true)</span>
+            }
+        }
+<span class="nc" id="L225">    }</span>
+
+    fun getMemberList(type: String) {
+<span class="nc" id="L228">        compositeDisposable.add(</span>
+<span class="nc" id="L229">            medicalLogsRepository.getMemberList(</span>
+<span class="nc" id="L230">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc" id="L231">                type</span>
+<span class="nc" id="L232">            ).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).doOnSubscribe {</span>
+<span class="nc" id="L233">                loading = true</span>
+<span class="nc" id="L234">            }.subscribe({ it -&gt;</span>
+
+<span class="nc bnc" id="L236" title="All 2 branches missed.">                memberListArray = it.valueArrayList ?: arrayListOf()</span>
+
+<span class="nc bnc" id="L238" title="All 8 branches missed.">                if (currentMember.selfId.isNotBlank() &amp;&amp; bubbleMemberList.isNotEmpty()) {</span>
+<span class="nc" id="L239">                    checkAccess(currentMember, false)</span>
+                }
+<span class="nc" id="L241">                loading = false</span>
+<span class="nc" id="L242">            }, {</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">                if (it is HttpException) {</span>
+<span class="nc" id="L244">                    _serverError.value = Event(</span>
+<span class="nc" id="L245">                        NetworkMessage.getErrorMessage(</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">                            it.response()?.errorBody()</span>
+                        )
+                    )
+                }
+<span class="nc" id="L250">                loading = false</span>
+<span class="nc" id="L251">            })</span>
+        )
+<span class="nc" id="L253">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L256">        super.onCleared()</span>
+<span class="nc" id="L257">        compositeDisposable.dispose()</span>
+<span class="nc" id="L258">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L261">        callbacks.remove(callback)</span>
+<span class="nc" id="L262">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L265">        callbacks.add(callback)</span>
+<span class="nc" id="L266">    }</span>
+
+    /* MARK: this method retrives list of users from database and show user in bubble */
+    fun getMemberFromDatabaseAndList() {
+<span class="nc" id="L270">        bubbleMemberList.clear()</span>
+<span class="nc bnc" id="L271" title="All 4 branches missed.">        memberInfo.insured?.let { it1 -&gt;</span>
+<span class="nc" id="L272">            bubbleMemberList.add(it1)</span>
+<span class="nc" id="L273">            bubbleMemberList.add(memberInfo)</span>
+
+<span class="nc" id="L275">            bubbleMemberList[0].apply { }</span>
+<span class="nc" id="L276">        } ?: run {</span>
+<span class="nc" id="L277">            bubbleMemberList.add(0, memberInfo)</span>
+<span class="nc" id="L278">            bubbleMemberList[0].apply {</span>
+<span class="nc" id="L279">                isSelected = true</span>
+<span class="nc" id="L280">            }</span>
+        }
+
+<span class="nc bnc" id="L283" title="All 2 branches missed.">        memberInfo.dependentsArrayList?.sortByDescending {</span>
+            DateUtils.stringServerDateToDate(
+                it.birthDate.toString()
+            )
+        }
+<span class="nc bnc" id="L288" title="All 2 branches missed.">        memberInfo.dependentsArrayList?.reverse()</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">        memberInfo.dependentsArrayList?.let { it1 -&gt;</span>
+
+<span class="nc bnc" id="L291" title="All 2 branches missed.">            for (member in it1) {</span>
+<span class="nc bnc" id="L292" title="All 2 branches missed.">                if (StringUtils.equalsIgnoreCase(member.memberRelationship, &quot;Spouse&quot;)) {</span>
+<span class="nc" id="L293">                    bubbleMemberList.add(1, member)</span>
+                } else {
+<span class="nc" id="L295">                    bubbleMemberList.add(member)</span>
+                }
+            }
+
+<span class="nc" id="L299">            var grouped = bubbleMemberList.groupBy { it.memberRelationship }</span>
+<span class="nc" id="L300">            grouped.forEach {</span>
+<span class="nc" id="L301">                it.value.sortedByDescending {</span>
+                    DateUtils.stringServerDateToDate(
+                        it.birthDate.toString()
+                    )
+                }
+<span class="nc" id="L306">                it.value.reversed()</span>
+<span class="nc" id="L307">            }</span>
+
+<span class="nc" id="L309">            bubbleMemberList.clear()</span>
+
+<span class="nc" id="L311">            grouped.forEach {</span>
+<span class="nc bnc" id="L312" title="All 2 branches missed.">                if (it.key.equals(&quot;Insured&quot;, true)) {</span>
+<span class="nc" id="L313">                    bubbleMemberList.add(0, it.value[0])</span>
+<span class="nc bnc" id="L314" title="All 2 branches missed.">                } else if (it.key.equals(&quot;Spouse&quot;, true)) {</span>
+<span class="nc bnc" id="L315" title="All 2 branches missed.">                    if (grouped.containsKey(&quot;Insured&quot;)) {</span>
+<span class="nc" id="L316">                        bubbleMemberList.add(1, it.value[0])</span>
+                    } else {
+<span class="nc" id="L318">                        bubbleMemberList.add(0, it.value[0])</span>
+                    }
+<span class="nc bnc" id="L320" title="All 2 branches missed.">                } else if (it.key.equals(&quot;Child&quot;, true)) {</span>
+<span class="nc" id="L321">                    val dateGroup = it.value.groupBy { date -&gt;</span>
+<span class="nc" id="L322">                        DateUtils.stringServerDateToDate(</span>
+<span class="nc" id="L323">                            date.birthDate.toString()</span>
+<span class="nc" id="L324">                        )</span>
+                    }
+
+<span class="nc" id="L327">                    dateGroup.forEach { item -&gt;</span>
+<span class="nc" id="L328">                        val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }</span>
+<span class="nc" id="L329">                        bubbleMemberList.addAll(sorted)</span>
+<span class="nc" id="L330">                    }</span>
+                }
+<span class="nc" id="L332">            }</span>
+
+<span class="nc" id="L334">            val tempOthers: ArrayList&lt;MemberInfo&gt; = arrayListOf()</span>
+<span class="nc" id="L335">            grouped.forEach {</span>
+<span class="nc bnc" id="L336" title="All 4 branches missed.">                if (!it.key.equals(&quot;Insured&quot;, true) &amp;&amp; !it.key.equals(</span>
+<span class="nc" id="L337">                        &quot;Spouse&quot;,</span>
+<span class="nc" id="L338">                        true</span>
+<span class="nc bnc" id="L339" title="All 2 branches missed.">                    ) &amp;&amp; !it.key.equals(&quot;Child&quot;, true)</span>
+                ) {
+<span class="nc" id="L341">                    tempOthers.addAll(it.value)</span>
+                }
+<span class="nc" id="L343">            }</span>
+
+<span class="nc" id="L345">            val dateGroup = tempOthers.groupBy { date -&gt;</span>
+<span class="nc" id="L346">                DateUtils.stringServerDateToDate(</span>
+<span class="nc" id="L347">                    date.birthDate.toString()</span>
+<span class="nc" id="L348">                )</span>
+            }
+<span class="nc" id="L350">            dateGroup.forEach { item -&gt;</span>
+<span class="nc" id="L351">                val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }</span>
+<span class="nc" id="L352">                bubbleMemberList.addAll(sorted)</span>
+<span class="nc" id="L353">            }</span>
+<span class="nc" id="L354">        }</span>
+
+<span class="nc" id="L356">        eligibleBubbleMemberList.clear()</span>
+
+<span class="nc bnc" id="L358" title="All 2 branches missed.">        for (item in bubbleMemberList) {</span>
+<span class="nc" id="L359">            item.isSelected = item.selfId == memberInfo.selfId</span>
+        }
+<span class="nc" id="L361">        memberInfo.isInsured =</span>
+<span class="nc bnc" id="L362" title="All 4 branches missed.">            memberInfo.insured == null || memberInfo.relationDesc.equals(&quot;spouse&quot;, true)</span>
+//        bubbleMemberList.add(
+//            MemberInfo(
+//                isInsured = memberInfo.insured == null || memberInfo.relationDesc.equals(
+//                    &quot;spouse&quot;, true
+//                )
+//            )
+//        )
+<span class="nc" id="L370">        listForHomeBubbleAdapter = bubbleMemberList.toList()</span>
+<span class="nc" id="L371">        _bubbleListGenerated.value = Event(listForHomeBubbleAdapter)</span>
+<span class="nc" id="L372">    }</span>
+
+    fun getMem() {
+<span class="nc bnc" id="L375" title="All 2 branches missed.">        viewModelScope.launch {</span>
+<span class="nc" id="L376">            memberInfoDb = homeRepository.getMemberSid(memberInfo.selfId).asLiveData()</span>
+<span class="nc" id="L377">        }</span>
+<span class="nc" id="L378">    }</span>
+
+    private fun getMessage(member: MemberInfo): String {
+<span class="nc bnc" id="L381" title="All 6 branches missed.">        return if (member.memberAdditionInReview || member.demographicUpdatePending || member.avatarInReview) {</span>
+<span class="nc" id="L382">            noData = true</span>
+<span class="nc" id="L383">            resources.getString(</span>
+<span class="nc" id="L384">                R.string.s_s_s_s_access_is_not_authorized_as_their_account_is_under_review,</span>
+<span class="nc bnc" id="L385" title="All 2 branches missed.">                (member.lastName ?: &quot;&quot;) + &quot;,&quot;,</span>
+<span class="nc bnc" id="L386" title="All 2 branches missed.">                member.firstName ?: &quot;&quot;,</span>
+<span class="nc" id="L387">                resources.getString(R.string.medical_logs)</span>
+            )
+        } else {
+<span class="nc" id="L390">            noData = false</span>
+<span class="nc" id="L391">            &quot;&quot;</span>
+        }
+    }
+<span class="nc" id="L394">    private val _hasAccess = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+    val hasAccess: LiveData&lt;Event&lt;Boolean&gt;&gt;
+<span class="nc" id="L396">        get() = _hasAccess</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

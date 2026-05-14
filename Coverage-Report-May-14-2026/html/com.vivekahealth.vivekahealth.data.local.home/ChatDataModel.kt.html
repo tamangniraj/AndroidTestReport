@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChatDataModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.local.home</a> &gt; <span class="el_source">ChatDataModel.kt</span></div><h1>ChatDataModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.local.home
+
+<span class="nc" id="L3">data class ChatDataModel(</span>
+<span class="nc" id="L4">    var selfId: Long?,</span>
+
+<span class="nc" id="L6">    val clientId: Int,</span>
+
+<span class="nc" id="L8">    val memberId: Long,</span>
+<span class="nc" id="L9">    val userId: String? = &quot;&quot;,</span>
+
+<span class="nc" id="L11">    val message: String,</span>
+<span class="nc" id="L12">    val channelName: String,</span>
+
+<span class="nc" id="L14">    val channelId: String,</span>
+
+<span class="nc" id="L16">    val createdOn: String,</span>
+
+<span class="nc" id="L18">    val modifiedOn: String,</span>
+
+<span class="nc" id="L20">    val editedOn: String,</span>
+
+<span class="nc" id="L22">    val userReadStatus: Boolean =</span>
+<span class="nc" id="L23">        false,</span>
+
+<span class="nc" id="L25">    val archived: Boolean =</span>
+<span class="nc" id="L26">        false,</span>
+
+<span class="nc" id="L28">    val memberReadStatus: Boolean =</span>
+<span class="nc" id="L29">        false,</span>
+
+<span class="nc" id="L31">    val isHeader: Boolean =</span>
+<span class="nc" id="L32">        false,</span>
+
+<span class="nc" id="L34">    val sectionHeader: String? =</span>
+<span class="nc" id="L35">        null,</span>
+
+<span class="nc" id="L37">    val autoReply: Boolean = false,</span>
+<span class="nc" id="L38">    val sessionId: String,</span>
+<span class="nc" id="L39">    val translatedMessage: String,</span>
+<span class="nc" id="L40">    val originalMessage: String,</span>
+<span class="nc" id="L41">    val messageContentType: String,</span>
+<span class="nc" id="L42">    var canInteract: Boolean = true,</span>
+<span class="nc" id="L43">    var actionsTaken: ArrayList&lt;String&gt;? = arrayListOf(),</span>
+<span class="nc" id="L44">    var originalLanguage: String,</span>
+<span class="nc" id="L45">    var translatedLanguage: String</span>
+<span class="nc" id="L46">)</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

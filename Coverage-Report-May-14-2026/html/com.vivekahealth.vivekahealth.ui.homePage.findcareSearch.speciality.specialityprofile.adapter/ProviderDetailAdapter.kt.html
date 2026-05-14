@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProviderDetailAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityprofile.adapter</a> &gt; <span class="el_source">ProviderDetailAdapter.kt</span></div><h1>ProviderDetailAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityprofile.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.databinding.SingleRowDocDetailBinding
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.Value
+
+enum class DetailType {
+<span class="nc" id="L11">    EIN, NPI, GENDER, PRI_TAXO_CAT, PRI_TAXO, SPECIALTIES, BOARD_CERT</span>
+<span class="nc" id="L12">}</span>
+
+class ProviderDetailAdapter(var provider: Value, var detailsList: ArrayList&lt;DetailType&gt;) :
+    RecyclerView.Adapter&lt;ProviderDetailAdapter.DocDetailViewHolder&gt;() {
+    lateinit var docDetailBinding: SingleRowDocDetailBinding
+
+    inner class DocDetailViewHolder(val binding: SingleRowDocDetailBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+        fun setData(provider: Value, detailType: DetailType) {
+            when (detailType) {
+                DetailType.EIN -&gt; {
+                    binding.detailKey = &quot;EIN&quot;
+                    binding.detailValue = provider.ein
+                }
+                DetailType.NPI -&gt; {
+                    binding.detailKey = &quot;NPI&quot;
+                    binding.detailValue = provider.npi
+                }
+                DetailType.GENDER -&gt; {
+                    binding.detailKey = binding.view.context.getString(R.string.gender)
+                    binding.detailValue = provider.gender
+                }
+                DetailType.PRI_TAXO_CAT -&gt; {
+                    binding.detailKey = binding.view.context.getString(
+                        R.string.primary_taxonomy_category
+                    )
+                    binding.detailValue = provider.primaryTaxonomyCategory
+                }
+                DetailType.PRI_TAXO -&gt; {
+                    binding.detailKey = binding.view.context.getString(R.string.primary_taxonomy)
+                    binding.detailValue = provider.primaryTaxonomy
+                }
+                DetailType.SPECIALTIES -&gt; {
+                    binding.detailKey = binding.view.context.getString(R.string.specialties)
+                    binding.detailValue = provider.specialities?.joinToString(&quot;, &quot;)
+                }
+                DetailType.BOARD_CERT -&gt; {
+                    binding.detailKey = binding.view.context.getString(R.string.board_certification)
+                    binding.detailValue = provider.boardCertified
+                }
+            }
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DocDetailViewHolder {
+        docDetailBinding =
+            SingleRowDocDetailBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return DocDetailViewHolder(docDetailBinding)
+    }
+
+    override fun onBindViewHolder(holder: DocDetailViewHolder, position: Int) {
+        val itemPosition = holder.layoutPosition
+        holder.setData(provider, detailsList[itemPosition])
+    }
+
+    override fun getItemCount(): Int {
+        return detailsList.size
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LocationHelper.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils.location</a> &gt; <span class="el_source">LocationHelper.kt</span></div><h1>LocationHelper.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils.location
+
+import android.Manifest
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
+import android.util.Log
+import android.view.View
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.fragment.app.Fragment
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.material.snackbar.Snackbar
+import com.vivekahealth.vivekahealth.BuildConfig.APPLICATION_ID
+import com.vivekahealth.vivekahealth.R
+
+<span class="nc" id="L21">class LocationHelper(</span>
+<span class="nc" id="L22">    private val activity: Activity,</span>
+<span class="nc" id="L23">    private val locationHelperListener: LocationHelperListener,</span>
+<span class="nc" id="L24">    private val fragment: Fragment</span>
+) :
+<span class="nc" id="L26">    AppCompatActivity() {</span>
+
+<span class="nc" id="L28">    private val TAG = &quot;LocationHelper&quot;</span>
+
+<span class="nc" id="L30">    private val REQUEST_PERMISSIONS_REQUEST_CODE = 34</span>
+
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    fun start() {
+<span class="nc" id="L35">        fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity)</span>
+
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        if (!checkPermissions()) {</span>
+<span class="nc" id="L38">            requestPermissions()</span>
+        } else {
+<span class="nc" id="L40">            getLastLocation()</span>
+        }
+<span class="nc" id="L42">    }</span>
+
+    @SuppressLint(&quot;MissingPermission&quot;)
+    private fun getLastLocation() {
+<span class="nc" id="L46">        fusedLocationClient.lastLocation</span>
+<span class="nc" id="L47">            .addOnCompleteListener { taskLocation -&gt;</span>
+<span class="nc bnc" id="L48" title="All 4 branches missed.">                if (taskLocation.isSuccessful &amp;&amp; taskLocation.result != null) {</span>
+<span class="nc" id="L49">                    val location = taskLocation.result</span>
+
+<span class="nc" id="L51">                    locationHelperListener.location(location)</span>
+                } else {
+                }
+<span class="nc" id="L54">            }</span>
+<span class="nc" id="L55">    }</span>
+
+    /**
+     * Shows a [Snackbar].
+     *
+     * @param snackStrId The id for the string resource for the Snackbar text.
+     * @param actionStrId The text of the action item.
+     * @param listener The listener associated with the Snackbar action.
+     */
+<span class="nc" id="L64">    private fun showSnackbar(</span>
+        snackStrId: Int,
+<span class="nc" id="L66">        actionStrId: Int = 0,</span>
+<span class="nc" id="L67">        listener: View.OnClickListener? = null</span>
+    ) {
+<span class="nc" id="L69">        val snackbar = Snackbar.make(</span>
+<span class="nc" id="L70">            activity.findViewById(android.R.id.content),</span>
+<span class="nc" id="L71">            activity.getString(snackStrId),</span>
+<span class="nc" id="L72">            Snackbar.LENGTH_INDEFINITE</span>
+        )
+<span class="nc bnc" id="L74" title="All 4 branches missed.">        if (actionStrId != 0 &amp;&amp; listener != null) {</span>
+<span class="nc" id="L75">            snackbar.setAction(activity.getString(actionStrId), listener)</span>
+        }
+<span class="nc" id="L77">        snackbar.show()</span>
+<span class="nc" id="L78">    }</span>
+
+    /**
+     * Return the current state of the permissions needed.
+     */
+    private fun checkPermissions() =
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        ActivityCompat.checkSelfPermission(</span>
+<span class="nc" id="L85">            activity,</span>
+<span class="nc" id="L86">            Manifest.permission.ACCESS_COARSE_LOCATION</span>
+<span class="nc" id="L87">        ) == PackageManager.PERMISSION_GRANTED</span>
+
+    private fun startLocationPermissionRequest() {
+<span class="nc" id="L90">        ActivityCompat.requestPermissions(</span>
+<span class="nc" id="L91">            activity,</span>
+<span class="nc" id="L92">            arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),</span>
+<span class="nc" id="L93">            REQUEST_PERMISSIONS_REQUEST_CODE</span>
+        )
+<span class="nc" id="L95">    }</span>
+
+    private fun requestPermissions() {
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (ActivityCompat.shouldShowRequestPermissionRationale(</span>
+<span class="nc" id="L99">                activity,</span>
+<span class="nc" id="L100">                Manifest.permission.ACCESS_COARSE_LOCATION</span>
+            )
+        ) {
+            // Provide an additional rationale to the user. This would happen if the user denied the
+            // request previously, but didn't check the &quot;Don't ask again&quot; checkbox.
+<span class="nc" id="L105">            showSnackbar(</span>
+<span class="nc" id="L106">                R.string.permission_rationale,</span>
+<span class="nc" id="L107">                R.string.ok_string,</span>
+                View.OnClickListener {
+                    // Request permission
+<span class="nc" id="L110">                    startLocationPermissionRequest()</span>
+<span class="nc" id="L111">                }</span>
+            )
+        } else {
+            // Request permission. It's possible this can be auto answered if device policy
+            // sets the permission in a given state or the user denied the permission
+            // previously and checked &quot;Never ask again&quot;.
+<span class="nc" id="L117">            startLocationPermissionRequest()</span>
+        }
+<span class="nc" id="L119">    }</span>
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array&lt;String&gt;,
+        grantResults: IntArray
+    ) {
+<span class="nc" id="L125">        super.onRequestPermissionsResult(requestCode, permissions, grantResults)</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if (requestCode == REQUEST_PERMISSIONS_REQUEST_CODE) {</span>
+<span class="nc" id="L127">            when {</span>
+                // If user interaction was interrupted, the permission request is cancelled and you
+                // receive empty arrays.
+<span class="nc bnc" id="L130" title="All 4 branches missed.">                grantResults.isEmpty() -&gt; Log.i(TAG, &quot;User interaction was cancelled.&quot;)</span>
+
+                // Permission granted.
+<span class="nc bnc" id="L133" title="All 2 branches missed.">                (grantResults[0] == PackageManager.PERMISSION_GRANTED) -&gt; getLastLocation()</span>
+
+                // Permission denied.
+
+                // Notify the user via a SnackBar that they have rejected a core permission for the
+                // app, which makes the Activity useless. In a real app, core permissions would
+                // typically be best requested during a welcome-screen flow.
+
+                // Additionally, it is important to remember that a permission might have been
+                // rejected without asking the user for permission (device policy or &quot;Never ask
+                // again&quot; prompts). Therefore, a user interface affordance is typically implemented
+                // when permissions are denied. Otherwise, your app could appear unresponsive to
+                // touches or interactions which have required permissions.
+                else -&gt; {
+<span class="nc" id="L147">                    showSnackbar(</span>
+<span class="nc" id="L148">                        R.string.permission_denied_explanation,</span>
+<span class="nc" id="L149">                        R.string.settings,</span>
+                        View.OnClickListener {
+                            // Build intent that displays the App settings screen.
+<span class="nc" id="L152">                            val intent = Intent().apply {</span>
+<span class="nc" id="L153">                                action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS</span>
+<span class="nc" id="L154">                                data = Uri.fromParts(&quot;package&quot;, APPLICATION_ID, null)</span>
+<span class="nc" id="L155">                                flags = Intent.FLAG_ACTIVITY_NEW_TASK</span>
+<span class="nc" id="L156">                            }</span>
+<span class="nc" id="L157">                            startActivity(intent)</span>
+<span class="nc" id="L158">                        }</span>
+                    )
+                }
+            }
+        }
+<span class="nc" id="L163">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UploadState.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.local.guest</a> &gt; <span class="el_source">UploadState.kt</span></div><h1>UploadState.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.local.guest
+
+import com.vivekahealth.vivekahealth.data.remote.guest.AdditionalRequirementResponse
+import com.vivekahealth.vivekahealth.data.remote.guest.DocumentUploadResponse
+import com.vivekahealth.vivekahealth.utils.remote.RetrofitException
+import okhttp3.internal.http2.StreamResetException
+import java.io.IOException
+import java.net.SocketTimeoutException
+
+enum class LoadingState {
+<span class="nc" id="L11">    UPLOAD,</span>
+<span class="nc" id="L12">    VERIFY,</span>
+<span class="nc" id="L13">    IDENTIFY,</span>
+<span class="nc" id="L14">    PROCESS,</span>
+<span class="nc" id="L15">    RESET</span>
+<span class="nc" id="L16">}</span>
+
+sealed class UploadState {
+
+<span class="nc" id="L20">    object Uploaded : UploadState()</span>
+<span class="nc" id="L21">    object CustomerSupport : UploadState()</span>
+<span class="nc" id="L22">    object AddZip : UploadState() // Multi-match request zip</span>
+<span class="nc" id="L23">    object AddAddress : UploadState() // Multi-match request address</span>
+<span class="nc" id="L24">    object NoMatchAddZip : UploadState() // No match request zip</span>
+<span class="nc" id="L25">    object NoMatchAddAddress : UploadState() // No match request address</span>
+
+<span class="nc" id="L27">    data class MemberAlreadyRegistered(val email: String) : UploadState()</span>
+<span class="nc" id="L28">    data class ResetSuccess(val email: String, val msg: String) : UploadState()</span>
+<span class="nc" id="L29">    data class ResetError(val msg: String) : UploadState()</span>
+
+<span class="nc" id="L31">    data class Loading(val state: LoadingState) : UploadState()</span>
+<span class="nc" id="L32">    data class Success(</span>
+<span class="nc" id="L33">        val qrResult: Any? = null,</span>
+<span class="nc" id="L34">        val imageResult: DocumentUploadResponse? = null,</span>
+<span class="nc" id="L35">        val additionalRequirement: AdditionalRequirementResponse? = null</span>
+<span class="nc" id="L36">    ) : UploadState() // Replace `String` with your data type</span>
+
+<span class="nc" id="L38">    data class SuccessScan(val data: Any? = null) : UploadState()</span>
+<span class="nc" id="L39">    data class FailedScan(val msg: String) : UploadState()</span>
+
+<span class="fc" id="L41">    data class Error(val message: String) : UploadState() {</span>
+<span class="fc" id="L42">        constructor(exception: Throwable) : this(</span>
+
+<span class="fc" id="L44">            when (exception) {</span>
+<span class="pc bpc" id="L45" title="2 of 4 branches missed.">                is SocketTimeoutException, is StreamResetException -&gt; &quot;Request timed out. Please try again.&quot;</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">                is IOException -&gt; &quot;No internet connection.&quot;</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">                is RetrofitException -&gt; handleRetrofitException(exception)</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">                else -&gt; exception.localizedMessage ?: &quot;An unexpected error occurred.&quot;</span>
+            }
+<span class="fc" id="L50">        )</span>
+
+        companion object {
+            private fun handleRetrofitException(exception: RetrofitException): String {
+<span class="fc" id="L54">                val ex = exception.exception</span>
+
+<span class="pc bpc" id="L56" title="3 of 6 branches missed.">                if ((ex.message?.contains(&quot;SocketException&quot;) == true) &amp;&amp;</span>
+<span class="nc bnc" id="L57" title="All 6 branches missed.">                    (ex.message?.contains(&quot;StreamResetException&quot;) == true)</span>
+                ) {
+<span class="nc" id="L59">                    return &quot;Upload failed due to a network interruption. Please check your connection and try again.&quot;</span>
+                }
+
+<span class="fc" id="L62">                return when (val ex = exception.exception) {</span>
+<span class="pc bpc" id="L63" title="2 of 4 branches missed.">                    is SocketTimeoutException, is StreamResetException -&gt; &quot;Request timed out. Please try again.&quot;</span>
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">                    is IOException -&gt; &quot;No internet connection.&quot;</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">                    else -&gt; ex.localizedMessage ?: &quot;An unexpected error occurred.&quot;</span>
+                }
+            }
+        }
+    }
+
+<span class="nc" id="L71">    object Idle : UploadState() // Optional, for the initial state</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

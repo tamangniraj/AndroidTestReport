@@ -1,0 +1,804 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoginV2ViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.login.loginV2</a> &gt; <span class="el_source">LoginV2ViewModel.kt</span></div><h1>LoginV2ViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.login.loginV2
+
+import android.content.SharedPreferences
+import android.text.Editable
+import android.text.TextWatcher
+import androidx.core.content.edit
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
+import com.google.gson.reflect.TypeToken
+import com.vivekahealth.vivekahealth.BR
+import com.vivekahealth.vivekahealth.data.remote.guest.GuestUserInfo
+import com.vivekahealth.vivekahealth.data.remote.home.UpdateDetails
+import com.vivekahealth.vivekahealth.data.remote.login.AuthToken
+import com.vivekahealth.vivekahealth.data.remote.login.ErrorResponse
+import com.vivekahealth.vivekahealth.data.remote.register.DataResponse
+import com.vivekahealth.vivekahealth.data.remote.register.RegisterUser
+import com.vivekahealth.vivekahealth.ui.guestHome.repository.GuestHomeRepository
+import com.vivekahealth.vivekahealth.ui.guestVerify.documents.DocumentType
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.ui.login.repository.LoginRepository
+import com.vivekahealth.vivekahealth.ui.register.step3.repository.EmailRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Constants.APOLOGY_MESSAGE
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import com.vivekahealth.vivekahealth.utils.remote.APILoginResponse
+import com.vivekahealth.vivekahealth.utils.remote.APIResponseV2
+import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.launch
+import retrofit2.Response
+import timber.log.Timber
+import javax.inject.Inject
+
+<span class="fc" id="L46">class LoginV2ViewModel @Inject constructor(</span>
+<span class="fc" id="L47">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L48">    private val loginRepository: LoginRepository,</span>
+<span class="fc" id="L49">    private val emailRepository: EmailRepository,</span>
+<span class="fc" id="L50">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L51">    private val guestHomeRepository: GuestHomeRepository</span>
+<span class="fc" id="L52">) : ViewModel(), Observable {</span>
+<span class="pc" id="L53">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="fc" id="L54">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="fc" id="L56">    private val _emailChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val emailChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="fc" id="L58">        get() = _emailChanged</span>
+
+<span class="fc" id="L60">    private val _passwordChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val passwordChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L62">        get() = _passwordChanged</span>
+
+<span class="fc" id="L64">    private val _shouldGoToLogin = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+    val shouldGoToLogin: LiveData&lt;Event&lt;Boolean&gt;&gt;
+<span class="fc" id="L66">        get() = _shouldGoToLogin</span>
+
+<span class="fc" id="L68">    private val _navigateToNextPage = MutableLiveData&lt;Event&lt;APIResponseV2&lt;DataResponse&gt;&gt;&gt;()</span>
+    val navigateToNextPage: LiveData&lt;Event&lt;APIResponseV2&lt;DataResponse&gt;&gt;&gt;
+<span class="nc" id="L70">        get() = _navigateToNextPage</span>
+
+<span class="fc" id="L72">    private val _isLoading = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+    val isLoading: LiveData&lt;Event&lt;Boolean&gt;&gt;
+<span class="nc" id="L74">        get() = _isLoading</span>
+
+<span class="fc" id="L76">    private val _logInSuccess = MutableLiveData&lt;APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;&gt;()</span>
+    val logInSuccess: LiveData&lt;APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;&gt;
+<span class="nc" id="L78">        get() = _logInSuccess</span>
+
+<span class="fc" id="L80">    private val _logInFail = MutableLiveData&lt;ErrorResponse&gt;()</span>
+    val logInFail: LiveData&lt;ErrorResponse&gt;
+<span class="nc" id="L82">        get() = _logInFail</span>
+
+<span class="pc" id="L84">    var isPasswordSaved: MutableLiveData&lt;Boolean&gt; = MutableLiveData()</span>
+
+<span class="pc" id="L86">    var availableBiometric: MutableLiveData&lt;Boolean&gt; = MutableLiveData(false)</span>
+
+<span class="pc" id="L88">    var biometricEnabled: MutableLiveData&lt;Boolean&gt; = MutableLiveData(</span>
+<span class="fc" id="L89">        preferences.getBoolean(</span>
+<span class="fc" id="L90">            preferences.getString(Constants.USER_EMAIL, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,</span>
+<span class="fc" id="L91">            false</span>
+        )
+<span class="nc" id="L93">    )</span>
+<span class="fc" id="L94">    private val _alternativeApp = MutableLiveData&lt;Event&lt;ErrorResponse&gt;&gt;()</span>
+    val alternativeApp: LiveData&lt;Event&lt;ErrorResponse&gt;&gt;
+<span class="nc" id="L96">        get() = _alternativeApp</span>
+
+<span class="fc" id="L98">    private val _navigateToFingerPrint = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToFingerPrint: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L100">        get() = _navigateToFingerPrint</span>
+
+<span class="fc" id="L102">    private val _fingerPrintLogin = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val fingerPrintLogin: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L104">        get() = _fingerPrintLogin</span>
+
+<span class="pc" id="L106">    var savedUserNameEncoded: String = preferences.getString(</span>
+<span class="fc" id="L107">        Constants.encodedEmail,</span>
+<span class="fc" id="L108">        &quot;&quot;</span>
+<span class="pc" id="L109">    ).toString()</span>
+<span class="pc" id="L110">    var savedPasswordEncoded: String = preferences.getString(</span>
+<span class="fc" id="L111">        Constants.encodedPassword,</span>
+<span class="fc" id="L112">        &quot;&quot;</span>
+<span class="pc" id="L113">    ).toString()</span>
+
+<span class="nc" id="L115">    var isBiometricLogin: Boolean = false</span>
+
+    // for data binding
+<span class="pc" id="L118">    var email: String = &quot;&quot;</span>
+<span class="pc" id="L119">    var bioEmail: String = &quot;&quot;</span>
+<span class="pc" id="L120">    var password: String = &quot;&quot;</span>
+<span class="nc" id="L121">    var emailError: Boolean = false</span>
+<span class="nc" id="L122">    var passwordError: Boolean = false</span>
+<span class="nc" id="L123">    var showPasswordLayout: Boolean = false</span>
+
+    var nextEnabled: Boolean = false
+<span class="nc" id="L126">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L128">            field = value</span>
+<span class="nc" id="L129">            callbacks.notifyCallbacks(this, BR.nextEnabled, null)</span>
+<span class="nc" id="L130">        }</span>
+
+<span class="pc" id="L132">    var gson = Gson()</span>
+<span class="pc" id="L133">    var user = RegisterUser()</span>
+
+<span class="nc" id="L135">    @get:Bindable</span>
+<span class="fc" id="L136">    val emailTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="fc" id="L139">        }</span>
+
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="fc" id="L142">        }</span>
+
+        override fun afterTextChanged(s: Editable) {
+<span class="fc" id="L145">            _emailChanged.value = Event(s.toString().trim())</span>
+<span class="fc" id="L146">        }</span>
+    }
+
+<span class="nc" id="L149">    @get:Bindable</span>
+<span class="fc" id="L150">    val passwordTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="fc" id="L153">        }</span>
+
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="fc" id="L156">        }</span>
+
+        override fun afterTextChanged(s: Editable) {
+<span class="fc" id="L159">            _passwordChanged.value = Event(s.toString())</span>
+<span class="fc" id="L160">        }</span>
+    }
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L164">        callbacks.add(callback)</span>
+<span class="nc" id="L165">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L168">        callbacks.remove(callback)</span>
+<span class="nc" id="L169">    }</span>
+
+    fun clearPreviousEnrollment() {
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        viewModelScope.launch {</span>
+<span class="fc" id="L173">            preferences.edit()</span>
+<span class="fc" id="L174">                .putString(Constants.enroll, &quot;&quot;)</span>
+<span class="fc" id="L175">                .putString(Constants.maritalStatus, &quot;&quot;)</span>
+<span class="fc" id="L176">                .putString(Constants.ContinueCoverage, &quot;&quot;)</span>
+<span class="fc" id="L177">                .apply()</span>
+<span class="fc" id="L178">        }</span>
+<span class="fc" id="L179">    }</span>
+
+    fun checkUsername(username: String) {
+<span class="nc" id="L182">        clearPreviousEnrollment()</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        viewModelScope.launch {</span>
+<span class="nc" id="L184">            loginRepository.getGuestToken()</span>
+<span class="nc" id="L185">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L186">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L187">                .doOnSubscribe {</span>
+<span class="nc" id="L188">                    _isLoading.value = Event(true)</span>
+<span class="nc" id="L189">                }</span>
+<span class="nc" id="L190">                .flatMap { response -&gt;</span>
+                    response.body()?.let {
+<span class="nc" id="L192">                        saveTokens(it)</span>
+<span class="nc" id="L193">                        val apisHeader: String = &quot;${it.token_type} ${it.access_token}&quot;</span>
+<span class="nc" id="L194">                        return@flatMap emailRepository.verifyEmailV2(username.trim(), apisHeader)</span>
+<span class="nc" id="L195">                            .subscribeOn(</span>
+<span class="nc" id="L196">                                Schedulers.io()</span>
+                            )
+<span class="nc" id="L198">                            .observeOn(AndroidSchedulers.mainThread())</span>
+                    }
+
+<span class="nc bnc" id="L201" title="All 4 branches missed.">                    response.errorBody()?.let {</span>
+<span class="nc" id="L202">                        try {</span>
+<span class="nc" id="L203">                            val errorResponse: DataResponse = gson.fromJson(</span>
+<span class="nc" id="L204">                                it.string(),</span>
+<span class="nc" id="L205">                                DataResponse::class.java</span>
+                            )
+
+<span class="nc" id="L208">                            return@flatMap Single.error(Throwable(errorResponse.errorDescription))</span>
+<span class="nc" id="L209">                        } catch (</span>
+                            ex: Exception
+                        ) {
+<span class="nc" id="L212">                            return@flatMap Single.error(Throwable(APOLOGY_MESSAGE))</span>
+                        }
+<span class="nc" id="L214">                    }</span>
+<span class="nc" id="L215">                }.subscribe({</span>
+<span class="nc" id="L216">                    Timber.d(&quot;ErrorCode: ${it.code()} ${it.raw().code}&quot;)</span>
+
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                    if (it.isSuccessful) {</span>
+<span class="nc bnc" id="L219" title="All 2 branches missed.">                        it.body()?.let {</span>
+<span class="nc bnc" id="L220" title="All 2 branches missed.">                            if (it.code == &quot;200&quot;) {</span>
+<span class="nc" id="L221">                                saveEmail()</span>
+<span class="nc bnc" id="L222" title="All 2 branches missed.">                                saveRegistrationId(it.otherDetails?.sessionId)</span>
+
+<span class="nc" id="L224">                                _navigateToNextPage.value = Event(</span>
+<span class="nc" id="L225">                                    APIResponseV2&lt;DataResponse&gt;().success(it)</span>
+                                )
+
+<span class="nc" id="L228">                                _shouldGoToLogin.value = Event(</span>
+<span class="nc bnc" id="L229" title="All 4 branches missed.">                                    it.reason?.compareTo(</span>
+<span class="nc" id="L230">                                        &quot;REGISTERED_AND_VERIFIED&quot;,</span>
+<span class="nc" id="L231">                                        true</span>
+                                    ) == 0
+                                )
+                            } else {
+<span class="nc" id="L235">                                try {</span>
+<span class="nc" id="L236">                                    val errorResponse = it</span>
+
+<span class="nc bnc" id="L238" title="All 6 branches missed.">                                    if (errorResponse.errorCode?.compareTo(</span>
+<span class="nc" id="L239">                                            &quot;ALTERNATE_APP_AVAILABLE&quot;,</span>
+<span class="nc" id="L240">                                            true</span>
+                                        ) == 0
+                                    ) {
+<span class="nc" id="L243">                                        _alternativeApp.value = Event(</span>
+<span class="nc" id="L244">                                            ErrorResponse(</span>
+<span class="nc bnc" id="L245" title="All 2 branches missed.">                                                android = errorResponse.otherDetails?.android.toString(),</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">                                                alternativeAppAvailable = errorResponse.otherDetails?.alternativeAppAvailable,</span>
+<span class="nc" id="L247">                                                error_description = errorResponse.errorDescription,</span>
+<span class="nc bnc" id="L248" title="All 4 branches missed.">                                                appName = errorResponse.otherDetails?.appName ?: &quot;&quot;</span>
+                                            )
+                                        )
+                                    } else {
+<span class="nc" id="L252">                                        _shouldGoToLogin.value = Event(</span>
+<span class="nc bnc" id="L253" title="All 4 branches missed.">                                            errorResponse.errorCode?.compareTo(</span>
+<span class="nc" id="L254">                                                &quot;REGISTERED_AND_VERIFIED&quot;,</span>
+<span class="nc" id="L255">                                                true</span>
+                                            ) == 0
+                                        )
+
+<span class="nc" id="L259">                                        _navigateToNextPage.value = Event(</span>
+<span class="nc" id="L260">                                            APIResponseV2&lt;DataResponse&gt;().errorData(</span>
+<span class="nc" id="L261">                                                errorResponse</span>
+                                            )
+                                        )
+                                    }
+<span class="nc" id="L265">                                } catch (e: Exception) {</span>
+<span class="nc" id="L266">                                    _navigateToNextPage.value = Event(</span>
+<span class="nc" id="L267">                                        APIResponseV2&lt;DataResponse&gt;().error(APOLOGY_MESSAGE)</span>
+                                    )
+                                }
+                            }
+<span class="nc" id="L271">                        }</span>
+                    } else {
+<span class="nc" id="L273">                        try {</span>
+<span class="nc" id="L274">                            val errorResponse: DataResponse = gson.fromJson(</span>
+<span class="nc bnc" id="L275" title="All 2 branches missed.">                                it.errorBody()?.string(),</span>
+<span class="nc" id="L276">                                DataResponse::class.java</span>
+                            )
+
+<span class="nc bnc" id="L279" title="All 6 branches missed.">                            if (errorResponse.errorType?.compareTo(</span>
+<span class="nc" id="L280">                                    &quot;ALTERNATE_APP_AVAILABLE&quot;,</span>
+<span class="nc" id="L281">                                    true</span>
+                                ) == 0
+                            ) {
+<span class="nc" id="L284">                                _alternativeApp.value = Event(</span>
+<span class="nc" id="L285">                                    ErrorResponse(</span>
+<span class="nc bnc" id="L286" title="All 2 branches missed.">                                        android = errorResponse.otherDetails?.android.toString(),</span>
+<span class="nc bnc" id="L287" title="All 2 branches missed.">                                        alternativeAppAvailable = errorResponse.otherDetails?.alternativeAppAvailable,</span>
+<span class="nc" id="L288">                                        error_description = errorResponse.errorDescription,</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">                                        appName = errorResponse.otherDetails?.appName</span>
+                                    )
+                                )
+                            } else {
+<span class="nc" id="L293">                                _shouldGoToLogin.value = Event(</span>
+<span class="nc bnc" id="L294" title="All 4 branches missed.">                                    errorResponse.errorType?.compareTo(</span>
+<span class="nc" id="L295">                                        &quot;REGISTERED_AND_VERIFIED&quot;,</span>
+<span class="nc" id="L296">                                        true</span>
+                                    ) == 0
+                                )
+
+<span class="nc" id="L300">                                _navigateToNextPage.value = Event(</span>
+<span class="nc" id="L301">                                    APIResponseV2&lt;DataResponse&gt;().errorData(</span>
+<span class="nc" id="L302">                                        errorResponse</span>
+                                    )
+                                )
+                            }
+<span class="nc" id="L306">                        } catch (e: Exception) {</span>
+<span class="nc" id="L307">                            _navigateToNextPage.value = Event(</span>
+<span class="nc" id="L308">                                APIResponseV2&lt;DataResponse&gt;().error(APOLOGY_MESSAGE)</span>
+                            )
+                        }
+                    }
+<span class="nc bnc" id="L312" title="All 8 branches missed.">                    if (!isBiometricLogin || shouldGoToLogin.value?.peekContent() == false) {</span>
+<span class="nc" id="L313">                        _isLoading.value = Event(false)</span>
+                    }
+<span class="nc" id="L315">                    email = username</span>
+<span class="nc" id="L316">                }, {</span>
+<span class="nc bnc" id="L317" title="All 4 branches missed.">                    if (&quot;Unable to resolve host&quot; in it.message.toString() || &quot;Unable to establish &quot; in it.message.toString()) {</span>
+<span class="nc" id="L318">                        saveEmail()</span>
+<span class="nc" id="L319">                        val decryptedEmail = HelperUtils.decrypt(savedUserNameEncoded)</span>
+<span class="nc bnc" id="L320" title="All 2 branches missed.">                        if (email == decryptedEmail) {</span>
+                            // Just go to login
+<span class="nc" id="L322">                            _shouldGoToLogin.value = Event(true)</span>
+                        }
+                    }
+
+<span class="nc" id="L326">                    try {</span>
+<span class="nc" id="L327">                        _navigateToNextPage.value = Event(</span>
+<span class="nc" id="L328">                            APIResponseV2&lt;DataResponse&gt;().error(</span>
+<span class="nc" id="L329">                                it.message.toString()</span>
+                            )
+                        )
+<span class="nc" id="L332">                    } catch (exception: Exception) {</span>
+<span class="nc" id="L333">                        _navigateToNextPage.value = Event(</span>
+<span class="nc" id="L334">                            APIResponseV2&lt;DataResponse&gt;().error(APOLOGY_MESSAGE)</span>
+                        )
+                    }
+
+<span class="nc" id="L338">                    _isLoading.value = Event(false)</span>
+<span class="nc" id="L339">                })</span>
+<span class="nc" id="L340">        }</span>
+<span class="nc" id="L341">    }</span>
+
+<span class="nc" id="L343">    fun login(username: String, password: String, isBiometricLogin: Boolean = false) {</span>
+<span class="nc" id="L344">        fromMagicLogin = false</span>
+<span class="nc" id="L345">        compositeDisposable.add(</span>
+<span class="nc" id="L346">            loginRepository.getLogin(username, password, &quot;&quot;, isBiometricLogin)</span>
+<span class="nc" id="L347">                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L348">                .doOnSubscribe {</span>
+<span class="nc" id="L349">                    _isLoading.value = Event(true)</span>
+<span class="nc" id="L350">                }</span>
+<span class="nc" id="L351">                .subscribe({</span>
+<span class="nc" id="L352">                    encourageVerification()</span>
+<span class="nc bnc" id="L353" title="All 2 branches missed.">                    if (it.isSuccessful) {</span>
+<span class="nc bnc" id="L354" title="All 2 branches missed.">                        it.body()?.let {</span>
+<span class="nc" id="L355">                            saveTokens(it)</span>
+<span class="nc" id="L356">                        }</span>
+
+<span class="nc" id="L358">                        preferences.edit().putBoolean(Constants.IS_MAGIC_LOGIN, false).apply()</span>
+
+<span class="nc" id="L360">                        saveForOffline(username, password)</span>
+
+<span class="nc" id="L362">                        getMemberId(it)</span>
+                        // Set email verified to true if logged in successfully
+<span class="nc" id="L364">                        val key = &quot;$username${Constants.EMAIL_VERIFIED}&quot;</span>
+<span class="nc" id="L365">                        preferences.edit {</span>
+<span class="nc" id="L366">                            putBoolean(key, true)</span>
+<span class="nc" id="L367">                        }</span>
+                    } else {
+<span class="nc" id="L369">                        _isLoading.value = Event(false)</span>
+
+<span class="nc" id="L371">                        val gson = Gson()</span>
+<span class="nc" id="L372">                        try {</span>
+<span class="nc" id="L373">                            val errorResponse: ErrorResponse? = gson.fromJson(</span>
+<span class="nc bnc" id="L374" title="All 2 branches missed.">                                it.errorBody()?.charStream(),</span>
+<span class="nc" id="L375">                                ErrorResponse::class.java</span>
+                            )
+
+<span class="nc bnc" id="L378" title="All 6 branches missed.">                            if (it.raw().code == 403 &amp;&amp; errorResponse?.alternativeAppAvailable == &quot;true&quot;) {</span>
+<span class="nc" id="L379">                                _alternativeApp.value = Event(</span>
+<span class="nc" id="L380">                                    ErrorResponse(</span>
+<span class="nc bnc" id="L381" title="All 2 branches missed.">                                        android = errorResponse.android.orEmpty(),</span>
+<span class="nc" id="L382">                                        alternativeAppAvailable = errorResponse.alternativeAppAvailable,</span>
+<span class="nc" id="L383">                                        error_description = errorResponse.error_description,</span>
+<span class="nc bnc" id="L384" title="All 2 branches missed.">                                        appName = errorResponse.appName.orEmpty()</span>
+                                    )
+                                )
+                            } else {
+<span class="nc bnc" id="L388" title="All 6 branches missed.">                                _logInFail.value = errorResponse?.takeIf {</span>
+<span class="nc bnc" id="L389" title="All 6 branches missed.">                                    !it.error_description.isNullOrBlank()</span>
+<span class="nc" id="L390">                                } ?: ErrorResponse(</span>
+<span class="nc" id="L391">                                    android = &quot;&quot;,</span>
+<span class="nc" id="L392">                                    alternativeAppAvailable = &quot;false&quot;,</span>
+<span class="nc" id="L393">                                    error_description = APOLOGY_MESSAGE,</span>
+<span class="nc" id="L394">                                    appName = &quot;&quot;</span>
+                                )
+                            }
+<span class="nc" id="L397">                        } catch (e: JsonSyntaxException) {</span>
+<span class="nc" id="L398">                            _logInFail.value = ErrorResponse(</span>
+<span class="nc" id="L399">                                android = &quot;&quot;,</span>
+<span class="nc" id="L400">                                alternativeAppAvailable = &quot;false&quot;,</span>
+<span class="nc" id="L401">                                error_description = APOLOGY_MESSAGE,</span>
+<span class="nc" id="L402">                                appName = &quot;&quot;</span>
+                            )
+                        }
+                    }
+<span class="nc" id="L406">                }, {</span>
+<span class="nc" id="L407">                    _isLoading.value = Event(false)</span>
+<span class="nc bnc" id="L408" title="All 2 branches missed.">                    it.message?.let { errMsg -&gt;</span>
+<span class="nc" id="L409">                        val errRes = ErrorResponse()</span>
+<span class="nc" id="L410">                        errRes.error_description = errMsg</span>
+<span class="nc" id="L411">                        _logInFail.value = errRes</span>
+<span class="nc" id="L412">                    }</span>
+<span class="nc" id="L413">                })</span>
+        )
+<span class="nc" id="L415">    }</span>
+
+    fun postLanguage(memberId: String, languageCode: String, response: Response&lt;AuthToken&gt;) {
+<span class="nc bnc" id="L418" title="All 6 branches missed.">        if (response.body()?.isGuest == true) {</span>
+<span class="nc" id="L419">            compositeDisposable.add(</span>
+<span class="nc" id="L420">                guestHomeRepository.setLanguagePreference(languageCode)</span>
+<span class="nc" id="L421">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L422">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L423">                    .doOnSubscribe {</span>
+<span class="nc" id="L424">                    }</span>
+<span class="nc" id="L425">                    .subscribe({</span>
+<span class="nc" id="L426">                        languageToPush = null</span>
+<span class="nc" id="L427">                        _isLoading.value = Event(false)</span>
+<span class="nc" id="L428">                        _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(</span>
+<span class="nc" id="L429">                            response</span>
+                        )
+<span class="nc" id="L431">                    }, {</span>
+<span class="nc" id="L432">                        _isLoading.value = Event(false)</span>
+<span class="nc" id="L433">                        _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(</span>
+<span class="nc" id="L434">                            response</span>
+                        )
+<span class="nc" id="L436">                    })</span>
+            )
+        } else {
+<span class="nc" id="L439">            compositeDisposable.add(</span>
+<span class="nc" id="L440">                homeRepository.updateUserDetails(</span>
+<span class="nc" id="L441">                    memberId,</span>
+<span class="nc" id="L442">                    UpdateDetails(languagePreference = languageCode)</span>
+                )
+<span class="nc" id="L444">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L445">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L446">                    .doOnSubscribe {</span>
+<span class="nc" id="L447">                    }</span>
+<span class="nc" id="L448">                    .subscribe({</span>
+<span class="nc" id="L449">                        languageToPush = null</span>
+<span class="nc" id="L450">                        _isLoading.value = Event(false)</span>
+<span class="nc" id="L451">                        _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(</span>
+<span class="nc" id="L452">                            response</span>
+                        )
+<span class="nc" id="L454">                    }, {</span>
+<span class="nc" id="L455">                        _isLoading.value = Event(false)</span>
+<span class="nc" id="L456">                        _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(</span>
+<span class="nc" id="L457">                            response</span>
+                        )
+<span class="nc" id="L459">                    })</span>
+            )
+        }
+<span class="nc" id="L462">    }</span>
+
+<span class="nc" id="L464">    var languageToPush: String? = null</span>
+
+    fun getGuestMemberId(response: Response&lt;AuthToken&gt;) {
+<span class="nc" id="L467">        compositeDisposable.add(</span>
+<span class="nc" id="L468">            guestHomeRepository.getGuestInfo()</span>
+<span class="nc" id="L469">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L470">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L471">                .doOnSubscribe {</span>
+<span class="nc" id="L472">                    _isLoading.value = Event(true)</span>
+<span class="nc" id="L473">                }</span>
+<span class="nc" id="L474">                .subscribe({</span>
+<span class="nc" id="L475">                    fetchedMemberId = it.id</span>
+//                    if (languageToPush != it.languagePreference) {
+//                        postLanguage(it.id, languageToPush ?: &quot;&quot;, response)
+//                    } else {
+<span class="nc" id="L479">                    _isLoading.value = Event(false)</span>
+
+<span class="nc" id="L481">                    handleGuestLogin(it)</span>
+<span class="nc bnc" id="L482" title="All 2 branches missed.">                    if (!isBiometricLogin) {</span>
+<span class="nc" id="L483">                        saveForOffline(email, password)</span>
+                    }
+
+//                    }
+
+<span class="nc" id="L488">                    _isLoading.value = Event(false)</span>
+<span class="nc" id="L489">                }, {</span>
+<span class="nc" id="L490">                    _isLoading.value = Event(false)</span>
+<span class="nc" id="L491">                    _logInFail.value = ErrorResponse(</span>
+<span class="nc" id="L492">                        android = &quot;&quot;,</span>
+<span class="nc" id="L493">                        alternativeAppAvailable = &quot;false&quot;,</span>
+<span class="nc bnc" id="L494" title="All 2 branches missed.">                        error_description = it.message ?: APOLOGY_MESSAGE,</span>
+<span class="nc" id="L495">                        appName = &quot;&quot;</span>
+                    )
+<span class="nc" id="L497">                })</span>
+
+        )
+<span class="nc" id="L500">    }</span>
+
+    fun getMemberId(response: Response&lt;AuthToken&gt;) {
+<span class="nc bnc" id="L503" title="All 6 branches missed.">        if (response.body()?.isGuest == true) {</span>
+<span class="nc" id="L504">            getGuestMemberId(response)</span>
+        } else {
+<span class="nc" id="L506">            getMemberFullId(response)</span>
+        }
+<span class="nc" id="L508">    }</span>
+
+<span class="nc" id="L510">    var fetchedMemberId: String ? = null</span>
+
+    fun getMemberFullId(response: Response&lt;AuthToken&gt;) {
+<span class="nc" id="L513">        compositeDisposable.add(</span>
+<span class="nc" id="L514">            homeRepository.getMember()</span>
+<span class="nc" id="L515">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L516">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L517">                .doOnDispose {</span>
+<span class="nc" id="L518">                    Timber.d(&quot;here&quot;)</span>
+<span class="nc" id="L519">                }.doOnSubscribe {</span>
+<span class="nc" id="L520">                    _isLoading.value = Event(true)</span>
+<span class="nc" id="L521">                }.doOnError {</span>
+<span class="nc" id="L522">                    _isLoading.value = Event(false)</span>
+<span class="nc" id="L523">                }.subscribe({</span>
+<span class="nc bnc" id="L524" title="All 2 branches missed.">                    it.email?.let { email -&gt;</span>
+<span class="nc" id="L525">                        preferences.edit().putString(Constants.USER_EMAIL, email).commit()</span>
+<span class="nc" id="L526">                        preferences.edit().putBoolean(</span>
+<span class="nc" id="L527">                            email + Constants.BIO_PERMISSION_REQUESTED,</span>
+<span class="nc" id="L528">                            biometricEnabled.value == true</span>
+<span class="nc" id="L529">                        ).commit()</span>
+                    }
+<span class="nc bnc" id="L531" title="All 2 branches missed.">                    it.selfId?.let { sid -&gt;</span>
+
+<span class="nc" id="L533">                        fetchedMemberId = sid</span>
+
+<span class="nc" id="L535">                        preferences.edit().putString(&quot;memberID&quot;, it.selfId)</span>
+<span class="nc" id="L536">                            .apply()</span>
+
+<span class="nc" id="L538">                        var languageInServer = it.languagePreference</span>
+
+<span class="nc" id="L540">                        var updatedMemberInfo = it</span>
+
+<span class="nc bnc" id="L542" title="All 4 branches missed.">                        if (languageToPush != null &amp;&amp; languageToPush != languageInServer) {</span>
+<span class="nc" id="L543">                            updatedMemberInfo = it.copy(languagePreference = languageToPush)</span>
+                        }
+
+<span class="nc" id="L546">                        Constants.CURRENT_LANGUAGE = updatedMemberInfo.languagePreference</span>
+
+<span class="nc" id="L548">                        homeRepository.insertMember(updatedMemberInfo)</span>
+
+<span class="nc bnc" id="L550" title="All 4 branches missed.">                        if (languageToPush != null &amp;&amp; languageToPush != languageInServer) {</span>
+<span class="nc bnc" id="L551" title="All 2 branches missed.">                            postLanguage(it.selfId, languageToPush ?: &quot;&quot;, response)</span>
+                        } else {
+<span class="nc" id="L553">                            _isLoading.value = Event(false)</span>
+<span class="nc" id="L554">                            _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(</span>
+<span class="nc" id="L555">                                response</span>
+                            )
+                        }
+<span class="nc" id="L558">                    }</span>
+<span class="nc" id="L559">                }, {</span>
+<span class="nc" id="L560">                    _isLoading.value = Event(false)</span>
+<span class="nc" id="L561">                    _logInFail.value = ErrorResponse(</span>
+<span class="nc" id="L562">                        android = &quot;&quot;,</span>
+<span class="nc" id="L563">                        alternativeAppAvailable = &quot;false&quot;,</span>
+<span class="nc bnc" id="L564" title="All 2 branches missed.">                        error_description = it.message ?: APOLOGY_MESSAGE,</span>
+<span class="nc" id="L565">                        appName = &quot;&quot;</span>
+                    )
+<span class="nc" id="L567">                })</span>
+        )
+<span class="nc" id="L569">    }</span>
+
+    fun saveEnableBiometricOnLogin(value: Boolean?) {
+<span class="nc bnc" id="L572" title="All 2 branches missed.">        value?.let {</span>
+<span class="nc" id="L573">            val pref = preferences.edit()</span>
+<span class="nc" id="L574">            pref.putBoolean(Constants.SET_BIO_METRIC_ON_LOGIN, it)</span>
+<span class="nc" id="L575">            pref.apply()</span>
+<span class="nc" id="L576">        }</span>
+<span class="nc" id="L577">    }</span>
+
+    fun saveRegistrationId(id: String?) {
+<span class="fc bfc" id="L580" title="All 2 branches covered.">        id?.let {</span>
+<span class="fc" id="L581">            user.registrationId = id</span>
+<span class="fc" id="L582">            val regString = gson.toJson(user)</span>
+<span class="fc" id="L583">            val regEdit = preferences.edit()</span>
+<span class="fc" id="L584">            regEdit.putString(Constants.register, regString)</span>
+<span class="fc" id="L585">            regEdit.apply()</span>
+<span class="fc" id="L586">        }</span>
+<span class="fc" id="L587">    }</span>
+
+    fun saveEmail() {
+<span class="nc" id="L590">        user.email = email</span>
+<span class="nc" id="L591">        val regString = gson.toJson(user)</span>
+<span class="nc" id="L592">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L593">        regEdit.putString(Constants.register, regString)</span>
+<span class="nc" id="L594">        regEdit.apply()</span>
+<span class="nc" id="L595">    }</span>
+
+    fun saveTokens(data: AuthToken) {
+<span class="fc" id="L598">        preferences.edit().putBoolean(Constants.IS_GUEST, data.isGuest).apply()</span>
+<span class="fc" id="L599">        preferences.edit().putString(Constants.ACCESS_TOKEN, data.access_token).apply()</span>
+<span class="fc" id="L600">        preferences.edit().putString(Constants.TOKEN_TYPE, data.token_type).apply()</span>
+<span class="fc" id="L601">        preferences.edit().putString(Constants.EXPIRES_IN, data.expires_in).apply()</span>
+<span class="fc" id="L602">        preferences.edit().putString(Constants.SCOPE, data.scope).apply()</span>
+<span class="fc" id="L603">        preferences.edit().putBoolean(Constants.HAS_SHOWN_SPLASH, false).apply()</span>
+<span class="fc" id="L604">        Constants.IS_OFFLINE = false</span>
+<span class="fc" id="L605">    }</span>
+
+    fun getFcmToken() {
+<span class="nc" id="L608">        FirebaseMessaging.getInstance().token.addOnCompleteListener(</span>
+            OnCompleteListener { task -&gt;
+<span class="nc bnc" id="L610" title="All 2 branches missed.">                if (!task.isSuccessful) {</span>
+<span class="nc" id="L611">                    return@OnCompleteListener</span>
+                }
+                // Get new FCM registration token
+<span class="nc" id="L614">                val token = task.result</span>
+<span class="nc" id="L615">                preferences.edit().putString(&quot;FCM_TOKEN&quot;, token).apply()</span>
+<span class="nc" id="L616">            }</span>
+        )
+<span class="nc" id="L618">    }</span>
+
+    fun clear() {
+<span class="nc" id="L621">        _logInFail.value = ErrorResponse()</span>
+<span class="nc" id="L622">        _navigateToNextPage.value = Event(APIResponseV2&lt;DataResponse&gt;().clear())</span>
+<span class="nc" id="L623">    }</span>
+
+<span class="nc" id="L625">    var fromMagicLogin = false</span>
+    fun magicLogin(magicTempUUID: String) {
+<span class="nc" id="L627">        preferences.edit().putString(Constants.MAGIC_TEMP_TOKEN, magicTempUUID).apply()</span>
+<span class="nc" id="L628">        compositeDisposable.add(</span>
+<span class="nc" id="L629">            loginRepository.getMagicLogin(magicTempUUID)</span>
+<span class="nc" id="L630">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L631">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L632">                .doOnSubscribe {</span>
+<span class="nc" id="L633">                    _isLoading.value = Event(true)</span>
+<span class="nc" id="L634">                }</span>
+<span class="nc" id="L635">                .subscribe({</span>
+<span class="nc" id="L636">                    _isLoading.value = Event(false)</span>
+<span class="nc bnc" id="L637" title="All 2 branches missed.">                    if (it.isSuccessful) {</span>
+<span class="nc bnc" id="L638" title="All 2 branches missed.">                        it.body()?.let {</span>
+<span class="nc" id="L639">                            saveTokens(it)</span>
+<span class="nc" id="L640">                        }</span>
+<span class="nc" id="L641">                        preferences.edit().putBoolean(Constants.IS_MAGIC_LOGIN, true).apply()</span>
+<span class="nc" id="L642">                        fromMagicLogin = true</span>
+<span class="nc" id="L643">                        getMemberId(it)</span>
+                    } else {
+<span class="nc" id="L645">                        val gson = Gson()</span>
+<span class="nc" id="L646">                        val type = object : TypeToken&lt;ErrorResponse&gt;() {}.type</span>
+<span class="nc" id="L647">                        val errorResponse: ErrorResponse? = gson.fromJson(</span>
+<span class="nc" id="L648">                            it.errorBody()!!.charStream(),</span>
+<span class="nc" id="L649">                            type</span>
+                        )
+<span class="nc bnc" id="L651" title="All 2 branches missed.">                        errorResponse?.let { err -&gt;</span>
+<span class="nc" id="L652">                            _logInFail.value = err</span>
+<span class="nc" id="L653">                        }</span>
+                    }
+<span class="nc" id="L655">                }, {</span>
+<span class="nc" id="L656">                    _isLoading.value = Event(false)</span>
+<span class="nc bnc" id="L657" title="All 2 branches missed.">                    it.message?.let { errMsg -&gt;</span>
+<span class="nc" id="L658">                        val errRes = ErrorResponse()</span>
+<span class="nc" id="L659">                        errRes.error_description = errMsg</span>
+<span class="nc" id="L660">                        _logInFail.value = errRes</span>
+<span class="nc" id="L661">                    }</span>
+<span class="nc" id="L662">                })</span>
+        )
+<span class="nc" id="L664">    }</span>
+
+    fun fingerPrint() {
+<span class="fc" id="L667">        _navigateToFingerPrint.value = Event(Unit)</span>
+<span class="fc" id="L668">    }</span>
+
+    fun fingerPrintLogin() {
+//        isBiometricLogin = true
+<span class="fc" id="L672">        _fingerPrintLogin.value = Event(Unit)</span>
+<span class="fc" id="L673">    }</span>
+
+    fun setBiometric() {
+<span class="fc bfc" id="L676" title="All 2 branches covered.">        if (biometricEnabled.value == true) {</span>
+<span class="fc" id="L677">            biometricEnabled.value = false</span>
+<span class="fc" id="L678">            preferences.edit()</span>
+<span class="fc" id="L679">                .putBoolean(</span>
+//                    preferences.getString(&quot;memberID&quot;, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,
+<span class="fc" id="L681">                    preferences.getString(Constants.USER_EMAIL, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,</span>
+<span class="fc" id="L682">                    false</span>
+                )
+<span class="fc" id="L684">                .apply()</span>
+        } else {
+<span class="fc" id="L686">            biometricEnabled.value = true</span>
+<span class="fc" id="L687">            preferences.edit()</span>
+<span class="fc" id="L688">                .putBoolean(</span>
+//                    preferences.getString(&quot;memberID&quot;, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,
+<span class="fc" id="L690">                    preferences.getString(Constants.USER_EMAIL, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,</span>
+<span class="fc" id="L691">                    true</span>
+                )
+<span class="fc" id="L693">                .apply()</span>
+        }
+<span class="fc" id="L695">    }</span>
+
+    fun allowBiometric(): Boolean {
+        // check new email or fallback to memberID
+<span class="fc bfc" id="L699" title="All 2 branches covered.">        val hasRequested = preferences.getBoolean(</span>
+<span class="fc" id="L700">            preferences.getString(Constants.USER_EMAIL, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,</span>
+<span class="fc" id="L701">            false</span>
+<span class="fc bfc" id="L702" title="All 2 branches covered.">        ) || preferences.getBoolean(</span>
+<span class="fc" id="L703">            preferences.getString(Constants.MEMBER_ID, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,</span>
+<span class="fc" id="L704">            false</span>
+        )
+<span class="fc bfc" id="L706" title="All 4 branches covered.">        return preferences.contains(Constants.encodedPassword) &amp;&amp; hasRequested</span>
+    }
+
+//    fun savePassword() {
+//        preferences.edit().remove(Constants.INACTIVITY_TIME_STAMP).apply()
+//
+//        if (password.isNotEmpty()) {
+//            val encoded = HelperUtils.encrypt(password)
+//            preferences.edit().putString(
+//                Constants.encodedPassword,
+//                encoded
+//            ).apply()
+//            val encodedEmail = HelperUtils.encrypt(email)
+//            if (preferences.getString(Constants.encodedEmail, &quot;&quot;).equals(encodedEmail, true)) {
+//                preferences.edit().putString(
+//                    Constants.encodedEmail,
+//                    encodedEmail
+//                ).apply()
+//            } else {
+//                preferences.edit().putBoolean(
+//                    Constants.biometricPref,
+//                    false
+//                ).apply()
+//                preferences.edit().putString(
+//                    Constants.encodedEmail,
+//                    encodedEmail
+//                ).apply()
+//            }
+//        }
+//    }
+
+    fun encourageVerification() {
+        // change this to guest id
+<span class="fc" id="L739">        preferences.edit().putBoolean(</span>
+<span class="fc" id="L740">            Constants.VERIFY_IDENTITY_POPUP_SHOWN,</span>
+<span class="fc" id="L741">            false</span>
+<span class="fc" id="L742">        ).apply()</span>
+<span class="fc" id="L743">    }</span>
+
+    fun saveForOffline(email: String, password: String) {
+<span class="nc" id="L746">        val encodedEmail = HelperUtils.encrypt(email)</span>
+<span class="nc" id="L747">        val encodedPassword = HelperUtils.encrypt(password)</span>
+<span class="nc" id="L748">        preferences.edit().putString(Constants.encodedEmail, encodedEmail).apply()</span>
+<span class="nc" id="L749">        preferences.edit().putString(Constants.encodedPassword, encodedPassword).apply()</span>
+<span class="nc" id="L750">    }</span>
+
+    fun updateEmail(it: String) {
+<span class="fc" id="L753">        _emailChanged.value = Event(it.trim())</span>
+<span class="fc" id="L754">    }</span>
+
+    // GUEST LOGIN RELATED
+<span class="pc" id="L757">    var documentType: DocumentType = DocumentType.DL_FRONT</span>
+<span class="pc" id="L758">    var sessionId: String? = null</span>
+<span class="pc" id="L759">    var guestEmail: String? = null</span>
+<span class="pc" id="L760">    var pendingSsnIdentification: Boolean = false</span>
+
+<span class="fc" id="L762">    private val _showVerifyIdentity = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val showVerifyIdentity: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L764">        get() = _showVerifyIdentity</span>
+
+<span class="fc" id="L766">    private val _showRequestInCustomerSupport = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val showRequestInCustomerSupport: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L768">        get() = _showRequestInCustomerSupport</span>
+
+<span class="fc" id="L770">    private val _showPendingVerification = MutableLiveData&lt;Event&lt;GuestUserInfo&gt;&gt;()</span>
+    val showPendingVerification: LiveData&lt;Event&lt;GuestUserInfo&gt;&gt;
+<span class="fc" id="L772">        get() = _showPendingVerification</span>
+
+    fun handleGuestLogin(guestUserInfo: GuestUserInfo) {
+<span class="fc" id="L775">        preferences.edit().putString(&quot;memberID&quot;, guestUserInfo.id)</span>
+<span class="fc" id="L776">            .apply()</span>
+<span class="fc" id="L777">        preferences.edit().putString(Constants.USER_EMAIL, guestUserInfo.email).commit()</span>
+
+<span class="fc" id="L779">        guestEmail = guestUserInfo.email</span>
+
+<span class="fc bfc" id="L781" title="All 2 branches covered.">        if (guestUserInfo.isOpenEnrollment == true) {</span>
+<span class="fc" id="L782">            _showPendingVerification.value = Event(guestUserInfo)</span>
+        } else {
+<span class="fc" id="L784">            pendingSsnIdentification = guestUserInfo.pendingIdentityVerification</span>
+<span class="fc bfc" id="L785" title="All 2 branches covered.">            if (pendingSsnIdentification) {</span>
+<span class="fc" id="L786">                sessionId = guestUserInfo.identificationSessionId</span>
+<span class="fc" id="L787">                _showPendingVerification.value = Event(guestUserInfo)</span>
+            } else {
+<span class="fc bfc" id="L789" title="All 2 branches covered.">                if (!guestUserInfo.requestInCustomerSupport) {</span>
+<span class="fc" id="L790">                    _showVerifyIdentity.value = Event(Unit)</span>
+                } else {
+<span class="fc" id="L792">                    _showRequestInCustomerSupport.value = Event(Unit)</span>
+                }
+            }
+        }
+<span class="fc" id="L796">    }</span>
+
+    fun clearLogin() {
+<span class="pc bpc" id="L799" title="1 of 2 branches missed.">        viewModelScope.launch {</span>
+<span class="fc" id="L800">            _shouldGoToLogin.value = Event(false)</span>
+<span class="fc" id="L801">        }</span>
+<span class="fc" id="L802">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

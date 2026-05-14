@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FindCareFilterModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.remote.home.findCare</a> &gt; <span class="el_source">FindCareFilterModel.kt</span></div><h1>FindCareFilterModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.remote.home.findCare
+
+import com.google.android.gms.maps.model.LatLng
+
+<span class="fc" id="L5">data class FindCareFilterModel(</span>
+<span class="pc" id="L6">    var showHome: Boolean = true,</span>
+<span class="pc" id="L7">    var showWork: Boolean = true,</span>
+<span class="pc" id="L8">    var showSpeciality: Boolean = false,</span>
+<span class="fc" id="L9">    var speciality: String? = &quot;&quot;,</span>
+<span class="pc" id="L10">    var addressName: String? = &quot;&quot;,</span>
+<span class="pc" id="L11">    var locationType: String? = &quot;1&quot;,</span>
+<span class="fc" id="L12">    var radius: String? = &quot;10&quot;,</span>
+<span class="fc" id="L13">    var providerType: String? = &quot;1&quot;,</span>
+<span class="pc" id="L14">    var outNetwork: Boolean = false,</span>
+<span class="pc" id="L15">    var homeLocation: String? = &quot;&quot;,</span>
+<span class="pc" id="L16">    var nearLocation: String? = &quot;&quot;,</span>
+<span class="pc" id="L17">    var workLocation: String? = &quot;&quot;,</span>
+<span class="pc" id="L18">    var customLocation: String? = &quot;&quot;,</span>
+<span class="pc" id="L19">    var home: LatLng? = null,</span>
+<span class="pc" id="L20">    var near: LatLng? = null,</span>
+<span class="pc" id="L21">    var work: LatLng? = null,</span>
+<span class="pc" id="L22">    var custom: LatLng? = null,</span>
+<span class="pc" id="L23">    var current: LatLng? = null,</span>
+<span class="pc" id="L24">    var searchText: String? = &quot;&quot;,</span>
+<span class="pc" id="L25">    var searchType: String? = &quot;&quot;,</span>
+<span class="pc" id="L26">    var taxonomyGroup: String? = &quot;&quot;,</span>
+<span class="pc" id="L27">    var codeType: String? = &quot;&quot;,</span>
+<span class="pc" id="L28">    var codeValue: String? = &quot;&quot;,</span>
+<span class="pc" id="L29">    var cptDescription: String? = &quot;&quot;,</span>
+<span class="pc" id="L30">    var specific: Boolean = false,</span>
+<span class="fc" id="L31">    var selectedSubSpeciality: ArrayList&lt;com.vivekahealth.vivekahealth.data.remote.home.findCare.specialityValue.ValueSelected&gt; = arrayListOf(),</span>
+<span class="pc" id="L32">    var taxonomyCodes: ArrayList&lt;String&gt; = arrayListOf()</span>
+<span class="fc" id="L33">)</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

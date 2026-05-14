@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MemberDetailViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.enroll.fragments.personalDetail</a> &gt; <span class="el_source">MemberDetailViewModel.kt</span></div><h1>MemberDetailViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.enroll.fragments.personalDetail
+
+import android.content.SharedPreferences
+import android.text.Editable
+import android.text.TextWatcher
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.data.remote.enroll.EnrollMember
+import com.vivekahealth.vivekahealth.data.remote.register.RegisterUser
+import com.vivekahealth.vivekahealth.ui.enroll.NextClickListener
+import com.vivekahealth.vivekahealth.ui.enroll.repository.EnrollRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Coroutines
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.disposables.CompositeDisposable
+import javax.inject.Inject
+import kotlinx.coroutines.Job
+import org.apache.commons.lang3.StringUtils
+
+<span class="nc" id="L26">class MemberDetailViewModel @Inject constructor(</span>
+<span class="nc" id="L27">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L28">    private val enrollRepository: EnrollRepository</span>
+<span class="nc" id="L29">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L31">    val gson = Gson()</span>
+<span class="nc" id="L32">    var user = EnrollMember()</span>
+    private lateinit var job: Job
+
+<span class="nc" id="L35">    var listAv = arrayListOf&lt;String&gt;()</span>
+
+<span class="nc" id="L37">    var listState = arrayListOf&lt;String&gt;()</span>
+<span class="nc" id="L38">    internal lateinit var nextClickListener: NextClickListener</span>
+
+<span class="nc" id="L40">    var selectedInsurance: String = &quot;&quot;</span>
+<span class="nc" id="L41">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L43">            field = value</span>
+<span class="nc" id="L44">            callbacks.notifyCallbacks(this, BR.selectedInsurance, null)</span>
+<span class="nc" id="L45">        }</span>
+<span class="nc" id="L46">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L48">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L50">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L52">        get() = _navigateToBack</span>
+<span class="nc" id="L53">    private val _navigateToNext = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToNext: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L55">        get() = _navigateToNext</span>
+
+<span class="nc" id="L57">    private val _nameChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+
+    val nameChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L60">        get() = _nameChanged</span>
+
+<span class="nc" id="L62">    private val _cityChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+
+    val cityChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L65">        get() = _cityChanged</span>
+
+<span class="nc" id="L67">    private val _setState = MutableLiveData&lt;Event&lt;Int&gt;&gt;()</span>
+    val setState: LiveData&lt;Event&lt;Int&gt;&gt;
+<span class="nc" id="L69">        get() = _setState</span>
+
+<span class="nc" id="L71">    private val _yesClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val yesClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L73">        get() = _yesClicked</span>
+<span class="nc" id="L74">    private val _noClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val noClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L76">        get() = _noClicked</span>
+
+<span class="nc" id="L78">    private val _zipChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+
+<span class="nc" id="L80">    var continueCoverage: String = &quot;&quot;</span>
+
+<span class="nc" id="L82">    var clicked: Boolean = false</span>
+
+<span class="nc" id="L84">    var zipExtension: String = &quot;&quot;</span>
+<span class="nc" id="L85">    var zipFirst: String = &quot;&quot;</span>
+    val zipChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L87">        get() = _zipChanged</span>
+
+<span class="nc" id="L89">    var addressStreet: String = &quot;&quot;</span>
+<span class="nc" id="L90">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L92">            field = value</span>
+
+<span class="nc" id="L94">            callbacks.notifyCallbacks(this, BR.addressStreet, null)</span>
+<span class="nc" id="L95">        }</span>
+<span class="nc" id="L96">    var zip: String = &quot;&quot;</span>
+<span class="nc" id="L97">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L99">            field = value</span>
+
+<span class="nc" id="L101">            callbacks.notifyCallbacks(this, BR.zip, null)</span>
+<span class="nc" id="L102">        }</span>
+
+<span class="nc" id="L104">    var state: String = &quot;&quot;</span>
+<span class="nc" id="L105">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L107">            field = value</span>
+
+<span class="nc" id="L109">            callbacks.notifyCallbacks(this, BR.state, null)</span>
+<span class="nc" id="L110">        }</span>
+
+<span class="nc" id="L112">    var apartment: String = &quot;&quot;</span>
+<span class="nc" id="L113">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L115">            field = value</span>
+<span class="nc" id="L116">            callbacks.notifyCallbacks(this, BR.apartment, null)</span>
+<span class="nc" id="L117">        }</span>
+
+<span class="nc" id="L119">    var city: String = &quot;&quot;</span>
+<span class="nc" id="L120">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L122">            field = value</span>
+<span class="nc" id="L123">            callbacks.notifyCallbacks(this, BR.city, null)</span>
+<span class="nc" id="L124">        }</span>
+
+    fun loadData() {
+<span class="nc" id="L127">        job = Coroutines.ioToMainThread(</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">            {</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">                if (!StringUtils.equals(preferences.getString(Constants.enroll, &quot;&quot;), &quot;&quot;)) {</span>
+<span class="nc" id="L130">                    user = gson.fromJson(</span>
+<span class="nc" id="L131">                        preferences.getString(Constants.enroll, &quot;&quot;),</span>
+<span class="nc" id="L132">                        EnrollMember::class.java</span>
+                    )
+                }
+<span class="nc" id="L135">            },</span>
+            {
+<span class="nc bnc" id="L137" title="All 2 branches missed.">                addressStreet = user.subscriber?.street1.toString()</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">                city = user.subscriber?.city.toString()</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">                val stateStr = user.subscriber?.state.toString()</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">                apartment = user.subscriber?.street2.toString()</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">                zipFirst = user.subscriber?.zip.toString()</span>
+
+<span class="nc bnc" id="L143" title="All 2 branches missed.">                zipExtension = user.subscriber?.zipExtension.toString()</span>
+<span class="nc" id="L144">                var zipOld = zipFirst + zipExtension</span>
+<span class="nc" id="L145">                zip = zipOld</span>
+
+<span class="nc bnc" id="L147" title="All 4 branches missed.">                if (stateStr.isNotBlank()) {</span>
+<span class="nc" id="L148">                    listAv.clear()</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">                    for (list in listState) {</span>
+<span class="nc" id="L150">                        listAv.add(list.substring(0, list.indexOf(&quot;-&quot;)))</span>
+                    }
+
+<span class="nc" id="L153">                    val index = listAv.indexOf(stateStr)</span>
+
+<span class="nc" id="L155">                    _setState.value = Event(index)</span>
+                }
+
+<span class="nc" id="L158">                continueCoverage = preferences.getString(Constants.ContinueCoverage, &quot;&quot;).toString()</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">                if (continueCoverage.equals(&quot;true&quot;, true)) {</span>
+<span class="nc" id="L160">                    yesClicked()</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">                } else if (continueCoverage.equals(&quot;false&quot;, true)) {</span>
+<span class="nc" id="L162">                    noClicked()</span>
+                }
+<span class="nc" id="L164">            }</span>
+        )
+<span class="nc" id="L166">    }</span>
+
+    fun onNextClicked() {
+<span class="nc" id="L169">        _navigateToNext.value = Event(Unit)</span>
+<span class="nc" id="L170">    }</span>
+
+    fun addSecondStep() {
+<span class="nc" id="L173">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L174">        regEdit.putString(Constants.ContinueCoverage, continueCoverage)</span>
+<span class="nc" id="L175">        regEdit.apply()</span>
+<span class="nc" id="L176">    }</span>
+    fun addFirstStep(id: String, firstName: String, lastName: String) {
+<span class="nc" id="L178">        var reg = gson.fromJson(</span>
+<span class="nc" id="L179">            preferences.getString(Constants.register, &quot;&quot;),</span>
+<span class="nc" id="L180">            RegisterUser::class.java</span>
+        )
+
+<span class="nc bnc" id="L183" title="All 6 branches missed.">        if (reg == null &amp;&amp; id.isNotBlank()) {</span>
+<span class="nc" id="L184">            reg = RegisterUser(firstName = firstName, lastName = lastName)</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">            user.subscriber?.memberId = id</span>
+        }
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        user.subscriber?.street1 = addressStreet.trim()</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        user.subscriber?.city = city.trim()</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        user.subscriber?.state = state</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">        user.subscriber?.street2 = apartment.trim()</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">        user.subscriber?.zip = zipFirst</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        user.subscriber?.zipExtension = zipExtension</span>
+<span class="nc bnc" id="L193" title="All 4 branches missed.">        user.subscriber?.firstName = reg.firstName?.trim()</span>
+<span class="nc bnc" id="L194" title="All 4 branches missed.">        user.subscriber?.lastName = reg.lastName?.trim()</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        user.subscriber?.ssn = reg.ssn</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">        user.subscriber?.gender = reg.gender</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">        user.subscriber?.dateOfBirth = reg.dob</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        user.subscriber?.phoneNumber = reg.mobile</span>
+
+<span class="nc" id="L200">        val regString = gson.toJson(user)</span>
+<span class="nc" id="L201">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L202">        regEdit.putString(Constants.enroll, regString)</span>
+<span class="nc" id="L203">        regEdit.apply()</span>
+<span class="nc" id="L204">    }</span>
+
+<span class="nc" id="L206">    @get:Bindable</span>
+<span class="nc" id="L207">    val addressTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L210">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L212">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L214">            _nameChanged.value = Event(s.toString())</span>
+<span class="nc" id="L215">        }</span>
+    }
+
+<span class="nc" id="L218">    @get:Bindable</span>
+<span class="nc" id="L219">    val cityTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L222">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L224">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L226">            _cityChanged.value = Event(s.toString())</span>
+<span class="nc" id="L227">        }</span>
+    }
+
+    fun yesClicked() {
+<span class="nc" id="L231">        selectedInsurance = &quot;Yes&quot;</span>
+
+<span class="nc" id="L233">        clicked = true</span>
+<span class="nc" id="L234">        _yesClicked.value = Event(Unit)</span>
+<span class="nc" id="L235">    }</span>
+    fun noClicked() {
+<span class="nc" id="L237">        clicked = true</span>
+
+<span class="nc" id="L239">        selectedInsurance = &quot;No&quot;</span>
+<span class="nc" id="L240">        _noClicked.value = Event(Unit)</span>
+<span class="nc" id="L241">    }</span>
+
+<span class="nc" id="L243">    @get:Bindable</span>
+<span class="nc" id="L244">    val zipTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L247">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L249">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L251">            _zipChanged.value = Event(s.toString())</span>
+<span class="nc" id="L252">        }</span>
+    }
+
+    fun onPrevClicked() {
+<span class="nc" id="L256">        _navigateToBack.value = Event(Unit)</span>
+<span class="nc" id="L257">    }</span>
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L259">        callbacks.add(callback)</span>
+<span class="nc" id="L260">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L263">        callbacks.remove(callback)</span>
+<span class="nc" id="L264">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L267">        super.onCleared()</span>
+<span class="nc" id="L268">        compositeDisposable.dispose()</span>
+<span class="nc" id="L269">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

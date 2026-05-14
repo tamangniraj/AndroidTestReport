@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RelationshipType.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.local.enroll</a> &gt; <span class="el_source">RelationshipType.kt</span></div><h1>RelationshipType.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.local.enroll
+
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+<span class="nc" id="L6">enum class RelationshipType(val code: Int) {</span>
+<span class="nc" id="L7">    PRIMARY(18),</span>
+<span class="nc" id="L8">    SPOUSE(1),</span>
+<span class="nc" id="L9">    CHILD(19);</span>
+
+    companion object {
+        fun fromCode(code: Int): RelationshipType? {
+<span class="nc bnc" id="L13" title="All 6 branches missed.">            return values().find { it.code == code }</span>
+        }
+    }
+<span class="nc" id="L16">}</span>
+
+<span class="nc" id="L18">@Parcelize</span>
+<span class="nc" id="L19">data class RootDocumentResponse(</span>
+<span class="nc" id="L20">    val documentList: List&lt;DocumentRelation&gt;</span>
+<span class="nc" id="L21">) : Parcelable</span>
+
+<span class="nc" id="L23">@Parcelize</span>
+<span class="nc" id="L24">data class DocumentRelation(</span>
+<span class="nc" id="L25">    val relationshipType: Int,</span>
+<span class="nc" id="L26">    val documents: List&lt;DocumentItem&gt;</span>
+<span class="nc" id="L27">) : Parcelable</span>
+
+<span class="nc" id="L29">@Parcelize</span>
+<span class="nc" id="L30">data class DocumentItem(</span>
+<span class="nc" id="L31">    val documentType: Int,</span>
+<span class="nc" id="L32">    val uploaded: Boolean,</span>
+<span class="nc" id="L33">    val required: Boolean,</span>
+<span class="nc" id="L34">    val documentName: String,</span>
+<span class="nc" id="L35">    val translatedDocumentName: String</span>
+) : Parcelable {
+<span class="nc" id="L37">    fun toDocumentPlus(relationshipType: RelationshipType): DocumentItemPlus = DocumentItemPlus(</span>
+<span class="nc" id="L38">        documentType,</span>
+<span class="nc" id="L39">        uploaded,</span>
+<span class="nc" id="L40">        required,</span>
+<span class="nc" id="L41">        documentName,</span>
+<span class="nc" id="L42">        translatedDocumentName,</span>
+<span class="nc" id="L43">        relationshipType</span>
+<span class="nc" id="L44">    )</span>
+<span class="nc" id="L45">}</span>
+
+<span class="nc" id="L47">data class DocumentItemPlus(</span>
+<span class="nc" id="L48">    val documentType: Int,</span>
+<span class="nc" id="L49">    val uploaded: Boolean,</span>
+<span class="nc" id="L50">    val required: Boolean,</span>
+<span class="nc" id="L51">    val documentName: String,</span>
+<span class="nc" id="L52">    val translatedDocumentName: String,</span>
+<span class="nc" id="L53">    val relationshipType: RelationshipType</span>
+)
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

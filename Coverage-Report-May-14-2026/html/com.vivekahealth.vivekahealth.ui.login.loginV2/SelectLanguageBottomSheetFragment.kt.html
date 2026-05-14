@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SelectLanguageBottomSheetFragment.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.login.loginV2</a> &gt; <span class="el_source">SelectLanguageBottomSheetFragment.kt</span></div><h1>SelectLanguageBottomSheetFragment.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.login.loginV2
+
+import android.content.Context
+import android.content.res.Configuration
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
+import androidx.annotation.StringRes
+import androidx.appcompat.widget.SearchView
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.databinding.FragmentSelectLanguageBottomSheetBinding
+import com.vivekahealth.vivekahealth.ui.BaseBottomSheetDialogFragment
+import com.vivekahealth.vivekahealth.ui.login.loginV2.adapter.SelectLanguageAdapter
+import com.vivekahealth.vivekahealth.ui.login.loginV2.adapter.SelectLanguageItem
+import com.vivekahealth.vivekahealth.utils.Constants
+import timber.log.Timber
+import java.util.Locale
+
+class SelectLanguageBottomSheetFragment : BaseBottomSheetDialogFragment() {
+    private lateinit var binding: FragmentSelectLanguageBottomSheetBinding
+    private lateinit var languageList: ArrayList&lt;SelectLanguageItem&gt;
+
+    companion object {
+        @JvmStatic
+        fun newInstance() = SelectLanguageBottomSheetFragment()
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = FragmentSelectLanguageBottomSheetBinding.inflate(layoutInflater, container, false)
+        return binding.root
+    }
+
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+    }
+
+    private var listener: LanguageChangeListener? = null
+
+    fun addListener(list: LanguageChangeListener) {
+        this.listener = list
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        val bottomSheet = dialog?.findViewById&lt;View&gt;(
+            com.google.android.material.R.id.design_bottom_sheet
+        )
+        bottomSheet?.layoutParams?.height = ViewGroup.LayoutParams.MATCH_PARENT
+
+        loadLanguageList()
+        val layoutManager = LinearLayoutManager(context)
+        binding.selectLangRecyclerView.layoutManager = layoutManager
+        val adapter = SelectLanguageAdapter(requireActivity(), languageList, onLangClick = {
+            Timber.d(&quot;LanguageUpdate: $it&quot;)
+            Constants.LOCAL_LANG_MODIFIED = it
+            listener?.onLanguageChange(it)
+            dismiss()
+        })
+        binding.selectLangRecyclerView.adapter = adapter
+        binding.selectLangRecyclerView.addItemDecoration(
+            DividerItemDecoration(requireContext(), layoutManager.orientation)
+        )
+        binding.cancelButton.setOnClickListener {
+            dismiss()
+        }
+        binding.langSearchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextChange(newText: String): Boolean {
+                adapter.filter.filter(newText.trim())
+                return true
+            }
+
+            override fun onQueryTextSubmit(query: String): Boolean {
+                adapter.filter.filter(query.trim())
+                return true
+            }
+        })
+    }
+
+    private fun loadLanguageList() {
+        languageList = arrayListOf(
+            getLanguageItemFor(R.string.afrikaan, &quot;af&quot;),
+            getLanguageItemFor(R.string.albanian, &quot;sq&quot;),
+            getLanguageItemFor(R.string.amharic, &quot;am&quot;),
+            getLanguageItemFor(R.string.armenian, &quot;hy&quot;),
+            getLanguageItemFor(R.string.assamese, &quot;as&quot;),
+            getLanguageItemFor(R.string.bangla, &quot;bn&quot;),
+            getLanguageItemFor(R.string.bashkir, &quot;ga&quot;),
+            getLanguageItemFor(R.string.basque, &quot;eu&quot;),
+            getLanguageItemFor(R.string.bosnian, &quot;bs&quot;),
+            getLanguageItemFor(R.string.bulgerian, &quot;bg&quot;),
+            getLanguageItemFor(R.string.burmese, &quot;my&quot;),
+            getLanguageItemFor(R.string.catalan, &quot;ca&quot;),
+            getLanguageItemFor(R.string.chinese, &quot;zh&quot;),
+            getLanguageItemFor(R.string.croatian, &quot;hr&quot;),
+            getLanguageItemFor(R.string.czech, &quot;cs&quot;),
+            getLanguageItemFor(R.string.danish, &quot;da&quot;),
+            getLanguageItemFor(R.string.dutch, &quot;nl&quot;),
+            getLanguageItemFor(R.string.english, &quot;en&quot;),
+            getLanguageItemFor(R.string.estonian, &quot;et&quot;),
+            getLanguageItemFor(R.string.farose, &quot;fo&quot;),
+            getLanguageItemFor(R.string.fijian, &quot;fj&quot;),
+            getLanguageItemFor(R.string.filipino, &quot;fil&quot;),
+            getLanguageItemFor(R.string.finnish, &quot;fi&quot;),
+            getLanguageItemFor(R.string.french, &quot;fr&quot;),
+            getLanguageItemFor(R.string.galician, &quot;gl&quot;),
+            getLanguageItemFor(R.string.georgian, &quot;ka&quot;),
+            getLanguageItemFor(R.string.german, &quot;de&quot;),
+            getLanguageItemFor(R.string.greek, &quot;el&quot;),
+            getLanguageItemFor(R.string.gujrati, &quot;gu&quot;),
+            getLanguageItemFor(R.string.haitian_creole, &quot;ht&quot;),
+            getLanguageItemFor(R.string.hindi, &quot;hi&quot;),
+            getLanguageItemFor(R.string.hungarian, &quot;hu&quot;),
+            getLanguageItemFor(R.string.icelandic, &quot;is&quot;),
+            getLanguageItemFor(R.string.indonesian, &quot;in&quot;),
+            getLanguageItemFor(R.string.inuktitut, &quot;iu&quot;),
+            getLanguageItemFor(R.string.irish, &quot;ga&quot;),
+            getLanguageItemFor(R.string.italian, &quot;it&quot;),
+            getLanguageItemFor(R.string.japanese, &quot;ja&quot;),
+            getLanguageItemFor(R.string.kannada, &quot;kn&quot;),
+            getLanguageItemFor(R.string.kazakh, &quot;kk&quot;),
+            getLanguageItemFor(R.string.khmer, &quot;km&quot;),
+            getLanguageItemFor(R.string.korean, &quot;ko&quot;),
+            getLanguageItemFor(R.string.kyrgyz, &quot;ky&quot;),
+            getLanguageItemFor(R.string.lao, &quot;lo&quot;),
+            getLanguageItemFor(R.string.latvian, &quot;lv&quot;),
+            getLanguageItemFor(R.string.lithuanian, &quot;lt&quot;),
+            getLanguageItemFor(R.string.macedonian, &quot;mk&quot;),
+            getLanguageItemFor(R.string.malagasy, &quot;mg&quot;),
+            getLanguageItemFor(R.string.malay, &quot;ms&quot;),
+            getLanguageItemFor(R.string.malayalam, &quot;ml&quot;),
+            getLanguageItemFor(R.string.maltese, &quot;mt&quot;),
+            getLanguageItemFor(R.string.maori, &quot;mi&quot;),
+            getLanguageItemFor(R.string.marathi, &quot;mr&quot;),
+            getLanguageItemFor(R.string.nepali, &quot;ne&quot;),
+            getLanguageItemFor(R.string.norwegian, &quot;nb&quot;),
+            getLanguageItemFor(R.string.odia, &quot;or&quot;),
+            getLanguageItemFor(R.string.polish, &quot;pl&quot;),
+            getLanguageItemFor(R.string.portuguese, &quot;pt&quot;),
+            getLanguageItemFor(R.string.punjabi, &quot;pa&quot;),
+            getLanguageItemFor(R.string.romanian, &quot;ro&quot;),
+            getLanguageItemFor(R.string.russian, &quot;ru&quot;),
+            getLanguageItemFor(R.string.samoan, &quot;sm&quot;),
+            getLanguageItemFor(R.string.serbian, &quot;sr&quot;),
+            getLanguageItemFor(R.string.slovak, &quot;sk&quot;),
+            getLanguageItemFor(R.string.slovenian, &quot;sl&quot;),
+            getLanguageItemFor(R.string.somali, &quot;so&quot;),
+            getLanguageItemFor(R.string.spanish, &quot;es&quot;),
+            getLanguageItemFor(R.string.swahili, &quot;sw&quot;),
+            getLanguageItemFor(R.string.swedish, &quot;sv&quot;),
+            getLanguageItemFor(R.string.tahitian, &quot;ty&quot;),
+            getLanguageItemFor(R.string.tamil, &quot;ta&quot;),
+            getLanguageItemFor(R.string.tatar, &quot;tt&quot;),
+            getLanguageItemFor(R.string.telugu, &quot;te&quot;),
+            getLanguageItemFor(R.string.thai, &quot;th&quot;),
+            getLanguageItemFor(R.string.tigrinya, &quot;ti&quot;),
+            getLanguageItemFor(R.string.tongan, &quot;to&quot;),
+            getLanguageItemFor(R.string.turkish, &quot;tr&quot;),
+            getLanguageItemFor(R.string.uppersorbian, &quot;hsb&quot;),
+            getLanguageItemFor(R.string.ukrainian, &quot;uk&quot;),
+            getLanguageItemFor(R.string.uzbek, &quot;uz&quot;),
+            getLanguageItemFor(R.string.vietnamese, &quot;vi&quot;),
+            getLanguageItemFor(R.string.welsh, &quot;cy&quot;),
+            getLanguageItemFor(R.string.zulu, &quot;zu&quot;)
+        )
+    }
+
+    private fun getLanguageItemFor(
+        @StringRes stringRes: Int,
+        languageCode: String
+    ): SelectLanguageItem {
+        return SelectLanguageItem(
+            requireContext().getStringByLocale(stringRes, Locale.forLanguageTag(languageCode)),
+            requireContext().getStringByLocale(stringRes, Locale.forLanguageTag(&quot;en&quot;)),
+            languageCode
+        )
+    }
+}
+
+fun Context.getStringByLocale(
+    @StringRes stringRes: Int,
+    locale: Locale,
+    vararg formatArgs: Any
+): String {
+<span class="nc" id="L197">    val configuration = Configuration(resources.configuration)</span>
+<span class="nc" id="L198">    configuration.setLocale(locale)</span>
+<span class="nc" id="L199">    return createConfigurationContext(configuration).resources.getString(stringRes, *formatArgs)</span>
+}
+
+interface LanguageChangeListener {
+    fun onLanguageChange(code: String)
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

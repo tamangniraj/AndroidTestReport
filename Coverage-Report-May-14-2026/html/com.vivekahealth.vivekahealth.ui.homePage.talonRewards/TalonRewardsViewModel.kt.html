@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TalonRewardsViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.talonRewards</a> &gt; <span class="el_source">TalonRewardsViewModel.kt</span></div><h1>TalonRewardsViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.talonRewards
+
+import android.content.SharedPreferences
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.data.remote.talon.TalonResponse
+import com.vivekahealth.vivekahealth.ui.homePage.documents.repository.DocumentRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
+import timber.log.Timber
+
+<span class="fc" id="L21">class TalonRewardsViewModel @Inject constructor(</span>
+<span class="fc" id="L22">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L23">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L24">    private val documentRepository: DocumentRepository</span>
+<span class="fc" id="L25">) : ViewModel(), Observable {</span>
+
+<span class="fc" id="L27">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L29">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+    var loading: Boolean = false
+<span class="fc" id="L31">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L33">            field = value</span>
+<span class="fc" id="L34">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="fc" id="L35">        }</span>
+    var data: Boolean = false
+<span class="fc" id="L37">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L39">            field = value</span>
+<span class="fc" id="L40">            callbacks.notifyCallbacks(this, BR.data, null)</span>
+<span class="fc" id="L41">        }</span>
+<span class="fc" id="L42">    var reason: String = &quot;&quot;</span>
+<span class="fc" id="L43">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L45">            field = value</span>
+<span class="fc" id="L46">            callbacks.notifyCallbacks(this, BR.reason, null)</span>
+<span class="fc" id="L47">        }</span>
+<span class="fc" id="L48">    private val _rewardContent = MutableLiveData&lt;Event&lt;TalonResponse&gt;&gt;()</span>
+    val rewardContent: LiveData&lt;Event&lt;TalonResponse&gt;&gt;
+<span class="fc" id="L50">        get() = _rewardContent</span>
+<span class="fc" id="L51">    private val _fitnessContent = MutableLiveData&lt;Event&lt;TalonResponse&gt;&gt;()</span>
+    val fitnessContent: LiveData&lt;Event&lt;TalonResponse&gt;&gt;
+<span class="fc" id="L53">        get() = _fitnessContent</span>
+
+    fun getTalonReward() {
+<span class="nc" id="L56">        compositeDisposable.add(</span>
+<span class="nc" id="L57">            homeRepository.getTalonUrl(</span>
+<span class="nc" id="L58">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc" id="L59">                &quot;userRewards&quot;</span>
+            )
+<span class="nc" id="L61">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L62">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L63">                .doOnSubscribe {</span>
+<span class="nc" id="L64">                    loading = true</span>
+<span class="nc" id="L65">                }</span>
+<span class="nc" id="L66">                .subscribe({</span>
+<span class="nc" id="L67">                    Timber.d(it.toString())</span>
+<span class="nc" id="L68">                    data = false</span>
+
+<span class="nc" id="L70">                    loading = false</span>
+<span class="nc" id="L71">                    _rewardContent.value = Event(it)</span>
+<span class="nc" id="L72">                }, {</span>
+<span class="nc" id="L73">                    Timber.d(it.toString())</span>
+
+<span class="nc" id="L75">                    data = true</span>
+
+<span class="nc" id="L77">                    loading = false</span>
+<span class="nc" id="L78">                })</span>
+        )
+<span class="nc" id="L80">    }</span>
+    fun getTalonFitness() {
+<span class="nc" id="L82">        compositeDisposable.add(</span>
+<span class="nc" id="L83">            homeRepository.getTalonUrl(</span>
+<span class="nc" id="L84">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc" id="L85">                &quot;userFitness&quot;</span>
+            )
+<span class="nc" id="L87">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L88">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L89">                .doOnSubscribe {</span>
+<span class="nc" id="L90">                    loading = true</span>
+<span class="nc" id="L91">                }</span>
+<span class="nc" id="L92">                .subscribe({</span>
+<span class="nc" id="L93">                    Timber.d(it.toString())</span>
+
+<span class="nc" id="L95">                    loading = false</span>
+<span class="nc" id="L96">                    data = false</span>
+
+<span class="nc" id="L98">                    _fitnessContent.value = Event(it)</span>
+<span class="nc" id="L99">                }, {</span>
+<span class="nc" id="L100">                    Timber.d(it.toString())</span>
+
+<span class="nc" id="L102">                    data = true</span>
+
+<span class="nc" id="L104">                    loading = false</span>
+<span class="nc" id="L105">                })</span>
+        )
+<span class="nc" id="L107">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L110">        callbacks.remove(callback)</span>
+<span class="nc" id="L111">    }</span>
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L113">        callbacks.add(callback)</span>
+<span class="nc" id="L114">    }</span>
+    override fun onCleared() {
+<span class="nc" id="L116">        super.onCleared()</span>
+<span class="nc" id="L117">        compositeDisposable.dispose()</span>
+<span class="nc" id="L118">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FindCareFilterViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findCare.filter</a> &gt; <span class="el_source">FindCareFilterViewModel.kt</span></div><h1>FindCareFilterViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findCare.filter
+
+import android.content.SharedPreferences
+import android.location.Location
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.google.android.gms.maps.model.LatLng
+import com.vivekahealth.vivekahealth.data.local.VivekaDatabase
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.FindCareFilterModel
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.disposables.CompositeDisposable
+import javax.inject.Inject
+
+<span class="fc" id="L21">class FindCareFilterViewModel @Inject constructor(</span>
+<span class="fc" id="L22">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L23">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L24">    private val vivekaDatabase: VivekaDatabase</span>
+<span class="fc" id="L25">) : ViewModel(), Observable {</span>
+<span class="fc" id="L26">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L28">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="pc" id="L29">    final var accessToken = preferences.getString(Constants.ACCESS_TOKEN, &quot;&quot;).toString()</span>
+<span class="pc" id="L30">    var wentToSetting: Boolean = false</span>
+<span class="pc" id="L31">    var defaultLocationType: Int? = null</span>
+<span class="pc" id="L32">    var defaultAddressName: String? = null</span>
+<span class="pc" id="L33">    var defaultLatLng: LatLng? = null</span>
+
+    var count: Int = 0
+<span class="fc" id="L36">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L38">            field = value</span>
+
+<span class="nc" id="L40">            callbacks.notifyCallbacks(this, BR.count, null)</span>
+<span class="nc" id="L41">        }</span>
+<span class="pc" id="L42">    var filterOptionOriginal: FindCareFilterModel = FindCareFilterModel()</span>
+<span class="fc" id="L43">    var filterOption: FindCareFilterModel = FindCareFilterModel()</span>
+<span class="fc" id="L44">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L46">            field = value</span>
+
+<span class="fc" id="L48">            callbacks.notifyCallbacks(this, BR.filterOption, null)</span>
+<span class="fc" id="L49">        }</span>
+
+<span class="fc" id="L51">    private val _navigateToPres = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToPres: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L53">        get() = _navigateToPres</span>
+<span class="fc" id="L54">    private val _navigateToDocFilter = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToDocFilter: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L56">        get() = _navigateToDocFilter</span>
+
+<span class="fc" id="L58">    private val _navigateToClear = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToClear: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L60">        get() = _navigateToClear</span>
+
+    fun clear() {
+<span class="fc" id="L63">        _navigateToClear.value = Event(Unit)</span>
+<span class="fc" id="L64">        filterOption.locationType = defaultLocationType.toString()</span>
+<span class="fc" id="L65">        filterOption.radius = &quot;10&quot;</span>
+<span class="fc" id="L66">        filterOption.current = defaultLatLng</span>
+<span class="fc" id="L67">        filterOption.addressName = defaultAddressName</span>
+<span class="fc" id="L68">        filterOption.speciality = &quot;&quot;</span>
+<span class="fc" id="L69">        filterOption.selectedSubSpeciality = arrayListOf()</span>
+<span class="fc" id="L70">        filterOption.outNetwork = false</span>
+<span class="fc" id="L71">        filterOption.providerType = &quot;1&quot;</span>
+<span class="fc" id="L72">        removeSpeciality()</span>
+<span class="fc" id="L73">        filterOption = filterOption</span>
+<span class="fc" id="L74">    }</span>
+
+    fun removeSpeciality() {
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">        if (filterOption.showSpeciality) {</span>
+<span class="nc" id="L78">            preferences.edit().putString(&quot;key&quot;, &quot;&quot;).apply()</span>
+        }
+<span class="fc" id="L80">        filterOption.speciality = &quot;&quot;</span>
+<span class="fc" id="L81">        filterOption.selectedSubSpeciality.clear()</span>
+<span class="fc" id="L82">        filterOption.taxonomyGroup = &quot;&quot;</span>
+<span class="fc" id="L83">        filterOption.taxonomyCodes.clear()</span>
+<span class="fc" id="L84">    }</span>
+
+    fun assignValue(value: FindCareFilterModel) {
+<span class="fc" id="L87">        filterOption = value</span>
+<span class="fc" id="L88">    }</span>
+
+    fun getSpeciality() {
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        if (filterOption.showSpeciality) {</span>
+<span class="nc" id="L92">            val list = filterOption.selectedSubSpeciality.map { it.speciality }</span>
+<span class="nc" id="L93">            filterOption.speciality = list.joinToString(separator = &quot;,&quot;) { it -&gt; it }</span>
+<span class="nc" id="L94">            filterOption = filterOption</span>
+        }
+<span class="nc" id="L96">    }</span>
+
+    fun locationCurrent(currentLocation: Location) {
+<span class="nc" id="L99">        filterOption.current = LatLng(currentLocation.latitude, currentLocation.longitude)</span>
+<span class="nc" id="L100">        filterOption.near = LatLng(currentLocation.latitude, currentLocation.longitude)</span>
+<span class="nc" id="L101">        filterOption = filterOption</span>
+<span class="nc" id="L102">    }</span>
+
+    fun close() {
+<span class="fc" id="L105">        filterOption = filterOptionOriginal</span>
+<span class="fc" id="L106">        _navigateToPres.value = Event(Unit)</span>
+<span class="fc" id="L107">    }</span>
+
+    fun outNetworkClick() {
+<span class="nc" id="L110">        filterOption.providerType = &quot;1&quot;</span>
+<span class="nc" id="L111">        filterOption.outNetwork = false</span>
+<span class="nc" id="L112">        filterOption.outNetwork = filterOption.outNetwork</span>
+<span class="nc" id="L113">    }</span>
+
+    fun apply() {
+<span class="fc" id="L116">        _navigateToDocFilter.value = Event(Unit)</span>
+<span class="fc" id="L117">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L120">        callbacks.add(callback)</span>
+<span class="nc" id="L121">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L124">        callbacks.remove(callback)</span>
+<span class="nc" id="L125">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L128">        super.onCleared()</span>
+<span class="nc" id="L129">        compositeDisposable.dispose()</span>
+<span class="nc" id="L130">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

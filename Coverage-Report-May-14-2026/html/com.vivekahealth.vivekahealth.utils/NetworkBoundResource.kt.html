@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NetworkBoundResource.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils</a> &gt; <span class="el_source">NetworkBoundResource.kt</span></div><h1>NetworkBoundResource.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (C) 2017 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.vivekahealth.vivekahealth.utils
+
+import androidx.annotation.MainThread
+import androidx.annotation.WorkerThread
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
+import com.vivekahealth.vivekahealth.utils.remote.*
+import com.vivekahealth.vivekahealth.utils.thread.AppExecutors
+
+/**
+ * A generic class that can provide a resource backed by both the sqlite database and the network.
+ *
+ *
+ * You can read more about it in the [Architecture
+ * Guide](https://developer.android.com/arch).
+ * @param &lt;ResultType&gt;
+ * @param &lt;RequestType&gt;
+&lt;/RequestType&gt;&lt;/ResultType&gt; */
+abstract class NetworkBoundResource&lt;ResultType, RequestType&gt;
+<span class="nc" id="L36">@MainThread constructor(private val appExecutors: AppExecutors) {</span>
+
+<span class="nc" id="L38">    private val result = MediatorLiveData&lt;Resource&lt;ResultType&gt;&gt;()</span>
+
+<span class="nc" id="L40">    init {</span>
+<span class="nc" id="L41">        result.value = Resource.loading(null)</span>
+<span class="nc" id="L42">        @Suppress(&quot;LeakingThis&quot;)</span>
+<span class="nc" id="L43">        val dbSource = loadFromDb()</span>
+<span class="nc" id="L44">        result.addSource(dbSource) { data -&gt;</span>
+<span class="nc" id="L45">            result.removeSource(dbSource)</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">            if (shouldFetch(data)) {</span>
+<span class="nc" id="L47">                fetchFromNetwork(dbSource)</span>
+            } else {
+<span class="nc" id="L49">                result.addSource(dbSource) { newData -&gt;</span>
+<span class="nc" id="L50">                    setValue(Resource.success(newData))</span>
+<span class="nc" id="L51">                }</span>
+            }
+<span class="nc" id="L53">        }</span>
+<span class="nc" id="L54">    }</span>
+
+    @MainThread
+    private fun setValue(newValue: Resource&lt;ResultType&gt;) {
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (result.value != newValue) {</span>
+<span class="nc" id="L59">            result.value = newValue</span>
+        }
+<span class="nc" id="L61">    }</span>
+
+    private fun fetchFromNetwork(dbSource: LiveData&lt;ResultType&gt;) {
+<span class="nc" id="L64">        val apiResponse = createCall()</span>
+        // we re-attach dbSource as a new source, it will dispatch its latest value quickly
+<span class="nc" id="L66">        result.addSource(dbSource) { newData -&gt;</span>
+<span class="nc" id="L67">            setValue(Resource.loading(newData))</span>
+<span class="nc" id="L68">        }</span>
+<span class="nc" id="L69">        result.addSource(apiResponse) { response -&gt;</span>
+<span class="nc" id="L70">            result.removeSource(apiResponse)</span>
+<span class="nc" id="L71">            result.removeSource(dbSource)</span>
+<span class="nc" id="L72">            when (response) {</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">                is ApiSuccessResponse -&gt; {</span>
+<span class="nc" id="L74">                    appExecutors.diskIO().execute {</span>
+<span class="nc" id="L75">                        saveCallResult(processResponse(response))</span>
+<span class="nc" id="L76">                        appExecutors.mainThread().execute {</span>
+                            // we specially request a new live data,
+                            // otherwise we will get immediately last cached value,
+                            // which may not be updated with latest results received from network.
+<span class="nc" id="L80">                            result.addSource(loadFromDb()) { newData -&gt;</span>
+<span class="nc" id="L81">                                setValue(Resource.success(newData))</span>
+<span class="nc" id="L82">                            }</span>
+<span class="nc" id="L83">                        }</span>
+<span class="nc" id="L84">                    }</span>
+                }
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                is ApiEmptyResponse -&gt; {</span>
+<span class="nc" id="L87">                    appExecutors.mainThread().execute {</span>
+                        // reload from disk whatever we had
+<span class="nc" id="L89">                        result.addSource(loadFromDb()) { newData -&gt;</span>
+<span class="nc" id="L90">                            setValue(Resource.success(newData))</span>
+<span class="nc" id="L91">                        }</span>
+<span class="nc" id="L92">                    }</span>
+                }
+<span class="nc" id="L94">                is ApiErrorResponse -&gt; {</span>
+<span class="nc" id="L95">                    onFetchFailed()</span>
+<span class="nc" id="L96">                    result.addSource(dbSource) { newData -&gt;</span>
+<span class="nc" id="L97">                        setValue(Resource.error(response.errorMessage, newData))</span>
+<span class="nc" id="L98">                    }</span>
+                }
+            }
+<span class="nc" id="L101">        }</span>
+<span class="nc" id="L102">    }</span>
+
+<span class="nc" id="L104">    protected open fun onFetchFailed() {}</span>
+
+<span class="nc" id="L106">    fun asLiveData() = result as LiveData&lt;Resource&lt;ResultType&gt;&gt;</span>
+
+    @WorkerThread
+<span class="nc" id="L109">    protected open fun processResponse(response: ApiSuccessResponse&lt;RequestType&gt;) = response.body</span>
+
+    @WorkerThread
+    protected abstract fun saveCallResult(item: RequestType)
+
+    @MainThread
+    protected abstract fun shouldFetch(data: ResultType?): Boolean
+
+    @MainThread
+    protected abstract fun loadFromDb(): LiveData&lt;ResultType&gt;
+
+    @MainThread
+    protected abstract fun createCall(): LiveData&lt;ApiResponseDb&lt;RequestType&gt;&gt;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

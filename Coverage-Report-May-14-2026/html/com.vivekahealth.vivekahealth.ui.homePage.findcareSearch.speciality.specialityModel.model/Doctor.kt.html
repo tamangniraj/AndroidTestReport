@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Doctor.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityModel.model</a> &gt; <span class="el_source">Doctor.kt</span></div><h1>Doctor.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityModel.model
+
+<span class="nc" id="L3">data class Doctor(</span>
+<span class="nc" id="L4">    val address1: String,</span>
+<span class="nc" id="L5">    val address2: Any,</span>
+<span class="nc" id="L6">    val addressType: Any,</span>
+<span class="nc" id="L7">    val addresses: List&lt;Any&gt;,</span>
+<span class="nc" id="L8">    val boardCertified: Any,</span>
+<span class="nc" id="L9">    val categories: List&lt;String&gt;,</span>
+<span class="nc" id="L10">    val cellNumber: Any,</span>
+<span class="nc" id="L11">    val city: String,</span>
+<span class="nc" id="L12">    val clientId: Any,</span>
+<span class="nc" id="L13">    val county: Any,</span>
+<span class="nc" id="L14">    val displayName: String,</span>
+<span class="nc" id="L15">    val distance: Double,</span>
+<span class="nc" id="L16">    val effectiveFromDate: Any,</span>
+<span class="nc" id="L17">    val effectiveToDate: Any,</span>
+<span class="nc" id="L18">    val favourite: Any,</span>
+<span class="nc" id="L19">    val federalTaxId: Any,</span>
+<span class="nc" id="L20">    val fileName: Any,</span>
+<span class="nc" id="L21">    val firstName: String,</span>
+<span class="nc" id="L22">    val fullAddress: Any,</span>
+<span class="nc" id="L23">    val fullOfficeName: String,</span>
+<span class="nc" id="L24">    val gender: Any,</span>
+<span class="nc" id="L25">    val lastName: String,</span>
+<span class="nc" id="L26">    val latitude: Double,</span>
+<span class="nc" id="L27">    val longitude: Double,</span>
+<span class="nc" id="L28">    val mailingAddress: MailingAddress,</span>
+<span class="nc" id="L29">    val middleName: Any,</span>
+<span class="nc" id="L30">    val npi: String,</span>
+<span class="nc" id="L31">    val nsa: Nsa?,</span>
+<span class="nc" id="L32">    val priceSource: String? = null,</span>
+<span class="nc" id="L33">    val officeName: String,</span>
+<span class="nc" id="L34">    val officeType: Any,</span>
+<span class="nc" id="L35">    val otherProviderDetails: Any,</span>
+<span class="nc" id="L36">    val otherTaxonomies: List&lt;String&gt;,</span>
+<span class="nc" id="L37">    val otherTaxonomiesCategories: List&lt;String&gt;,</span>
+<span class="nc" id="L38">    val phoneNumber: Any,</span>
+<span class="nc" id="L39">    val postalCode: String,</span>
+<span class="nc" id="L40">    val practiceAddress: PracticeAddress,</span>
+<span class="nc" id="L41">    val preferred: Any,</span>
+<span class="nc" id="L42">    val primaryTaxonomy: String,</span>
+<span class="nc" id="L43">    val primaryTaxonomyCategory: String,</span>
+<span class="nc" id="L44">    val provFaxPhone: Any,</span>
+<span class="nc" id="L45">    val providerId: Any,</span>
+<span class="nc" id="L46">    val providerNetwork: String,</span>
+<span class="nc" id="L47">    val sortPriority: Int,</span>
+<span class="nc" id="L48">    val specialities: List&lt;String&gt;,</span>
+<span class="nc" id="L49">    val specialityCode1: Any,</span>
+<span class="nc" id="L50">    val specialityCode2: Any,</span>
+<span class="nc" id="L51">    val specialityCode3: Any,</span>
+<span class="nc" id="L52">    val specialityCode4: Any,</span>
+<span class="nc" id="L53">    val specialityDescription1: Any,</span>
+<span class="nc" id="L54">    val specialityDescription2: Any,</span>
+<span class="nc" id="L55">    val specialityDescription3: Any,</span>
+<span class="nc" id="L56">    val specialityDescription4: Any,</span>
+<span class="nc" id="L57">    val specialityFocusCode1: Any,</span>
+<span class="nc" id="L58">    val specialityFocusCode2: Any,</span>
+<span class="nc" id="L59">    val specialityFocusDescription1: Any,</span>
+<span class="nc" id="L60">    val specialityFocusDescription2: Any,</span>
+<span class="nc" id="L61">    val ssn: Any,</span>
+<span class="nc" id="L62">    val state: String,</span>
+<span class="nc" id="L63">    val telephone: String,</span>
+<span class="nc" id="L64">    val validated: Any,</span>
+<span class="nc" id="L65">    val w9: Any,</span>
+<span class="nc" id="L66">    val webUrl: Any,</span>
+<span class="nc" id="L67">    val zip: String,</span>
+<span class="nc" id="L68">    val zipCode: String,</span>
+<span class="nc" id="L69">    val zipExtension: Any</span>
+<span class="nc" id="L70">)</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

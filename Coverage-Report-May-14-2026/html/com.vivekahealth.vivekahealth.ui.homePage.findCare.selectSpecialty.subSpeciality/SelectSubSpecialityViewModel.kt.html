@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SelectSubSpecialityViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findCare.selectSpecialty.subSpeciality</a> &gt; <span class="el_source">SelectSubSpecialityViewModel.kt</span></div><h1>SelectSubSpecialityViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findCare.selectSpecialty.subSpeciality
+
+import android.content.SharedPreferences
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.data.local.VivekaDatabase
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.FindCareFilterModel
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.specialityValue.Value
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.specialityValue.ValueSelected
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.disposables.CompositeDisposable
+import javax.inject.Inject
+
+<span class="nc" id="L20">class SelectSubSpecialityViewModel @Inject constructor(</span>
+<span class="nc" id="L21">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L22">    private val homeRepository: HomeRepository,</span>
+<span class="nc" id="L23">    private val vivekaDatabase: VivekaDatabase</span>
+<span class="nc" id="L24">) : ViewModel(), Observable {</span>
+<span class="nc" id="L25">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L27">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="nc" id="L28">    var valueList: ArrayList&lt;ValueSelected&gt; = arrayListOf()</span>
+<span class="nc" id="L29">    private val _updateList = MutableLiveData&lt;Event&lt;List&lt;ValueSelected&gt;&gt;&gt;()</span>
+    val updateList: LiveData&lt;Event&lt;List&lt;ValueSelected&gt;&gt;&gt;
+<span class="nc" id="L31">        get() = _updateList</span>
+
+<span class="nc" id="L33">    private val _close = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val close: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L35">        get() = _close</span>
+<span class="nc" id="L36">    var listMain: Value? = null</span>
+<span class="nc" id="L37">    private val _done = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val done: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L39">        get() = _done</span>
+<span class="nc" id="L40">    var filterOption: FindCareFilterModel = FindCareFilterModel()</span>
+<span class="nc" id="L41">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L43">            field = value</span>
+
+<span class="nc" id="L45">            callbacks.notifyCallbacks(this, BR.filterOption, null)</span>
+<span class="nc" id="L46">        }</span>
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L48">        callbacks.add(callback)</span>
+<span class="nc" id="L49">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L52">        callbacks.remove(callback)</span>
+<span class="nc" id="L53">    }</span>
+
+    fun apply() {
+<span class="nc" id="L56">        filterOption.selectedSubSpeciality.clear()</span>
+<span class="nc" id="L57">        var selected = valueList.filter { valueSelected -&gt; valueSelected.selected }</span>
+<span class="nc" id="L58">        filterOption.selectedSubSpeciality.addAll(selected)</span>
+<span class="nc" id="L59">        var listTemp = filterOption.selectedSubSpeciality.toSet().toList()</span>
+<span class="nc" id="L60">        filterOption.selectedSubSpeciality.clear()</span>
+<span class="nc" id="L61">        filterOption.selectedSubSpeciality.addAll(listTemp)</span>
+//        filterOption.selectedSubSpeciality.removeIf { item -&gt; !(item.taxonomyGroup.equals(listMain?.specialityGroup,true)) }
+
+<span class="nc" id="L64">        _done.value = Event(Unit)</span>
+<span class="nc" id="L65">    }</span>
+
+    fun close() {
+<span class="nc" id="L68">        _close.value = Event(Unit)</span>
+<span class="nc" id="L69">    }</span>
+
+    fun listUpdate(mainList: List&lt;ValueSelected&gt;, changed: Int, isChecked: Boolean) {
+<span class="nc" id="L72">        var index = changed</span>
+
+<span class="nc" id="L74">        var value = mainList[index]</span>
+<span class="nc" id="L75">        var originalIndex = valueList.indexOf(value)</span>
+<span class="nc" id="L76">        value.selected = isChecked</span>
+
+<span class="nc" id="L78">        val updatedItems = valueList.toMutableList().apply { this[originalIndex] = value }</span>
+<span class="nc" id="L79">        val updatedItemsView = mainList.toMutableList().apply { this[index] = value }</span>
+
+<span class="nc" id="L81">        valueList.clear()</span>
+<span class="nc" id="L82">        valueList.addAll(updatedItems)</span>
+
+<span class="nc" id="L84">        _updateList.value = Event(updatedItemsView)</span>
+<span class="nc" id="L85">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L88">        super.onCleared()</span>
+<span class="nc" id="L89">        compositeDisposable.dispose()</span>
+<span class="nc" id="L90">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

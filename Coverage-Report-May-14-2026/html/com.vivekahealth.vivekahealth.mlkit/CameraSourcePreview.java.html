@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CameraSourcePreview.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.mlkit</a> &gt; <span class="el_source">CameraSourcePreview.java</span></div><h1>CameraSourcePreview.java</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.mlkit;
+
+import android.content.Context;
+import android.content.res.Configuration;
+import android.util.AttributeSet;
+import android.util.Log;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.ViewGroup;
+
+import com.google.android.gms.common.images.Size;
+
+import java.io.IOException;
+
+/** Preview the camera image in the screen. */
+public class CameraSourcePreview extends ViewGroup {
+  private static final String TAG = &quot;MIDemoApp:Preview&quot;;
+
+  private final Context context;
+  private final SurfaceView surfaceView;
+  private boolean startRequested;
+  private boolean surfaceAvailable;
+  private CameraSource cameraSource;
+
+  private GraphicOverlay overlay;
+
+  public CameraSourcePreview(Context context, AttributeSet attrs) {
+<span class="nc" id="L28">    super(context, attrs);</span>
+<span class="nc" id="L29">    this.context = context;</span>
+<span class="nc" id="L30">    startRequested = false;</span>
+<span class="nc" id="L31">    surfaceAvailable = false;</span>
+
+<span class="nc" id="L33">    surfaceView = new SurfaceView(context);</span>
+<span class="nc" id="L34">    surfaceView.getHolder().addCallback(new SurfaceCallback());</span>
+<span class="nc" id="L35">    addView(surfaceView);</span>
+<span class="nc" id="L36">  }</span>
+
+  private void start(CameraSource cameraSource) throws IOException {
+<span class="nc" id="L39">    this.cameraSource = cameraSource;</span>
+
+<span class="nc bnc" id="L41" title="All 2 branches missed.">    if (this.cameraSource != null) {</span>
+<span class="nc" id="L42">      startRequested = true;</span>
+<span class="nc" id="L43">      startIfReady();</span>
+    }
+<span class="nc" id="L45">  }</span>
+
+  public void start(CameraSource cameraSource, GraphicOverlay overlay) throws IOException {
+<span class="nc" id="L48">    this.overlay = overlay;</span>
+<span class="nc" id="L49">    start(cameraSource);</span>
+<span class="nc" id="L50">  }</span>
+
+  public void stop() {
+<span class="nc bnc" id="L53" title="All 2 branches missed.">    if (cameraSource != null) {</span>
+<span class="nc" id="L54">      cameraSource.stop();</span>
+    }
+<span class="nc" id="L56">  }</span>
+
+  public void release() {
+<span class="nc bnc" id="L59" title="All 2 branches missed.">    if (cameraSource != null) {</span>
+<span class="nc" id="L60">      cameraSource.release();</span>
+<span class="nc" id="L61">      cameraSource = null;</span>
+    }
+<span class="nc" id="L63">    surfaceView.getHolder().getSurface().release();</span>
+<span class="nc" id="L64">  }</span>
+
+  private void startIfReady() throws IOException, SecurityException {
+<span class="nc bnc" id="L67" title="All 4 branches missed.">    if (startRequested &amp;&amp; surfaceAvailable) {</span>
+
+<span class="nc" id="L69">       cameraSource.start(surfaceView.getHolder());</span>
+
+//      if (PreferenceUtils.isCameraLiveViewportEnabled(context)) {
+//        cameraSource.start(surfaceView.getHolder());
+//      } else {
+//        cameraSource.start();
+//      }
+<span class="nc" id="L76">      requestLayout();</span>
+
+<span class="nc bnc" id="L78" title="All 2 branches missed.">      if (overlay != null) {</span>
+<span class="nc" id="L79">        Size size = cameraSource.getPreviewSize();</span>
+<span class="nc" id="L80">        int min = Math.min(size.getWidth(), size.getHeight());</span>
+<span class="nc" id="L81">        int max = Math.max(size.getWidth(), size.getHeight());</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        boolean isImageFlipped = cameraSource.getCameraFacing() == CameraSource.CAMERA_FACING_FRONT;</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (isPortraitMode()) {</span>
+          // Swap width and height sizes when in portrait, since it will be rotated by 90 degrees.
+          // The camera preview and the image being processed have the same size.
+<span class="nc" id="L86">          overlay.setImageSourceInfo(min, max, isImageFlipped);</span>
+        } else {
+<span class="nc" id="L88">          overlay.setImageSourceInfo(max, min, isImageFlipped);</span>
+        }
+<span class="nc" id="L90">        overlay.clear();</span>
+      }
+<span class="nc" id="L92">      startRequested = false;</span>
+    }
+<span class="nc" id="L94">  }</span>
+
+<span class="nc" id="L96">  private class SurfaceCallback implements SurfaceHolder.Callback {</span>
+    @Override
+    public void surfaceCreated(SurfaceHolder surface) {
+<span class="nc" id="L99">      surfaceAvailable = true;</span>
+      try {
+<span class="nc" id="L101">        startIfReady();</span>
+<span class="nc" id="L102">      } catch (IOException e) {</span>
+<span class="nc" id="L103">        Log.e(TAG, &quot;Could not start camera source.&quot;, e);</span>
+<span class="nc" id="L104">      }</span>
+<span class="nc" id="L105">    }</span>
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder surface) {
+<span class="nc" id="L109">      surfaceAvailable = false;</span>
+<span class="nc" id="L110">    }</span>
+
+    @Override
+<span class="nc" id="L113">    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}</span>
+  }
+
+  @Override
+  protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+<span class="nc" id="L118">    int width = 320;</span>
+<span class="nc" id="L119">    int height = 240;</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">    if (cameraSource != null) {</span>
+<span class="nc" id="L121">      Size size = cameraSource.getPreviewSize();</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">      if (size != null) {</span>
+<span class="nc" id="L123">        width = size.getWidth();</span>
+<span class="nc" id="L124">        height = size.getHeight();</span>
+      }
+    }
+
+    // Swap width and height sizes when in portrait, since it will be rotated 90 degrees
+<span class="nc bnc" id="L129" title="All 2 branches missed.">    if (isPortraitMode()) {</span>
+<span class="nc" id="L130">      int tmp = width;</span>
+<span class="nc" id="L131">      width = height;</span>
+<span class="nc" id="L132">      height = tmp;</span>
+    }
+
+<span class="nc" id="L135">    float previewAspectRatio = (float) width / height;</span>
+<span class="nc" id="L136">    int layoutWidth = right - left;</span>
+<span class="nc" id="L137">    int layoutHeight = bottom - top;</span>
+<span class="nc" id="L138">    float layoutAspectRatio = (float) layoutWidth / layoutHeight;</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">    if (previewAspectRatio &gt; layoutAspectRatio) {</span>
+      // The preview input is wider than the layout area. Fit the layout height and crop
+      // the preview input horizontally while keep the center.
+<span class="nc" id="L142">      int horizontalOffset = (int) (previewAspectRatio * layoutHeight - layoutWidth) / 2;</span>
+<span class="nc" id="L143">      surfaceView.layout(-horizontalOffset, 0, layoutWidth + horizontalOffset, layoutHeight);</span>
+<span class="nc" id="L144">    } else {</span>
+      // The preview input is taller than the layout area. Fit the layout width and crop the preview
+      // input vertically while keep the center.
+<span class="nc" id="L147">      int verticalOffset = (int) (layoutWidth / previewAspectRatio - layoutHeight) / 2;</span>
+<span class="nc" id="L148">      surfaceView.layout(0, -verticalOffset, layoutWidth, layoutHeight + verticalOffset);</span>
+    }
+<span class="nc" id="L150">  }</span>
+
+  private boolean isPortraitMode() {
+<span class="nc" id="L153">    int orientation = context.getResources().getConfiguration().orientation;</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">    if (orientation == Configuration.ORIENTATION_LANDSCAPE) {</span>
+<span class="nc" id="L155">      return false;</span>
+    }
+<span class="nc bnc" id="L157" title="All 2 branches missed.">    if (orientation == Configuration.ORIENTATION_PORTRAIT) {</span>
+<span class="nc" id="L158">      return true;</span>
+    }
+
+<span class="nc" id="L161">    Log.d(TAG, &quot;isPortraitMode returning false by default&quot;);</span>
+<span class="nc" id="L162">    return false;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

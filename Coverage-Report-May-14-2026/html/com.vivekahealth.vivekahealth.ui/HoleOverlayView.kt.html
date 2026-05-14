@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HoleOverlayView.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui</a> &gt; <span class="el_source">HoleOverlayView.kt</span></div><h1>HoleOverlayView.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui
+
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.RectF
+import android.util.AttributeSet
+import android.view.View
+
+<span class="nc" id="L13">class HoleOverlayView @JvmOverloads constructor(</span>
+    context: Context,
+<span class="nc" id="L15">    attrs: AttributeSet? = null,</span>
+<span class="nc" id="L16">    defStyle: Int = 0</span>
+<span class="nc" id="L17">) : View(context, attrs, defStyle) {</span>
+
+<span class="nc" id="L19">    private val holePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {</span>
+<span class="nc" id="L20">        xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)</span>
+<span class="nc" id="L21">    }</span>
+
+<span class="nc" id="L23">    private val overlayPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {</span>
+<span class="nc" id="L24">        color = Color.parseColor(&quot;#B3000000&quot;) // semi-transparent black</span>
+<span class="nc" id="L25">    }</span>
+
+    // Size of the hole
+<span class="nc" id="L28">    var holeWidth = 450</span>
+<span class="nc" id="L29">    var holeHeight = 800</span>
+
+    override fun onDraw(canvas: Canvas) {
+<span class="nc" id="L32">        super.onDraw(canvas)</span>
+
+        // Set layer type to make CLEAR mode work
+<span class="nc" id="L35">        setLayerType(LAYER_TYPE_HARDWARE, null)</span>
+
+<span class="nc" id="L37">        val parentWidth = width.toFloat()</span>
+<span class="nc" id="L38">        val parentHeight = height.toFloat()</span>
+
+        // Hole size: 60% of width, height from 9:16 aspect ratio
+<span class="nc" id="L41">        val holeWidth = parentWidth * 0.7f</span>
+<span class="nc" id="L42">        val holeHeight = holeWidth * 6f / 5f</span>
+
+<span class="nc" id="L44">        val centerX = parentWidth / 2f</span>
+<span class="nc" id="L45">        val centerY = parentHeight / 2f</span>
+
+<span class="nc" id="L47">        val left = centerX - holeWidth / 2f</span>
+<span class="nc" id="L48">        val top = centerY - holeHeight / 2f</span>
+<span class="nc" id="L49">        val right = centerX + holeWidth / 2f</span>
+<span class="nc" id="L50">        val bottom = centerY + holeHeight / 2f</span>
+
+<span class="nc" id="L52">        val holeRect = RectF(left, top, right, bottom)</span>
+
+        // Draw dim background
+<span class="nc" id="L55">        canvas.drawRect(0f, 0f, parentWidth, parentHeight, overlayPaint)</span>
+
+        // Clear hole in the center
+<span class="nc" id="L58">        canvas.drawOval(holeRect, holePaint)</span>
+<span class="nc" id="L59">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

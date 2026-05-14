@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Normalization.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.mlkit</a> &gt; <span class="el_source">Normalization.kt</span></div><h1>Normalization.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.mlkit
+
+import kotlin.text.iterator
+
+<span class="pc" id="L5">data class NormalizationResult(</span>
+<span class="fc" id="L6">    val normalized: String,</span>
+<span class="fc" id="L7">    val wasModified: Boolean,</span>
+<span class="pc" id="L8">    val modifications: List&lt;String&gt; = emptyList()</span>
+<span class="nc" id="L9">)</span>
+
+<span class="fc" id="L11">class IdNormalizer {</span>
+    companion object {
+        // Valid prefixes - only these should trigger normalization
+<span class="fc" id="L14">        private val VALID_PREFIXES = setOf(</span>
+<span class="fc" id="L15">            &quot;ASF&quot;, &quot;FUN&quot;, &quot;TLO&quot;, &quot;XYB&quot;, &quot;GLW&quot;,</span>
+<span class="fc" id="L16">            &quot;EGA&quot;, &quot;FFI&quot;, &quot;PTH&quot;, &quot;QCH&quot;, &quot;QEW&quot;</span>
+        )
+
+        // OCR character confusion mappings
+<span class="fc" id="L20">        private val CHAR_TO_DIGIT = mapOf(</span>
+<span class="fc" id="L21">            'O' to '0',</span>
+<span class="fc" id="L22">            'o' to '0',</span>
+<span class="fc" id="L23">            'I' to '1',</span>
+<span class="fc" id="L24">            'l' to '1',</span>
+<span class="fc" id="L25">            '|' to '1',</span>
+<span class="fc" id="L26">            'Z' to '2',</span>
+<span class="fc" id="L27">            'z' to '2',</span>
+<span class="fc" id="L28">            'G' to '6',</span>
+<span class="fc" id="L29">            'g' to '6',</span>
+<span class="fc" id="L30">            'S' to '5',</span>
+<span class="fc" id="L31">            's' to '5',</span>
+<span class="fc" id="L32">            'B' to '8',</span>
+<span class="fc" id="L33">            'D' to '0'</span>
+        )
+    }
+
+    /**
+     * Normalizes an extracted ID with OCR corrections
+     * Only processes IDs that match valid prefix patterns or APU suffix pattern
+     */
+    fun normalize(extractedId: String): NormalizationResult {
+<span class="fc" id="L42">        val modifications = mutableListOf&lt;String&gt;()</span>
+<span class="fc" id="L43">        val normalized = extractedId.trim().uppercase()</span>
+
+        // Step 1: Check if it ends with APU
+<span class="fc" id="L46">        val hasAPU = normalized.endsWith(&quot;APU&quot;)</span>
+
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        if (hasAPU) {</span>
+            // Pattern: numeric + APU (no prefix)
+<span class="fc" id="L50">            return normalizeApuFormat(normalized, modifications)</span>
+        } else {
+            // Pattern: PREFIX + numeric (no APU)
+            // Only process if it matches one of our valid prefixes
+<span class="fc" id="L54">            return normalizePrefixFormat(normalized, extractedId, modifications)</span>
+        }
+    }
+
+    /**
+     * Normalize IDs with APU suffix (no prefix)
+     * Format: digits + APU
+     */
+    private fun normalizeApuFormat(extractedId: String, modifications: MutableList&lt;String&gt;): NormalizationResult {
+        // Remove APU suffix
+<span class="fc" id="L64">        val withoutAPU = extractedId.dropLast(3)</span>
+
+        // Normalize the numeric portion
+<span class="fc" id="L67">        val normalizedNumeric = fixNumericPortion(withoutAPU, modifications)</span>
+
+        // Validate it's all digits and correct length
+<span class="pc bpc" id="L70" title="1 of 6 branches missed.">        if (normalizedNumeric.length !in 4..20) {</span>
+<span class="fc" id="L71">            modifications.add(</span>
+<span class="fc" id="L72">                &quot;Warning: Numeric portion length ${normalizedNumeric.length} not in range 4-20&quot;</span>
+            )
+        }
+
+<span class="fc" id="L76">        val finalId = normalizedNumeric + &quot;APU&quot;</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        val wasModified = finalId != extractedId</span>
+
+<span class="fc" id="L79">        return NormalizationResult(finalId, wasModified, modifications)</span>
+    }
+
+    /**
+     * Normalize IDs with prefix (no APU)
+     * Format: PREFIX + digits
+     * Only processes if prefix matches one of the valid prefixes (with OCR tolerance)
+     */
+    private fun normalizePrefixFormat(
+        normalized: String,
+        originalId: String,
+        modifications: MutableList&lt;String&gt;
+    ): NormalizationResult {
+        // Step 1: Try to extract potential prefix (first 3 chars)
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (normalized.length &lt; 7) { // At least 3 char prefix + 4 digits minimum</span>
+<span class="fc" id="L94">            return NormalizationResult(</span>
+<span class="fc" id="L95">                originalId,</span>
+<span class="fc" id="L96">                false,</span>
+<span class="fc" id="L97">                listOf(&quot;Info: ID too short to match pattern&quot;)</span>
+            )
+        }
+
+<span class="fc" id="L101">        val potentialPrefix = normalized.take(3)</span>
+
+        // Step 2: Check if this could be a valid prefix (with OCR errors)
+<span class="fc" id="L104">        val correctedPrefix = findMatchingPrefix(potentialPrefix)</span>
+
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if (correctedPrefix == null) {</span>
+            // Not matching any valid prefix, return as-is (don't normalize)
+<span class="fc" id="L108">            return NormalizationResult(</span>
+<span class="fc" id="L109">                originalId,</span>
+<span class="fc" id="L110">                false,</span>
+<span class="fc" id="L111">                listOf(&quot;Info: Prefix '$potentialPrefix' does not match any valid prefix&quot;)</span>
+            )
+        }
+
+        // Step 3: We found a matching prefix, proceed with normalization
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">        if (correctedPrefix != potentialPrefix) {</span>
+<span class="nc" id="L117">            modifications.add(&quot;Prefix: $potentialPrefix → $correctedPrefix&quot;)</span>
+        }
+
+        // Step 4: Extract numeric portion
+<span class="fc" id="L121">        val numericPart = normalized.drop(3)</span>
+
+        // Step 5: Normalize the numeric portion (fix OCR confusions)
+        // QEW prefix: M, W, A are valid mid-ID characters (not OCR errors)
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        val allowedAlpha = if (correctedPrefix == &quot;QEW&quot;) setOf('M', 'W', 'A') else emptySet()</span>
+<span class="fc" id="L126">        val normalizedNumeric = fixNumericPortion(numericPart, modifications, allowedAlpha)</span>
+
+        // Step 6: Validate numeric portion length
+<span class="pc bpc" id="L129" title="3 of 6 branches missed.">        if (normalizedNumeric.length !in 4..20) {</span>
+<span class="nc" id="L130">            modifications.add(</span>
+<span class="nc" id="L131">                &quot;Warning: Numeric portion length ${normalizedNumeric.length} not in range 4-20&quot;</span>
+            )
+        }
+
+        // Step 7: Reconstruct the ID
+<span class="fc" id="L136">        val finalId = correctedPrefix + normalizedNumeric</span>
+
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        val wasModified = finalId != originalId</span>
+<span class="fc" id="L139">        return NormalizationResult(finalId, wasModified, modifications)</span>
+    }
+
+    /**
+     * Find matching valid prefix considering OCR errors
+     * Returns null if no match found
+     */
+    private fun findMatchingPrefix(extractedPrefix: String): String? {
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        if (extractedPrefix.length != 3) return null</span>
+
+        // First, check for exact match
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        if (VALID_PREFIXES.contains(extractedPrefix)) {</span>
+<span class="fc" id="L151">            return extractedPrefix</span>
+        }
+
+        // Check each valid prefix for potential OCR matches
+<span class="fc bfc" id="L155" title="All 2 branches covered.">        for (validPrefix in VALID_PREFIXES) {</span>
+<span class="fc" id="L156">            val corrected = attemptPrefixCorrection(extractedPrefix, validPrefix)</span>
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">            if (corrected != null) {</span>
+<span class="nc" id="L158">                return corrected</span>
+            }
+        }
+
+<span class="fc" id="L162">        return null</span>
+    }
+
+    /**
+     * Attempt to correct prefix by replacing likely OCR errors
+     * Returns the valid prefix if correction is successful, null otherwise
+     */
+    private fun attemptPrefixCorrection(extracted: String, target: String): String? {
+<span class="pc bpc" id="L170" title="2 of 4 branches missed.">        if (extracted.length != 3 || target.length != 3) return null</span>
+
+<span class="fc" id="L172">        var differences = 0</span>
+<span class="fc" id="L173">        val potentialFixes = mutableListOf&lt;Pair&lt;Int, Char&gt;&gt;()</span>
+
+<span class="fc bfc" id="L175" title="All 2 branches covered.">        for (i in 0..2) {</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">            if (extracted[i] != target[i]) {</span>
+<span class="fc" id="L177">                differences++</span>
+
+                // Check if this is a likely OCR confusion
+<span class="fc" id="L180">                val isLikelyOcrError = when (i) {</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">                    2 -&gt; {</span>
+                        // Last character might be O/I confused with 0/1
+<span class="pc bpc" id="L183" title="3 of 4 branches missed.">                        (extracted[i] == '0' &amp;&amp; target[i] == 'O') ||</span>
+<span class="pc bpc" id="L184" title="3 of 4 branches missed.">                            (extracted[i] == 'O' &amp;&amp; target[i] == '0') ||</span>
+<span class="pc bpc" id="L185" title="3 of 4 branches missed.">                            (extracted[i] == '1' &amp;&amp; target[i] == 'I') ||</span>
+<span class="pc bpc" id="L186" title="3 of 4 branches missed.">                            (extracted[i] == 'I' &amp;&amp; target[i] == '1') ||</span>
+<span class="pc bpc" id="L187" title="3 of 4 branches missed.">                            (extracted[i] == 'l' &amp;&amp; target[i] == 'I') ||</span>
+<span class="pc bpc" id="L188" title="3 of 4 branches missed.">                            (extracted[i] == 'L' &amp;&amp; target[i] == 'I')</span>
+                    }
+                    else -&gt; {
+                        // First two characters: check for common confusions
+<span class="pc bpc" id="L192" title="3 of 4 branches missed.">                        (extracted[i] == '0' &amp;&amp; target[i] == 'O') ||</span>
+<span class="pc bpc" id="L193" title="3 of 4 branches missed.">                            (extracted[i] == '1' &amp;&amp; target[i] == 'I') ||</span>
+<span class="pc bpc" id="L194" title="3 of 4 branches missed.">                            (extracted[i] == 'l' &amp;&amp; target[i] == 'I')</span>
+                    }
+                }
+
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">                if (isLikelyOcrError) {</span>
+<span class="nc" id="L199">                    potentialFixes.add(Pair(i, target[i]))</span>
+                }
+            }
+        }
+
+        // Only accept if we have 1-2 differences and all are OCR-explainable
+<span class="pc bpc" id="L205" title="2 of 8 branches missed.">        if (differences in 1..2 &amp;&amp; potentialFixes.size == differences) {</span>
+<span class="nc" id="L206">            return target</span>
+        }
+
+<span class="fc" id="L209">        return null</span>
+    }
+
+    /**
+     * Fix OCR issues in the numeric portion.
+     * [allowedAlpha] contains alpha characters that are valid for this ID format and should be kept as-is.
+     */
+<span class="fc" id="L216">    private fun fixNumericPortion(</span>
+        numericPart: String,
+        modifications: MutableList&lt;String&gt;,
+<span class="fc" id="L219">        allowedAlpha: Set&lt;Char&gt; = emptySet()</span>
+    ): String {
+<span class="fc" id="L221">        val fixed = StringBuilder()</span>
+
+<span class="fc bfc" id="L223" title="All 2 branches covered.">        for (char in numericPart) {</span>
+<span class="fc" id="L224">            when {</span>
+<span class="fc bfc" id="L225" title="All 2 branches covered.">                char.isDigit() -&gt; fixed.append(char)</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">                allowedAlpha.contains(char) -&gt; fixed.append(char)</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">                CHAR_TO_DIGIT.containsKey(char) -&gt; {</span>
+<span class="fc" id="L228">                    val replacement = CHAR_TO_DIGIT[char]!!</span>
+<span class="fc" id="L229">                    modifications.add(&quot;Numeric: $char → $replacement&quot;)</span>
+<span class="fc" id="L230">                    fixed.append(replacement)</span>
+                }
+                else -&gt; {
+                    // Unknown character in numeric portion
+<span class="fc" id="L234">                    modifications.add(</span>
+<span class="fc" id="L235">                        &quot;Warning: Unexpected char '$char' in numeric portion, skipping&quot;</span>
+                    )
+                    // Skip invalid characters
+                }
+            }
+        }
+
+<span class="fc" id="L242">        return fixed.toString()</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

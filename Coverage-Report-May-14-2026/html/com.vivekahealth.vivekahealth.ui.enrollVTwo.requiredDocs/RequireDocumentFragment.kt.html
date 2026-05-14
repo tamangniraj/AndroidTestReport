@@ -1,0 +1,527 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RequireDocumentFragment.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.enrollVTwo.requiredDocs</a> &gt; <span class="el_source">RequireDocumentFragment.kt</span></div><h1>RequireDocumentFragment.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.enrollVTwo.requiredDocs
+
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.ContentValues.TAG
+import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.os.Bundle
+import android.provider.MediaStore
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
+import com.canhub.cropper.CropImage
+import com.canhub.cropper.CropImageContract
+import com.canhub.cropper.CropImageContractOptions
+import com.canhub.cropper.CropImageOptions
+import com.canhub.cropper.CropImageView
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.local.enroll.ListDoc
+import com.vivekahealth.vivekahealth.data.local.enroll.RelationshipType
+import com.vivekahealth.vivekahealth.data.remote.enroll.Person
+import com.vivekahealth.vivekahealth.databinding.FragmentChildRequireDocumentBinding
+import com.vivekahealth.vivekahealth.di.Injectable
+import com.vivekahealth.vivekahealth.ui.BaseFragment
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.uploadDocuments.uploadUI.UploadDocCallback
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.uploadDocuments.uploadUI.UploadDocumentFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.DependentCheckItem
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.pickerBottomSheet.PickerButtonListener
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.pickerBottomSheet.PickerSheetFragment
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.DependentType
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.EnrollmentV2Activity
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.SharedViewModel
+import com.vivekahealth.vivekahealth.utils.ActivityUtils
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.EventObserver
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import com.vivekahealth.vivekahealth.utils.remote.Status
+import kotlinx.coroutines.launch
+import timber.log.Timber
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.InputStream
+import java.text.SimpleDateFormat
+import java.util.Locale
+import javax.inject.Inject
+
+open class RequireDocumentFragment : BaseFragment(), Injectable {
+
+    protected lateinit var binding: FragmentChildRequireDocumentBinding
+
+    protected lateinit var viewModel: RequiredDocsViewModel
+
+    @Inject
+    lateinit var viewModelFactory: ViewModelProvider.Factory
+    private lateinit var cropImageLauncher: ActivityResultLauncher&lt;CropImageContractOptions&gt;
+    private var uriForFile: Uri? = null
+    private lateinit var requestCameraPermissionLauncher: ActivityResultLauncher&lt;String&gt;
+    private lateinit var cameraLauncher: ActivityResultLauncher&lt;Intent&gt;
+    private lateinit var galleryLauncher: ActivityResultLauncher&lt;Intent&gt;
+
+    /**
+     * Replaceable in tests — set before clicking a doc card.
+     * When non-null, [showPicker] calls [ImagePickerClient.pick] instead of showing the
+     * real picker bottom sheet. Same pattern as DocumentScanFragment.scannerClient.
+     */
+    internal var imagePickerClient: ImagePickerClient? = null
+
+    protected val sharedViewModel: SharedViewModel by activityViewModels()
+
+    val args: RequireDocumentFragmentArgs by navArgs()
+
+    companion object {
+        fun newInstance() = RequireDocumentFragment()
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        binding = FragmentChildRequireDocumentBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    val adapter = DocAdapterV2(
+        onClick = {
+
+            if (it.disable != true) {
+                viewModel.currentItem = it
+                viewModel.currentPerson = it.person!!
+                viewModel.currentDoc = it.fileName.toString()
+                showPicker()
+            }
+        }
+    )
+    var data: DependentCheckItem? = null
+    protected var relationType: Int = -1
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        requestCameraPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted -&gt;
+            if (isGranted) {
+                launchCamera()
+            }
+        }
+
+        cameraLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result -&gt;
+            if (result.resultCode == Activity.RESULT_OK) {
+                uriForFile?.let { uri -&gt;
+                    startCrop(uri)
+                }
+            }
+        }
+
+        galleryLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result -&gt;
+            if (result.resultCode == Activity.RESULT_OK) {
+                result.data?.data?.let { uri -&gt;
+                    startCrop(uri)
+                }
+            }
+        }
+
+        cropImageLauncher = registerForActivityResult(CropImageContract()) { result -&gt;
+
+            if (result.isSuccessful) {
+                result.uriContent?.let { croppedUri -&gt;
+                    openUpload(croppedUri)
+                }
+            } else if (result !is CropImage.CancelledResult) {
+                val exception = result.error
+                exception?.let {
+                    android.widget.Toast.makeText(
+                        requireContext(),
+                        &quot;Crop failed: ${it.message}&quot;,
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        viewModel = ViewModelProvider(this, viewModelFactory).get(
+            RequiredDocsViewModel::class.java
+        )
+
+        binding.lifecycleOwner = viewLifecycleOwner
+        binding.viewModel = this@RequireDocumentFragment.viewModel
+
+        relationType = args.relationType
+        binding.relationType = relationType
+
+        viewModel.navigateToNext.observe(
+            viewLifecycleOwner,
+            EventObserver {
+                markDependentComplete()
+
+                if (relationType == RelationshipType.PRIMARY.code) {
+                    navigateForPrimary()
+                } else {
+                    navigateForDependent()
+                }
+            }
+        )
+
+        sharedViewModel.enrollmentData.observe(
+            viewLifecycleOwner,
+            Observer {
+                if (relationType == RelationshipType.CHILD.code) {
+                    data = sharedViewModel.enrollmentData.value?.findChildByIndex(
+                        sharedViewModel.index
+                    )
+                } else if (relationType == RelationshipType.SPOUSE.code) {
+                    data = sharedViewModel.enrollmentData.value?.findSpouse()
+                } else if (relationType == RelationshipType.PRIMARY.code) {
+                    data = sharedViewModel.enrollmentData.value?.findPrimary()
+                }
+
+                viewModel.firstNameSpouse = data?.firstName ?: &quot;&quot;
+
+                data?.let { dt -&gt;
+
+                    val childAgeInYear = DateUtils.getDateDiff(
+                        SimpleDateFormat(&quot;yyyy-MM-dd&quot;, Locale.getDefault()),
+                        data?.dob ?: &quot;&quot;,
+                        DateUtils.getCurrentDateServer()
+                    )
+
+                    Timber.d(&quot;Boolean:1 ${dt.previousInsurance} &quot;)
+
+                    val docs = sharedViewModel.findRequiredDocument(
+                        relationType,
+                        dt.previousInsurance,
+                        dt.spouseInsured
+                    ).map {
+                        val isMinorChild = data?.type == DependentType.CHILD &amp;&amp; childAgeInYear &lt; 1
+
+                        val hasValidSSN = relationType == RelationshipType.CHILD.code &amp;&amp;
+                            !data?.ssn.isNullOrEmpty() &amp;&amp;
+                            ActivityUtils.checkSsnValidity(data?.ssn ?: &quot;&quot;)
+
+                        val optionalForChild = (isMinorChild &amp;&amp; !hasValidSSN)
+
+                        ListDoc(
+                            uploaded = containsId(dt, it.documentType) || it.uploaded,
+                            person = Person(
+                                firstName = dt.firstName,
+                                lastName = dt.lastName,
+                                ssnOptional = (!it.required) || optionalForChild
+                            ),
+                            fileName = it.documentName,
+                            id = it.documentType,
+                            optional = (!it.required) || optionalForChild,
+                            disable = it.uploaded,
+                            documentName = it.translatedDocumentName
+                        )
+                    }
+
+                    // if all the item uploaded then next enable
+                    setEnableNextButton(docs)
+                    adapter.submitList(docs)
+                }
+            }
+        )
+
+        viewModel.navigateToBack.observe(
+            viewLifecycleOwner,
+            EventObserver {
+                findNavController().navigateUp()
+            }
+        )
+
+        val animator: RecyclerView.ItemAnimator? = binding.docRecyclerView.itemAnimator
+        if (animator is SimpleItemAnimator) {
+            (animator as SimpleItemAnimator).supportsChangeAnimations = false
+        }
+        binding.docRecyclerView.adapter = adapter
+
+        viewModel.navigateToUpload.observe(viewLifecycleOwner) {
+            when (it.status) {
+                Status.LOADING -&gt; {
+                    showUploadLoading(getString(R.string.uploading_document))
+                }
+
+                Status.SUCCESS -&gt; {
+//                    viewModel.setDocumentName(it.data?.id.toString(), it.data?.fileName.toString())
+                    sharedViewModel.updateUploadStatus(
+                        data,
+                        viewModel.currentItem,
+                        it.data?.id.toString()
+                    )
+
+                    dismissUploadLoading()
+                }
+
+                Status.ERROR -&gt; {
+//                    sharedViewModel.updateUploadStatus(
+//                        data,
+//                        viewModel.currentItem,
+//                        &quot;file $relationType ${viewModel.currentItem.docName}&quot;
+//                    )
+
+                    dismissUploadLoading()
+                    showOkMessageDialog(requireContext(), it.error ?: &quot;Something went wrong&quot;)
+
+                    // Timber.d(it.error)
+                }
+            }
+        }
+
+        if (relationType == RelationshipType.PRIMARY.code) {
+            sharedViewModel.updateTitle(getString(R.string.document_upload))
+        }
+    }
+
+    open fun setEnableNextButton(docs: List&lt;ListDoc&gt;) {
+        binding.nextEnable = docs.filter { !it.optional }.all { it.uploaded }
+    }
+
+    open fun markDependentComplete() {
+        when (relationType) {
+            RelationshipType.CHILD.code -&gt; sharedViewModel.updateChildCompleteRequireDocument()
+            RelationshipType.SPOUSE.code -&gt; sharedViewModel.updateSpouseCompleteRequireDocument()
+            RelationshipType.PRIMARY.code -&gt; sharedViewModel.updatePrimaryCompleteRequireDocument()
+        }
+    }
+
+    private fun showPicker() {
+        // Tests inject an imagePickerClient that calls onImageReady immediately,
+        // bypassing the real picker bottom sheet entirely — same pattern as scannerClient.
+        imagePickerClient?.let { client -&gt;
+            imagePickerClient = null // reset so subsequent calls use the real picker
+            client.pick { uri -&gt; openUpload(uri) }
+            return
+        }
+
+        val dialog: BottomSheetDialogFragment = PickerSheetFragment.newInstance()
+        val bundle = Bundle()
+        bundle.putBoolean(&quot;home&quot;, true)
+        dialog.arguments = bundle
+        (dialog as PickerSheetFragment).setCallback(object : PickerButtonListener {
+            override fun onCamera() {
+                requestCameraPermission()
+                dialog.dismiss()
+            }
+
+            override fun onLibrary() {
+                val intent = Intent(Intent.ACTION_PICK).apply {
+                    type = &quot;image/*&quot;
+                }
+                galleryLauncher.launch(intent)
+                dialog.dismiss()
+            }
+
+            override fun onFileLibrary() {
+            }
+
+            override fun onRemoveDependent() {
+            }
+
+            override fun onRemove() {
+            }
+
+            override fun onClose() {
+                dialog.dismiss()
+            }
+        })
+
+        dialog.show(childFragmentManager, &quot;tag&quot;)
+    }
+
+    private fun requestCameraPermission() {
+        when {
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED -&gt; {
+                launchCamera()
+            }
+
+            shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -&gt; {
+                Timber.tag(TAG).d(&quot;requestCameraPermission - Camera Permission NOT Granted&quot;)
+                requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
+
+            else -&gt; {
+                requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
+        }
+    }
+
+    private fun launchCamera() {
+        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        try {
+            val imageFile = HelperUtils.createImageFile(requireActivity())
+            uriForFile = FileProvider.getUriForFile(
+                requireActivity(),
+                requireContext().packageName + &quot;.provider&quot;,
+                imageFile
+            )
+            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, uriForFile)
+            takePictureIntent.putExtra(
+                MediaStore.EXTRA_SCREEN_ORIENTATION,
+                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            )
+            cameraLauncher.launch(takePictureIntent)
+        } catch (e: java.io.IOException) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun startCrop(uri: Uri) {
+        cropImageLauncher.launch(
+            CropImageContractOptions(
+                uri = uri,
+                cropImageOptions = CropImageOptions(
+                    guidelines = CropImageView.Guidelines.ON,
+                    imageSourceIncludeCamera = false
+                )
+            )
+        )
+    }
+
+    // Old onActivityResult removed - now using Activity Result API with registered launchers
+
+    fun openUpload(item: Uri?) {
+        val file = File(item?.path.toString())
+        val originalFileName = file.name
+
+        val imageStream: InputStream? =
+            item?.let { activity?.contentResolver?.openInputStream(it) }
+
+        val docBitmap = BitmapFactory.decodeStream(imageStream)
+
+        // Build the full-quality multipart body for upload
+        viewModel.filePart = HelperUtils.buildImageBodyPart(
+            originalFileName,
+            docBitmap,
+            requireContext()
+        )
+
+        // Scale down for preview only — passing a full-resolution JPEG byte array through
+        // Fragment.arguments crosses a Binder transaction and crashes with
+        // &quot;Could not copy bitmap to parcel blob&quot; on large camera images.
+        val previewStream = ByteArrayOutputStream()
+        val maxPreviewDim = 800
+        val scaleRatio = minOf(
+            maxPreviewDim.toFloat() / docBitmap.width,
+            maxPreviewDim.toFloat() / docBitmap.height,
+            1f
+        )
+        val previewBitmap = if (scaleRatio &lt; 1f) {
+            Bitmap.createScaledBitmap(
+                docBitmap,
+                (docBitmap.width * scaleRatio).toInt().coerceAtLeast(1),
+                (docBitmap.height * scaleRatio).toInt().coerceAtLeast(1),
+                true
+            )
+        } else {
+            docBitmap
+        }
+        previewBitmap.compress(Bitmap.CompressFormat.JPEG, 80, previewStream)
+        if (previewBitmap !== docBitmap) previewBitmap.recycle()
+        val byteArray = previewStream.toByteArray()
+
+        val dialog: DialogFragment = UploadDocumentFragment.newInstance()
+        val bundle = Bundle()
+        bundle.putByteArray(&quot;BitMap&quot;, byteArray)
+
+        bundle.putString(&quot;DocumentName&quot;, viewModel.currentDoc)
+
+        bundle.putString(
+            &quot;PersonName&quot;,
+            viewModel.currentPerson.firstName + &quot; &quot; + viewModel.currentPerson.lastName
+        )
+        dialog.arguments = bundle
+        (dialog as UploadDocumentFragment).setCallback(object : UploadDocCallback {
+            override fun onActionClick() {
+                showPicker()
+                dialog.dismiss()
+            }
+
+            override fun onUploadClick() {
+                callUploadAPI()
+                dialog.dismiss()
+            }
+        })
+
+        dialog.show(childFragmentManager, &quot;tag&quot;)
+    }
+
+    fun containsId(item: DependentCheckItem, targetId: Int): Boolean {
+        return item.uploadedList?.any { it.fileTypeId == targetId } == true
+    }
+
+    open fun callUploadAPI() {
+        viewModel.uploadPicture(viewModel.currentItem)
+    }
+
+    open fun navigateForPrimary() {
+        findNavController().navigate(R.id.action_require_document_to_legal_fragment)
+    }
+
+    open fun navigateForDependent() {
+        findNavController().popBackStack(R.id.reviewDependentDetails, false)
+    }
+
+    open fun showUploadLoading(message: String) {
+        (activity as EnrollmentV2Activity).showLoading(message)
+    }
+
+    open fun dismissUploadLoading() {
+        (activity as EnrollmentV2Activity).dismissLoading()
+    }
+}
+
+<span class="nc" id="L502">fun flattenJson(obj: Any?, prefix: String = &quot;&quot;): Map&lt;String, String&gt; {</span>
+<span class="nc" id="L503">    val flatMap = mutableMapOf&lt;String, String&gt;()</span>
+
+<span class="nc" id="L505">    when (obj) {</span>
+<span class="nc bnc" id="L506" title="All 2 branches missed.">        is Map&lt;*, *&gt; -&gt; {</span>
+<span class="nc" id="L507">            obj.forEach { (key, value) -&gt;</span>
+<span class="nc bnc" id="L508" title="All 4 branches missed.">                val fullKey = if (prefix.isEmpty()) &quot;$key&quot; else &quot;$prefix.$key&quot;</span>
+<span class="nc" id="L509">                flatMap.putAll(flattenJson(value, fullKey))</span>
+<span class="nc" id="L510">            }</span>
+        }
+
+<span class="nc bnc" id="L513" title="All 2 branches missed.">        is List&lt;*&gt; -&gt; {</span>
+<span class="nc" id="L514">            obj.forEachIndexed { index, value -&gt;</span>
+<span class="nc" id="L515">                val fullKey = &quot;$prefix[$index]&quot;</span>
+<span class="nc" id="L516">                flatMap.putAll(flattenJson(value, fullKey))</span>
+<span class="nc" id="L517">            }</span>
+        }
+
+        else -&gt; {
+<span class="nc bnc" id="L521" title="All 4 branches missed.">            flatMap[prefix] = obj?.toString() ?: &quot;null&quot;</span>
+        }
+    }
+
+<span class="nc" id="L525">    return flatMap</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

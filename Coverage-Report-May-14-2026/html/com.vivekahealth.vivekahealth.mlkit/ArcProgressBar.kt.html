@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArcProgressBar.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.mlkit</a> &gt; <span class="el_source">ArcProgressBar.kt</span></div><h1>ArcProgressBar.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.mlkit
+
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
+import android.util.AttributeSet
+import android.view.View
+
+<span class="nc" id="L10">class ArcProgressBar @JvmOverloads constructor(</span>
+    context: Context,
+<span class="nc" id="L12">    attrs: AttributeSet? = null,</span>
+<span class="nc" id="L13">    defStyleAttr: Int = 0</span>
+<span class="nc" id="L14">) : View(context, attrs, defStyleAttr) {</span>
+
+<span class="nc" id="L16">    private val rect = RectF() // RectF to draw arcs</span>
+
+<span class="nc" id="L18">    val colorLeft = 0xFFEBD301.toInt()</span>
+<span class="nc" id="L19">    val colorRight = 0xFFEBD301.toInt()</span>
+
+<span class="nc" id="L21">    val padding = 15f</span>
+<span class="nc" id="L22">    val arcWidth = 25f</span>
+
+    // Paints for the background and foreground arcs
+<span class="nc" id="L25">    private val backgroundPaint = Paint().apply {</span>
+<span class="nc" id="L26">        color = 0xFFE0E0E0.toInt() // Light Gray for background</span>
+<span class="nc" id="L27">        style = Paint.Style.STROKE</span>
+<span class="nc" id="L28">        strokeWidth = arcWidth</span>
+<span class="nc" id="L29">        isAntiAlias = true</span>
+<span class="nc" id="L30">    }</span>
+
+<span class="nc" id="L32">    private val arcPaintBottomRight = Paint().apply {</span>
+<span class="nc" id="L33">        color = colorRight // Blue for top progress</span>
+<span class="nc" id="L34">        style = Paint.Style.STROKE</span>
+<span class="nc" id="L35">        strokeWidth = arcWidth</span>
+<span class="nc" id="L36">        isAntiAlias = true</span>
+<span class="nc" id="L37">    }</span>
+
+<span class="nc" id="L39">    private val arcPaintTopRight = Paint().apply {</span>
+<span class="nc" id="L40">        color = colorRight // Red for bottom progress</span>
+<span class="nc" id="L41">        style = Paint.Style.STROKE</span>
+<span class="nc" id="L42">        strokeWidth = arcWidth</span>
+<span class="nc" id="L43">        isAntiAlias = true</span>
+<span class="nc" id="L44">    }</span>
+
+<span class="nc" id="L46">    private val arcPaintTopLeft = Paint().apply {</span>
+<span class="nc" id="L47">        color = colorLeft // Green for left progress</span>
+<span class="nc" id="L48">        style = Paint.Style.STROKE</span>
+<span class="nc" id="L49">        strokeWidth = arcWidth</span>
+<span class="nc" id="L50">        isAntiAlias = true</span>
+<span class="nc" id="L51">    }</span>
+
+<span class="nc" id="L53">    private val arcPaintBottomLeft = Paint().apply {</span>
+<span class="nc" id="L54">        color = colorLeft // Yellow for right progress</span>
+<span class="nc" id="L55">        style = Paint.Style.STROKE</span>
+<span class="nc" id="L56">        strokeWidth = arcWidth</span>
+<span class="nc" id="L57">        isAntiAlias = true</span>
+<span class="nc" id="L58">    }</span>
+
+<span class="nc" id="L60">    private val arcPaintTopBottom = Paint().apply {</span>
+<span class="nc" id="L61">        color = colorLeft // Green for left progress</span>
+<span class="nc" id="L62">        style = Paint.Style.STROKE</span>
+<span class="nc" id="L63">        strokeWidth = arcWidth</span>
+<span class="nc" id="L64">        isAntiAlias = true</span>
+<span class="nc" id="L65">    }</span>
+
+    private var progressLeftTop = 0f
+    private var progressLeftBottom = 0f
+
+    private var progressRightTop = 0f
+    private var progressRightBottom = 0f
+
+    private var progressTopBottom = 0f
+
+<span class="nc" id="L75">    var gap = 22.5f</span>
+
+<span class="nc" id="L77">    var padding_between_arc = 2f</span>
+
+    // Set progress values for each arc (in degrees)
+    fun setProgress(p1: Float, p2: Float, p3: Float, p4: Float, p5: Float) {
+<span class="nc" id="L81">        progressLeftTop = (p1 / 100f) * (45f + gap)</span>
+<span class="nc" id="L82">        progressLeftBottom = (p2 / 100f) * (45f + gap)</span>
+
+<span class="nc" id="L84">        progressRightTop = (p3 / 100f) * (45f + gap)</span>
+<span class="nc" id="L85">        progressRightBottom = (p4 / 100f) * (45f + gap)</span>
+
+<span class="nc" id="L87">        progressTopBottom = (p5 / 100f) * (gap - padding_between_arc)</span>
+
+<span class="nc" id="L89">        updateColorOfArc(p1, p2, p3, p4, p5)</span>
+
+<span class="nc" id="L91">        invalidate() // Redraw the view when progress is updated</span>
+<span class="nc" id="L92">    }</span>
+
+    fun updateColorOfArc(p1: Float, p2: Float, p3: Float, p4: Float, p5: Float) {
+<span class="nc bnc" id="L95" title="All 8 branches missed.">        if (p1 == 100f &amp;&amp; p2 == 100f) {</span>
+<span class="nc" id="L96">            arcPaintTopLeft.color = 0xAB5DBA3A.toInt()</span>
+<span class="nc" id="L97">            arcPaintBottomLeft.color = 0xAB5DBA3A.toInt()</span>
+        } else {
+<span class="nc" id="L99">            arcPaintTopLeft.color = 0xFFEBD301.toInt()</span>
+<span class="nc" id="L100">            arcPaintBottomLeft.color = 0xFFEBD301.toInt()</span>
+        }
+
+<span class="nc bnc" id="L103" title="All 8 branches missed.">        if (p3 == 100f &amp;&amp; p4 == 100f) {</span>
+<span class="nc" id="L104">            arcPaintTopRight.color = 0xAB5DBA3A.toInt()</span>
+<span class="nc" id="L105">            arcPaintBottomRight.color = 0xAB5DBA3A.toInt()</span>
+        } else {
+<span class="nc" id="L107">            arcPaintTopRight.color = 0xFFEBD301.toInt()</span>
+<span class="nc" id="L108">            arcPaintBottomRight.color = 0xFFEBD301.toInt()</span>
+        }
+
+<span class="nc bnc" id="L111" title="All 4 branches missed.">        if (p5 == 100f) {</span>
+<span class="nc" id="L112">            arcPaintTopBottom.color = 0xAB5DBA3A.toInt()</span>
+        } else {
+<span class="nc" id="L114">            arcPaintTopBottom.color = 0xFFEBD301.toInt()</span>
+        }
+<span class="nc" id="L116">    }</span>
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+<span class="nc" id="L119">        super.onSizeChanged(w, h, oldw, oldh)</span>
+        // Define the RectF to draw arcs, ensuring the arcs fit within the view
+<span class="nc" id="L121">        val padding = padding // Padding around the arcs</span>
+<span class="nc" id="L122">        rect.set(padding, padding, w.toFloat() - padding, h.toFloat() - padding)</span>
+<span class="nc" id="L123">    }</span>
+
+    override fun onDraw(canvas: Canvas) {
+<span class="nc" id="L126">        super.onDraw(canvas)</span>
+
+        // background
+<span class="nc" id="L129">        drawBackgroundArc(canvas)</span>
+
+<span class="nc" id="L131">        drawLeftArcProgress(canvas)</span>
+
+<span class="nc" id="L133">        drawRightArcProgress(canvas)</span>
+
+<span class="nc" id="L135">        drawTopBottomArcProgress(canvas)</span>
+<span class="nc" id="L136">    }</span>
+
+    private fun drawLeftArcProgress(canvas: Canvas) {
+<span class="nc" id="L139">        canvas.drawArc(rect, ((90f * 2) + 45f + gap), -progressLeftTop, false, arcPaintTopLeft)</span>
+<span class="nc" id="L140">        canvas.drawArc(rect, (90f + gap), progressLeftBottom, false, arcPaintBottomLeft)</span>
+<span class="nc" id="L141">    }</span>
+
+    private fun drawRightArcProgress(canvas: Canvas) {
+<span class="nc" id="L144">        canvas.drawArc(rect, ((90f * 3) + gap), progressRightTop, false, arcPaintTopRight)</span>
+<span class="nc" id="L145">        canvas.drawArc(rect, (90f - gap), -progressRightBottom, false, arcPaintBottomRight)</span>
+<span class="nc" id="L146">    }</span>
+
+    private fun drawTopBottomArcProgress(canvas: Canvas) {
+        // progress top Bottom
+<span class="nc" id="L150">        canvas.drawArc(rect, (90f), -progressTopBottom, false, arcPaintTopBottom)</span>
+<span class="nc" id="L151">        canvas.drawArc(rect, (90f), progressTopBottom, false, arcPaintTopBottom)</span>
+
+<span class="nc" id="L153">        canvas.drawArc(rect, (90 * 3f), -progressTopBottom, false, arcPaintTopBottom)</span>
+<span class="nc" id="L154">        canvas.drawArc(rect, (90 * 3f), progressTopBottom, false, arcPaintTopBottom)</span>
+<span class="nc" id="L155">    }</span>
+
+    private fun drawBackgroundArc(canvas: Canvas) {
+        // Draw background arcs with gaps
+<span class="nc" id="L159">        canvas.drawArc(rect, (90f * 3) + gap, (90f + 45f), false, backgroundPaint) // Top Left Background</span>
+<span class="nc" id="L160">        canvas.drawArc(rect, (90f + gap), 90f + 45f, false, backgroundPaint) // Top Right Background</span>
+
+        // top - background
+<span class="nc" id="L163">        canvas.drawArc(</span>
+<span class="nc" id="L164">            rect,</span>
+<span class="nc" id="L165">            (((90f * 3) - gap + padding_between_arc)),</span>
+<span class="nc" id="L166">            45f - (2 * padding_between_arc),</span>
+<span class="nc" id="L167">            false,</span>
+<span class="nc" id="L168">            backgroundPaint</span>
+        ) // Top Right Background
+
+        // bottom - background
+<span class="nc" id="L172">        canvas.drawArc(</span>
+<span class="nc" id="L173">            rect,</span>
+<span class="nc" id="L174">            ((90f - gap + padding_between_arc)),</span>
+<span class="nc" id="L175">            45f - (2 * padding_between_arc),</span>
+<span class="nc" id="L176">            false,</span>
+<span class="nc" id="L177">            backgroundPaint</span>
+        ) // Top Right Background
+<span class="nc" id="L179">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

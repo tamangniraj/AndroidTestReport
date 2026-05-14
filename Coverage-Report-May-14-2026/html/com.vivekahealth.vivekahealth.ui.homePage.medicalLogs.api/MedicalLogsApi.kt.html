@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MedicalLogsApi.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.api</a> &gt; <span class="el_source">MedicalLogsApi.kt</span></div><h1>MedicalLogsApi.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.api
+
+import com.vivekahealth.vivekahealth.data.remote.home.medicalLogs.*
+import io.reactivex.Single
+import retrofit2.http.*
+
+interface MedicalLogsApi {
+
+    @GET(&quot;member/v2/{memberId}/getMedicalLogs&quot;)
+    fun getAllLogsList(
+        @Path(&quot;memberId&quot;) memberId: String,
+        @Query(&quot;type&quot;) medicalLogType: String,
+        @Query(
+            &quot;sharedMemberIds&quot;
+        ) sharedMemberIds: String,
+        @Query(&quot;sortAction&quot;) sortAction: String,
+        @Query(&quot;sortBy&quot;) sortBy: String
+    ): Single&lt;MedicalLogsAll&gt;
+
+<span class="nc" id="L20">    @GET(&quot;member/v2/{memberId}/getMedicalLogs&quot;)</span>
+    fun getClaimsLogsList(
+        @Path(&quot;memberId&quot;) memberId: String,
+        @Query(&quot;type&quot;) medicalLogType: String,
+        @Query(
+            &quot;sharedMemberIds&quot;
+        ) sharedMemberIds: String,
+        @Query(&quot;sortAction&quot;) sortAction: String,
+        @Query(&quot;sortBy&quot;) sortBy: String,
+        @Query(
+            &quot;claimType&quot;
+        ) claimType: String,
+        @Query(&quot;claimStatus&quot;) claimStatus: String,
+<span class="nc" id="L33">        @Query(&quot;pageSize&quot;) pageSize: Int = 30,</span>
+<span class="nc" id="L34">        @Query(&quot;pageNo&quot;) pageNo: Int = 1</span>
+    ): Single&lt;MedicalLogsAll&gt;
+
+    @GET(&quot;member/{memberId}/getClaimDetail/{claimNumber}&quot;)
+    fun getClaimsDetails(
+        @Path(&quot;memberId&quot;) memberId: String,
+        @Path(&quot;claimNumber&quot;) claimNumber: String
+    ): Single&lt;ClaimsDetail&gt;
+
+    @GET(&quot;member/v2/{memberId}/diagnosisHistoryDetails/{icdCode}&quot;)
+    fun getDiagnosisDetails(
+        @Path(&quot;memberId&quot;) memberId: String,
+        @Path(&quot;icdCode&quot;) claimNumber: String
+    ): Single&lt;DiagnosisDetailList&gt;
+
+<span class="nc" id="L49">    @GET(&quot;member/v2/{memberId}/getMedicalLogs&quot;)</span>
+    fun getDiagnosisLogsList(
+        @Path(&quot;memberId&quot;) memberId: String,
+        @Query(&quot;type&quot;) medicalLogType: String,
+        @Query(
+            &quot;sharedMemberIds&quot;
+        ) sharedMemberIds: String,
+        @Query(&quot;sortAction&quot;) sortAction: String,
+        @Query(&quot;sortBy&quot;) sortBy: String,
+        @Query(&quot;diagnosisFreqRange&quot;) diagnosisFreqRange: String,
+<span class="nc" id="L59">        @Query(&quot;pageSize&quot;) pageSize: Int = 30,</span>
+<span class="nc" id="L60">        @Query(&quot;pageNo&quot;) pageNo: Int = 1</span>
+    ): Single&lt;MedicalLogsAll&gt;
+
+<span class="nc" id="L63">    @GET(&quot;member/v2/{memberId}/getMedicalLogs&quot;)</span>
+    fun getPresLogsList(
+        @Path(&quot;memberId&quot;) memberId: String,
+        @Query(&quot;type&quot;) medicalLogType: String,
+        @Query(&quot;sharedMemberIds&quot;) sharedMemberIds: String,
+        @Query(&quot;sortAction&quot;) sortAction: String,
+        @Query(&quot;sortBy&quot;) sortBy: String,
+        @Query(&quot;drugName&quot;) drugName: String,
+        @Query(&quot;pharmacyType&quot;) pharmacyType: String,
+<span class="nc" id="L72">        @Query(&quot;pageSize&quot;) pageSize: Int = 30,</span>
+<span class="nc" id="L73">        @Query(&quot;pageNo&quot;) pageNo: Int = 1</span>
+    ): Single&lt;MedicalLogsAll&gt;
+
+<span class="nc" id="L76">    @GET(&quot;member/v2/{memberId}/getMedicalLogs&quot;)</span>
+    fun getImmunizationLogsList(
+        @Path(&quot;memberId&quot;) memberId: String,
+        @Query(&quot;type&quot;) medicalLogType: String,
+        @Query(&quot;sharedMemberIds&quot;) sharedMemberIds: String,
+        @Query(&quot;sortAction&quot;) sortAction: String,
+        @Query(&quot;sortBy&quot;) sortBy: String,
+        @Query(&quot;vaccineName&quot;) vaccineType: String,
+<span class="nc" id="L84">        @Query(&quot;pageSize&quot;) pageSize: Int = 30,</span>
+<span class="nc" id="L85">        @Query(&quot;pageNo&quot;) pageNo: Int = 1</span>
+    ): Single&lt;MedicalLogsAll&gt;
+
+    @GET(&quot;member/{selfId}/getSharedWithMe&quot;)
+    fun getDependentList(
+        @Path(&quot;selfId&quot;) selfId: String,
+        @Query(&quot;sharingTypes&quot;) sharingTypes: String
+    ): Single&lt;SharedMember&gt;
+
+    // Updated API endpoint with correct pagination parameters
+<span class="nc" id="L95">    @GET(&quot;member/v2/{memberId}/getMedicalLogs&quot;)</span>
+    fun getAllLogsList(
+        @Path(&quot;memberId&quot;) memberId: String,
+        @Query(&quot;type&quot;) medicalLogType: String,
+        @Query(&quot;sharedMemberIds&quot;) sharedMemberIds: String,
+        @Query(&quot;sortAction&quot;) sortAction: String,
+<span class="nc" id="L101">        @Query(&quot;sortBy&quot;) sortBy: String? = null,</span>
+<span class="nc" id="L102">        @Query(&quot;pageSize&quot;) pageSize: Int = 30,</span>
+<span class="nc" id="L103">        @Query(&quot;pageNo&quot;) pageNo: Int = 1</span>
+    ): Single&lt;MedicalLogsAll&gt;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProcessLicenseResponse.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.remote.guest</a> &gt; <span class="el_source">ProcessLicenseResponse.kt</span></div><h1>ProcessLicenseResponse.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.remote.guest
+
+import com.google.gson.annotations.SerializedName
+
+<span class="nc" id="L5">data class ProcessLicenseResponse(</span>
+<span class="nc" id="L6">    @SerializedName(&quot;documentId&quot;) val documentId: String? = null,</span>
+<span class="nc" id="L7">    @SerializedName(&quot;legalFirstName&quot;) val legalFirstName: String? = null,</span>
+<span class="nc" id="L8">    @SerializedName(&quot;legalLastName&quot;) val legalLastName: String? = null,</span>
+<span class="nc" id="L9">    @SerializedName(&quot;legalMiddleName&quot;) val legalMiddleName: String? = null,</span>
+<span class="nc" id="L10">    @SerializedName(&quot;dob&quot;) val dob: String? = null,</span>
+<span class="nc" id="L11">    @SerializedName(&quot;gender&quot;) val gender: String? = null,</span>
+<span class="nc" id="L12">    @SerializedName(&quot;expirationDate&quot;) val expirationDate: String? = null,</span>
+<span class="nc" id="L13">    @SerializedName(&quot;height&quot;) val height: String? = null,</span>
+<span class="nc" id="L14">    @SerializedName(&quot;eyeColor&quot;) val eyeColor: String? = null,</span>
+<span class="nc" id="L15">    @SerializedName(&quot;issuedDate&quot;) val issuedDate: String? = null,</span>
+<span class="nc" id="L16">    @SerializedName(&quot;licenseNumber&quot;) val licenseNumber: String? = null,</span>
+<span class="nc" id="L17">    @SerializedName(&quot;fullAddress&quot;) val fullAddress: FullAddress? = null,</span>
+<span class="nc" id="L18">    @SerializedName(&quot;details&quot;) val details: String? = null,</span>
+<span class="nc" id="L19">    @SerializedName(&quot;attemptNumber&quot;) val attemptNumber: Int? = null</span>
+<span class="nc" id="L20">) {</span>
+    val isEmpty: Boolean
+<span class="nc bnc" id="L22" title="All 12 branches missed.">        get() = legalFirstName.isNullOrBlank() &amp;&amp; legalLastName.isNullOrBlank()</span>
+
+<span class="nc" id="L24">    data class FullAddress(</span>
+<span class="nc" id="L25">        @SerializedName(&quot;state&quot;) val state: String? = null,</span>
+<span class="nc" id="L26">        @SerializedName(&quot;stateName&quot;) val stateName: String? = null,</span>
+<span class="nc" id="L27">        @SerializedName(&quot;city&quot;) val city: String? = null,</span>
+<span class="nc" id="L28">        @SerializedName(&quot;zip&quot;) val zip: String? = null,</span>
+<span class="nc" id="L29">        @SerializedName(&quot;zipExtension&quot;) val zipExtension: String? = null,</span>
+<span class="nc" id="L30">        @SerializedName(&quot;addressLine1&quot;) val addressLine1: String? = null,</span>
+<span class="nc" id="L31">        @SerializedName(&quot;addressLine2&quot;) val addressLine2: String? = null</span>
+<span class="nc" id="L32">    )</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

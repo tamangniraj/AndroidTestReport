@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HomeRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.repository</a> &gt; <span class="el_source">HomeRepository.kt</span></div><h1>HomeRepository.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.repository
+
+import com.vivekahealth.vivekahealth.BuildConfig
+import com.vivekahealth.vivekahealth.data.ShareCardResponse
+import com.vivekahealth.vivekahealth.data.local.enroll.RootDocumentResponse
+import com.vivekahealth.vivekahealth.data.local.home.ChatDataModel
+import com.vivekahealth.vivekahealth.data.local.home.ChatList
+import com.vivekahealth.vivekahealth.data.local.home.ChatRead
+import com.vivekahealth.vivekahealth.data.local.home.ClientDetailsDao
+import com.vivekahealth.vivekahealth.data.local.home.HomeBenefitDao
+import com.vivekahealth.vivekahealth.data.local.home.MemberInfoDao
+import com.vivekahealth.vivekahealth.data.local.home.RecentCardsDao
+import com.vivekahealth.vivekahealth.data.remote.about.ChatSession
+import com.vivekahealth.vivekahealth.data.remote.about.ChatSessionClose
+import com.vivekahealth.vivekahealth.data.remote.about.LogChat
+import com.vivekahealth.vivekahealth.data.remote.about.PendingStatus
+import com.vivekahealth.vivekahealth.data.remote.enroll.DocumentUploadSuccessEnroll
+import com.vivekahealth.vivekahealth.data.remote.enroll.EnrollMember
+
+import com.vivekahealth.vivekahealth.data.remote.enroll.Person
+import com.vivekahealth.vivekahealth.data.remote.home.AddDependent
+import com.vivekahealth.vivekahealth.data.remote.home.AppInstallUpdate
+import com.vivekahealth.vivekahealth.data.remote.home.ClientDetailResponse
+import com.vivekahealth.vivekahealth.data.remote.home.InsuranceCardHome
+import com.vivekahealth.vivekahealth.data.remote.home.MemberAddress
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.data.remote.home.RadiologistResponse
+import com.vivekahealth.vivekahealth.data.remote.home.RecentActivityHome
+import com.vivekahealth.vivekahealth.data.remote.home.ResponseAddDependent
+import com.vivekahealth.vivekahealth.data.remote.home.SwitcherResponse
+import com.vivekahealth.vivekahealth.data.remote.home.UpdateDetails
+import com.vivekahealth.vivekahealth.data.remote.home.UpdatePassword
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.GeoCodeResponse
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.HtmlFindCareResponse
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.DoctorResponseNew
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.specialityValue.RecentAll
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.specialityValue.SpecialityAll
+import com.vivekahealth.vivekahealth.data.remote.home.messageCenter.MessageCenterList
+import com.vivekahealth.vivekahealth.data.remote.home.messageCenter.MessageData
+import com.vivekahealth.vivekahealth.data.remote.home.messageCenter.NotificationCount
+import com.vivekahealth.vivekahealth.data.remote.home.more.CustomMenuResponse
+import com.vivekahealth.vivekahealth.data.remote.home.primaryDevicePrompt.PrimaryDevicePromptResponse
+import com.vivekahealth.vivekahealth.data.remote.home.share.RequestMail
+import com.vivekahealth.vivekahealth.data.remote.login.AuthToken
+import com.vivekahealth.vivekahealth.data.remote.login.ChangePasswordV2DTO
+import com.vivekahealth.vivekahealth.data.remote.register.DataResponse
+import com.vivekahealth.vivekahealth.data.remote.register.TempCode
+import com.vivekahealth.vivekahealth.data.remote.talon.TalonResponse
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityModel.Specialties
+import com.vivekahealth.vivekahealth.ui.homePage.service.HomeService
+import com.vivekahealth.vivekahealth.ui.homePage.surveys.MemberSurveysResponse
+import com.vivekahealth.vivekahealth.ui.homePage.surveys.SurveyStatusResponse
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.thread.AppExecutors
+import io.reactivex.Single
+import kotlinx.coroutines.flow.Flow
+import okhttp3.MultipartBody
+import okhttp3.ResponseBody
+import retrofit2.Response
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * Repository that handles User objects.
+ */
+@Singleton
+<span class="fc" id="L67">class HomeRepository @Inject constructor(</span>
+<span class="fc" id="L68">    private val appExecutors: AppExecutors,</span>
+<span class="fc" id="L69">    private val homeService: HomeService,</span>
+<span class="fc" id="L70">    private val dao: MemberInfoDao,</span>
+<span class="fc" id="L71">    private val daoBenefit: HomeBenefitDao,</span>
+<span class="fc" id="L72">    private val recentCardsDao: RecentCardsDao,</span>
+<span class="fc" id="L73">    private val clientDetailsDao: ClientDetailsDao</span>
+
+) {
+
+//    fun loadUser(memberId: String): LiveData&lt;Resource&lt;MemberInfo&gt;&gt; {
+//        return object : NetworkBoundResource&lt;MemberInfo, MemberInfo&gt;(appExecutors) {
+//            override fun saveCallResult(item: MemberInfo) {
+//                dao.insert(item)
+//            }
+//
+//            override fun shouldFetch(data: MemberInfo?) = data == null
+//
+//            override fun loadFromDb() = dao.getMemberInfoLiveData(memberId)
+//
+//            override fun createCall() = homeService.getHomeApi().getMemberInfoNew()
+//        }.asLiveData()
+//    }
+
+    fun updateMember(memberInfo: MemberInfo) {
+<span class="nc" id="L92">        dao.update(memberInfo)</span>
+<span class="nc" id="L93">    }</span>
+
+    fun insertBenefit(insuranceCardHome: InsuranceCardHome) {
+<span class="fc" id="L96">        daoBenefit.insert(insuranceCardHome)</span>
+<span class="fc" id="L97">    }</span>
+
+    fun getBenefit(selfId: String): InsuranceCardHome? {
+<span class="fc" id="L100">        return daoBenefit.getInsuranceDataLiveData(selfId)</span>
+    }
+
+    fun insertUpdate(insuranceCardHome: InsuranceCardHome) {
+<span class="nc" id="L104">        daoBenefit.update(insuranceCardHome)</span>
+<span class="nc" id="L105">    }</span>
+
+    fun deleteBenefit(selfId: String) {
+<span class="nc" id="L108">        daoBenefit.deleteBenefitAll(selfId)</span>
+<span class="nc" id="L109">    }</span>
+
+    fun insertRecent(recentActivityHome: RecentActivityHome) {
+<span class="fc" id="L112">        recentCardsDao.insert(recentActivityHome)</span>
+<span class="fc" id="L113">    }</span>
+
+    fun updateRecent(recentActivityHome: RecentActivityHome) {
+<span class="nc" id="L116">        recentCardsDao.update(recentActivityHome)</span>
+<span class="nc" id="L117">    }</span>
+
+    fun getRecent(selfId: String): RecentActivityHome? {
+<span class="fc" id="L120">        return recentCardsDao.getRecentDataLiveData(selfId)</span>
+    }
+
+    fun deleteRecent(selfId: String) {
+<span class="nc" id="L124">        recentCardsDao.deleteRecent(selfId)</span>
+<span class="nc" id="L125">    }</span>
+
+    fun insertMember(memberInfo: MemberInfo) {
+<span class="fc" id="L128">        dao.insert(memberInfo)</span>
+<span class="fc" id="L129">    }</span>
+
+    fun getBenefitFromDb(selfId: String): Flow&lt;InsuranceCardHome&gt; {
+<span class="nc" id="L132">        return daoBenefit.getBenefit(selfId)</span>
+    }
+
+    fun insertClientDetail(clientDetailResponse: ClientDetailResponse) {
+<span class="fc" id="L136">        clientDetailsDao.insert(clientDetailResponse)</span>
+<span class="fc" id="L137">    }</span>
+
+    fun getClientDetail(id: String): Flow&lt;ClientDetailResponse&gt; {
+<span class="fc" id="L140">        return clientDetailsDao.getClientDetailLiveData(id)</span>
+    }
+
+    fun getRecentFromDb(selfId: String): Flow&lt;RecentActivityHome&gt; {
+<span class="nc" id="L144">        return recentCardsDao.getRecentCards(selfId)</span>
+    }
+
+    fun getMemberFromDb(): Flow&lt;List&lt;MemberInfo&gt;&gt; {
+<span class="fc" id="L148">        return dao.getAll()</span>
+    }
+
+    suspend fun deleteAll() {
+<span class="nc" id="L152">        dao.deleteAll()</span>
+<span class="nc" id="L153">    }</span>
+
+    fun getMemberSid(memberid: String): Flow&lt;MemberInfo&gt; {
+<span class="fc" id="L156">        return dao.getMemberInfoLiveData(memberid)</span>
+    }
+
+    fun deleteMember(memberInfo: MemberInfo) {
+<span class="nc" id="L160">        dao.delete(memberInfo)</span>
+<span class="nc" id="L161">    }</span>
+
+<span class="fc" id="L163">    fun getLogout(): Single&lt;DataResponse&gt; = homeService.getHomeApi().getLogout()</span>
+
+    fun getMenu(memberId: String, menuType: String): Single&lt;CustomMenuResponse&gt; =
+<span class="nc" id="L166">        homeService.getHomeApi().getMenuContent(</span>
+<span class="nc" id="L167">            memberId,</span>
+<span class="nc" id="L168">            menuType</span>
+<span class="nc" id="L169">        )</span>
+
+<span class="fc" id="L171">    fun getMember(): Single&lt;MemberInfo&gt; = homeService.getHomeApi().getMemberInfoV2()</span>
+
+<span class="fc" id="L173">    fun getClientLogo(): Single&lt;ClientDetailResponse&gt; = homeService.getHomeApi().getClientDetail()</span>
+
+    fun getBenefitsCards(memberId: String): Single&lt;InsuranceCardHome&gt; =
+<span class="fc" id="L176">        homeService.getHomeApi().getBenefitCards(</span>
+<span class="fc" id="L177">            memberId</span>
+<span class="fc" id="L178">        )</span>
+
+    fun getRecentActivities(memberId: String, selectedId: String): Single&lt;RecentActivityHome&gt; =
+<span class="fc" id="L181">        homeService.getHomeApi().getRecentActivities(</span>
+<span class="fc" id="L182">            memberId,</span>
+<span class="fc" id="L183">            selectedId,</span>
+<span class="fc" id="L184">            DateUtils.timeZoneId()</span>
+<span class="fc" id="L185">        )</span>
+
+    fun postAddDependent(
+        memberId: String,
+        details: AddDependent,
+        actionType: String,
+        isDemographicUpdate: Boolean
+<span class="nc" id="L192">    ): Single&lt;ResponseAddDependent&gt; = homeService.getHomeApi().postAddDependent(</span>
+<span class="nc" id="L193">        memberId,</span>
+<span class="nc" id="L194">        details,</span>
+<span class="nc" id="L195">        actionType,</span>
+<span class="nc" id="L196">        isDemographicUpdate</span>
+<span class="nc" id="L197">    )</span>
+
+    fun uploadProfile(
+        memberId: String,
+        filePart: MultipartBody.Part
+<span class="nc" id="L202">    ): Single&lt;DocumentUploadSuccessEnroll&gt; = homeService.getHomeApi().getDoc(</span>
+<span class="nc" id="L203">        memberId,</span>
+<span class="nc" id="L204">        filePart</span>
+<span class="nc" id="L205">    )</span>
+
+    fun updatePassword(memberId: String, updatePassword: UpdatePassword): Single&lt;DataResponse&gt; =
+<span class="nc" id="L208">        homeService.getHomeApi().getUpdatePassword(</span>
+<span class="nc" id="L209">            memberId,</span>
+<span class="nc" id="L210">            updatePassword</span>
+<span class="nc" id="L211">        )</span>
+
+    fun changePassword(changePasswordDTO: ChangePasswordV2DTO): Single&lt;DataResponse&gt; =
+<span class="nc" id="L214">        homeService.getHomeApi().changePassword(</span>
+<span class="nc" id="L215">            changePasswordDTO</span>
+<span class="nc" id="L216">        )</span>
+
+    fun updateUserDetails(memberId: String, updateDetails: UpdateDetails): Single&lt;DataResponse&gt; =
+<span class="nc" id="L219">        homeService.getHomeApi().postMemberDetails(</span>
+<span class="nc" id="L220">            memberId,</span>
+<span class="nc" id="L221">            updateDetails</span>
+<span class="nc" id="L222">        )</span>
+
+    fun removeDependent(memberId: String, addDependent: AddDependent): Single&lt;DataResponse&gt; =
+<span class="nc" id="L225">        homeService.getHomeApi().removeDependent(</span>
+<span class="nc" id="L226">            memberId,</span>
+<span class="nc" id="L227">            addDependent</span>
+<span class="nc" id="L228">        )</span>
+
+    fun removeAvatar(memberId: String): Single&lt;DataResponse&gt; =
+<span class="nc" id="L231">        homeService.getHomeApi().getRemoveAvatar(</span>
+<span class="nc" id="L232">            memberId</span>
+<span class="nc" id="L233">        )</span>
+
+    fun uploadDoc(
+        memberID: String,
+        filePart: MultipartBody.Part,
+        type: Int,
+        filename: String
+<span class="nc" id="L240">    ): Single&lt;DocumentUploadSuccessEnroll&gt; = homeService.getHomeApi().getDoc(</span>
+<span class="nc" id="L241">        memberID,</span>
+<span class="nc" id="L242">        filePart,</span>
+<span class="nc" id="L243">        filename,</span>
+<span class="nc" id="L244">        type</span>
+<span class="nc" id="L245">    )</span>
+
+    fun shareBenefitCards(
+        memberId: String,
+        email: String,
+        cardTypes: String,
+        diagnoses: Boolean,
+        medications: Boolean
+<span class="nc" id="L253">    ): Single&lt;ShareCardResponse&gt; = homeService.getHomeApi().getShareCardsDataService(</span>
+<span class="nc" id="L254">        memberId,</span>
+<span class="nc" id="L255">        email,</span>
+<span class="nc" id="L256">        cardTypes,</span>
+<span class="nc" id="L257">        diagnoses,</span>
+<span class="nc" id="L258">        medications</span>
+<span class="nc" id="L259">    )</span>
+
+    fun shareVaccinationCards(
+        memberId: String,
+        email: String
+<span class="nc" id="L264">    ): Single&lt;ShareCardResponse&gt; = homeService.getHomeApi().getShareVaccinationCardsDataService(</span>
+<span class="nc" id="L265">        memberId,</span>
+<span class="nc" id="L266">        email</span>
+<span class="nc" id="L267">    )</span>
+
+    fun getGoPeperless(memberId: String, goPaperless: Boolean): Single&lt;ResponseBody&gt; =
+<span class="nc" id="L270">        homeService.getHomeApi().getGoPaperless(</span>
+<span class="nc" id="L271">            memberId,</span>
+<span class="nc" id="L272">            goPaperless</span>
+<span class="nc" id="L273">        )</span>
+
+    fun refreshFcm(memberId: String, fcm: String, isPrimary: Boolean): Single&lt;Void&gt; =
+<span class="fc" id="L276">        homeService.getHomeApi().refreshFcm(</span>
+<span class="fc" id="L277">            memberId,</span>
+<span class="fc" id="L278">            fcm,</span>
+<span class="fc" id="L279">            false,</span>
+<span class="fc" id="L280">            isPrimary</span>
+<span class="fc" id="L281">        )</span>
+
+    fun shouldPromptForPrimaryDevice(memberId: String): Single&lt;PrimaryDevicePromptResponse&gt; =
+<span class="fc" id="L284">        homeService.getHomeApi().requirePrimaryDeviceCheck(</span>
+<span class="fc" id="L285">            memberId</span>
+<span class="fc" id="L286">        )</span>
+
+    fun downloadPDF(
+        memberId: String,
+        cardType: String,
+        downloadDiagnoses: Boolean,
+        downloadMedications: Boolean
+<span class="nc" id="L293">    ): Single&lt;ResponseBody&gt; = homeService.getHomeApi().downloadPDF(</span>
+<span class="nc" id="L294">        memberId,</span>
+<span class="nc" id="L295">        cardType,</span>
+<span class="nc" id="L296">        downloadDiagnoses,</span>
+<span class="nc" id="L297">        downloadMedications</span>
+<span class="nc" id="L298">    )</span>
+
+    fun downloadVaccinePDF(
+        memberId: String
+<span class="nc" id="L302">    ): Single&lt;ResponseBody&gt; = homeService.getHomeApi().downloadVaccinePDF(</span>
+<span class="nc" id="L303">        memberId</span>
+<span class="nc" id="L304">    )</span>
+
+    fun mailBenefit(memberId: String, requestMail: RequestMail): Single&lt;ShareCardResponse&gt; =
+<span class="nc" id="L307">        homeService.getHomeApi().getMailCardService(</span>
+<span class="nc" id="L308">            memberId,</span>
+<span class="nc" id="L309">            requestMail</span>
+<span class="nc" id="L310">        )</span>
+
+    fun getNotifications(memberId: String, pageNumber: Int): Single&lt;MessageCenterList&gt; =
+<span class="fc" id="L313">        homeService.getHomeApi().getMessageCenter(</span>
+<span class="fc" id="L314">            memberId,</span>
+<span class="fc" id="L315">            10,</span>
+<span class="fc" id="L316">            pageNumber</span>
+<span class="fc" id="L317">        )</span>
+
+    fun getUnreadNotification(memberId: String): Single&lt;NotificationCount&gt; =
+<span class="fc" id="L320">        homeService.getHomeApi().getUnReadCount(</span>
+<span class="fc" id="L321">            memberId</span>
+<span class="fc" id="L322">        )</span>
+
+    fun getTalonUrl(memberId: String, type: String): Single&lt;TalonResponse&gt; =
+<span class="nc" id="L325">        homeService.getHomeApi().getWidgetUrl(</span>
+<span class="nc" id="L326">            memberId,</span>
+<span class="nc" id="L327">            type</span>
+<span class="nc" id="L328">        )</span>
+
+    fun downloadBenefitPDF(memberId: String): Single&lt;ResponseBody&gt; =
+<span class="nc" id="L331">        homeService.getHomeApi().downloadBenefitPDF(</span>
+<span class="nc" id="L332">            memberId</span>
+<span class="nc" id="L333">        )</span>
+
+    fun paydFormEmail(memberId: String, email: String): Single&lt;ResponseBody&gt; =
+<span class="nc" id="L336">        homeService.getHomeApi().sendPaydFormAsEmail(</span>
+<span class="nc" id="L337">            memberId,</span>
+<span class="nc" id="L338">            email</span>
+<span class="nc" id="L339">        )</span>
+
+<span class="nc" id="L341">    fun paydForm(email: String): Single&lt;ResponseBody&gt; = homeService.getHomeApi().getPaydFormFile(</span>
+<span class="nc" id="L342">        email</span>
+<span class="nc" id="L343">    )</span>
+
+    fun getPreferredRadiologists(memberId: String): Single&lt;RadiologistResponse&gt; =
+<span class="nc" id="L346">        homeService.getHomeApi().getPreferredRadiologists(</span>
+<span class="nc" id="L347">            memberId</span>
+<span class="nc" id="L348">        )</span>
+
+    fun getPhoneNumberChange(
+        memberId: String,
+        countryCode: String,
+        phoneNumber: String,
+        otp: String,
+        tempUUID: String
+<span class="nc" id="L356">    ): Single&lt;TempCode&gt; = homeService.getHomeApi().getNewMobileNumber(</span>
+<span class="nc" id="L357">        memberId,</span>
+<span class="nc" id="L358">        countryCode,</span>
+<span class="nc" id="L359">        phoneNumber,</span>
+<span class="nc" id="L360">        otp,</span>
+<span class="nc" id="L361">        tempUUID</span>
+<span class="nc" id="L362">    )</span>
+
+    fun getSwitcher(memberId: String): Single&lt;SwitcherResponse&gt; =
+<span class="fc" id="L365">        homeService.getHomeApi().getIsMemberSwitcherAvailable(</span>
+<span class="fc" id="L366">            memberId</span>
+<span class="fc" id="L367">        )</span>
+
+    fun getLogin(tempToken: String, relatedMemberID: String): Single&lt;Response&lt;AuthToken&gt;&gt; =
+<span class="nc" id="L370">        homeService.getHomeApi().getLogin(</span>
+<span class="nc" id="L371">            BuildConfig.LOGIN_CLIENT_ID,</span>
+<span class="nc" id="L372">            BuildConfig.LOGIN_CLIENT_SECRET,</span>
+<span class="nc" id="L373">            &quot;related_entity_grant_type&quot;,</span>
+<span class="nc" id="L374">            tempToken,</span>
+<span class="nc" id="L375">            relatedMemberID</span>
+<span class="nc" id="L376">        )</span>
+
+    fun getChat(
+        new: String?,
+        refId: Long?,
+        page: Int?,
+        pageNumber: Int?,
+        pageSize: Int?,
+        showOriginalMessages: Boolean
+<span class="fc" id="L385">    ): Single&lt;ChatList&gt; = homeService.getHomeApi().getChat(</span>
+<span class="fc" id="L386">        new,</span>
+<span class="fc" id="L387">        refId,</span>
+<span class="fc" id="L388">        page,</span>
+<span class="fc" id="L389">        pageNumber,</span>
+<span class="fc" id="L390">        pageSize,</span>
+<span class="fc" id="L391">        showOriginalMessages</span>
+<span class="fc" id="L392">    )</span>
+
+<span class="nc" id="L394">    fun sendChat(message: MessageData): Single&lt;ChatDataModel&gt; = homeService.getHomeApi().postChat(</span>
+<span class="nc" id="L395">        message</span>
+<span class="nc" id="L396">    )</span>
+
+<span class="nc" id="L398">    fun sendChatLog(message: LogChat): Single&lt;ChatDataModel&gt; = homeService.getHomeApi().postChatLog(</span>
+<span class="nc" id="L399">        message</span>
+<span class="nc" id="L400">    )</span>
+
+<span class="nc" id="L402">    fun chatRead(chatRead: ChatRead): Single&lt;ChatList&gt; = homeService.getHomeApi().chatRead(chatRead)</span>
+    fun updateMaritalStatus(
+        selfId: String,
+        person: Person?,
+        maritalStatus: Int
+    ): Single&lt;DataResponse&gt; {
+<span class="nc bnc" id="L408" title="All 2 branches missed.">        return if (maritalStatus == 1) {</span>
+<span class="nc" id="L409">            homeService.getHomeApi().updateMaritalStatusSingle(</span>
+<span class="nc" id="L410">                selfId,</span>
+<span class="nc" id="L411">                maritalStatus</span>
+            )
+        } else {
+<span class="nc" id="L414">            homeService.getHomeApi().updateMaritalStatus(</span>
+<span class="nc" id="L415">                selfId,</span>
+<span class="nc" id="L416">                person,</span>
+<span class="nc" id="L417">                maritalStatus</span>
+            )
+        }
+    }
+
+    fun getDoctorList(
+        memberID: String,
+        latitude: String,
+        longitude: String,
+        provider: String,
+        radius: String
+<span class="nc" id="L428">    ): Single&lt;DoctorResponseNew&gt; = homeService.getHomeApi().getDoctorList(</span>
+<span class="nc" id="L429">        memberID,</span>
+<span class="nc" id="L430">        latitude,</span>
+<span class="nc" id="L431">        longitude,</span>
+<span class="nc" id="L432">        provider,</span>
+<span class="nc" id="L433">        &quot;10&quot;</span>
+<span class="nc" id="L434">    )</span>
+
+    fun getPendingStatus(memberId: String): Single&lt;PendingStatus&gt; =
+<span class="nc" id="L437">        homeService.getHomeApi().getDemographicUpdateStatus(</span>
+<span class="nc" id="L438">            memberId</span>
+<span class="nc" id="L439">        )</span>
+
+    fun getDoctorListSearch(
+        search: String,
+        memberID: String,
+        latitude: String,
+        longitude: String,
+        provider: String,
+        radius: String
+<span class="nc" id="L448">    ): Single&lt;Specialties&gt; = homeService.getHomeApi().getFindCareSearchList(</span>
+<span class="nc" id="L449">        search,</span>
+<span class="nc" id="L450">        memberID,</span>
+<span class="nc" id="L451">        latitude,</span>
+<span class="nc" id="L452">        longitude,</span>
+<span class="nc" id="L453">        provider,</span>
+<span class="nc" id="L454">        &quot;10&quot;</span>
+<span class="nc" id="L455">    )</span>
+
+    fun htmlFIndCare(selfId: String): Single&lt;HtmlFindCareResponse&gt; =
+<span class="nc" id="L458">        homeService.getHomeApi().getHtmlForFindDoc(</span>
+<span class="nc" id="L459">            selfId</span>
+<span class="nc" id="L460">        )</span>
+
+    fun updateAddress(selfId: String, address: MemberAddress): Single&lt;DataResponse&gt; =
+<span class="nc" id="L463">        homeService.getHomeApi().getUpdateAddress(</span>
+<span class="nc" id="L464">            selfId,</span>
+<span class="nc" id="L465">            address</span>
+<span class="nc" id="L466">        )</span>
+
+<span class="nc" id="L468">    fun getAddress(url: String): Single&lt;GeoCodeResponse&gt; = homeService.getHomeApi().getAddress(url)</span>
+    fun getChatSession(memberId: String): Single&lt;ChatSession&gt; =
+<span class="nc" id="L470">        homeService.getHomeApi().getChatSession(</span>
+<span class="nc" id="L471">            memberId</span>
+<span class="nc" id="L472">        )</span>
+
+    fun getChatSessionClose(memberId: String, sessionId: String): Single&lt;ChatSessionClose&gt; =
+<span class="nc" id="L475">        homeService.getHomeApi().chatSessionClose(</span>
+<span class="nc" id="L476">            memberId,</span>
+<span class="nc" id="L477">            sessionId</span>
+<span class="nc" id="L478">        )</span>
+
+<span class="nc" id="L480">    fun getAllSpecialities(): Single&lt;SpecialityAll&gt; = homeService.getHomeApi().getAllAllSpeciality()</span>
+    fun getRecentSpecialities(): Single&lt;RecentAll&gt; =
+<span class="nc" id="L482">        homeService.getHomeApi().getAllRecentSpeciality()</span>
+
+    fun sendAppInstallUpdateData(appInstallUpdate: AppInstallUpdate, memberId: String) =
+<span class="fc" id="L485">        homeService.getHomeApi().sendAppUpdateInstallData(</span>
+<span class="fc" id="L486">            memberId,</span>
+<span class="fc" id="L487">            appInstallUpdate</span>
+<span class="fc" id="L488">        )</span>
+
+    fun startEnrollment(memberId: String): Single&lt;RootDocumentResponse&gt; =
+<span class="nc" id="L491">        homeService.getHomeApi().requireDocuments(</span>
+<span class="nc" id="L492">            memberId</span>
+<span class="nc" id="L493">        )</span>
+
+    fun enrollMember(member: EnrollMember): Single&lt;Response&lt;DataResponse&gt;&gt; =
+<span class="nc" id="L496">        homeService.getHomeApi().getEnroll(</span>
+<span class="nc" id="L497">            member</span>
+<span class="nc" id="L498">        )</span>
+
+    fun uploadDoc(
+        filePart: MultipartBody.Part,
+        fileName: String,
+        fileType: String
+<span class="nc" id="L504">    ): Single&lt;DocumentUploadSuccessEnroll&gt; = homeService.getHomeApi().uploadFile(</span>
+<span class="nc" id="L505">        filePart,</span>
+<span class="nc" id="L506">        fileName,</span>
+<span class="nc" id="L507">        fileType</span>
+<span class="nc" id="L508">    )</span>
+
+    fun getSurveys(): Single&lt;Response&lt;MemberSurveysResponse&gt;&gt; =
+<span class="nc" id="L511">        homeService.getHomeApi().memberSurveys()</span>
+
+    fun getSplashScreens(): Single&lt;Response&lt;MemberSurveysResponse&gt;&gt; =
+<span class="fc" id="L514">        homeService.getHomeApi().splashScreens()</span>
+
+    fun optOutSurvey(memberId: String, optOut: Boolean): Single&lt;Response&lt;ResponseBody&gt;&gt; =
+<span class="nc" id="L517">        homeService.getHomeApi().optOutSurvey(memberId, optOut)</span>
+
+<span class="fc" id="L519">    fun getSurveyStatus(): Single&lt;Response&lt;SurveyStatusResponse&gt;&gt; = homeService.getHomeApi().surveyStatus()</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

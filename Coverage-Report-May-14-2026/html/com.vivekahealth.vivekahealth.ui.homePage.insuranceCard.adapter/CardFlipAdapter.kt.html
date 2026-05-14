@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CardFlipAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.insuranceCard.adapter</a> &gt; <span class="el_source">CardFlipAdapter.kt</span></div><h1>CardFlipAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.insuranceCard.adapter
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.util.Base64
+import android.util.LruCache
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.navigation.Navigation
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import com.vivekahealth.vivekahealth.databinding.ItemCardBinding
+import com.vivekahealth.vivekahealth.ui.homePage.insuranceCard.InsuranceCardsFragmentDirections
+import com.vivekahealth.vivekahealth.utils.getManifestPlaceHolderValue
+import java.net.URLDecoder
+
+class InsuranceCardFlipAdapter(private val cardImages: List&lt;String&gt;) :
+    ListAdapter&lt;String, InsuranceCardFlipViewHolder&gt;(InsuranceCardFlipDiffUtilCallBack()) {
+    lateinit var context: Context
+    private val htmlCache = LruCache&lt;String, String&gt;(10)
+    val maxSize = Int.MAX_VALUE
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): InsuranceCardFlipViewHolder {
+        context = parent.context
+        return InsuranceCardFlipViewHolder(
+            ItemCardBinding.inflate(
+                LayoutInflater.from(
+                    context
+                ),
+                parent,
+                false
+
+            )
+        )
+    }
+
+    override fun getItemCount() = maxSize
+
+    override fun onBindViewHolder(holder: InsuranceCardFlipViewHolder, position: Int) {
+        with(holder.itemCardBinding) {
+            val cardImage = cardImages[position % 2]
+            val cachedHtml = htmlCache[cardImage]
+            val webSettings: WebSettings = wvCard.settings
+            webSettings.javaScriptEnabled = true
+            webSettings.textZoom = 100
+            wvCard.webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView, url: String?): Boolean {
+                    val appHost = getManifestPlaceHolderValue(context, &quot;APP_HOST&quot;)
+                    val shouldHandleDeepLink = url?.contains(appHost ?: &quot;app.vivekahealth.com&quot;) ?: false
+                    return if (shouldHandleDeepLink) {
+                        handleDeeplink(view, url ?: &quot;&quot;)
+                        true
+                    } else {
+                        view.context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        true
+                    }
+                }
+
+                override fun onLoadResource(view: WebView?, url: String?) {
+                }
+            }
+            wvCard.setInitialScale(1)
+            webSettings.loadWithOverviewMode = true
+            webSettings.useWideViewPort = true
+            webSettings.javaScriptEnabled = true
+            webSettings.builtInZoomControls = true
+            webSettings.displayZoomControls = false
+
+            if (cachedHtml != null) {
+                wvCard.loadData(
+                    cachedHtml,
+                    &quot;text/html; charset=UTF-8&quot;,
+                    &quot;base64&quot;
+                )
+            } else {
+                val base64Front =
+                    Base64.encodeToString(cardImage.toByteArray(), Base64.DEFAULT)
+                wvCard.loadData(
+                    base64Front,
+                    &quot;text/html; charset=UTF-8&quot;,
+                    &quot;base64&quot;
+                )
+                htmlCache.put(cardImage, base64Front)
+            }
+        }
+    }
+
+    fun handleDeeplink(view: WebView, url: String) {
+        val decodedUrl = URLDecoder.decode(url, &quot;UTF-8&quot;)
+        val dynamicLink = Uri.parse(decodedUrl)
+        val path = dynamicLink.path
+        val queryParams = dynamicLink.queryParameterNames
+        if (path.contentEquals(&quot;/customMenu&quot;, true)) {
+            var menuName = &quot;&quot;
+            var menuTypeId = &quot;1&quot;
+            for (q in queryParams) {
+                if (q.equals(&quot;menuName&quot;, true)) {
+                    menuName = dynamicLink.getQueryParameter(q) ?: &quot;&quot;
+                }
+                if (q.equals(&quot;menuType&quot;, true)) {
+                    menuTypeId = (dynamicLink.getQueryParameter(q) ?: &quot;1&quot;)
+                }
+            }
+            val directToCustomMenu =
+                InsuranceCardsFragmentDirections.actionInsuranceCardsFragmentToDynamicMenuFragment(
+                    menuTypeId,
+                    menuName
+                )
+            Navigation.findNavController(view).navigate(directToCustomMenu)
+        }
+    }
+}
+
+class InsuranceCardFlipViewHolder(val itemCardBinding: ItemCardBinding) :
+    ViewHolder(itemCardBinding.root)
+
+<span class="nc" id="L121">class InsuranceCardFlipDiffUtilCallBack : DiffUtil.ItemCallback&lt;String&gt;() {</span>
+<span class="nc" id="L122">    override fun areItemsTheSame(oldItem: String, newItem: String) = oldItem == newItem</span>
+
+<span class="nc" id="L124">    override fun areContentsTheSame(oldItem: String, newItem: String) = oldItem == newItem</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

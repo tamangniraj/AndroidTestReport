@@ -1,0 +1,881 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocumentScanViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.guestVerify.documents</a> &gt; <span class="el_source">DocumentScanViewModel.kt</span></div><h1>DocumentScanViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.guestVerify.documents
+
+import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.os.Bundle
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import com.google.mlkit.vision.barcode.common.Barcode.DriverLicense
+import com.vivekahealth.vivekahealth.FirebaseTags
+import com.vivekahealth.vivekahealth.data.local.guest.LoadingState
+import com.vivekahealth.vivekahealth.data.local.guest.UploadState
+import com.vivekahealth.vivekahealth.data.remote.guest.AdditionalRequirementResponse
+import com.vivekahealth.vivekahealth.data.remote.guest.AdditionalVerification
+import com.vivekahealth.vivekahealth.data.remote.guest.CurrentFullAddress
+import com.vivekahealth.vivekahealth.data.remote.guest.Demographics
+import com.vivekahealth.vivekahealth.data.remote.guest.DocumentUploadResponse
+import com.vivekahealth.vivekahealth.data.remote.guest.ErrorDetail
+import com.vivekahealth.vivekahealth.data.remote.guest.IdentifyErrorResponse
+import com.vivekahealth.vivekahealth.data.remote.guest.UploadDetailsSendParams
+import com.vivekahealth.vivekahealth.data.remote.guest.UploadResponse
+import com.vivekahealth.vivekahealth.data.remote.login.GenericErrorResponse
+import com.vivekahealth.vivekahealth.data.remote.register.DataResponse
+import com.vivekahealth.vivekahealth.ui.guestVerify.repository.GuestUploadRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.DateUtils.convertLicenseDate
+import com.vivekahealth.vivekahealth.utils.DateUtils.toGenderApi
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import com.vivekahealth.vivekahealth.utils.remote.APIResponse
+import io.reactivex.Observable.just
+import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import okhttp3.MultipartBody
+import okhttp3.ResponseBody
+import java.util.UUID
+import javax.inject.Inject
+
+<span class="nc" id="L53">class DocumentScanViewModel @Inject constructor(</span>
+<span class="nc" id="L54">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L55">    var uploadRepository: GuestUploadRepository,</span>
+<span class="nc" id="L56">    private val firebaseAnalytics: FirebaseAnalytics</span>
+<span class="nc" id="L57">) : ViewModel(), Observable {</span>
+
+    private var memberId: String? = null
+    private var token: String? = null
+
+    fun setAnalyticsParams(memberId: String?, token: String?) {
+<span class="nc" id="L63">        this.memberId = memberId</span>
+<span class="nc" id="L64">        this.token = token</span>
+<span class="nc" id="L65">    }</span>
+
+<span class="nc" id="L67">    private fun logGuestVerifyEvent(eventName: String, additionalParams: Bundle.() -&gt; Unit = {}) {</span>
+<span class="nc" id="L68">        val bundle = Bundle().apply {</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">            putString(FirebaseTags.PARAM_MEMBER_ID, memberId ?: &quot;&quot;)</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            putString(FirebaseTags.PARAM_TOKEN, token ?: &quot;&quot;)</span>
+<span class="nc" id="L71">            additionalParams()</span>
+<span class="nc" id="L72">        }</span>
+<span class="nc" id="L73">        firebaseAnalytics.logEvent(eventName, bundle)</span>
+<span class="nc" id="L74">    }</span>
+
+<span class="nc" id="L76">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L78">        get() = _navigateToBack</span>
+
+<span class="nc" id="L80">    private val _navigateToNext = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToNext: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L82">        get() = _navigateToNext</span>
+
+<span class="nc" id="L84">    private val _navigateToSkip = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToSkip: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L86">        get() = _navigateToSkip</span>
+
+<span class="nc" id="L88">    private val _openCamera = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val openCamera: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L90">        get() = _openCamera</span>
+
+<span class="nc" id="L92">    private val _navigateToManualId = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToManualId: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L94">        get() = _navigateToManualId</span>
+
+<span class="nc" id="L96">    var gson = Gson()</span>
+    private lateinit var job: Job
+<span class="nc" id="L98">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L100">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L102">    var documentType: DocumentType = DocumentType.DL_FRONT</span>
+
+    val showError: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
+<span class="nc" id="L105">        get() = _showError</span>
+<span class="nc" id="L106">    private val _showError = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+
+<span class="nc" id="L108">    private val _uploadState = MutableLiveData&lt;Event&lt;UploadState&gt;&gt;()</span>
+<span class="nc" id="L109">    val uploadState: LiveData&lt;Event&lt;UploadState&gt;&gt; get() = _uploadState</span>
+
+<span class="nc" id="L111">    var attemptNumber: Int = 1</span>
+
+<span class="nc" id="L113">    var status: PublishSubject&lt;LoadingState&gt; = PublishSubject.create()</span>
+
+    private val _reUploadFrontVerifiedAndAdditionalDetails =
+<span class="nc" id="L116">        MutableLiveData&lt;Event&lt;AdditionalRequirementResponse&gt;&gt;()</span>
+    val reUploadFrontVerifiedAndAdditionalDetails: LiveData&lt;Event&lt;AdditionalRequirementResponse&gt;&gt;
+<span class="nc" id="L118">        get() = _reUploadFrontVerifiedAndAdditionalDetails</span>
+
+<span class="nc" id="L120">    private val _reUploadFrontVerifyAndAdditionalDetailsError = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val reUploadFrontVerifyAndAdditionalDetailsError: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L122">        get() = _reUploadFrontVerifyAndAdditionalDetailsError</span>
+
+    fun uploadAndIgnore(
+        documentType: DocumentType,
+        file: Bitmap?,
+        token: String,
+        isSsn: Boolean?
+    ) {
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (file == null) {</span>
+<span class="nc" id="L131">            _uploadState.value = Event(UploadState.Error(&quot;No file provided&quot;))</span>
+<span class="nc" id="L132">            return</span>
+        }
+
+<span class="nc" id="L135">        val filePart: MultipartBody.Part = HelperUtils.createMultipartBodyPartFromBitmap(</span>
+<span class="nc" id="L136">            bitmap = file,</span>
+<span class="nc" id="L137">            &quot;file&quot;,</span>
+<span class="nc" id="L138">            &quot;${UUID.randomUUID()}-$documentType-${DateUtils.getCurrentLocalTime()}&quot;</span>
+        )
+
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">        viewModelScope.launch {</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">            if (documentType == DocumentType.DL_BACK) {</span>
+<span class="fc" id="L143">                compositeDisposable.add(</span>
+<span class="fc" id="L144">                    uploadRepository.uploadDoc(token, filePart, documentType)</span>
+<span class="fc" id="L145">                        .subscribeOn(Schedulers.io())</span>
+<span class="pc" id="L146">                        .subscribe({}, { error -&gt;</span>
+<span class="nc" id="L147">                            timber.log.Timber.e(error, &quot;Background upload failed&quot;)</span>
+<span class="nc" id="L148">                        })</span>
+                )
+<span class="pc bpc" id="L150" title="3 of 4 branches missed.">            } else if (documentType == DocumentType.SSN || documentType == DocumentType.SSN_ONLY) {</span>
+<span class="fc" id="L151">                compositeDisposable.add(</span>
+<span class="fc" id="L152">                    uploadRepository.uploadDoc(token, filePart, documentType)</span>
+<span class="fc" id="L153">                        .subscribeOn(Schedulers.io())</span>
+<span class="pc" id="L154">                        .subscribe({}, { error -&gt;</span>
+<span class="nc" id="L155">                            timber.log.Timber.e(error, &quot;Background SSN upload failed&quot;)</span>
+<span class="nc" id="L156">                        })</span>
+                )
+            }
+<span class="fc" id="L159">        }</span>
+<span class="nc" id="L160">    }</span>
+
+<span class="nc" id="L162">    fun uploadDocumentWithQR(</span>
+        documentType: DocumentType,
+        file: Bitmap?,
+        token: String,
+        driverLicense: DriverLicense?,
+        json: String?,
+        id: String?,
+        verifiedInServer: String?,
+<span class="nc" id="L170">        isSsn: Boolean ? = null</span>
+    ) {
+<span class="nc bnc" id="L172" title="All 2 branches missed.">        if (file == null) {</span>
+<span class="nc" id="L173">            _uploadState.value = Event(UploadState.Error(&quot;No file provided&quot;))</span>
+<span class="nc" id="L174">            return</span>
+        }
+<span class="nc" id="L176">        logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_UPLOAD_STARTED) {</span>
+<span class="nc" id="L177">            putString(&quot;doc_type&quot;, documentType.name)</span>
+<span class="nc" id="L178">        }</span>
+
+<span class="nc" id="L180">        val filePart: MultipartBody.Part = HelperUtils.createMultipartBodyPartFromBitmap(</span>
+<span class="nc" id="L181">            bitmap = file,</span>
+<span class="nc" id="L182">            &quot;file&quot;,</span>
+<span class="nc" id="L183">            &quot;${UUID.randomUUID()}-$documentType-${DateUtils.getCurrentLocalTime()}&quot;</span>
+        )
+
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        viewModelScope.launch {</span>
+<span class="nc" id="L187">            just(documentType)</span>
+<span class="nc" id="L188">                .flatMap({ docType -&gt;</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                    if (docType == DocumentType.DL_FRONT) {</span>
+<span class="nc" id="L190">                        val uploadFrontObservable = uploadRepository.uploadDoc(</span>
+<span class="nc" id="L191">                            token,</span>
+<span class="nc" id="L192">                            filePart,</span>
+<span class="nc" id="L193">                            documentType</span>
+<span class="nc" id="L194">                        ).toObservable()</span>
+
+<span class="nc" id="L196">                        uploadFrontObservable</span>
+<span class="nc" id="L197">                            .doOnNext { o -&gt; status.onNext(LoadingState.PROCESS) }</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">                            ?.flatMap { uploadFrontResult -&gt;</span>
+
+<span class="nc" id="L200">                                logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_PROCESS_FRONT_STARTED) {</span>
+<span class="nc" id="L201">                                    putString(&quot;doc_type&quot;, documentType.name)</span>
+<span class="nc" id="L202">                                    putInt(&quot;attempt_number&quot;, attemptNumber)</span>
+<span class="nc" id="L203">                                }</span>
+
+<span class="nc" id="L205">                                uploadRepository.processDocument(token)</span>
+<span class="nc" id="L206">                                    .toObservable()</span>
+<span class="nc" id="L207">                                    .map { processDocumentResult -&gt;</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">                                        if (processDocumentResult.code() == 200) {</span>
+<span class="nc" id="L209">                                            logGuestVerifyEvent(</span>
+<span class="nc" id="L210">                                                FirebaseTags.GUEST_VERIFY_PROCESS_FRONT_SUCCESS</span>
+                                            ) {
+<span class="nc" id="L212">                                                putString(&quot;doc_type&quot;, documentType.name)</span>
+<span class="nc" id="L213">                                                putInt(&quot;attempt_number&quot;, attemptNumber)</span>
+<span class="nc" id="L214">                                            }</span>
+<span class="nc" id="L215">                                            return@map UploadStep(</span>
+<span class="nc" id="L216">                                                documentType = documentType,</span>
+<span class="nc" id="L217">                                                uploadResponse = uploadFrontResult,</span>
+<span class="nc" id="L218">                                                processDocumentResponse = processDocumentResult.body()</span>
+                                            )
+<span class="nc bnc" id="L220" title="All 2 branches missed.">                                        } else if (processDocumentResult.code() == 400) {</span>
+<span class="nc" id="L221">                                            logGuestVerifyEvent(</span>
+<span class="nc" id="L222">                                                FirebaseTags.GUEST_VERIFY_PROCESS_FRONT_FAILED</span>
+                                            ) {
+<span class="nc" id="L224">                                                putString(&quot;doc_type&quot;, documentType.name)</span>
+<span class="nc" id="L225">                                                putInt(&quot;attempt_number&quot;, attemptNumber)</span>
+<span class="nc" id="L226">                                            }</span>
+<span class="nc" id="L227">                                            val errorResponse: DataResponse = gson.fromJson(</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">                                                processDocumentResult.errorBody()?.string(),</span>
+<span class="nc" id="L229">                                                DataResponse::class.java</span>
+                                            )
+
+<span class="nc" id="L232">                                            return@map UploadStep(</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">                                                error = errorResponse.errorDescription</span>
+<span class="nc" id="L234">                                                    ?: &quot;Something went wrong!&quot;</span>
+                                            )
+                                        } else {
+<span class="nc" id="L237">                                            return@map UploadStep(</span>
+<span class="nc" id="L238">                                                error = &quot;Something went wrong&quot;</span>
+                                            )
+                                        }
+<span class="nc" id="L241">                                    }</span>
+                            }
+<span class="nc bnc" id="L243" title="All 2 branches missed.">                    } else if (documentType == DocumentType.DL_BACK) {</span>
+<span class="nc bnc" id="L244" title="All 6 branches missed.">                        if (verifiedInServer != null &amp;&amp; verifiedInServer.isNotEmpty()) {</span>
+<span class="nc" id="L245">                            uploadRepository.verify(token)</span>
+<span class="nc" id="L246">                                .toObservable()</span>
+<span class="nc" id="L247">                                .map { verifyResponse -&gt;</span>
+<span class="nc bnc" id="L248" title="All 2 branches missed.">                                    if (verifyResponse.isSuccessful) {</span>
+<span class="nc" id="L249">                                        UploadStep(</span>
+<span class="nc" id="L250">                                            documentType = docType,</span>
+<span class="nc" id="L251">                                            verifyResponse = verifyResponse.body()</span>
+                                        )
+                                    } else {
+<span class="nc" id="L254">                                        val errorResponse: GenericErrorResponse = gson.fromJson(</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">                                            verifyResponse.errorBody()?.string(),</span>
+<span class="nc" id="L256">                                            GenericErrorResponse::class.java</span>
+                                        )
+<span class="nc" id="L258">                                        UploadStep(error = errorResponse.getErrorMessage())</span>
+<span class="nc" id="L259">                                    }</span>
+                                }
+<span class="nc" id="L261">                                .flatMap { uploadStep -&gt;</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">                                    if (uploadStep.error != null) {</span>
+<span class="nc" id="L263">                                        return@flatMap just(uploadStep)</span>
+                                    }
+
+<span class="nc" id="L266">                                    uploadRepository.additionalRequirements(token)</span>
+<span class="nc" id="L267">                                        .toObservable()</span>
+<span class="nc" id="L268">                                        .map { additionalRequirements -&gt;</span>
+<span class="nc" id="L269">                                            uploadStep.copy(</span>
+<span class="nc" id="L270">                                                additionalRequirementResponse = additionalRequirements.body()</span>
+<span class="nc" id="L271">                                            )</span>
+<span class="nc" id="L272">                                        }</span>
+                                }
+                        } else {
+                            // upload back media in background we are not concerned with response
+
+                            // upload the back barcode data; we are interested in this
+                            // then upon success call verify and then additional details
+<span class="nc" id="L279">                            uploadRepository.updateDetails(</span>
+<span class="nc" id="L280">                                token,</span>
+<span class="nc" id="L281">                                driverLicense.toUploadDetailsSendParams(</span>
+<span class="nc" id="L282">                                    json,</span>
+<span class="nc" id="L283">                                    attemptNumber</span>
+                                )
+<span class="nc" id="L285">                            ).toObservable()</span>
+<span class="nc" id="L286">                                .doOnNext { o -&gt; status.onNext(LoadingState.PROCESS) }</span>
+<span class="nc" id="L287">                                .map {</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">                                    if (it.isSuccessful) {</span>
+<span class="nc" id="L289">                                        return@map UploadStep(</span>
+<span class="nc" id="L290">                                            documentType = docType,</span>
+<span class="nc" id="L291">                                            qrUploadResult = it.body()</span>
+                                        )
+                                    } else {
+<span class="nc" id="L294">                                        val errorResponse: GenericErrorResponse = gson.fromJson(</span>
+<span class="nc bnc" id="L295" title="All 2 branches missed.">                                            it.errorBody()?.string(),</span>
+<span class="nc" id="L296">                                            GenericErrorResponse::class.java</span>
+                                        )
+<span class="nc" id="L298">                                        return@map UploadStep(</span>
+<span class="nc" id="L299">                                            error = errorResponse.getErrorMessage()</span>
+                                        )
+                                    }
+<span class="nc" id="L302">                                }.flatMap { uploadStep -&gt;</span>
+<span class="nc bnc" id="L303" title="All 2 branches missed.">                                    if (uploadStep.error != null) {</span>
+<span class="nc" id="L304">                                        return@flatMap just(uploadStep)</span>
+                                    }
+<span class="nc" id="L306">                                    uploadRepository.verify(token)</span>
+<span class="nc" id="L307">                                        .toObservable().map {</span>
+<span class="nc bnc" id="L308" title="All 2 branches missed.">                                            if (it.isSuccessful) {</span>
+<span class="nc" id="L309">                                                return@map uploadStep.copy(</span>
+<span class="nc" id="L310">                                                    verifyResponse = it.body()</span>
+                                                )
+                                            } else {
+<span class="nc" id="L313">                                                val errorResponse: GenericErrorResponse =</span>
+<span class="nc" id="L314">                                                    gson.fromJson(</span>
+<span class="nc bnc" id="L315" title="All 2 branches missed.">                                                        it.errorBody()?.string(),</span>
+<span class="nc" id="L316">                                                        GenericErrorResponse::class.java</span>
+                                                    )
+<span class="nc" id="L318">                                                return@map UploadStep(</span>
+<span class="nc" id="L319">                                                    error = errorResponse.getErrorMessage()</span>
+                                                )
+                                            }
+<span class="nc" id="L322">                                        }</span>
+                                }
+<span class="nc" id="L324">                                .flatMap { uploadStep -&gt;</span>
+
+<span class="nc bnc" id="L326" title="All 2 branches missed.">                                    if (uploadStep.error != null) {</span>
+<span class="nc" id="L327">                                        return@flatMap just(uploadStep)</span>
+                                    }
+
+<span class="nc" id="L330">                                    uploadRepository.additionalRequirements(token)</span>
+<span class="nc" id="L331">                                        .toObservable()</span>
+<span class="nc" id="L332">                                        .map { additionalRequirements -&gt;</span>
+<span class="nc bnc" id="L333" title="All 2 branches missed.">                                            if (additionalRequirements.isSuccessful) {</span>
+<span class="nc" id="L334">                                                return@map uploadStep.copy(</span>
+<span class="nc" id="L335">                                                    additionalRequirementResponse = additionalRequirements.body()</span>
+                                                )
+                                            } else {
+<span class="nc" id="L338">                                                val errorResponse: GenericErrorResponse =</span>
+<span class="nc" id="L339">                                                    gson.fromJson(</span>
+<span class="nc" id="L340">                                                        additionalRequirements.errorBody()</span>
+<span class="nc bnc" id="L341" title="All 2 branches missed.">                                                            ?.string(),</span>
+<span class="nc" id="L342">                                                        GenericErrorResponse::class.java</span>
+                                                    )
+<span class="nc" id="L344">                                                return@map UploadStep(</span>
+<span class="nc" id="L345">                                                    error = errorResponse.getErrorMessage()</span>
+                                                )
+                                            }
+<span class="nc" id="L348">                                        }</span>
+                                }
+                        }
+<span class="nc bnc" id="L351" title="All 4 branches missed.">                    } else if (documentType == DocumentType.SSN || documentType == DocumentType.SSN_ONLY) {</span>
+<span class="nc" id="L352">                        uploadRepository.updateDetails(</span>
+<span class="nc" id="L353">                            token,</span>
+<span class="nc" id="L354">                            uploadSsnDetails(id, isSsn)</span>
+<span class="nc" id="L355">                        ).toObservable().map {</span>
+<span class="nc" id="L356">                            return@map UploadStep(</span>
+<span class="nc" id="L357">                                documentType = docType,</span>
+<span class="nc" id="L358">                                qrUploadResult = it.body()</span>
+                            )
+                        }
+                    } else {
+<span class="nc" id="L362">                        return@flatMap just(UploadStep(error = &quot;&quot;))</span>
+<span class="nc" id="L363">                    }</span>
+<span class="nc" id="L364">                }, 5)</span>
+<span class="nc" id="L365">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L366">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L367">                .doOnSubscribe {</span>
+<span class="nc" id="L368">                    status.onNext(LoadingState.UPLOAD)</span>
+<span class="nc" id="L369">                }</span>
+<span class="nc" id="L370">                .subscribe({</span>
+<span class="nc bnc" id="L371" title="All 2 branches missed.">                    if (it.error != null) {</span>
+<span class="nc" id="L372">                        logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_UPLOAD_ERROR) {</span>
+<span class="nc" id="L373">                            putString(&quot;doc_type&quot;, documentType.name)</span>
+<span class="nc" id="L374">                            putString(&quot;error_type&quot;, it.error)</span>
+<span class="nc" id="L375">                        }</span>
+<span class="nc" id="L376">                        _uploadState.value = Event(UploadState.Error(it.error))</span>
+<span class="nc" id="L377">                        return@subscribe</span>
+                    }
+
+<span class="nc" id="L380">                    logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_UPLOAD_SUCCESS) {</span>
+<span class="nc" id="L381">                        putString(&quot;doc_type&quot;, documentType.name)</span>
+<span class="nc" id="L382">                    }</span>
+
+<span class="nc bnc" id="L384" title="All 6 branches missed.">                    when (it.documentType) {</span>
+                        DocumentType.DL_FRONT -&gt; {
+<span class="nc" id="L386">                            _uploadState.value = Event(</span>
+<span class="nc" id="L387">                                UploadState.Success(null, it.uploadResponse)</span>
+                            )
+                        }
+
+                        DocumentType.DL_BACK -&gt; {
+<span class="nc" id="L392">                            attemptNumber = 1</span>
+<span class="nc" id="L393">                            _uploadState.value = Event(</span>
+<span class="nc" id="L394">                                UploadState.Success(</span>
+<span class="nc" id="L395">                                    it.qrUploadResult,</span>
+<span class="nc" id="L396">                                    it.uploadResponse,</span>
+<span class="nc" id="L397">                                    it.additionalRequirementResponse</span>
+                                )
+                            )
+                        }
+
+                        DocumentType.SSN, DocumentType.SSN_ONLY -&gt; {
+<span class="nc" id="L403">                            _uploadState.value = Event(</span>
+<span class="nc" id="L404">                                UploadState.Success(it.qrUploadResult, it.uploadResponse)</span>
+                            )
+                        }
+
+                        else -&gt; {
+                        }
+                    }
+
+<span class="nc" id="L412">                    uploadAndIgnore(</span>
+<span class="nc" id="L413">                        documentType,</span>
+<span class="nc" id="L414">                        file,</span>
+<span class="nc" id="L415">                        token,</span>
+<span class="nc" id="L416">                        isSsn</span>
+                    )
+<span class="nc" id="L418">                }, {</span>
+<span class="nc" id="L419">                    val errorMessage = when {</span>
+<span class="nc bnc" id="L420" title="All 6 branches missed.">                        it.message?.contains(</span>
+<span class="nc" id="L421">                            &quot;SocketException&quot;,</span>
+<span class="nc" id="L422">                            ignoreCase = true</span>
+<span class="nc" id="L423">                        ) == true -&gt; Constants.APOLOGY_MESSAGE</span>
+
+<span class="nc bnc" id="L425" title="All 2 branches missed.">                        else -&gt; it.message ?: Constants.APOLOGY_MESSAGE</span>
+                    }
+<span class="nc" id="L427">                    logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_UPLOAD_ERROR) {</span>
+<span class="nc" id="L428">                        putString(&quot;doc_type&quot;, documentType.name)</span>
+<span class="nc" id="L429">                        putString(&quot;error_type&quot;, errorMessage)</span>
+<span class="nc" id="L430">                    }</span>
+<span class="nc" id="L431">                    _uploadState.value = Event(UploadState.Error(errorMessage))</span>
+<span class="nc" id="L432">                })</span>
+<span class="nc" id="L433">        }</span>
+<span class="nc" id="L434">    }</span>
+
+    fun scanBarcodeImage(token: String, file: Bitmap?, documentType: DocumentType) {
+<span class="nc bnc" id="L437" title="All 2 branches missed.">        if (file == null) {</span>
+<span class="nc" id="L438">            _uploadState.value = Event(UploadState.Error(&quot;No file provided&quot;))</span>
+<span class="nc" id="L439">            return</span>
+        }
+
+<span class="nc" id="L442">        val filePart: MultipartBody.Part = HelperUtils.createMultipartBodyPartFromBitmap(</span>
+<span class="nc" id="L443">            bitmap = file,</span>
+<span class="nc" id="L444">            &quot;file&quot;,</span>
+<span class="nc" id="L445">            &quot;${UUID.randomUUID()}-$documentType-${DateUtils.getCurrentLocalTime()}&quot;</span>
+        )
+
+<span class="nc bnc" id="L448" title="All 2 branches missed.">        viewModelScope.launch {</span>
+<span class="nc" id="L449">            uploadRepository.scanBarCode(token, filePart, documentType)</span>
+<span class="nc" id="L450">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L451">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L452">                .doOnSubscribe {</span>
+<span class="nc" id="L453">                    status.onNext(LoadingState.UPLOAD)</span>
+<span class="nc" id="L454">                }</span>
+<span class="nc" id="L455">                .subscribe({</span>
+<span class="nc bnc" id="L456" title="All 2 branches missed.">                    if (it.isSuccessful) {</span>
+<span class="nc" id="L457">                        _uploadState.value = Event(UploadState.SuccessScan())</span>
+                    } else {
+<span class="nc" id="L459">                        val errorResponse: GenericErrorResponse = gson.fromJson(</span>
+<span class="nc bnc" id="L460" title="All 2 branches missed.">                            it.errorBody()?.string(),</span>
+<span class="nc" id="L461">                            GenericErrorResponse::class.java</span>
+                        )
+<span class="nc" id="L463">                        _uploadState.value = Event(</span>
+<span class="nc" id="L464">                            UploadState.FailedScan(errorResponse.getErrorMessage())</span>
+                        )
+                    }
+<span class="nc" id="L467">                }, {</span>
+<span class="nc" id="L468">                    _uploadState.value = Event(</span>
+<span class="nc bnc" id="L469" title="All 2 branches missed.">                        UploadState.Error(it.message ?: Constants.APOLOGY_MESSAGE)</span>
+                    )
+<span class="nc" id="L471">                })</span>
+<span class="nc" id="L472">        }</span>
+<span class="nc" id="L473">    }</span>
+
+    fun resetState() {
+<span class="nc" id="L476">        _uploadState.value = Event(UploadState.Idle)</span>
+<span class="nc" id="L477">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L480">        callbacks.add(callback)</span>
+<span class="nc" id="L481">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L484">        callbacks.remove(callback)</span>
+<span class="nc" id="L485">    }</span>
+
+    fun onPrevClicked() {
+<span class="nc" id="L488">        singleClick {</span>
+<span class="nc" id="L489">            _navigateToBack.value = Event(Unit)</span>
+<span class="nc" id="L490">        }</span>
+<span class="nc" id="L491">    }</span>
+
+    fun onNextClicked() {
+<span class="nc" id="L494">        singleClick {</span>
+<span class="nc" id="L495">            _navigateToNext.value = Event(Unit) // Process the first click immediately</span>
+<span class="nc" id="L496">        }</span>
+<span class="nc" id="L497">    }</span>
+
+    fun onSkipClicked() {
+<span class="nc" id="L500">        singleClick {</span>
+<span class="nc" id="L501">            _navigateToSkip.value = Event(Unit) // Process the first click immediately</span>
+<span class="nc" id="L502">        }</span>
+<span class="nc" id="L503">    }</span>
+
+    fun onOpenCamera() {
+<span class="nc" id="L506">        singleClick {</span>
+<span class="nc" id="L507">            _openCamera.value = Event(Unit)</span>
+<span class="nc" id="L508">        }</span>
+<span class="nc" id="L509">    }</span>
+
+    fun onEnterManuallyClicked() {
+<span class="nc" id="L512">        singleClick {</span>
+<span class="nc" id="L513">            _navigateToManualId.value = Event(Unit)</span>
+<span class="nc" id="L514">        }</span>
+<span class="nc" id="L515">    }</span>
+
+    private var debounceJob: Job? = null
+    private var isDebouncing = false
+<span class="nc" id="L519">    private val debounceInterval = 500L // Set your debounce interval in milliseconds</span>
+
+    fun singleClick(action: () -&gt; Unit) {
+<span class="nc bnc" id="L522" title="All 2 branches missed.">        if (isDebouncing) return</span>
+<span class="nc" id="L523">        action()</span>
+<span class="nc" id="L524">        isDebouncing = true</span>
+<span class="nc bnc" id="L525" title="All 2 branches missed.">        debounceJob?.cancel()</span>
+<span class="nc" id="L526">        debounceJob = viewModelScope.launch {</span>
+<span class="fc" id="L527">            delay(debounceInterval)</span>
+<span class="fc" id="L528">            isDebouncing = false</span>
+<span class="fc" id="L529">        }</span>
+<span class="nc" id="L530">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L533">        super.onCleared()</span>
+<span class="nc" id="L534">        compositeDisposable.dispose()</span>
+<span class="nc" id="L535">    }</span>
+
+    fun addToDisposable(disposable: Disposable) {
+<span class="nc" id="L538">        compositeDisposable.add(disposable)</span>
+<span class="nc" id="L539">    }</span>
+
+    fun verifyAndAdditionalDetails(token: String) {
+<span class="nc" id="L542">        val verifyAndAddDet = uploadRepository.verify(token)</span>
+<span class="nc" id="L543">            .flatMap { verifyResponse -&gt;</span>
+<span class="nc bnc" id="L544" title="All 2 branches missed.">                if (verifyResponse.isSuccessful) {</span>
+<span class="nc" id="L545">                    uploadRepository.additionalRequirements(token)</span>
+<span class="nc" id="L546">                } else {</span>
+<span class="nc" id="L547">                    val errorResponse: GenericErrorResponse =</span>
+<span class="nc" id="L548">                        gson.fromJson(</span>
+<span class="nc" id="L549">                            verifyResponse.errorBody()</span>
+<span class="nc bnc" id="L550" title="All 2 branches missed.">                                ?.string(),</span>
+<span class="nc" id="L551">                            GenericErrorResponse::class.java</span>
+                        )
+<span class="nc" id="L553">                    Single.error(Exception(errorResponse.getErrorMessage()))</span>
+<span class="nc" id="L554">                }</span>
+            }
+<span class="nc" id="L556">            .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L557">            .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L558">            .doOnSubscribe { _uploadState.value = Event(UploadState.Loading(LoadingState.VERIFY)) }</span>
+<span class="nc" id="L559">            .subscribe({ additionalResponse -&gt;</span>
+<span class="nc bnc" id="L560" title="All 2 branches missed.">                if (additionalResponse.isSuccessful) {</span>
+<span class="nc" id="L561">                    _reUploadFrontVerifiedAndAdditionalDetails.value = Event(</span>
+<span class="nc" id="L562">                        additionalResponse.body()!!</span>
+                    )
+                } else {
+<span class="nc" id="L565">                    val errorResponse: GenericErrorResponse = gson.fromJson(</span>
+<span class="nc bnc" id="L566" title="All 2 branches missed.">                        additionalResponse.errorBody()?.string(),</span>
+<span class="nc" id="L567">                        GenericErrorResponse::class.java</span>
+                    )
+<span class="nc" id="L569">                    _reUploadFrontVerifyAndAdditionalDetailsError.value =</span>
+<span class="nc bnc" id="L570" title="All 2 branches missed.">                        Event(errorResponse.message ?: &quot;&quot;)</span>
+                }
+<span class="nc" id="L572">            }, { error -&gt;</span>
+<span class="nc bnc" id="L573" title="All 2 branches missed.">                _reUploadFrontVerifyAndAdditionalDetailsError.value = Event(error.message ?: &quot;&quot;)</span>
+<span class="nc" id="L574">            })</span>
+<span class="nc" id="L575">        compositeDisposable.add(verifyAndAddDet)</span>
+<span class="nc" id="L576">    }</span>
+
+<span class="nc" id="L578">    private val _showAlternateAppAvailable = MutableLiveData&lt;Event&lt;DataResponse&gt;&gt;()</span>
+<span class="nc" id="L579">    val showAlternateAppAvailable: LiveData&lt;Event&lt;DataResponse&gt;&gt; get() = _showAlternateAppAvailable</span>
+<span class="nc" id="L580">    private val _showSuccessDialog = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="nc" id="L581">    val showSuccessDialog: LiveData&lt;Event&lt;Unit&gt;&gt; get() = _showSuccessDialog</span>
+<span class="nc" id="L582">    private val _guestSkipSsnUploadState = MutableLiveData&lt;Event&lt;UploadState&gt;&gt;()</span>
+<span class="nc" id="L583">    val guestSkipSsnUploadState: LiveData&lt;Event&lt;UploadState&gt;&gt; get() = _guestSkipSsnUploadState</span>
+
+<span class="nc" id="L585">    fun identify(token: String, reregister: Boolean? = false) {</span>
+<span class="nc" id="L586">        logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_IDENTIFY_STARTED)</span>
+<span class="nc bnc" id="L587" title="All 2 branches missed.">        viewModelScope.launch {</span>
+<span class="nc" id="L588">            compositeDisposable.clear()</span>
+<span class="nc" id="L589">            compositeDisposable.add(</span>
+<span class="nc" id="L590">                uploadRepository.identify(token, reregister)</span>
+<span class="nc" id="L591">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L592">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L593">                    .doOnSubscribe {</span>
+<span class="nc" id="L594">                        _guestSkipSsnUploadState.value = Event(</span>
+<span class="nc" id="L595">                            UploadState.Loading(LoadingState.IDENTIFY)</span>
+                        )
+<span class="nc" id="L597">                    }.subscribe({</span>
+<span class="nc bnc" id="L598" title="All 2 branches missed.">                        if (it.isSuccessful) {</span>
+<span class="nc bnc" id="L599" title="All 2 branches missed.">                            it.body()?.let { responseBody -&gt;</span>
+<span class="nc" id="L600">                                when (responseBody.code) {</span>
+<span class="nc bnc" id="L601" title="All 4 branches missed.">                                    200 -&gt; {</span>
+<span class="nc" id="L602">                                        logGuestVerifyEvent(</span>
+<span class="nc" id="L603">                                            FirebaseTags.GUEST_VERIFY_IDENTIFY_SUCCESS</span>
+                                        )
+<span class="nc" id="L605">                                        _guestSkipSsnUploadState.value = Event(</span>
+<span class="nc" id="L606">                                            UploadState.Success()</span>
+                                        )
+<span class="nc" id="L608">                                        _showSuccessDialog.value = Event(Unit)</span>
+                                    }
+
+<span class="nc" id="L611">                                    else -&gt; handleError(responseBody.error)</span>
+                                }
+<span class="nc" id="L613">                            }</span>
+                        } else {
+<span class="nc bnc" id="L615" title="All 2 branches missed.">                            if (it.code() == 403) {</span>
+<span class="nc" id="L616">                                _guestSkipSsnUploadState.value = Event(UploadState.Error(&quot;&quot;))</span>
+<span class="nc" id="L617">                                handleAlternateAppAvailable(it.errorBody())</span>
+                            } else {
+<span class="nc" id="L619">                                handleErrorResponse(it.errorBody())</span>
+                            }
+                        }
+<span class="nc" id="L622">                    }, { error -&gt;</span>
+<span class="nc" id="L623">                        _guestSkipSsnUploadState.value = Event(</span>
+<span class="nc" id="L624">                            UploadState.Error(error)</span>
+                        )
+<span class="nc" id="L626">                    })</span>
+            )
+<span class="nc" id="L628">        }</span>
+<span class="nc" id="L629">    }</span>
+
+    private fun handleError(error: ErrorDetail?) {
+<span class="nc bnc" id="L632" title="All 17 branches missed.">        when (error?.error) {</span>
+            &quot;SENT_TO_CUSTOMER_SUPPORT&quot; -&gt; {
+<span class="nc" id="L634">                logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_IDENTIFY_SUPPORT_NEEDED)</span>
+<span class="nc" id="L635">                _guestSkipSsnUploadState.value = Event(</span>
+<span class="nc" id="L636">                    UploadState.CustomerSupport</span>
+                )
+            }
+
+            &quot;NO_MATCH&quot; -&gt; {
+<span class="nc" id="L641">                logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_IDENTIFY_NO_MATCH)</span>
+<span class="nc" id="L642">                when {</span>
+<span class="nc bnc" id="L643" title="All 2 branches missed.">                    error.requireCurrentZip -&gt; _guestSkipSsnUploadState.value = Event(</span>
+<span class="nc" id="L644">                        UploadState.NoMatchAddZip</span>
+                    )
+
+<span class="nc bnc" id="L647" title="All 2 branches missed.">                    error.requireCurrentAddress -&gt; _guestSkipSsnUploadState.value = Event(</span>
+<span class="nc" id="L648">                        UploadState.NoMatchAddAddress</span>
+                    )
+
+<span class="nc" id="L651">                    else -&gt; _guestSkipSsnUploadState.value = Event(</span>
+<span class="nc" id="L652">                        UploadState.Error(error.errorDescription)</span>
+                    )
+                }
+            }
+
+            &quot;MULTIPLE_MATCH&quot; -&gt; {
+<span class="nc" id="L658">                logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_IDENTIFY_MULTIPLE_MATCH)</span>
+<span class="nc" id="L659">                when {</span>
+<span class="nc bnc" id="L660" title="All 2 branches missed.">                    error.requireCurrentZip -&gt; _guestSkipSsnUploadState.value = Event(</span>
+<span class="nc" id="L661">                        UploadState.AddZip</span>
+                    )
+
+<span class="nc bnc" id="L664" title="All 2 branches missed.">                    error.requireCurrentAddress -&gt; _guestSkipSsnUploadState.value = Event(</span>
+<span class="nc" id="L665">                        UploadState.AddAddress</span>
+                    )
+
+<span class="nc" id="L668">                    else -&gt; _guestSkipSsnUploadState.value = Event(</span>
+<span class="nc" id="L669">                        UploadState.Error(error.errorDescription)</span>
+                    )
+                }
+            }
+
+            &quot;MEMBER_ALREADY_REGISTERED&quot; -&gt; {
+<span class="nc" id="L675">                logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_IDENTIFY_ALREADY_REGISTERED)</span>
+<span class="nc" id="L676">                _guestSkipSsnUploadState.value = Event(</span>
+<span class="nc bnc" id="L677" title="All 4 branches missed.">                    UploadState.MemberAlreadyRegistered(error.otherDetails?.email ?: &quot;&quot;)</span>
+                )
+            }
+
+            else -&gt; {
+<span class="nc" id="L682">                logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_IDENTIFY_ERROR) {</span>
+<span class="nc bnc" id="L683" title="All 4 branches missed.">                    putString(&quot;error_type&quot;, error?.error ?: &quot;unknown&quot;)</span>
+<span class="nc" id="L684">                }</span>
+<span class="nc" id="L685">                _guestSkipSsnUploadState.value = Event(</span>
+<span class="nc bnc" id="L686" title="All 4 branches missed.">                    UploadState.Error(error?.errorDescription ?: &quot;&quot;)</span>
+                )
+            }
+        }
+<span class="nc" id="L690">    }</span>
+
+    private fun handleErrorResponse(errorBody: ResponseBody?) {
+<span class="nc" id="L693">        val errorBodyString = try {</span>
+<span class="nc bnc" id="L694" title="All 2 branches missed.">            errorBody?.string()</span>
+<span class="nc" id="L695">        } catch (e: Exception) {</span>
+<span class="nc" id="L696">            null</span>
+        }
+
+<span class="nc bnc" id="L699" title="All 6 branches missed.">        if (errorBodyString.isNullOrBlank()) {</span>
+<span class="nc" id="L700">            _guestSkipSsnUploadState.value = Event(UploadState.Error(&quot;Unknown error occurred&quot;))</span>
+<span class="nc" id="L701">            return</span>
+        }
+
+        // Try to parse as JsonObject first to check structure
+<span class="nc" id="L705">        val jsonObject = try {</span>
+<span class="nc" id="L706">            gson.fromJson(errorBodyString, JsonObject::class.java)</span>
+<span class="nc" id="L707">        } catch (e: Exception) {</span>
+<span class="nc" id="L708">            _guestSkipSsnUploadState.value = Event(UploadState.Error(&quot;Invalid server response&quot;))</span>
+<span class="nc" id="L709">            return</span>
+        }
+
+<span class="nc" id="L712">        val errorMessage = when {</span>
+            // Check if it matches IdentifyErrorResponse structure
+<span class="nc bnc" id="L714" title="All 2 branches missed.">            hasIdentifyErrorStructure(jsonObject) -&gt; {</span>
+<span class="nc" id="L715">                parseIdentifyErrorResponse(errorBodyString)</span>
+            }
+            // Check if it matches ErrorDetail structure
+<span class="nc bnc" id="L718" title="All 2 branches missed.">            hasErrorDetailStructure(jsonObject) -&gt; {</span>
+<span class="nc" id="L719">                parseErrorDetail(errorBodyString)</span>
+            }
+            // Try to extract any error message from generic structure
+            else -&gt; {
+<span class="nc" id="L723">                extractGenericErrorMessage(jsonObject)</span>
+            }
+        }
+
+<span class="nc" id="L727">        _guestSkipSsnUploadState.value = Event(UploadState.Error(errorMessage))</span>
+<span class="nc" id="L728">    }</span>
+
+    private fun hasIdentifyErrorStructure(jsonObject: JsonObject): Boolean {
+<span class="nc" id="L731">        return jsonObject.has(&quot;errorCode&quot;)</span>
+    }
+
+    private fun hasErrorDetailStructure(jsonObject: JsonObject): Boolean {
+<span class="nc" id="L735">        return jsonObject.has(&quot;error_description&quot;)</span>
+    }
+
+    private fun parseIdentifyErrorResponse(jsonString: String): String {
+<span class="nc" id="L739">        return try {</span>
+<span class="nc" id="L740">            val errorResponse = gson.fromJson(jsonString, IdentifyErrorResponse::class.java)</span>
+<span class="nc bnc" id="L741" title="All 6 branches missed.">            errorResponse.error?.errorDescription</span>
+<span class="nc" id="L742">                ?: errorResponse.message</span>
+<span class="nc" id="L743">                ?: &quot;Unknown error occurred&quot;</span>
+<span class="nc" id="L744">        } catch (e: Exception) {</span>
+<span class="nc" id="L745">            &quot;Error parsing server response&quot;</span>
+        }
+    }
+
+    private fun parseErrorDetail(jsonString: String): String {
+<span class="nc" id="L750">        return try {</span>
+<span class="nc" id="L751">            val errorResponse = gson.fromJson(jsonString, ErrorDetail::class.java)</span>
+<span class="nc bnc" id="L752" title="All 2 branches missed.">            errorResponse.errorDescription ?: &quot;Unknown error occurred&quot;</span>
+<span class="nc" id="L753">        } catch (e: Exception) {</span>
+<span class="nc" id="L754">            &quot;Error parsing server response&quot;</span>
+        }
+    }
+
+    private fun extractGenericErrorMessage(jsonObject: JsonObject): String {
+<span class="nc" id="L759">        return when {</span>
+<span class="nc bnc" id="L760" title="All 2 branches missed.">            jsonObject.has(&quot;message&quot;) -&gt; {</span>
+<span class="nc bnc" id="L761" title="All 4 branches missed.">                jsonObject.get(&quot;message&quot;)?.asString ?: &quot;Unknown error&quot;</span>
+            }
+
+<span class="nc bnc" id="L764" title="All 2 branches missed.">            jsonObject.has(&quot;error&quot;) -&gt; {</span>
+<span class="nc" id="L765">                val error = jsonObject.get(&quot;error&quot;)</span>
+<span class="nc" id="L766">                when {</span>
+<span class="nc bnc" id="L767" title="All 2 branches missed.">                    error.isJsonPrimitive -&gt; error.asString</span>
+<span class="nc bnc" id="L768" title="All 6 branches missed.">                    error.isJsonObject -&gt; error.asJsonObject.get(&quot;message&quot;)?.asString</span>
+<span class="nc" id="L769">                        ?: &quot;Unknown error&quot;</span>
+
+<span class="nc" id="L771">                    else -&gt; &quot;Unknown error&quot;</span>
+                }
+            }
+
+<span class="nc bnc" id="L775" title="All 2 branches missed.">            jsonObject.has(&quot;detail&quot;) -&gt; {</span>
+<span class="nc bnc" id="L776" title="All 4 branches missed.">                jsonObject.get(&quot;detail&quot;)?.asString ?: &quot;Unknown error&quot;</span>
+            }
+
+<span class="nc" id="L779">            else -&gt; &quot;HTTP Status 404 – Not Found&quot;</span>
+        }
+    }
+
+    private fun handleAlternateAppAvailable(errorBody: ResponseBody?) {
+<span class="nc" id="L784">        val errorResponse: DataResponse? = gson.fromJson(</span>
+<span class="nc bnc" id="L785" title="All 2 branches missed.">            errorBody?.string(),</span>
+<span class="nc" id="L786">            DataResponse::class.java</span>
+        )
+<span class="nc bnc" id="L788" title="All 2 branches missed.">        errorResponse?.let {</span>
+<span class="nc" id="L789">            _showAlternateAppAvailable.value = Event(it)</span>
+<span class="nc" id="L790">        }</span>
+<span class="nc" id="L791">    }</span>
+
+    /**
+     *     SMS(1, &quot;SMS&quot;),
+     *     VOICE(2, &quot;Voice&quot;),
+     *     EMAIL(3, &quot;Email&quot;),
+     *     DEMOGRAPHIC(4, &quot;Demographic&quot;),
+     *     SELFIE_MATCH(5, &quot;Selfie Match&quot;), //verify selfie match with document photo
+     *     AI_SELFIE(6, &quot;AI Selfie&quot;), //verify the selfie is valid
+     *     LICENSE_FRONT(7, &quot;License Front&quot;),
+     *     LICENSE_BACK(8, &quot;License Back&quot;),
+     *     SSN_INSURANCE_CARD(9, &quot;SSN Card or Insurance card&quot;);
+     *
+     * */
+    fun logFailedDocumentScanAttempt(id: String, documentType: DocumentType) {
+<span class="nc bnc" id="L806" title="All 7 branches missed.">        val verificationType: Int = when (documentType) {</span>
+<span class="nc" id="L807">            DocumentType.DL_FRONT -&gt; 7</span>
+<span class="nc" id="L808">            DocumentType.DL_BACK -&gt; 8</span>
+<span class="nc" id="L809">            DocumentType.SSN -&gt; 9</span>
+<span class="nc" id="L810">            DocumentType.SSN_ONLY -&gt; 9</span>
+<span class="nc" id="L811">            DocumentType.INSURANCE_CARD -&gt; 9</span>
+<span class="nc" id="L812">            DocumentType.SELFIE -&gt; 5</span>
+<span class="nc" id="L813">            DocumentType.SELFIE_MANUAL -&gt; 5</span>
+        }
+<span class="nc" id="L815">        compositeDisposable.add(</span>
+<span class="nc" id="L816">            uploadRepository.logFailedDocumentAttempt(id, verificationType)</span>
+<span class="nc" id="L817">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L818">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L819">                .subscribe({}, { error -&gt;</span>
+<span class="nc" id="L820">                    timber.log.Timber.e(error, &quot;Failed to log document scan attempt&quot;)</span>
+<span class="nc" id="L821">                })</span>
+        )
+<span class="nc" id="L823">    }</span>
+}
+
+fun uploadSsnDetails(value: String?, isSsn: Boolean?): UploadDetailsSendParams {
+<span class="nc" id="L827">    return UploadDetailsSendParams(</span>
+<span class="nc" id="L828">        additionalVerification = AdditionalVerification(</span>
+<span class="nc bnc" id="L829" title="All 2 branches missed.">            ssn = if (isSsn == true) value else null,</span>
+<span class="nc bnc" id="L830" title="All 2 branches missed.">            insuranceCardId = if (isSsn == false) value else null</span>
+        )
+    )
+}
+
+fun DriverLicense?.toUploadDetailsSendParams(
+    json: String?,
+    attemptCount: Int?
+): UploadDetailsSendParams {
+<span class="nc bnc" id="L839" title="All 2 branches missed.">    if (json == null) {</span>
+<span class="nc" id="L840">        return UploadDetailsSendParams(</span>
+<span class="nc" id="L841">            drivingLicenseDto = Demographics(</span>
+<span class="nc" id="L842">                attemptNumber = attemptCount</span>
+            )
+        )
+    }
+
+<span class="nc" id="L847">    return UploadDetailsSendParams(</span>
+<span class="nc" id="L848">        drivingLicenseDto = Demographics(</span>
+<span class="nc" id="L849">            documentId = &quot;1&quot;,</span>
+<span class="nc bnc" id="L850" title="All 4 branches missed.">            legalFirstName = this?.firstName.orEmpty(),</span>
+<span class="nc bnc" id="L851" title="All 4 branches missed.">            legalLastName = this?.lastName.orEmpty(),</span>
+<span class="nc bnc" id="L852" title="All 4 branches missed.">            legalMiddleName = this?.middleName.orEmpty(),</span>
+<span class="nc bnc" id="L853" title="All 4 branches missed.">            dob = this?.birthDate.orEmpty().convertLicenseDate(),</span>
+<span class="nc bnc" id="L854" title="All 4 branches missed.">            address = this?.addressStreet.orEmpty(),</span>
+<span class="nc bnc" id="L855" title="All 4 branches missed.">            gender = this?.gender.orEmpty().toGenderApi(),</span>
+<span class="nc bnc" id="L856" title="All 4 branches missed.">            expirationDate = this?.expiryDate.orEmpty().convertLicenseDate(),</span>
+<span class="nc bnc" id="L857" title="All 4 branches missed.">            issuedDate = this?.issueDate.orEmpty().convertLicenseDate(),</span>
+<span class="nc bnc" id="L858" title="All 4 branches missed.">            licenseNumber = this?.licenseNumber.orEmpty(),</span>
+<span class="nc" id="L859">            details = json,</span>
+<span class="nc" id="L860">            fullAddress = CurrentFullAddress(</span>
+<span class="nc bnc" id="L861" title="All 2 branches missed.">                this?.addressZip,</span>
+<span class="nc bnc" id="L862" title="All 2 branches missed.">                this?.addressStreet,</span>
+<span class="nc" id="L863">                &quot;&quot;,</span>
+<span class="nc bnc" id="L864" title="All 2 branches missed.">                this?.addressCity,</span>
+<span class="nc bnc" id="L865" title="All 2 branches missed.">                this?.addressState</span>
+            ),
+<span class="nc" id="L867">            attemptNumber = attemptCount</span>
+        )
+    )
+}
+
+<span class="nc" id="L872">data class UploadStep(</span>
+<span class="nc" id="L873">    val documentType: DocumentType? = null,</span>
+<span class="nc" id="L874">    val uploadResponse: DocumentUploadResponse? = null,</span>
+<span class="nc" id="L875">    val processDocumentResponse: UploadResponse? = null,</span>
+<span class="nc" id="L876">    val qrUploadResult: UploadResponse? = null,</span>
+<span class="nc" id="L877">    val additionalRequirementResponse: AdditionalRequirementResponse? = null,</span>
+<span class="nc" id="L878">    val verifyResponse: UploadResponse? = null,</span>
+<span class="nc" id="L879">    val error: String? = null</span>
+<span class="nc" id="L880">)</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

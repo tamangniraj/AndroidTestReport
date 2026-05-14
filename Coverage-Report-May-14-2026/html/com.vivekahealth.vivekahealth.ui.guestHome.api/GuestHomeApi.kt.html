@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GuestHomeApi.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.guestHome.api</a> &gt; <span class="el_source">GuestHomeApi.kt</span></div><h1>GuestHomeApi.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.guestHome.api
+
+import com.vivekahealth.vivekahealth.data.remote.enroll.DocumentUploadSuccessEnroll
+import com.vivekahealth.vivekahealth.data.local.enroll.RootDocumentResponse
+import com.vivekahealth.vivekahealth.data.remote.enroll.OpenEnrollmentData
+import com.vivekahealth.vivekahealth.data.remote.enroll.RootMissingDocumentResponse
+import com.vivekahealth.vivekahealth.data.remote.guest.ProcessLicenseResponse
+import com.vivekahealth.vivekahealth.data.remote.guest.GuestClientDetails
+import com.vivekahealth.vivekahealth.data.remote.guest.GuestUserInfo
+import com.vivekahealth.vivekahealth.data.remote.guest.LanguagePreference
+import com.vivekahealth.vivekahealth.data.remote.guest.StartIdentificationsReceiveParams
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.HtmlFindCareResponse
+import com.vivekahealth.vivekahealth.data.remote.home.messageCenter.MessageCenterList
+import com.vivekahealth.vivekahealth.data.remote.home.messageCenter.NotificationCount
+import com.vivekahealth.vivekahealth.data.remote.register.DataResponse
+import com.vivekahealth.vivekahealth.data.remote.resetPassword.ChangePasswordV3DTO
+import io.reactivex.Single
+import okhttp3.MultipartBody
+import retrofit2.Response
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.Multipart
+import retrofit2.http.POST
+import retrofit2.http.Part
+import retrofit2.http.Query
+
+interface GuestHomeApi {
+
+    @GET(&quot;guest/v2/info&quot;)
+    fun getGuestInfo(): Single&lt;GuestUserInfo&gt;
+
+    @GET(&quot;guest/v2/clientDetails&quot;)
+    fun getGuestClientDetails(): Single&lt;GuestClientDetails&gt;
+
+    @GET(&quot;guest/v2/refreshFcmId&quot;)
+    fun refreshGuestFcm(
+        @Query(&quot;memberId&quot;) memberId: String,
+        @Query(&quot;fcmId&quot;) fcmId: String,
+        @Query(&quot;isApns&quot;) isAPN: Boolean,
+        @Query(&quot;isPrimary&quot;) isPrimary: Boolean
+    ): Single&lt;Void&gt;
+
+    @GET(&quot;guest/v2/identifications/start&quot;)
+    fun startRegistration(): Single&lt;StartIdentificationsReceiveParams&gt;
+
+    @POST(&quot;guest/v2/changePassword&quot;)
+    fun changePasswordGuest(@Body changePasswordV3DTO: ChangePasswordV3DTO): Single&lt;DataResponse&gt;
+
+    @POST(&quot;guest/v2/updatePassword&quot;)
+    fun updatePasswordGuest(@Body changePasswordV3DTO: ChangePasswordV3DTO): Single&lt;DataResponse&gt;
+
+    @GET(&quot;guest/v2/logout&quot;)
+    fun getLogoutGuest(): Single&lt;DataResponse&gt;
+
+    @GET(&quot;guest/v2/messages&quot;)
+    fun getGuestNotifications(
+        @Query(&quot;pageNo&quot;) pageNo: Int,
+        @Query(&quot;pageSize&quot;) pageSize: Int
+    ): Single&lt;MessageCenterList&gt;
+
+    @GET(&quot;guest/v2/unreadNotificationCount&quot;)
+    fun getGuestUnreadNotificationCount(): Single&lt;NotificationCount&gt;
+
+    @POST(&quot;guest/v2/languagePreference&quot;)
+    fun setGuestLanguagePreference(@Body languagePreference: LanguagePreference): Single&lt;DataResponse&gt;
+
+    @GET(&quot;guest/v2/findADocPage&quot;)
+    fun getHtmlForFindDoc(): Single&lt;HtmlFindCareResponse&gt;
+
+    @POST(&quot;guest/v2/selfEnroll&quot;)
+    fun getOpenEnroll(
+        @Body enrollMember: OpenEnrollmentData
+    ): Single&lt;Response&lt;DocumentUploadSuccessEnroll&gt;&gt;
+
+    @GET(&quot;guest/v2/missingDocuments&quot;)
+    fun getMissingRequiredDocuments(): Single&lt;RootMissingDocumentResponse&gt;
+
+    @GET(&quot;guest/v2/requiredDocuments&quot;)
+    fun getRequiredDocuments(): Single&lt;RootDocumentResponse&gt;
+
+    @Multipart
+    @POST(&quot;guest/v2/processLicense&quot;)
+    fun processLicense(
+        @Part file: MultipartBody.Part
+    ): Single&lt;Response&lt;ProcessLicenseResponse&gt;&gt;
+
+<span class="nc" id="L87">    @Multipart</span>
+    @POST(&quot;guest/v2/selfEnroll/uploadFile&quot;)
+    fun uploadOpenFile(
+        @Part filePart: MultipartBody.Part,
+        @Query(&quot;fileType&quot;) fileName: String,
+<span class="nc" id="L92">        @Query(&quot;enrollmentId&quot;) enrollmentId: Long? = null</span>
+    ): Single&lt;DocumentUploadSuccessEnroll&gt;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

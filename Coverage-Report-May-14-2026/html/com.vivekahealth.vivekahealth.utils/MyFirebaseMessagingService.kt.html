@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MyFirebaseMessagingService.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils</a> &gt; <span class="el_source">MyFirebaseMessagingService.kt</span></div><h1>MyFirebaseMessagingService.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2020 Razeware LLC
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the &quot;Software&quot;), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * Notwithstanding the foregoing, you may not use, copy, modify, merge, publish,
+ * distribute, sublicense, create a derivative work, and/or sell copies of the
+ * Software in any work that is designed, intended, or marketed for pedagogical or
+ * instructional purposes related to programming, coding, application development,
+ * or information technology.  Permission for such use, copying, modification,
+ * merger, publication, distribution, sublicensing, creation of derivative works,
+ * or sale is expressly withheld.
+ *
+ * This project and source code may use libraries or frameworks that are
+ * released under various Open-Source licenses. Use of those libraries and
+ * frameworks are governed by their own individual licenses.
+ *
+ * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+package com.vivekahealth.vivekahealth.utils
+
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.media.RingtoneManager
+import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.firebase.messaging.FirebaseMessagingService
+import com.google.firebase.messaging.RemoteMessage
+import com.vivekahealth.vivekahealth.MainActivity
+import com.vivekahealth.vivekahealth.R
+
+<span class="nc" id="L60">class MyFirebaseMessagingService : FirebaseMessagingService() {</span>
+    private var broadcaster: LocalBroadcastManager? = null
+    private val processLater = false
+<span class="nc" id="L63">    private val NOTIFICATION_CHANNEL_ID = &quot;100&quot;</span>
+<span class="nc" id="L64">    private var GROUP_KEY_MESSAGE = &quot;com.vivekahealth.vivekahealth.message&quot;</span>
+
+    override fun onNewToken(token: String) {
+        // Save the refreshed token if needed
+<span class="nc" id="L68">    }</span>
+
+    override fun onMessageReceived(remoteMessage: RemoteMessage) {
+<span class="nc" id="L71">        super.onMessageReceived(remoteMessage)</span>
+<span class="nc" id="L72">        handleNow(remoteMessage)</span>
+<span class="nc" id="L73">    }</span>
+
+    override fun handleIntent(intent: Intent?) {
+<span class="nc" id="L76">        super.handleIntent(intent)</span>
+<span class="nc" id="L77">    }</span>
+
+    private fun getRandomNumber(min: Int, max: Int): Int {
+<span class="nc" id="L80">        return (Math.random() * (max - min) + min).toInt()</span>
+    }
+
+    private fun sendCountBroadcast(context: Context, action: String, data: Map&lt;String, String&gt;) {
+<span class="nc" id="L84">        val intent = Intent(Constants.BROADCAST_NOTIFICATION_COUNT).apply {</span>
+<span class="nc" id="L85">            data.forEach {</span>
+<span class="nc" id="L86">                putExtra(it.key, it.value)</span>
+<span class="nc" id="L87">            }</span>
+<span class="nc" id="L88">        }</span>
+<span class="nc" id="L89">        intent.putExtra(&quot;click_action&quot;, action)</span>
+<span class="nc" id="L90">        LocalBroadcastManager.getInstance(context).sendBroadcast(intent)</span>
+<span class="nc" id="L91">    }</span>
+
+    private fun handleNow(remoteMessage: RemoteMessage) {
+<span class="nc" id="L94">        val randomId = getRandomNumber(1, 10000)</span>
+
+<span class="nc" id="L96">        sendCountBroadcast(</span>
+<span class="nc" id="L97">            context = this.applicationContext,</span>
+<span class="nc bnc" id="L98" title="All 4 branches missed.">            action = remoteMessage.notification?.clickAction ?: &quot;&quot;,</span>
+<span class="nc" id="L99">            data = remoteMessage.data + mapOf(&quot;randomId&quot; to randomId.toString())</span>
+        )
+
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        remoteMessage.notification?.let {</span>
+<span class="nc" id="L103">            val handler = Handler(Looper.getMainLooper())</span>
+<span class="nc" id="L104">            handler.post {</span>
+<span class="nc" id="L105">                val intent = Intent(this, MainActivity::class.java)</span>
+<span class="nc" id="L106">                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)</span>
+
+<span class="nc" id="L108">                val bundle = Bundle()</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">                bundle.putString(&quot;click_action&quot;, remoteMessage.notification?.clickAction)</span>
+
+<span class="nc" id="L111">                intent.putExtras(bundle)</span>
+
+<span class="nc bnc" id="L113" title="All 2 branches missed.">                val pendingIntent: PendingIntent = if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.S) {</span>
+<span class="nc" id="L114">                    PendingIntent.getActivity(</span>
+<span class="nc" id="L115">                        this,</span>
+<span class="nc" id="L116">                        0,</span>
+<span class="nc" id="L117">                        intent,</span>
+<span class="nc" id="L118">                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT</span>
+                    )
+<span class="nc" id="L120">                } else {</span>
+<span class="nc" id="L121">                    PendingIntent.getActivity(</span>
+<span class="nc" id="L122">                        this,</span>
+<span class="nc" id="L123">                        0,</span>
+<span class="nc" id="L124">                        intent,</span>
+<span class="nc" id="L125">                        PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE</span>
+                    )
+                }
+
+<span class="nc" id="L129">                val defaultSoundUri = RingtoneManager.getDefaultUri(</span>
+<span class="nc" id="L130">                    RingtoneManager.TYPE_NOTIFICATION</span>
+                )
+
+<span class="nc" id="L133">                val notificationBuilder: NotificationCompat.Builder =</span>
+<span class="nc" id="L134">                    NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)</span>
+<span class="nc" id="L135">                        .setSmallIcon(R.mipmap.ic_launcher_round)</span>
+<span class="nc" id="L136">                        .setContentTitle(it.title)</span>
+<span class="nc" id="L137">                        .setContentText(it.body)</span>
+<span class="nc" id="L138">                        .setAutoCancel(true)</span>
+<span class="nc" id="L139">                        .setLargeIcon(</span>
+<span class="nc" id="L140">                            BitmapFactory.decodeResource(</span>
+<span class="nc" id="L141">                                resources,</span>
+<span class="nc" id="L142">                                R.mipmap.ic_launcher_round</span>
+                            )
+                        )
+<span class="nc" id="L145">                        .setSound(defaultSoundUri)</span>
+<span class="nc" id="L146">                        .setPriority(NotificationCompat.PRIORITY_MAX)</span>
+<span class="nc" id="L147">                        .setColor(resources.getColor(R.color.colorAccentTransparent))</span>
+<span class="nc" id="L148">                        .setStyle(</span>
+<span class="nc" id="L149">                            NotificationCompat.BigTextStyle().bigText(</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">                                remoteMessage.notification?.body</span>
+                            )
+                        )
+<span class="nc" id="L153">                        .setGroup(GROUP_KEY_MESSAGE)</span>
+<span class="nc" id="L154">                        .setContentIntent(pendingIntent)</span>
+
+<span class="nc" id="L156">                val notificationManager = NotificationManagerCompat.from(this)</span>
+
+<span class="nc bnc" id="L158" title="All 2 branches missed.">                if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.O) {</span>
+<span class="nc" id="L159">                    val importance = NotificationManager.IMPORTANCE_HIGH</span>
+<span class="nc" id="L160">                    val notificationChannel = NotificationChannel(</span>
+<span class="nc" id="L161">                        NOTIFICATION_CHANNEL_ID,</span>
+<span class="nc" id="L162">                        getString(R.string.app_name) + &quot; Notification&quot;,</span>
+<span class="nc" id="L163">                        importance</span>
+                    )
+<span class="nc" id="L165">                    notificationChannel.lockscreenVisibility = NotificationCompat.VISIBILITY_PRIVATE</span>
+<span class="nc" id="L166">                    notificationChannel.importance = NotificationManager.IMPORTANCE_HIGH</span>
+<span class="nc" id="L167">                    notificationChannel.enableLights(true)</span>
+<span class="nc" id="L168">                    notificationChannel.lightColor = Color.GREEN</span>
+<span class="nc" id="L169">                    notificationChannel.enableVibration(true)</span>
+<span class="nc" id="L170">                    notificationChannel.setSound(defaultSoundUri, null)</span>
+<span class="nc" id="L171">                    notificationChannel.vibrationPattern = longArrayOf(100, 200, 300, 400, 500, 400, 300, 200, 400)</span>
+<span class="nc" id="L172">                    notificationBuilder.setChannelId(NOTIFICATION_CHANNEL_ID)</span>
+<span class="nc" id="L173">                    notificationManager.createNotificationChannel(notificationChannel)</span>
+                }
+
+<span class="nc bnc" id="L176" title="All 2 branches missed.">                if (ActivityCompat.checkSelfPermission(</span>
+<span class="nc" id="L177">                        this,</span>
+<span class="nc" id="L178">                        Manifest.permission.POST_NOTIFICATIONS</span>
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+<span class="nc" id="L181">                    notificationManager.notify(</span>
+<span class="nc" id="L182">                        randomId,</span>
+<span class="nc" id="L183">                        notificationBuilder.build()</span>
+                    )
+                }
+<span class="nc" id="L186">            }</span>
+        }
+<span class="nc" id="L188">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

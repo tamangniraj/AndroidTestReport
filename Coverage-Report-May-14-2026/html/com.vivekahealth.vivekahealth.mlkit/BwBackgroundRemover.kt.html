@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BwBackgroundRemover.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.mlkit</a> &gt; <span class="el_source">BwBackgroundRemover.kt</span></div><h1>BwBackgroundRemover.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.mlkit
+
+import android.graphics.Bitmap
+
+/**
+ * Standalone Black &amp; White background remover.
+ *
+ * Algorithm — colour-aware binary split:
+ *
+ *   bgScore = luma × 0.6 + redExcess × 255 × 0.4
+ *
+ *   bgScore ≤ splitPoint  →  pure BLACK  (ink / dark text)
+ *   bgScore &gt;  splitPoint  →  pure WHITE  (background)
+ *
+ * Adding redness to the score means pinkish/reddish logo pixels score
+ * higher than their luminance alone and are reliably mapped to white,
+ * so background stripes cannot masquerade as text strokes.
+ *
+ * Usage:
+ *   val result: Bitmap = BwBackgroundRemover.process(bitmap)
+ *   val result: Bitmap = BwBackgroundRemover.process(bitmap, threshold = 0.35f)
+ *
+ * threshold  — split point as a fraction of 255.  Default 0.29 (splitPoint ≈ 74).
+ *              Raise toward 0.50 if faint text is missed; lower if background bleeds in.
+ *
+ * No external dependencies. Pure CPU — no RenderScript, no ML Kit, no Coil.
+ * Safe to copy into any Android project that targets minSdk 21+.
+ */
+object BwBackgroundRemover {
+
+    private const val DEFAULT_THRESHOLD = 0.29f
+
+    private const val BLACK = 0xFF000000.toInt()
+    private const val WHITE = 0xFFFFFFFF.toInt()
+
+    private const val LUMA_WEIGHT = 0.6f // luminance contribution to bgScore
+    private const val RED_WEIGHT = 0.4f // redness contribution to bgScore
+
+    // ── OCR letter → digit confusion table ───────────────────────────────────
+    // One-way: only letter→digit substitutions.  Never digit→digit or digit→letter.
+    // Covers the most common ML Kit OCR errors when reading printed digit sequences.
+    //
+    //  digit  |  common OCR misreads
+    //  -------+-----------------------------------------------
+    //    0    |  O o D
+    //    1    |  I l i L |
+    //    2    |  Z z
+    //    3    |  E
+    //    4    |  A h
+    //    5    |  S s
+    //    6    |  b G   ← user-confirmed: '6' often read as 'b'
+    //    7    |  T Y
+    //    8    |  B e
+    //    9    |  g q
+<span class="fc" id="L55">    val OCR_DIGIT_FIXES: Map&lt;Char, Char&gt; = mapOf(</span>
+<span class="fc" id="L56">        'O' to '0', 'o' to '0', 'D' to '0',</span>
+<span class="fc" id="L57">        'I' to '1', 'l' to '1', 'i' to '1', 'L' to '1', '|' to '1',</span>
+<span class="fc" id="L58">        'Z' to '2', 'z' to '2',</span>
+<span class="fc" id="L59">        'E' to '3',</span>
+<span class="fc" id="L60">        'A' to '4', 'h' to '4',</span>
+<span class="fc" id="L61">        'S' to '5', 's' to '5',</span>
+<span class="fc" id="L62">        'b' to '6', 'G' to '6',</span>
+<span class="fc" id="L63">        'T' to '7', 'Y' to '7',</span>
+<span class="fc" id="L64">        'B' to '8', 'e' to '8',</span>
+<span class="fc" id="L65">        'g' to '9', 'q' to '9'</span>
+    )
+
+    // ── Public data classes ───────────────────────────────────────────────────
+
+    /** A single OCR character substitution that was applied (letter → digit). */
+<span class="fc" id="L71">    data class OcrFix(</span>
+<span class="fc" id="L72">        val position: Int,</span>
+<span class="fc" id="L73">        val original: Char,</span>
+<span class="fc" id="L74">        val replacement: Char</span>
+    ) {
+<span class="nc" id="L76">        override fun toString() = &quot;pos $position: '$original'→'$replacement'&quot;</span>
+    }
+
+    /**
+     * Result of one step inside [processIterative].
+     *
+     * @param iteration         1-based index: 1 = original image; 2–5 = BW at 20%/30%/40%/50%
+     * @param thresholdPct      0 = original (no BW); 20/30/40/50 = BW threshold percent
+     * @param rawOcrText        Full raw OCR text returned at this step
+     * @param rawCandidate      The SSN-like token found in OCR output before any fixing;
+     *                          null if no 9-char alphanumeric token was found
+     * @param ocrFixes          Letter→digit substitutions applied (empty when [foundDirect])
+     * @param normalizedCandidate  [rawCandidate] after OCR fixes; null when found direct or absent
+     * @param extractedSsn      9-digit SSN string if found; null if not detected at this step
+     * @param foundDirect       SSN token was all-digits — no fixing needed
+     * @param foundViaOcrFix    SSN found only after letter→digit normalization
+     */
+<span class="fc" id="L93">    data class IterationDetail(</span>
+<span class="pc" id="L94">        val iteration: Int,</span>
+<span class="pc" id="L95">        val thresholdPct: Int,</span>
+<span class="pc" id="L96">        val rawOcrText: String,</span>
+<span class="pc" id="L97">        val rawCandidate: String?,</span>
+<span class="pc" id="L98">        val ocrFixes: List&lt;OcrFix&gt;,</span>
+<span class="pc" id="L99">        val normalizedCandidate: String?,</span>
+<span class="pc" id="L100">        val extractedSsn: String?,</span>
+<span class="pc" id="L101">        val foundDirect: Boolean,</span>
+<span class="pc" id="L102">        val foundViaOcrFix: Boolean</span>
+    ) {
+        /** Human-readable label for the step, e.g. &quot;Original&quot; or &quot;BW 30%&quot;. */
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        val stepLabel: String get() = if (thresholdPct == 0) &quot;Original&quot; else &quot;BW $thresholdPct%&quot;</span>
+    }
+
+    /**
+     * Aggregated result of [processIterative] across all steps.
+     *
+     * @param iterations        All steps that were actually run (1–5 entries)
+     * @param finalSsn          First 9-digit SSN found; null if not detected in any step
+     * @param foundAtThreshold  Threshold percent where SSN was found (0 = original); null if not found
+     * @param foundAtIteration  1-based iteration index where SSN was found; null if not found
+     */
+<span class="nc" id="L116">    data class IterativeResult(</span>
+<span class="nc" id="L117">        val iterations: List&lt;IterationDetail&gt;,</span>
+<span class="nc" id="L118">        val finalSsn: String?,</span>
+<span class="nc" id="L119">        val foundAtThreshold: Int?,</span>
+<span class="nc" id="L120">        val foundAtIteration: Int?</span>
+    )
+
+    // ── process ───────────────────────────────────────────────────────────────
+
+    /**
+     * Returns a new ARGB_8888 bitmap with every pixel converted to pure black or pure white.
+     *
+     * @param source     Input bitmap (not modified, not recycled).
+     * @param threshold  Split sensitivity 0.0–1.0. Default [DEFAULT_THRESHOLD] = 0.29.
+     */
+<span class="nc" id="L131">    private fun process(source: Bitmap, threshold: Float = DEFAULT_THRESHOLD): Bitmap {</span>
+<span class="nc" id="L132">        val splitPoint = (threshold * 255f).coerceIn(10f, 245f)</span>
+<span class="nc" id="L133">        val pixels = source.copyPixels()</span>
+
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        for (i in pixels.indices) {</span>
+<span class="nc" id="L136">            val pixel = pixels[i]</span>
+<span class="nc" id="L137">            val r = (pixel shr 16) and 0xFF</span>
+<span class="nc" id="L138">            val g = (pixel shr 8) and 0xFF</span>
+<span class="nc" id="L139">            val b = pixel and 0xFF</span>
+
+            // Rec. 601 luma
+<span class="nc" id="L142">            val luma = (0.299f * r + 0.587f * g + 0.114f * b)</span>
+            // How much redder R is than the average of G+B  (0 = neutral, ~1 = vivid red)
+<span class="nc" id="L144">            val redExcess = ((r - (g + b) * 0.5f) / 255f).coerceIn(0f, 1f)</span>
+<span class="nc" id="L145">            val bgScore = luma * LUMA_WEIGHT + redExcess * 255f * RED_WEIGHT</span>
+
+<span class="nc bnc" id="L147" title="All 2 branches missed.">            pixels[i] = if (bgScore &lt;= splitPoint) BLACK else WHITE</span>
+        }
+
+<span class="nc" id="L150">        return pixels.toBitmap(source.width, source.height)</span>
+    }
+
+    // ── processIterative ──────────────────────────────────────────────────────
+
+    /**
+     * Iterative SSN extraction with progressive BW background removal.
+     *
+     * Step order (stops as soon as SSN is found):
+     *   1. Original image — no BW processing (fastest; no image modification)
+     *   2. BW at threshold 20%
+     *   3. BW at threshold 30%
+     *   4. BW at threshold 40%
+     *   5. BW at threshold 50%
+     *
+     * At each step OCR letter→digit normalization is attempted on candidates
+     * with 1–2 misread characters (e.g. '2b3-45-6789' → '263-45-6789').
+     * Only letters are substituted; digit positions are never modified (one-way fix).
+     *
+     * All attempted steps are recorded in [IterativeResult.iterations] so the caller
+     * can display the full trace.
+     *
+     * @param source  Input bitmap (not modified, not recycled by this function)
+     * @param ocr     Suspend lambda that receives the bitmap for the current step and returns
+     *                raw OCR text.  BW-processed bitmaps passed to [ocr] are recycled after
+     *                [ocr] returns; the original [source] bitmap is never recycled.
+     */
+<span class="nc" id="L177">    suspend fun processIterative(</span>
+        source: Bitmap,
+        ocr: suspend (Bitmap) -&gt; String
+    ): IterativeResult {
+<span class="nc" id="L181">        val iterations = mutableListOf&lt;IterationDetail&gt;()</span>
+<span class="nc" id="L182">        var finalSsn: String? = null</span>
+<span class="nc" id="L183">        var foundAtThreshold: Int? = null</span>
+<span class="nc" id="L184">        var foundAtIteration: Int? = null</span>
+
+        // Build the step list: (thresholdPct=0 means use original, no BW processing)
+<span class="nc" id="L187">        val steps = intArrayOf(0, 20, 30, 40, 50)</span>
+
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        for ((idx, thresholdPct) in steps.withIndex()) {</span>
+            // For step 0 use the original bitmap directly; do NOT recycle it.
+            // For BW steps, create a new processed bitmap and recycle it after OCR.
+<span class="nc" id="L192">            val bitmapForOcr: Bitmap</span>
+<span class="nc" id="L193">            val recycleBitmap: Boolean</span>
+<span class="nc bnc" id="L194" title="All 2 branches missed.">            if (thresholdPct == 0) {</span>
+<span class="nc" id="L195">                bitmapForOcr = source</span>
+<span class="nc" id="L196">                recycleBitmap = false</span>
+            } else {
+<span class="nc" id="L198">                bitmapForOcr = process(source, thresholdPct / 100f)</span>
+<span class="nc" id="L199">                recycleBitmap = true</span>
+            }
+
+<span class="nc" id="L202">            val rawText = ocr(bitmapForOcr)</span>
+<span class="nc bnc" id="L203" title="All 2 branches missed.">            if (recycleBitmap) bitmapForOcr.recycle()</span>
+
+<span class="nc" id="L205">            val extracted = extractSsnWithFixes(rawText)</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">            val ssn = extracted.directSsn ?: extracted.normalizedSsn</span>
+
+<span class="nc" id="L208">            iterations.add(</span>
+<span class="nc" id="L209">                IterationDetail(</span>
+<span class="nc" id="L210">                    iteration = idx + 1,</span>
+<span class="nc" id="L211">                    thresholdPct = thresholdPct,</span>
+<span class="nc" id="L212">                    rawOcrText = rawText,</span>
+<span class="nc" id="L213">                    rawCandidate = extracted.rawCandidate,</span>
+<span class="nc" id="L214">                    ocrFixes = extracted.fixes,</span>
+<span class="nc" id="L215">                    normalizedCandidate = extracted.normalizedSsn,</span>
+<span class="nc" id="L216">                    extractedSsn = ssn,</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">                    foundDirect = extracted.directSsn != null,</span>
+<span class="nc bnc" id="L218" title="All 4 branches missed.">                    foundViaOcrFix = extracted.directSsn == null &amp;&amp; extracted.normalizedSsn != null</span>
+                )
+            )
+
+<span class="nc bnc" id="L222" title="All 2 branches missed.">            if (ssn != null) {</span>
+<span class="nc" id="L223">                finalSsn = ssn</span>
+<span class="nc" id="L224">                foundAtThreshold = thresholdPct</span>
+<span class="nc" id="L225">                foundAtIteration = idx + 1</span>
+<span class="nc" id="L226">                break // stop as soon as SSN is found</span>
+            }
+        }
+
+<span class="nc" id="L230">        return IterativeResult(</span>
+<span class="nc" id="L231">            iterations = iterations,</span>
+<span class="nc" id="L232">            finalSsn = finalSsn,</span>
+<span class="nc" id="L233">            foundAtThreshold = foundAtThreshold,</span>
+<span class="nc" id="L234">            foundAtIteration = foundAtIteration</span>
+        )
+    }
+
+    // ── OCR extraction + normalisation ───────────────────────────────────────
+
+    // Private result carrier — not part of public API
+<span class="fc" id="L241">    internal data class SsnExtractResult(</span>
+<span class="fc" id="L242">        val directSsn: String?,</span>
+<span class="fc" id="L243">        val normalizedSsn: String?,</span>
+<span class="fc" id="L244">        val fixes: List&lt;OcrFix&gt;,</span>
+<span class="fc" id="L245">        val rawCandidate: String?</span>
+    )
+
+    /**
+     * Scans [text] for a 9-character SSN token (pure digits, or digits with OCR letter errors).
+     *
+     * Strategy:
+     *  1. Collect candidates: formatted (XXX-XX-XXXX allowing letters) and
+     *     unformatted (9-char alphanumeric runs).
+     *  2. For each candidate:
+     *     a. All 9 chars are digits → direct SSN match (returned immediately).
+     *     b. 1–2 chars are letters with known digit equivalents in [OCR_DIGIT_FIXES]
+     *        → apply one-way letter→digit substitution and return the fixed SSN.
+     *  3. Returns the first successful candidate; all fields null if nothing found.
+     *
+     * One-way constraint: letters are substituted for digits only.  Digits are never modified.
+     */
+    internal fun extractSsnWithFixes(text: String): SsnExtractResult {
+        // (rawToken, strippedCore) — strippedCore is 9 alphanumeric chars, no dashes/spaces
+<span class="fc" id="L264">        val candidates = mutableListOf&lt;Pair&lt;String, String&gt;&gt;()</span>
+
+        // 1. Formatted XXX-XX-XXXX  (dashes required so we know the field boundaries)
+<span class="fc" id="L267">        Regex(&quot;&quot;&quot;[0-9A-Za-z]{3}-[0-9A-Za-z]{2}-[0-9A-Za-z]{4}&quot;&quot;&quot;)</span>
+<span class="fc" id="L268">            .findAll(text)</span>
+<span class="fc" id="L269">            .forEach { m -&gt;</span>
+<span class="fc" id="L270">                val core = m.value.replace(&quot;-&quot;, &quot;&quot;)</span>
+<span class="pc bpc" id="L271" title="1 of 2 branches missed.">                if (core.length == 9) candidates.add(m.value to core)</span>
+<span class="fc" id="L272">            }</span>
+
+        // 2. Whitespace-delimited tokens — strip ALL non-alphanumeric chars (dashes, dots, colons…)
+        //    Catches: &quot;565-242083&quot; (one dash), &quot;565.24.2083&quot; (dots), &quot;565 242083&quot; (space), etc.
+<span class="fc" id="L276">        text.split(Regex(&quot;&quot;&quot;[\s\n\r\t]+&quot;&quot;&quot;)).forEach { token -&gt;</span>
+<span class="fc" id="L277">            val core = token.replace(Regex(&quot;[^0-9A-Za-z]&quot;), &quot;&quot;)</span>
+<span class="fc bfc" id="L278" title="All 2 branches covered.">            if (core.length == 9) {</span>
+<span class="fc bfc" id="L279" title="All 2 branches covered.">                if (candidates.none { it.second == core }) candidates.add(token to core)</span>
+            }
+<span class="fc" id="L281">        }</span>
+
+        // 2.5 Dash-containing alphanumeric runs not bounded by whitespace
+        //     e.g. &quot;SSN:565-242083.&quot; — regex extracts &quot;565-242083&quot;, strips dash → &quot;565242083&quot;
+        //     Handles any single-dash SSN variant regardless of surrounding punctuation.
+<span class="fc" id="L286">        Regex(&quot;&quot;&quot;[0-9A-Za-z][0-9A-Za-z\-]+[0-9A-Za-z]&quot;&quot;&quot;)</span>
+<span class="fc" id="L287">            .findAll(text)</span>
+<span class="fc" id="L288">            .forEach { m -&gt;</span>
+<span class="fc bfc" id="L289" title="All 2 branches covered.">                if ('-' in m.value) {</span>
+<span class="fc" id="L290">                    val core = m.value.replace(&quot;-&quot;, &quot;&quot;)</span>
+<span class="pc bpc" id="L291" title="2 of 4 branches missed.">                    if (core.length == 9 &amp;&amp; core.all { it.isLetterOrDigit() }) {</span>
+<span class="fc bfc" id="L292" title="All 2 branches covered.">                        if (candidates.none { it.second == core }) candidates.add(m.value to core)</span>
+                    }
+                }
+<span class="fc" id="L295">            }</span>
+
+        // 3. Raw 9-char alphanumeric runs (catches cases embedded in longer text)
+<span class="fc" id="L298">        Regex(&quot;&quot;&quot;[0-9A-Za-z]{9}&quot;&quot;&quot;).findAll(text).forEach { m -&gt;</span>
+<span class="pc bpc" id="L299" title="1 of 2 branches missed.">            if (candidates.none { it.second == m.value }) candidates.add(m.value to m.value)</span>
+<span class="fc" id="L300">        }</span>
+
+<span class="fc bfc" id="L302" title="All 2 branches covered.">        for ((raw, core) in candidates) {</span>
+<span class="pc bpc" id="L303" title="1 of 2 branches missed.">            if (core.length != 9) continue</span>
+
+<span class="fc" id="L305">            val letterCount = core.count { it.isLetter() }</span>
+
+            // ── Direct: all digits ────────────────────────────────────────────
+<span class="fc bfc" id="L308" title="All 2 branches covered.">            if (letterCount == 0) {</span>
+<span class="fc" id="L309">                return SsnExtractResult(</span>
+<span class="fc" id="L310">                    directSsn = core,</span>
+<span class="fc" id="L311">                    normalizedSsn = null,</span>
+<span class="fc" id="L312">                    fixes = emptyList(),</span>
+<span class="fc" id="L313">                    rawCandidate = raw</span>
+                )
+            }
+
+            // ── Attempt OCR fix: 1 or 2 letter positions ─────────────────────
+<span class="pc bpc" id="L318" title="1 of 6 branches missed.">            if (letterCount in 1..2) {</span>
+<span class="fc" id="L319">                val fixes = mutableListOf&lt;OcrFix&gt;()</span>
+<span class="fc" id="L320">                val normalized = core.toCharArray()</span>
+<span class="fc" id="L321">                var fixable = true</span>
+
+<span class="fc bfc" id="L323" title="All 2 branches covered.">                for (i in core.indices) {</span>
+<span class="fc" id="L324">                    val c = core[i]</span>
+<span class="fc bfc" id="L325" title="All 2 branches covered.">                    if (c.isLetter()) {</span>
+<span class="fc" id="L326">                        val digit = OCR_DIGIT_FIXES[c]</span>
+<span class="fc bfc" id="L327" title="All 2 branches covered.">                        if (digit != null) {</span>
+<span class="fc" id="L328">                            fixes.add(OcrFix(position = i, original = c, replacement = digit))</span>
+<span class="fc" id="L329">                            normalized[i] = digit</span>
+                        } else {
+<span class="fc" id="L331">                            fixable = false</span>
+<span class="fc" id="L332">                            break</span>
+                        }
+                    }
+                    // digit positions are left untouched — one-way fix only
+                }
+
+<span class="pc bpc" id="L338" title="1 of 4 branches missed.">                if (fixable &amp;&amp; normalized.all { it.isDigit() }) {</span>
+<span class="fc" id="L339">                    return SsnExtractResult(</span>
+<span class="fc" id="L340">                        directSsn = null,</span>
+<span class="fc" id="L341">                        normalizedSsn = String(normalized),</span>
+<span class="fc" id="L342">                        fixes = fixes,</span>
+<span class="fc" id="L343">                        rawCandidate = raw</span>
+                    )
+                }
+            }
+        }
+
+<span class="fc" id="L349">        return SsnExtractResult(</span>
+<span class="fc" id="L350">            directSsn = null,</span>
+<span class="fc" id="L351">            normalizedSsn = null,</span>
+<span class="fc" id="L352">            fixes = emptyList(),</span>
+<span class="fc" id="L353">            rawCandidate = null</span>
+        )
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    private fun Bitmap.copyPixels(): IntArray {
+<span class="nc" id="L360">        val px = IntArray(width * height)</span>
+<span class="nc" id="L361">        getPixels(px, 0, width, 0, 0, width, height)</span>
+<span class="nc" id="L362">        return px</span>
+    }
+
+    private fun IntArray.toBitmap(width: Int, height: Int): Bitmap {
+<span class="nc" id="L366">        val out = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)</span>
+<span class="nc" id="L367">        out.setPixels(this, 0, width, 0, 0, width, height)</span>
+<span class="nc" id="L368">        return out</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

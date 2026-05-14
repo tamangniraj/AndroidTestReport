@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PDFViewerViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.documents.pdfViewer</a> &gt; <span class="el_source">PDFViewerViewModel.kt</span></div><h1>PDFViewerViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.documents.pdfViewer
+
+import android.content.SharedPreferences
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.uploadDocuments.uploadUI.UploadDocCallback
+import com.vivekahealth.vivekahealth.ui.enroll.repository.EnrollRepository
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.disposables.CompositeDisposable
+import javax.inject.Inject
+
+<span class="fc" id="L17">class PDFViewerViewModel @Inject constructor(</span>
+<span class="fc" id="L18">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L19">    private val enrollRepository: EnrollRepository</span>
+<span class="fc" id="L20">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L22">    internal lateinit var uploadDocCallback: UploadDocCallback</span>
+
+<span class="pc" id="L24">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L26">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="fc" id="L28">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L30">        get() = _navigateToBack</span>
+<span class="fc" id="L31">    private val _navigateToNext = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToNext: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L33">        get() = _navigateToNext</span>
+
+    val navigateToUpload: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L36">        get() = _navigateToUpload</span>
+<span class="fc" id="L37">    private val _navigateToUpload = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToReTake: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L39">        get() = _navigateToReTake</span>
+<span class="fc" id="L40">    private val _navigateToReTake = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+
+    var profile: Boolean = false
+<span class="fc" id="L43">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L45">            field = value</span>
+<span class="nc" id="L46">            callbacks.notifyCallbacks(this, BR.profile, null)</span>
+<span class="nc" id="L47">        }</span>
+    val navigateToClose: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L49">        get() = _navigateToClose</span>
+<span class="fc" id="L50">    private val _navigateToClose = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    fun onPrevClicked() {
+<span class="fc" id="L52">        _navigateToBack.value = Event(Unit)</span>
+<span class="fc" id="L53">    }</span>
+    fun onNextClicked() {
+<span class="fc" id="L55">        _navigateToNext.value = Event(Unit)</span>
+<span class="fc" id="L56">    }</span>
+
+    fun close() {
+<span class="fc" id="L59">        _navigateToClose.value = Event(Unit)</span>
+<span class="fc" id="L60">    }</span>
+    fun reTake() {
+<span class="fc" id="L62">        _navigateToReTake.value = Event(Unit)</span>
+<span class="fc" id="L63">    }</span>
+
+    fun upload() {
+<span class="fc" id="L66">        _navigateToUpload.value = Event(Unit)</span>
+<span class="fc" id="L67">    }</span>
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L69">        callbacks.add(callback)</span>
+<span class="nc" id="L70">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L73">        callbacks.remove(callback)</span>
+<span class="nc" id="L74">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L77">        super.onCleared()</span>
+<span class="nc" id="L78">        compositeDisposable.dispose()</span>
+<span class="nc" id="L79">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

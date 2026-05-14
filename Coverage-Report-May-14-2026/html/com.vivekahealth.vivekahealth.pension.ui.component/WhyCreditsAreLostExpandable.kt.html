@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WhyCreditsAreLostExpandable.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.pension.ui.component</a> &gt; <span class="el_source">WhyCreditsAreLostExpandable.kt</span></div><h1>WhyCreditsAreLostExpandable.kt</h1><pre class="source lang-java linenums">@file:OptIn(ExperimentalMaterial3Api::class)
+
+package com.vivekahealth.vivekahealth.pension.ui.component
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.vivekahealth.vivekahealth.FirebaseTags
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.pension.data.model.PlanRules
+import com.vivekahealth.vivekahealth.pension.ui.tagged
+import com.vivekahealth.vivekahealth.pension.ui.viewmodel.PensionViewModel
+
+@Composable
+fun WhyCreditsAreLostExpandable(
+<span class="nc bnc" id="L45" title="All 2 branches missed.">    modifier: Modifier = Modifier,</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">    scrollState: ScrollState? = null,</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">    rules: PlanRules? = null,</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">    viewModel: PensionViewModel? = null</span>
+<span class="nc bnc" id="L49" title="All 30 branches missed.">) {</span>
+<span class="nc" id="L50">    var isExpanded by remember { mutableStateOf(false) }</span>
+<span class="nc" id="L51">    var hasLoggedInitialState by remember { mutableStateOf(false) }</span>
+
+    // Log analytics when expansion state changes
+<span class="nc bnc" id="L54" title="All 2 branches missed.">    LaunchedEffect(isExpanded) {</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (viewModel != null) {</span>
+            // Skip logging on initial composition
+<span class="nc bnc" id="L57" title="All 2 branches missed.">            if (!hasLoggedInitialState) {</span>
+<span class="nc" id="L58">                hasLoggedInitialState = true</span>
+            } else {
+<span class="nc bnc" id="L60" title="All 2 branches missed.">                if (isExpanded) {</span>
+<span class="nc" id="L61">                    viewModel.logEvent(FirebaseTags.PENSION_CREDITS_LOST_EXPAND)</span>
+                } else {
+<span class="nc" id="L63">                    viewModel.logEvent(FirebaseTags.PENSION_CREDITS_LOST_COLLAPSE)</span>
+                }
+            }
+        }
+<span class="nc" id="L67">    }</span>
+
+    // Animation for the arrow rotation
+<span class="nc" id="L70">    val arrowRotation by animateFloatAsState(</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        targetValue = if (isExpanded) 0f else 360f,</span>
+<span class="nc" id="L72">        animationSpec = tween(300),</span>
+<span class="nc" id="L73">        label = &quot;arrow_rotation&quot;</span>
+    )
+
+    // Auto-scroll to bottom when expanded
+<span class="nc bnc" id="L77" title="All 2 branches missed.">    LaunchedEffect(isExpanded) {</span>
+<span class="nc bnc" id="L78" title="All 4 branches missed.">        if (isExpanded &amp;&amp; scrollState != null) {</span>
+<span class="nc" id="L79">            kotlinx.coroutines.delay(350) // Wait for expansion animation to complete</span>
+<span class="nc" id="L80">            scrollState.animateScrollTo(scrollState.maxValue)</span>
+        }
+<span class="nc" id="L82">    }</span>
+
+<span class="nc bnc" id="L84" title="All 2 branches missed.">    Card(</span>
+<span class="nc" id="L85">        modifier = modifier</span>
+<span class="nc" id="L86">            .fillMaxWidth()</span>
+<span class="nc" id="L87">            .clip(RoundedCornerShape(12.dp))</span>
+<span class="nc" id="L88">            .tagged(&quot;Why Credits Are Lost Expandable&quot;),</span>
+<span class="nc" id="L89">        colors = CardDefaults.cardColors(</span>
+<span class="nc" id="L90">            containerColor = Color.White</span>
+        ),
+<span class="nc" id="L92">        elevation = CardDefaults.cardElevation(</span>
+<span class="nc" id="L93">            defaultElevation = 2.dp</span>
+        )
+<span class="nc" id="L95">    ) {</span>
+<span class="nc bnc" id="L96" title="All 6 branches missed.">        Column {</span>
+            // Header row
+<span class="nc" id="L98">            Row(</span>
+<span class="nc" id="L99">                modifier = Modifier</span>
+<span class="nc" id="L100">                    .fillMaxWidth()</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">                    .clickable { isExpanded = !isExpanded }</span>
+<span class="nc" id="L102">                    .padding(16.dp),</span>
+<span class="nc" id="L103">                verticalAlignment = Alignment.CenterVertically,</span>
+<span class="nc" id="L104">                horizontalArrangement = Arrangement.SpaceBetween</span>
+            ) {
+<span class="nc" id="L106">                Row(</span>
+<span class="nc" id="L107">                    verticalAlignment = Alignment.CenterVertically</span>
+                ) {
+<span class="nc" id="L109">                    Icon(</span>
+<span class="nc" id="L110">                        painter = painterResource(R.drawable.ic_warning_pension),</span>
+<span class="nc" id="L111">                        contentDescription = &quot;Info&quot;,</span>
+<span class="nc" id="L112">                        tint = colorResource(R.color.primaryLight),</span>
+<span class="nc" id="L113">                        modifier = Modifier.size(20.dp)</span>
+                    )
+
+<span class="nc" id="L116">                    Spacer(modifier = Modifier.width(8.dp))</span>
+
+<span class="nc" id="L118">                    Text(</span>
+<span class="nc" id="L119">                        text = stringResource(R.string.why_credits_are_lost),</span>
+<span class="nc" id="L120">                        color = colorResource(R.color.primaryLight),</span>
+<span class="nc" id="L121">                        fontSize = 16.sp,</span>
+<span class="nc" id="L122">                        fontWeight = FontWeight.Medium</span>
+                    )
+<span class="nc" id="L124">                }</span>
+
+<span class="nc" id="L126">                Icon(</span>
+<span class="nc" id="L127">                    imageVector = Icons.Default.KeyboardArrowDown,</span>
+<span class="nc" id="L128">                    contentDescription = &quot;Expand&quot;,</span>
+<span class="nc" id="L129">                    tint = Color(0xFF666666),</span>
+<span class="nc" id="L130">                    modifier = Modifier</span>
+<span class="nc" id="L131">                        .size(24.dp)</span>
+<span class="nc" id="L132">                        .rotate(arrowRotation)</span>
+                )
+<span class="nc" id="L134">            }</span>
+
+            // Expandable content
+<span class="nc" id="L137">            AnimatedVisibility(</span>
+<span class="nc" id="L138">                visible = isExpanded,</span>
+<span class="nc" id="L139">                enter = expandVertically(</span>
+<span class="nc" id="L140">                    animationSpec = tween(300)</span>
+<span class="nc" id="L141">                ) + fadeIn(animationSpec = tween(300)),</span>
+<span class="nc" id="L142">                exit = shrinkVertically(</span>
+<span class="nc" id="L143">                    animationSpec = tween(300)</span>
+<span class="nc" id="L144">                ) + fadeOut(animationSpec = tween(300))</span>
+<span class="nc" id="L145">            ) {</span>
+<span class="nc" id="L146">                Column(</span>
+<span class="nc" id="L147">                    modifier = Modifier</span>
+<span class="nc" id="L148">                        .fillMaxWidth()</span>
+<span class="nc" id="L149">                        .background(Color(0xFFFFFFFF))</span>
+<span class="nc" id="L150">                        .padding(16.dp)</span>
+                ) {
+<span class="nc bnc" id="L152" title="All 4 branches missed.">                    rules?.ruleDescriptions?.forEachIndexed {</span>
+                            index, rule -&gt;
+<span class="nc" id="L154">                        val parts = parseRule(rule)</span>
+<span class="nc" id="L155">                        CreditLostItem(</span>
+<span class="nc" id="L156">                            title = parts.first,</span>
+<span class="nc" id="L157">                            description = parts.second,</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">                            isLast = index == rules.ruleDescriptions.size</span>
+                        )
+<span class="nc" id="L160">                    }</span>
+<span class="nc" id="L161">                }</span>
+<span class="nc" id="L162">            }</span>
+<span class="nc" id="L163">        }</span>
+<span class="nc" id="L164">    }</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">}</span>
+
+@Composable
+private fun CreditLostItem(
+    title: String,
+    description: String,
+<span class="nc bnc" id="L171" title="All 2 branches missed.">    isLast: Boolean = false</span>
+<span class="nc bnc" id="L172" title="All 24 branches missed.">) {</span>
+<span class="nc" id="L173">    Row(</span>
+<span class="nc" id="L174">        modifier = Modifier</span>
+<span class="nc" id="L175">            .fillMaxWidth()</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">            .padding(bottom = if (isLast) 0.dp else 8.dp),</span>
+<span class="nc" id="L177">        verticalAlignment = Alignment.Top</span>
+    ) {
+        // Bullet point
+<span class="nc" id="L180">        Text(</span>
+<span class="nc" id="L181">            text = &quot;•&quot;,</span>
+<span class="nc" id="L182">            fontSize = 14.sp,</span>
+<span class="nc" id="L183">            lineHeight = 20.sp</span>
+        )
+
+<span class="nc" id="L186">        Spacer(modifier = Modifier.width(8.dp))</span>
+
+        // Content
+<span class="nc" id="L189">        Text(</span>
+<span class="nc" id="L190">            text = buildAnnotatedString {</span>
+<span class="nc bnc" id="L191" title="All 4 branches missed.">                if (title.isNotEmpty()) {</span>
+<span class="nc" id="L192">                    withStyle(</span>
+<span class="nc" id="L193">                        style = SpanStyle(</span>
+<span class="nc" id="L194">                            fontWeight = FontWeight.SemiBold,</span>
+<span class="nc" id="L195">                            color = Color(0xFF333333)</span>
+                        )
+                    ) {
+<span class="nc" id="L198">                        append(title)</span>
+<span class="nc" id="L199">                    }</span>
+<span class="nc" id="L200">                    append(&quot; &quot;)</span>
+                }
+<span class="nc" id="L202">                withStyle(</span>
+<span class="nc" id="L203">                    style = SpanStyle(</span>
+<span class="nc" id="L204">                        color = Color(0xFF666666)</span>
+                    )
+                ) {
+<span class="nc" id="L207">                    append(description)</span>
+<span class="nc" id="L208">                }</span>
+<span class="nc" id="L209">            },</span>
+<span class="nc" id="L210">            fontSize = 14.sp,</span>
+<span class="nc" id="L211">            lineHeight = 20.sp</span>
+        )
+<span class="nc" id="L213">    }</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">}</span>
+
+fun parseRule(rule: String): Pair&lt;String, String&gt; {
+<span class="nc" id="L217">    val delimiterIndex = when {</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">        rule.contains(&quot;=&quot;) -&gt; rule.indexOf(&quot;=&quot;)</span>
+<span class="nc bnc" id="L219" title="All 2 branches missed.">        rule.contains(&quot;:&quot;) -&gt; rule.indexOf(&quot;:&quot;)</span>
+<span class="nc" id="L220">        else -&gt; -1</span>
+    }
+<span class="nc bnc" id="L222" title="All 2 branches missed.">    return if (delimiterIndex != -1) {</span>
+<span class="nc" id="L223">        rule.substring(0, delimiterIndex).trim() to rule.substring(delimiterIndex)</span>
+    } else {
+<span class="nc" id="L225">        &quot;&quot; to rule.trim()</span>
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+<span class="nc bnc" id="L231" title="All 6 branches missed.">private fun PreviewWhyCreditsAreLost() {</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">    MaterialTheme {</span>
+<span class="nc bnc" id="L233" title="All 6 branches missed.">        Column(</span>
+<span class="nc" id="L234">            modifier = Modifier.padding(16.dp),</span>
+<span class="nc" id="L235">            verticalArrangement = Arrangement.spacedBy(16.dp)</span>
+        ) {
+<span class="nc" id="L237">            WhyCreditsAreLostExpandable()</span>
+<span class="nc" id="L238">        }</span>
+<span class="nc" id="L239">    }</span>
+<span class="nc bnc" id="L240" title="All 2 branches missed.">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

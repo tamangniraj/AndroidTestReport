@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FindCareSearchViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findcareSearch</a> &gt; <span class="el_source">FindCareSearchViewModel.kt</span></div><h1>FindCareSearchViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findcareSearch
+
+import android.content.SharedPreferences
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.data.local.home.findCare.ProviderCallData
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.FindCareFilterModel
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.Value
+import com.vivekahealth.vivekahealth.ui.homePage.findCareSelectSpecialityActivity.RetrofitClient
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.repository.FindCareSearchRepository
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityModel.Procedure
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityModel.Specialties
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality.selectSpecialityAllModel.SpecialityAll
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+
+<span class="fc" id="L31">class FindCareSearchViewModel @Inject constructor(</span>
+<span class="fc" id="L32">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L33">    private val findCareSearchRepository: FindCareSearchRepository</span>
+<span class="fc" id="L34">) : ViewModel(), Observable {</span>
+
+<span class="fc" id="L36">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L37">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="pc" id="L38">    var ValueList: ArrayList&lt;Specialties&gt; = ArrayList()</span>
+<span class="pc" id="L39">    var providerCallData: ProviderCallData = ProviderCallData()</span>
+
+<span class="pc" id="L41">    var key: String = &quot;&quot;</span>
+
+<span class="pc" id="L43">    var eligibleValueList: ArrayList&lt;Specialties&gt; = ArrayList()</span>
+<span class="pc" id="L44">    var listForDoctorAdapter: List&lt;Specialties&gt; = listOf()</span>
+<span class="nc" id="L45">    var memberInfoDb =</span>
+<span class="fc" id="L46">        findCareSearchRepository.getMemberSid(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="pc" id="L47">            .asLiveData()</span>
+<span class="pc" id="L48">    final var accessToken = preferences.getString(Constants.ACCESS_TOKEN, &quot;&quot;).toString()</span>
+    private var mutableSignup: MutableLiveData&lt;SpecialityAll&gt;? = null
+<span class="pc" id="L50">    var tempListFlat: ArrayList&lt;Any&gt; = arrayListOf()</span>
+<span class="pc" id="L51">    final var latitude = preferences.getString(Constants.LATITUDE, &quot;&quot;).toString()</span>
+<span class="pc" id="L52">    final var longitude = preferences.getString(Constants.LONGITUDE, &quot;&quot;).toString()</span>
+<span class="pc" id="L53">    final var accesstoken = preferences.getString(Constants.ACCESS_TOKEN, &quot;&quot;).toString()</span>
+<span class="pc" id="L54">    var memberInfoList = findCareSearchRepository.getMemberFromDb().asLiveData()</span>
+<span class="fc" id="L55">    private val _showFilter = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val showFilter: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L57">        get() = _showFilter</span>
+<span class="pc" id="L58">    var gson = Gson()</span>
+<span class="fc" id="L59">    private val _logsListGenerated = MutableLiveData&lt;Event&lt;Specialties&gt;&gt;()</span>
+    val logsListGenerated: LiveData&lt;Event&lt;Specialties&gt;&gt;
+<span class="fc" id="L61">        get() = _logsListGenerated</span>
+<span class="fc" id="L62">    private val _docListGenerated = MutableLiveData&lt;Event&lt;ArrayList&lt;Value&gt;&gt;&gt;()</span>
+    val docListGenerated: LiveData&lt;Event&lt;ArrayList&lt;Value&gt;&gt;&gt;
+<span class="fc" id="L64">        get() = _docListGenerated</span>
+<span class="pc" id="L65">    var page = 1</span>
+
+<span class="fc" id="L67">    private val _statusLiveData = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val statusLiveData: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="fc" id="L69">        get() = _statusLiveData</span>
+
+    fun updateTheStatus(status: String) {
+<span class="fc" id="L72">        _statusLiveData.value = Event(status)</span>
+<span class="fc" id="L73">    }</span>
+
+<span class="fc" id="L75">    init {</span>
+<span class="fc" id="L76">        _statusLiveData.value = Event(&quot;Speciality&quot;)</span>
+<span class="fc" id="L77">    }</span>
+
+<span class="pc" id="L79">    var sortby = &quot;relevance&quot;</span>
+<span class="pc" id="L80">    var sortAction = &quot;&quot;</span>
+
+<span class="pc" id="L82">    var docList: ArrayList&lt;Value&gt; = arrayListOf()</span>
+
+<span class="fc" id="L84">    private val _procedureClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val procedureClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L86">        get() = _procedureClicked</span>
+<span class="fc" id="L87">    private val _specialityClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val specialityClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L89">        get() = _specialityClicked</span>
+<span class="fc" id="L90">    private val _doctorClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val doctorClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L92">        get() = _doctorClicked</span>
+
+<span class="pc" id="L94">    var firstOpen = true</span>
+
+<span class="fc" id="L96">    private val _sortView = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val sortView: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L98">        get() = _sortView</span>
+<span class="pc" id="L99">    var searchText = &quot;&quot;</span>
+<span class="pc" id="L100">    var isLastPage = false</span>
+<span class="pc" id="L101">    var isScrolling = false</span>
+
+    var loading: Boolean = false
+<span class="fc" id="L104">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L106">            field = value</span>
+<span class="nc" id="L107">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L108">        }</span>
+    var noData: Boolean = false
+<span class="fc" id="L110">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L112">            field = value</span>
+<span class="fc" id="L113">            callbacks.notifyCallbacks(this, BR.noData, null)</span>
+<span class="fc" id="L114">        }</span>
+    var showMapBtn: Boolean = false
+<span class="fc" id="L116">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L118">            field = value</span>
+<span class="fc" id="L119">            callbacks.notifyCallbacks(this, BR.showMapBtn, null)</span>
+<span class="fc" id="L120">        }</span>
+<span class="fc" id="L121">    var filterOption: FindCareFilterModel = FindCareFilterModel()</span>
+<span class="nc" id="L122">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L124">            field = value</span>
+
+<span class="nc" id="L126">            callbacks.notifyCallbacks(this, com.vivekahealth.vivekahealth.BR.filterOption, null)</span>
+<span class="nc" id="L127">        }</span>
+    var countSpeciality: Int = 0
+<span class="fc" id="L129">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L131">            field = value</span>
+<span class="nc" id="L132">            callbacks.notifyCallbacks(this, BR.countSpeciality, null)</span>
+<span class="nc" id="L133">        }</span>
+    var countProcedure: Int = 0
+<span class="fc" id="L135">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L137">            field = value</span>
+<span class="nc" id="L138">            callbacks.notifyCallbacks(this, BR.countProcedure, null)</span>
+<span class="nc" id="L139">        }</span>
+    var countDoc: Int = 0
+<span class="fc" id="L141">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L143">            field = value</span>
+<span class="fc" id="L144">            callbacks.notifyCallbacks(this, BR.countDoc, null)</span>
+<span class="fc" id="L145">        }</span>
+<span class="pc" id="L146">    final var memberID = preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+    fun selectAll(post: String): LiveData&lt;SpecialityAll&gt; {
+<span class="nc" id="L148">        mutableSignup = MutableLiveData()</span>
+<span class="nc" id="L149">        selectSpecialityAll(post)</span>
+<span class="nc" id="L150">        return mutableSignup!!</span>
+    }
+
+    fun data(value: String) {
+<span class="nc bnc" id="L154" title="All 6 branches missed.">        if (filterOption.searchText.isNullOrBlank()) {</span>
+<span class="nc" id="L155">            var filterOptionOut = gson.fromJson(value, FindCareFilterModel::class.java)</span>
+<span class="nc" id="L156">            filterOptionOut.speciality = &quot;&quot;</span>
+<span class="nc" id="L157">            filterOption = filterOptionOut</span>
+        }
+<span class="nc" id="L159">    }</span>
+
+    fun stringGson(value: Value): String {
+<span class="nc" id="L162">        return gson.toJson(value)</span>
+    }
+
+    fun stringFilter(value: FindCareFilterModel): String {
+<span class="nc" id="L166">        return gson.toJson(value)</span>
+    }
+
+    fun largestList(): Int {
+<span class="fc" id="L170">        var list = listOf&lt;Int&gt;(countSpeciality, countProcedure, countDoc)</span>
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">        return list.indexOf(list.maxOrNull() ?: 0)</span>
+    }
+
+    fun sort() {
+<span class="fc" id="L175">        _sortView.value = Event(Unit)</span>
+<span class="fc" id="L176">    }</span>
+
+    fun retainList(list: ArrayList&lt;Value&gt;) {
+<span class="fc" id="L179">        docList = list</span>
+<span class="fc" id="L180">        countDoc = docList.size</span>
+<span class="fc" id="L181">        noData = docList.isEmpty()</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        showMapBtn = docList.isNotEmpty()</span>
+<span class="fc" id="L183">        _docListGenerated.value = Event(docList)</span>
+<span class="fc" id="L184">    }</span>
+
+    fun sortList(procedureList: ArrayList&lt;Procedure&gt;): ArrayList&lt;Procedure&gt; {
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        if (sortby.equals(&quot;cost&quot;, true)) {</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">            if (sortAction.equals(&quot;asc&quot;, true)) {</span>
+<span class="nc" id="L189">                val sortedList = procedureList.sortedWith(compareBy { it.minPrice })</span>
+<span class="nc" id="L190">                procedureList.clear()</span>
+<span class="nc" id="L191">                procedureList.addAll(sortedList)</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">            } else if (sortAction.equals(&quot;desc&quot;, true)) {</span>
+<span class="nc" id="L193">                val sortedList = procedureList.sortedByDescending { it.maxPrice }</span>
+<span class="nc" id="L194">                procedureList.clear()</span>
+<span class="nc" id="L195">                procedureList.addAll(sortedList)</span>
+            }
+<span class="nc bnc" id="L197" title="All 2 branches missed.">        } else if (sortby.equals(&quot;code&quot;, true)) {</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">            if (sortAction.equals(&quot;asc&quot;, true)) {</span>
+<span class="nc" id="L199">                val sortedList = procedureList.sortedBy { it.code }</span>
+<span class="nc" id="L200">                procedureList.clear()</span>
+<span class="nc" id="L201">                procedureList.addAll(sortedList)</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">            } else if (sortAction.equals(&quot;desc&quot;, true)) {</span>
+<span class="nc" id="L203">                val sortedList = procedureList.sortedByDescending { it.code }</span>
+<span class="nc" id="L204">                procedureList.clear()</span>
+<span class="nc" id="L205">                procedureList.addAll(sortedList)</span>
+            }
+<span class="nc bnc" id="L207" title="All 2 branches missed.">        } else if (sortby.equals(&quot;relevance&quot;, true)) {</span>
+<span class="nc" id="L208">            val sortedList = procedureList.sortedBy { it.index }</span>
+<span class="nc" id="L209">            procedureList.clear()</span>
+<span class="nc" id="L210">            procedureList.addAll(sortedList)</span>
+        }
+
+<span class="nc" id="L213">        return procedureList</span>
+    }
+
+    fun openFilter() {
+<span class="nc" id="L217">        _showFilter.value = Event(Unit)</span>
+<span class="nc" id="L218">    }</span>
+
+    private fun selectSpecialityAll(post: String) {
+<span class="nc" id="L221">        val call: Call&lt;SpecialityAll&gt; = RetrofitClient.getApi()!!.getAllAllSpeciality(post)</span>
+<span class="nc" id="L222">        call.enqueue(object : Callback&lt;SpecialityAll&gt; {</span>
+            override fun onResponse(
+                call: Call&lt;SpecialityAll&gt;,
+                response: Response&lt;SpecialityAll&gt;
+            ) {
+<span class="nc" id="L227">                try {</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">                    mutableSignup?.value = response.body()</span>
+<span class="nc" id="L229">                } catch (e: Exception) {</span>
+                }
+<span class="nc" id="L231">            }</span>
+<span class="nc" id="L232">            override fun onFailure(call: Call&lt;SpecialityAll&gt;, t: Throwable) { }</span>
+        })
+<span class="nc" id="L234">    }</span>
+
+    // no usages found
+    fun getProcedureList(search: String, provider_type: String, within: String) {
+<span class="nc" id="L238">        var radiu: String</span>
+<span class="nc bnc" id="L239" title="All 2 branches missed.">        if (within.equals(&quot;No limits&quot;, ignoreCase = true)) {</span>
+<span class="nc" id="L240">            radiu = &quot;&quot;</span>
+        } else {
+<span class="nc" id="L242">            radiu = within</span>
+        }
+<span class="nc" id="L244">        loading = true</span>
+<span class="nc" id="L245">        compositeDisposable.add(</span>
+<span class="nc" id="L246">            findCareSearchRepository.getProcedureList(</span>
+<span class="nc" id="L247">                search,</span>
+<span class="nc" id="L248">                memberID,</span>
+<span class="nc" id="L249">                preferences.getString(</span>
+<span class="nc" id="L250">                    Constants.LATITUDE,</span>
+<span class="nc" id="L251">                    &quot;&quot;</span>
+<span class="nc" id="L252">                ).toString(),</span>
+<span class="nc" id="L253">                preferences.getString(Constants.LONGITUDE, &quot;&quot;).toString(),</span>
+<span class="nc" id="L254">                provider_type,</span>
+<span class="nc" id="L255">                radiu</span>
+            )
+<span class="nc" id="L257">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L258">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L259">                .doOnSubscribe {</span>
+<span class="nc" id="L260">                    loading = true</span>
+<span class="nc" id="L261">                }</span>
+<span class="nc" id="L262">                .subscribe({ it -&gt;</span>
+<span class="nc" id="L263">                    eligibleValueList = ValueList</span>
+<span class="nc" id="L264">                    listForDoctorAdapter = eligibleValueList.toList()</span>
+<span class="nc" id="L265">                    countDoc = it.doctors.size</span>
+<span class="nc" id="L266">                    countProcedure = it.procedures.size</span>
+<span class="nc" id="L267">                    countSpeciality = it.specialties.size</span>
+
+<span class="nc bnc" id="L269" title="All 2 branches missed.">                    showMapBtn = it.doctors.isNotEmpty()</span>
+
+<span class="nc" id="L271">                    _logsListGenerated.value = Event(it)</span>
+<span class="nc" id="L272">                }, {</span>
+<span class="nc" id="L273">                    loading = false</span>
+<span class="nc" id="L274">                })</span>
+        )
+<span class="nc" id="L276">    }</span>
+
+    // heavly used
+    fun getSpecialityList() {
+<span class="nc" id="L280">        compositeDisposable.clear()</span>
+
+<span class="nc" id="L282">        val displayPrice = false</span>
+
+<span class="nc" id="L284">        compositeDisposable.add(</span>
+<span class="nc" id="L285">            findCareSearchRepository.getProcedureList(</span>
+<span class="nc" id="L286">                filterOption.searchText.toString(),</span>
+<span class="nc" id="L287">                memberID,</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">                filterOption.current?.latitude.toString(),</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">                filterOption.current?.longitude.toString(),</span>
+<span class="nc" id="L290">                filterOption.providerType.toString(),</span>
+<span class="nc" id="L291">                filterOption.radius.toString(),</span>
+<span class="nc" id="L292">                displayPrice = displayPrice</span>
+            )
+<span class="nc" id="L294">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L295">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L296">                .doOnSubscribe {</span>
+<span class="nc" id="L297">                    loading = true</span>
+<span class="nc" id="L298">                }</span>
+<span class="nc" id="L299">                .subscribe({ it -&gt;</span>
+
+                    // if display price is
+<span class="nc bnc" id="L302" title="All 2 branches missed.">                    if (!displayPrice) {</span>
+<span class="nc" id="L303">                        it.procedures.forEachIndexed { index, procedure -&gt;</span>
+<span class="nc" id="L304">                            procedure.priceLoading = true</span>
+<span class="nc" id="L305">                            procedure.index = index</span>
+<span class="nc" id="L306">                        }</span>
+                    }
+
+<span class="nc" id="L309">                    loading = false</span>
+
+<span class="nc" id="L311">                    countDoc = it.doctors.size</span>
+<span class="nc" id="L312">                    countProcedure = it.procedures.size</span>
+<span class="nc" id="L313">                    countSpeciality = it.specialties.size</span>
+
+<span class="nc bnc" id="L315" title="All 2 branches missed.">                    if (firstOpen) {</span>
+<span class="nc" id="L316">                        firstOpen = false</span>
+<span class="nc" id="L317">                        var larger = largestList()</span>
+
+<span class="nc bnc" id="L319" title="All 3 branches missed.">                        if (larger == 0) {</span>
+<span class="nc" id="L320">                            _statusLiveData.value = Event(&quot;Speciality&quot;)</span>
+                        } else if (larger == 1) {
+<span class="nc" id="L322">                            _statusLiveData.value = Event(&quot;Procedure&quot;)</span>
+                        } else {
+<span class="nc" id="L324">                            _statusLiveData.value = Event(&quot;Doctor&quot;)</span>
+                        }
+                    }
+
+<span class="nc" id="L328">                    _logsListGenerated.value = Event(it)</span>
+
+<span class="nc bnc" id="L330" title="All 2 branches missed.">                    if (!displayPrice) {</span>
+<span class="nc" id="L331">                        getPriceFromBillingCode(it)</span>
+                    }
+
+                    // only call if display price is false
+<span class="nc" id="L335">                }, {</span>
+<span class="nc" id="L336">                    loading = false</span>
+<span class="nc" id="L337">                })</span>
+        )
+<span class="nc" id="L339">    }</span>
+
+    fun getPriceFromBillingCode(specialties: Specialties) {
+<span class="nc" id="L342">        var codes = specialties.procedures.map {</span>
+<span class="nc" id="L343">            it.code</span>
+        }
+
+<span class="nc" id="L346">        compositeDisposable.add(</span>
+<span class="nc" id="L347">            findCareSearchRepository.getPriceFromBillingList(</span>
+<span class="nc" id="L348">                codes,</span>
+<span class="nc bnc" id="L349" title="All 2 branches missed.">                filterOption.current?.latitude.toString(),</span>
+<span class="nc bnc" id="L350" title="All 2 branches missed.">                filterOption.current?.longitude.toString(),</span>
+<span class="nc" id="L351">                filterOption.radius.toString()</span>
+            )
+<span class="nc" id="L353">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L354">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L355">                .doOnSubscribe {</span>
+<span class="nc" id="L356">                }.subscribe({</span>
+<span class="nc" id="L357">                    val scheduleMap = it.billingCodeFeeScheduleDtoList.associateBy { dto -&gt; dto.billingCode }</span>
+
+                    // Update each procedure
+<span class="nc" id="L360">                    specialties.procedures.forEach { procedure -&gt;</span>
+<span class="nc bnc" id="L361" title="All 2 branches missed.">                        scheduleMap[procedure.code]?.let { dto -&gt;</span>
+<span class="nc" id="L362">                            procedure.price = dto.amount</span>
+<span class="nc" id="L363">                            procedure.priceSource = dto.priceSource</span>
+<span class="nc" id="L364">                            procedure.minPrice = dto.minAmount</span>
+<span class="nc" id="L365">                            procedure.maxPrice = dto.maxAmount</span>
+<span class="nc bnc" id="L366" title="All 2 branches missed.">                            procedure.occurrence = dto.occurrence?.toLong() ?: 0L</span>
+
+<span class="nc" id="L368">                            procedure.priceLoading = false</span>
+<span class="nc" id="L369">                        } ?: kotlin.run {</span>
+<span class="nc" id="L370">                            procedure.priceLoading = false</span>
+<span class="nc" id="L371">                        }</span>
+                        // Re-post the updated value wrapped in Event again
+<span class="nc" id="L373">                    }</span>
+
+<span class="nc" id="L375">                    val sorted = sortList(specialties.procedures)</span>
+<span class="nc" id="L376">                    specialties.procedures = sorted</span>
+
+<span class="nc" id="L378">                    _logsListGenerated.value = Event(specialties)</span>
+<span class="nc" id="L379">                }, {</span>
+                    // on error handle the result to hide loading
+<span class="nc" id="L381">                    specialties.procedures.forEach { procedure -&gt;</span>
+<span class="nc" id="L382">                        procedure.priceLoading = false</span>
+<span class="nc" id="L383">                    }</span>
+
+<span class="nc" id="L385">                    val sorted = sortList(specialties.procedures)</span>
+<span class="nc" id="L386">                    specialties.procedures = sorted</span>
+
+<span class="nc" id="L388">                    _logsListGenerated.value = Event(specialties)</span>
+<span class="nc" id="L389">                })</span>
+        )
+<span class="nc" id="L391">    }</span>
+
+    fun getDoctorList(search: String, provider_type: String, within: String) {
+<span class="nc" id="L394">        var radiu: String</span>
+<span class="nc bnc" id="L395" title="All 2 branches missed.">        if (within.equals(&quot;No limits&quot;, ignoreCase = true)) {</span>
+<span class="nc" id="L396">            radiu = &quot;&quot;</span>
+        } else {
+<span class="nc" id="L398">            radiu = within</span>
+        }
+<span class="nc" id="L400">        loading = true</span>
+<span class="nc" id="L401">        compositeDisposable.add(</span>
+<span class="nc" id="L402">            findCareSearchRepository.getProcedureList(</span>
+<span class="nc" id="L403">                search,</span>
+<span class="nc" id="L404">                memberID,</span>
+<span class="nc" id="L405">                preferences.getString(Constants.LATITUDE, &quot;&quot;).toString(),</span>
+<span class="nc" id="L406">                preferences.getString(Constants.LONGITUDE, &quot;&quot;).toString(),</span>
+<span class="nc" id="L407">                provider_type,</span>
+<span class="nc" id="L408">                radiu</span>
+            )
+<span class="nc" id="L410">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L411">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L412">                .doOnSubscribe {</span>
+<span class="nc" id="L413">                    loading = true</span>
+<span class="nc" id="L414">                }</span>
+<span class="nc" id="L415">                .subscribe({ it -&gt;</span>
+
+<span class="nc" id="L417">                    page++</span>
+
+<span class="nc bnc" id="L419" title="All 6 branches missed.">                    isLastPage = it.paging?.totalPages == page</span>
+<span class="nc" id="L420">                    eligibleValueList = ValueList</span>
+<span class="nc" id="L421">                    listForDoctorAdapter = eligibleValueList.toList()</span>
+<span class="nc" id="L422">                    countDoc = it.doctors.size</span>
+<span class="nc bnc" id="L423" title="All 2 branches missed.">                    showMapBtn = countDoc &gt; 0</span>
+<span class="nc" id="L424">                    countProcedure = it.procedures.size</span>
+<span class="nc" id="L425">                    countSpeciality = it.specialties.size</span>
+
+<span class="nc" id="L427">                    _logsListGenerated.value = Event(it)</span>
+<span class="nc" id="L428">                }, {</span>
+<span class="nc" id="L429">                    loading = false</span>
+<span class="nc" id="L430">                })</span>
+        )
+<span class="nc" id="L432">    }</span>
+
+    fun onProcedureClicked() {
+<span class="fc" id="L435">        _procedureClicked.value = Event(Unit)</span>
+<span class="fc" id="L436">    }</span>
+
+    fun onSpecialityClicked() {
+<span class="fc" id="L439">        _specialityClicked.value = Event(Unit)</span>
+<span class="fc" id="L440">    }</span>
+
+    fun onDoctorsClicked() {
+<span class="fc" id="L443">        _doctorClicked.value = Event(Unit)</span>
+<span class="fc" id="L444">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L447">        callbacks.add(callback)</span>
+<span class="nc" id="L448">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L451">        callbacks.remove(callback)</span>
+<span class="nc" id="L452">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L455">        super.onCleared()</span>
+<span class="nc" id="L456">        compositeDisposable.dispose()</span>
+<span class="nc" id="L457">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VivekaHealthViewModelFactory.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.viewmodel</a> &gt; <span class="el_source">VivekaHealthViewModelFactory.kt</span></div><h1>VivekaHealthViewModelFactory.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import javax.inject.Inject
+import javax.inject.Provider
+import javax.inject.Singleton
+
+@Singleton
+<span class="fc" id="L10">class VivekaHealthViewModelFactory @Inject constructor(</span>
+<span class="fc" id="L11">    private val creators: Map&lt;Class&lt;out ViewModel&gt;, @JvmSuppressWildcards Provider&lt;ViewModel&gt;&gt;</span>
+) :
+    ViewModelProvider.Factory {
+
+    override fun &lt;T : ViewModel&gt; create(modelClass: Class&lt;T&gt;): T {
+<span class="fc" id="L16">        var creator: Provider&lt;out ViewModel&gt;? = creators[modelClass]</span>
+<span class="pc bpc" id="L17" title="1 of 2 branches missed.">        if (creator == null) {</span>
+<span class="nc bnc" id="L18" title="All 2 branches missed.">            for ((key, value) in creators) {</span>
+<span class="nc bnc" id="L19" title="All 2 branches missed.">                if (modelClass.isAssignableFrom(key)) {</span>
+<span class="nc" id="L20">                    creator = value</span>
+<span class="nc" id="L21">                    break</span>
+                }
+            }
+        }
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">        if (creator == null) {</span>
+<span class="nc" id="L26">            throw IllegalArgumentException(&quot;unknown model class &quot; + modelClass)</span>
+        }
+<span class="fc" id="L28">        try {</span>
+            @Suppress(&quot;UNCHECKED_CAST&quot;)
+<span class="fc" id="L30">            return creator.get() as T</span>
+<span class="nc" id="L31">        } catch (e: Exception) {</span>
+<span class="nc" id="L32">            throw RuntimeException(e)</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegisterRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.register.step8.repository</a> &gt; <span class="el_source">RegisterRepository.kt</span></div><h1>RegisterRepository.kt</h1><pre class="source lang-java linenums">
+
+package com.vivekahealth.vivekahealth.ui.register.step8.repository
+
+import com.vivekahealth.vivekahealth.data.remote.register.RegisterUser
+import com.vivekahealth.vivekahealth.data.remote.register.DataResponse
+import com.vivekahealth.vivekahealth.ui.register.step8.service.RegisterService
+import io.reactivex.Single
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * Repository that handles User objects.
+ */
+@Singleton
+<span class="fc" id="L16">class RegisterRepository @Inject constructor(</span>
+<span class="fc" id="L17">    private val registerService: RegisterService</span>
+) {
+
+<span class="fc" id="L20">    fun reSendEmail(email: String): Single&lt;DataResponse&gt; = registerService.getRegisterApi().registerService(</span>
+<span class="fc" id="L21">        email,</span>
+<span class="fc" id="L22">        &quot;&quot;</span>
+<span class="fc" id="L23">    )</span>
+
+<span class="fc" id="L25">    fun registerUser(registerUser: RegisterUser): Single&lt;DataResponse&gt; = registerService.getRegisterApi().registerService(</span>
+<span class="fc" id="L26">        registerUser</span>
+<span class="fc" id="L27">    )</span>
+
+<span class="fc" id="L29">    fun verifyRegisterUser(registerUser: RegisterUser): Single&lt;DataResponse&gt; = registerService.getRegisterApi().registerVerifyService(</span>
+<span class="fc" id="L30">        registerUser</span>
+<span class="fc" id="L31">    )</span>
+
+<span class="fc" id="L33">    fun verifySsn(registerUser: RegisterUser): Single&lt;DataResponse&gt; = registerService.getRegisterApi().registerVerifySsnService(</span>
+<span class="fc" id="L34">        registerUser</span>
+<span class="fc" id="L35">    )</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

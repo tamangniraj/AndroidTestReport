@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChildDOBViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.enrollVTwo.child.dob</a> &gt; <span class="el_source">ChildDOBViewModel.kt</span></div><h1>ChildDOBViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.enrollVTwo.child.dob
+
+import android.content.SharedPreferences
+import android.text.Editable
+import android.text.TextWatcher
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.data.remote.register.DataResponse
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.remote.APIResponse
+import io.reactivex.disposables.CompositeDisposable
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+<span class="fc" id="L24">class ChildDOBViewModel @Inject constructor(</span>
+<span class="fc" id="L25">    private val preferences: SharedPreferences</span>
+<span class="fc" id="L26">) : ViewModel(), Observable {</span>
+
+<span class="fc" id="L28">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L30">        get() = _navigateToBack</span>
+
+<span class="fc" id="L32">    private val _navigateToNext = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToNext: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L34">        get() = _navigateToNext</span>
+
+<span class="pc" id="L36">    var gson = Gson()</span>
+    private lateinit var job: Job
+<span class="fc" id="L38">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L40">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+    val showError: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
+<span class="nc" id="L43">        get() = _showError</span>
+<span class="fc" id="L44">    private val _showError = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L47">        callbacks.add(callback)</span>
+<span class="nc" id="L48">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L51">        callbacks.remove(callback)</span>
+<span class="nc" id="L52">    }</span>
+
+    fun onPrevClicked() {
+<span class="fc" id="L55">        singleClick {</span>
+<span class="fc" id="L56">            _navigateToBack.value = Event(Unit)</span>
+<span class="fc" id="L57">        }</span>
+<span class="fc" id="L58">    }</span>
+
+    fun onNextClicked() {
+<span class="fc" id="L61">        singleClick {</span>
+<span class="fc" id="L62">            _navigateToNext.value = Event(Unit) // Process the first click immediately</span>
+<span class="fc" id="L63">        }</span>
+<span class="fc" id="L64">    }</span>
+
+    private var debounceJob: Job? = null
+    private var isDebouncing = false
+<span class="fc" id="L68">    private val debounceInterval = 500L // Set your debounce interval in milliseconds</span>
+
+    fun singleClick(action: () -&gt; Unit) {
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (isDebouncing) return</span>
+<span class="fc" id="L72">        action()</span>
+<span class="fc" id="L73">        isDebouncing = true</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        debounceJob?.cancel()</span>
+<span class="fc" id="L75">        debounceJob = viewModelScope.launch {</span>
+<span class="fc" id="L76">            delay(debounceInterval)</span>
+<span class="fc" id="L77">            isDebouncing = false</span>
+<span class="fc" id="L78">        }</span>
+<span class="fc" id="L79">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L82">        super.onCleared()</span>
+<span class="nc" id="L83">        compositeDisposable.dispose()</span>
+<span class="nc" id="L84">    }</span>
+
+<span class="fc" id="L86">    var firstName: String = &quot;&quot;</span>
+<span class="fc" id="L87">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L89">            field = value</span>
+<span class="fc" id="L90">            callbacks.notifyCallbacks(this, BR.firstName, null)</span>
+<span class="fc" id="L91">        }</span>
+
+<span class="fc" id="L93">    private val _dobDateComplete = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val dobDateComplete: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="fc" id="L95">        get() = _dobDateComplete</span>
+
+<span class="fc" id="L97">    @get:Bindable</span>
+<span class="fc" id="L98">    val dobDateWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L101">        }</span>
+
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L104">        }</span>
+
+        override fun afterTextChanged(s: Editable) {
+<span class="fc" id="L107">            _dobDateComplete.value = Event(s.toString())</span>
+<span class="fc" id="L108">        }</span>
+    }
+
+<span class="pc" id="L111">    var errorMessageDob: String = &quot;&quot;</span>
+
+    var showErrorDob: Boolean = false
+<span class="nc" id="L114">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L116">            field = value</span>
+<span class="nc" id="L117">            callbacks.notifyCallbacks(this, BR.showErrorDob, null)</span>
+<span class="nc" id="L118">        }</span>
+
+<span class="pc" id="L120">    var dateOfBirthSpouse: String = &quot;&quot;</span>
+
+<span class="fc" id="L122">    private val _datePrevDob = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val datePrevDob: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="fc" id="L124">        get() = _datePrevDob</span>
+
+<span class="fc" id="L126">    private val _openWheelDob = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val openWheelDob: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L128">        get() = _openWheelDob</span>
+
+    fun calDobClicked() {
+<span class="fc" id="L131">        _openWheelDob.value = Event(Unit)</span>
+<span class="fc" id="L132">    }</span>
+
+    fun dobPrevious(dob: String?, fname: String?) {
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">        fname?.let {</span>
+<span class="fc" id="L136">            firstName = it</span>
+<span class="fc" id="L137">        }</span>
+
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        dob?.let {</span>
+<span class="fc" id="L140">            dateOfBirthSpouse = dob</span>
+<span class="fc" id="L141">            _datePrevDob.value = Event(dateOfBirthSpouse)</span>
+<span class="fc" id="L142">        }</span>
+<span class="fc" id="L143">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

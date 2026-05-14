@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GuestUserInfo.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.remote.guest</a> &gt; <span class="el_source">GuestUserInfo.kt</span></div><h1>GuestUserInfo.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.remote.guest
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = &quot;guest_info&quot;)
+<span class="fc" id="L7">data class GuestUserInfo(</span>
+<span class="fc" id="L8">    val email: String,</span>
+<span class="pc" id="L9">    val phoneNumber: String,</span>
+<span class="pc" id="L10">    val countryCode: String,</span>
+<span class="fc" id="L11">    @PrimaryKey</span>
+    val id: String,
+<span class="fc" id="L13">    val requestInCustomerSupport: Boolean,</span>
+<span class="fc" id="L14">    val pendingIdentityVerification: Boolean,</span>
+<span class="fc" id="L15">    val identificationSessionId: String? = null,</span>
+<span class="pc" id="L16">    val languagePreference: String?,</span>
+<span class="fc" id="L17">    val isOpenEnrollment: Boolean? = null,</span>
+<span class="fc" id="L18">    val isEnrolled: Boolean? = null</span>
+<span class="fc" id="L19">)</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

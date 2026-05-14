@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VivekaDatabase.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.local</a> &gt; <span class="el_source">VivekaDatabase.kt</span></div><h1>VivekaDatabase.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.local
+
+import android.content.Context
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import com.vivekahealth.vivekahealth.data.local.home.ClientDetailsDao
+import com.vivekahealth.vivekahealth.data.local.home.GuestClientDetailsDao
+import com.vivekahealth.vivekahealth.data.local.home.GuestInfoDao
+import com.vivekahealth.vivekahealth.data.local.home.HomeBenefitDao
+import com.vivekahealth.vivekahealth.data.local.home.InsuranceWithCardCardDataDao
+import com.vivekahealth.vivekahealth.data.local.home.MemberInfoDao
+import com.vivekahealth.vivekahealth.data.local.home.RecentCardsDao
+import com.vivekahealth.vivekahealth.data.local.home.WorkBenefitV2Dao
+import com.vivekahealth.vivekahealth.data.local.typeConverter.VivekaTypeConverters
+import com.vivekahealth.vivekahealth.data.remote.guest.GuestClientDetails
+import com.vivekahealth.vivekahealth.data.remote.guest.GuestUserInfo
+import com.vivekahealth.vivekahealth.data.remote.home.CardsInsurance
+import com.vivekahealth.vivekahealth.data.remote.home.ClientDetailResponse
+import com.vivekahealth.vivekahealth.data.remote.home.InsuranceCardHome
+import com.vivekahealth.vivekahealth.data.remote.home.InsuranceDataNewModel
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.data.remote.home.RecentActivityHome
+import com.vivekahealth.vivekahealth.data.remote.home.ValueInsurance
+import com.vivekahealth.vivekahealth.data.remote.home.workBenefit.workLog.WorkBenefitV2Entity
+import com.vivekahealth.vivekahealth.pension.data.local.dao.PensionConfigDao
+import com.vivekahealth.vivekahealth.pension.data.local.dao.SummaryImpactDao
+import com.vivekahealth.vivekahealth.pension.data.local.dao.WorkHistoryDao
+import com.vivekahealth.vivekahealth.pension.data.local.entity.PensionConfigEntity
+import com.vivekahealth.vivekahealth.pension.data.local.entity.SummaryImpactEntity
+import com.vivekahealth.vivekahealth.pension.data.local.entity.WorkHistoryEntity
+
+/**
+ * Main database VivekaDataBase.
+ */
+<span class="fc" id="L41">@Database(</span>
+    entities = [
+        MemberInfo::class,
+        InsuranceCardHome::class,
+        RecentActivityHome::class,
+        ClientDetailResponse::class,
+        InsuranceDataNewModel::class,
+        CardsInsurance::class,
+        WorkBenefitV2Entity::class,
+        GuestUserInfo::class,
+        GuestClientDetails::class,
+        SummaryImpactEntity::class,
+        WorkHistoryEntity::class,
+        PensionConfigEntity::class
+    ],
+    version = 39,
+    exportSchema = false
+)
+
+@TypeConverters(VivekaTypeConverters::class)
+
+<span class="fc" id="L62">abstract class VivekaDatabase : RoomDatabase() {</span>
+    abstract fun memberInfoDao(): MemberInfoDao
+    abstract fun HomeBenefitDao(): HomeBenefitDao
+    abstract fun RecentCardsDao(): RecentCardsDao
+    abstract fun insuranceWithCardDataDao(): InsuranceWithCardCardDataDao
+    abstract fun ClientDetailsDao(): ClientDetailsDao
+    abstract fun workBenefitV2Dao(): WorkBenefitV2Dao
+    abstract fun guestInfoDao(): GuestInfoDao
+    abstract fun guestClientDetailsDao(): GuestClientDetailsDao
+    abstract fun summaryImpactDao(): SummaryImpactDao
+    abstract fun workHistoryDao(): WorkHistoryDao
+    abstract fun pensionConfigDao(): PensionConfigDao
+
+    companion object {
+
+        // For Singleton instantiation
+        @Volatile
+        private var INSTANCE: VivekaDatabase? = null
+        fun getDatabase(context: Context): VivekaDatabase {
+            // if the INSTANCE is not null, then return it,
+            // if it is, then create the database
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">            return INSTANCE ?: synchronized(this) {</span>
+<span class="fc" id="L84">                val instance = Room.databaseBuilder(</span>
+<span class="fc" id="L85">                    context.applicationContext,</span>
+<span class="fc" id="L86">                    VivekaDatabase::class.java,</span>
+<span class="fc" id="L87">                    &quot;viveka_db.db&quot;</span>
+<span class="fc" id="L88">                ).allowMainThreadQueries()</span>
+<span class="fc" id="L89">                    .addMigrations(MIGRATION_26_28)</span>
+<span class="fc" id="L90">                    .fallbackToDestructiveMigration().build()</span>
+<span class="fc" id="L91">                INSTANCE = instance</span>
+                // return instance
+<span class="fc" id="L93">                instance</span>
+            }
+        }
+
+<span class="pc" id="L97">        var MIGRATION_26_28 = object : Migration(26, 28) {</span>
+            override fun migrate(db: SupportSQLiteDatabase) {
+<span class="nc" id="L99">                db.execSQL(</span>
+<span class="nc" id="L100">                    &quot;CREATE TABLE IF NOT EXISTS insurance_data_new (&quot; +</span>
+                        &quot;selfId INTEGER NOT NULL PRIMARY KEY, &quot; +
+                        &quot;updatedDate TEXT)&quot;
+                )
+
+<span class="nc" id="L105">                db.execSQL(</span>
+<span class="nc" id="L106">                    &quot;CREATE TABLE IF NOT EXISTS card_data (&quot; +</span>
+                        &quot;selfId INTEGER NOT NULL, &quot; +
+                        &quot;front TEXT, &quot; +
+                        &quot;back TEXT, &quot; +
+                        &quot;benefitType TEXT NOT NULL, &quot; +
+                        &quot;PRIMARY KEY (selfId, benefitType))&quot;
+                )
+
+<span class="nc" id="L114">                try {</span>
+<span class="nc" id="L115">                    val cursor = db.query(&quot;SELECT * FROM insurance_data&quot;)</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">                    while (cursor.moveToNext()) {</span>
+<span class="nc" id="L117">                        val selfId = cursor.getString(cursor.getColumnIndexOrThrow(&quot;selfId&quot;)).toLong()</span>
+<span class="nc" id="L118">                        val updatedDate = cursor.getString(</span>
+<span class="nc" id="L119">                            cursor.getColumnIndexOrThrow(&quot;updatedDate&quot;)</span>
+                        )
+<span class="nc" id="L121">                        val cardsStrings = cursor.getString(cursor.getColumnIndexOrThrow(&quot;values&quot;))</span>
+<span class="nc" id="L122">                        val cards = stringToValues(cardsStrings)</span>
+
+<span class="nc" id="L124">                        val list = ArrayList&lt;CardsInsurance&gt;()</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                        cards?.forEachIndexed { index, it -&gt;</span>
+
+<span class="nc" id="L127">                            list.add(</span>
+<span class="nc" id="L128">                                CardsInsurance(</span>
+<span class="nc" id="L129">                                    selfId = selfId,</span>
+<span class="nc" id="L130">                                    front = it.front,</span>
+<span class="nc" id="L131">                                    back = it.back,</span>
+<span class="nc" id="L132">                                    benefitType = it.benefitType,</span>
+<span class="nc" id="L133">                                    indexOrder = index</span>
+                                )
+                            )
+<span class="nc" id="L136">                        }</span>
+
+<span class="nc" id="L138">                        db.execSQL(</span>
+<span class="nc" id="L139">                            &quot;INSERT INTO insurance_data_new (selfId, updatedDate) VALUES (?, ?)&quot;,</span>
+<span class="nc" id="L140">                            arrayOf(selfId, updatedDate)</span>
+                        )
+
+<span class="nc" id="L143">                        list.forEach {</span>
+<span class="nc" id="L144">                            db.execSQL(</span>
+<span class="nc" id="L145">                                &quot;INSERT INTO card_data (selfId, front, back, benefitType) VALUES (?, ?, ?, ?)&quot;,</span>
+<span class="nc" id="L146">                                arrayOf(selfId, it.front, it.back, it.benefitType)</span>
+                            )
+<span class="nc" id="L148">                        }</span>
+                    }
+<span class="nc" id="L150">                    cursor.close()</span>
+
+<span class="nc" id="L152">                    db.execSQL(</span>
+<span class="nc" id="L153">                        &quot;DROP TABLE insurance_data&quot;</span>
+                    )
+<span class="nc" id="L155">                } catch (exp: Exception) {</span>
+<span class="nc" id="L156">                    exp.printStackTrace()</span>
+                }
+<span class="nc" id="L158">            }</span>
+<span class="nc" id="L159">        }</span>
+    }
+}
+
+fun stringToValues(data: String?): List&lt;ValueInsurance&gt;? {
+<span class="nc" id="L164">    var gson = Gson()</span>
+
+<span class="nc bnc" id="L166" title="All 2 branches missed.">    if (data == null) {</span>
+<span class="nc" id="L167">        return null</span>
+    }
+<span class="nc" id="L169">    val listType = object : TypeToken&lt;List&lt;ValueInsurance&gt;&gt;() {}.type</span>
+<span class="nc" id="L170">    return gson.fromJson(data, listType)</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

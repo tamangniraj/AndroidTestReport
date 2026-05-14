@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GmsDocumentScannerClient.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.guestVerify.documents.scanner</a> &gt; <span class="el_source">GmsDocumentScannerClient.kt</span></div><h1>GmsDocumentScannerClient.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.guestVerify.documents.scanner
+
+import android.app.Activity
+import android.net.Uri
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.fragment.app.Fragment
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_BASE_WITH_FILTER
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
+import com.vivekahealth.vivekahealth.ui.guestVerify.documents.DocumentType
+import javax.inject.Inject
+
+<span class="nc" id="L17">class GmsDocumentScannerClient @Inject constructor() : DocumentScannerClient {</span>
+
+    private lateinit var scannerLauncher: ActivityResultLauncher&lt;IntentSenderRequest&gt;
+    private var onPageCaptured: ((Uri, DocumentType) -&gt; Unit)? = null
+    private var currentDocumentType: DocumentType? = null
+
+    override fun register(fragment: Fragment, onPageCaptured: (Uri, DocumentType) -&gt; Unit) {
+<span class="nc" id="L24">        this.onPageCaptured = onPageCaptured</span>
+<span class="nc" id="L25">        scannerLauncher = fragment.registerForActivityResult(</span>
+<span class="nc" id="L26">            ActivityResultContracts.StartIntentSenderForResult()</span>
+        ) { result -&gt;
+<span class="nc bnc" id="L28" title="All 2 branches missed.">            if (result.resultCode == Activity.RESULT_OK) {</span>
+<span class="nc bnc" id="L29" title="All 2 branches missed.">                val docType = currentDocumentType ?: return@registerForActivityResult</span>
+<span class="nc" id="L30">                GmsDocumentScanningResult.fromActivityResultIntent(result.data)</span>
+<span class="nc bnc" id="L31" title="All 6 branches missed.">                    ?.pages?.getOrNull(0)?.imageUri</span>
+<span class="nc bnc" id="L32" title="All 2 branches missed.">                    ?.let { uri -&gt; onPageCaptured(uri, docType) }</span>
+            }
+<span class="nc" id="L34">        }</span>
+<span class="nc" id="L35">    }</span>
+
+    override fun startScan(
+        activity: Activity,
+        documentType: DocumentType,
+        onFailure: (Exception) -&gt; Unit
+    ) {
+<span class="nc" id="L42">        currentDocumentType = documentType</span>
+<span class="nc" id="L43">        val options = GmsDocumentScannerOptions.Builder()</span>
+<span class="nc" id="L44">            .setScannerMode(SCANNER_MODE_BASE_WITH_FILTER)</span>
+<span class="nc" id="L45">            .setResultFormats(RESULT_FORMAT_JPEG)</span>
+<span class="nc" id="L46">            .setPageLimit(1)</span>
+<span class="nc" id="L47">            .setGalleryImportAllowed(false)</span>
+<span class="nc" id="L48">            .build()</span>
+<span class="nc" id="L49">        GmsDocumentScanning.getClient(options)</span>
+<span class="nc" id="L50">            .getStartScanIntent(activity)</span>
+<span class="nc" id="L51">            .addOnSuccessListener { intentSender -&gt;</span>
+<span class="nc" id="L52">                scannerLauncher.launch(IntentSenderRequest.Builder(intentSender).build())</span>
+<span class="nc" id="L53">            }</span>
+<span class="nc" id="L54">            .addOnFailureListener { e -&gt; onFailure(e) }</span>
+<span class="nc" id="L55">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

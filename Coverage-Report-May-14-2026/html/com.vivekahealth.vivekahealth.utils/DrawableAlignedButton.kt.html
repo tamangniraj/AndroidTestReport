@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DrawableAlignedButton.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils</a> &gt; <span class="el_source">DrawableAlignedButton.kt</span></div><h1>DrawableAlignedButton.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils
+
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.drawable.Drawable
+import android.opengl.ETC1.getHeight
+import android.opengl.ETC1.getWidth
+import android.util.AttributeSet
+import com.google.android.material.button.MaterialButton
+
+class DrawableAlignedButton : MaterialButton {
+<span class="nc" id="L12">    constructor(context: Context?, attrs: AttributeSet?) : super(context!!, attrs) {}</span>
+<span class="nc" id="L13">    constructor(context: Context?) : super(context!!) {}</span>
+<span class="nc" id="L14">    constructor(context: Context?, attrs: AttributeSet?, style: Int) : super(</span>
+<span class="nc" id="L15">        context!!,</span>
+<span class="nc" id="L16">        attrs,</span>
+<span class="nc" id="L17">        style</span>
+<span class="nc" id="L18">    ) {}</span>
+
+    private var mLeftDrawable: Drawable? = null
+
+    // Overriden to work only with a left drawable.
+    override fun setCompoundDrawablesWithIntrinsicBounds(
+        left: Drawable?,
+        top: Drawable?,
+        right: Drawable?,
+        bottom: Drawable?
+    ) {
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        if (left == null) return</span>
+<span class="nc" id="L30">        left.setBounds(0, 0, left.intrinsicWidth, left.intrinsicHeight)</span>
+<span class="nc" id="L31">        mLeftDrawable = left</span>
+<span class="nc" id="L32">    }</span>
+
+    protected override fun onDraw(canvas: Canvas) {
+        // transform the canvas so we can draw both image and text at center.
+<span class="nc" id="L36">        canvas.save()</span>
+<span class="nc" id="L37">        canvas.translate((2 + mLeftDrawable!!.intrinsicWidth / 2).toFloat(), 0F)</span>
+<span class="nc" id="L38">        super.onDraw(canvas)</span>
+<span class="nc" id="L39">        canvas.restore()</span>
+<span class="nc" id="L40">        canvas.save()</span>
+<span class="nc" id="L41">        val widthOfText = getPaint().measureText(getText().toString()) as Int</span>
+<span class="nc" id="L42">        val left = (getWidth() + widthOfText) / 2 - mLeftDrawable!!.intrinsicWidth - 2</span>
+<span class="nc" id="L43">        canvas.translate(</span>
+<span class="nc" id="L44">            left.toFloat(),</span>
+<span class="nc" id="L45">            ((getHeight() - mLeftDrawable!!.intrinsicHeight) / 2).toFloat()</span>
+        )
+<span class="nc" id="L47">        mLeftDrawable!!.draw(canvas)</span>
+<span class="nc" id="L48">        canvas.restore()</span>
+<span class="nc" id="L49">    }</span>
+
+    protected override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+<span class="nc" id="L52">        super.onMeasure(widthMeasureSpec, heightMeasureSpec)</span>
+<span class="nc" id="L53">        var height: Int = getMeasuredHeight()</span>
+<span class="nc" id="L54">        height = Math.max(</span>
+<span class="nc" id="L55">            height,</span>
+<span class="nc" id="L56">            mLeftDrawable!!.intrinsicHeight + getPaddingTop() + getPaddingBottom()</span>
+        )
+<span class="nc" id="L58">        setMeasuredDimension(getMeasuredWidth(), height)</span>
+<span class="nc" id="L59">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

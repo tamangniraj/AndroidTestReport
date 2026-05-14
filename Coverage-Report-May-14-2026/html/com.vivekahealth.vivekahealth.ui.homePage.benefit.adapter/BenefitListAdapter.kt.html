@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BenefitListAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.benefit.adapter</a> &gt; <span class="el_source">BenefitListAdapter.kt</span></div><h1>BenefitListAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.benefit.adapter
+
+import android.graphics.BitmapFactory
+import android.util.Base64
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.local.benefit.InNetworkBarDetails
+import com.vivekahealth.vivekahealth.data.local.benefit.OutNetworkBarDetails
+import com.vivekahealth.vivekahealth.data.local.home.BarModel
+import com.vivekahealth.vivekahealth.data.remote.home.*
+import com.vivekahealth.vivekahealth.databinding.SingleCellBenefitPerMonthBinding
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import timber.log.Timber
+import kotlin.collections.ArrayList
+
+class BenefitListAdapter(
+    private var reason: String,
+    private var eligible: Boolean,
+    private var onClickReason: (String?) -&gt; Unit,
+    private var onClick: (MemberBenefitDto) -&gt; Unit,
+    private var barModel: BarModel,
+    private var onClickBenefit: (BenefitsDTO) -&gt; Unit
+) : ListAdapter&lt;BenefitsDTO, RecyclerView.ViewHolder&gt;(
+    BenefitDiffCallback()
+) {
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return BenefitViewHolder(
+            SingleCellBenefitPerMonthBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            )
+        )
+    }
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = getItem(position)
+        var barInfo = barModel.values!!.find { it.name!!.contains(item.benefitName!!) }
+
+        (holder as BenefitViewHolder).binding.benefit = item
+
+        holder.binding.benefitNameText = item.benefitName?.let {
+            it
+        }
+        holder.binding.reasonGone = (reason.isNullOrBlank() || reason.equals(&quot;null&quot;, true)) &amp;&amp; item.reasons.isNullOrBlank()
+//        holder.binding.reasonGone = eligible
+
+        if (barInfo?.familyExpenses != null) {
+            holder.binding.outGone = false
+            holder.binding.inGone = false
+            var maxWidth = HelperUtils.getWidth(holder.binding.nameView.context)
+            var totalViewWidth = maxWidth
+            var ratio: Double = 0.0
+            ratio =
+                (barInfo.familyExpenses!!.familyDeductibleMaxAmount?.toDouble() ?: 0.0) / (barInfo.familyExpenses!!.familyOutOfPocketMaxAmount?.toDouble() ?: 0.0)
+            var deductibleMainWidth = totalViewWidth * (ratio)
+            var temp = totalViewWidth * (1 - ratio)
+            var coinsuranceMainWidth = temp * 0.8
+            var deductibleWidthRatio: Double = 0.0
+            deductibleWidthRatio = (barInfo.familyExpenses!!.familyDeductibleAmount ?: 0.0) / (barInfo.familyExpenses!!.familyDeductibleMaxAmount ?: 0.0)
+
+            var deductibleWidth = deductibleWidthRatio * deductibleMainWidth
+            var oopWidthRatio: Double = 0.0
+            oopWidthRatio = (barInfo.familyExpenses!!.familyOutOfPocketAmount ?: 0.0) / (barInfo.familyExpenses!!.familyOutOfPocketMaxAmount ?: 0.0)
+            var oopWidth = 0.0
+            if ((barInfo.familyExpenses!!.familyDeductibleAmount ?: 0.0) &gt;= (barInfo.familyExpenses!!.familyDeductibleMaxAmount ?: 0.0)) {
+                oopWidth = oopWidthRatio * coinsuranceMainWidth
+            }
+
+            var ratioOon: Double = 0.0
+
+            ratioOon = (barInfo.familyExpenses!!.familyOonDeductibleMaxAmount?.toDouble() ?: 0.0) / (barInfo.familyExpenses!!.familyOonOutOfPocketMaxAmount?.toDouble() ?: 0.0)
+            var deductibleMainWidthOon = totalViewWidth * (ratioOon)
+            var tempOon = totalViewWidth * (1 - ratioOon)
+            var coinsuranceMainWidthOon = tempOon * 0.8
+            var deductibleWidthRatioOon: Double = 0.0
+            deductibleWidthRatioOon = (barInfo.familyExpenses!!.familyOonDeductibleAmount ?: 0.0) / (barInfo.familyExpenses!!.familyOonDeductibleMaxAmount ?: 0.0)
+
+            var deductibleWidthOon = deductibleWidthRatioOon * deductibleMainWidthOon
+            var oopWidthRatioOon: Double = 0.0
+            oopWidthRatioOon = (barInfo.familyExpenses!!.familyOonOutOfPocketAmount ?: 0.0) / (barInfo.familyExpenses!!.familyOonOutOfPocketMaxAmount ?: 0.0)
+            var oopWidthOon = 0.0
+            if ((barInfo.familyExpenses!!.familyOonDeductibleAmount ?: 0.0) &gt;= (barInfo.familyExpenses!!.familyOonDeductibleMaxAmount ?: 0.0)) {
+                oopWidthOon = oopWidthRatioOon * coinsuranceMainWidthOon
+            }
+
+            if ((barInfo.familyExpenses!!.familyDeductibleMaxAmount ?: 0.0) &gt;= (barInfo.familyExpenses!!.familyOutOfPocketMaxAmount ?: 0.0)) {
+                deductibleMainWidth = 0.0
+                holder.binding.barIn.deductibleSlide.visibility = View.GONE
+                holder.binding.barIn.coinsuranceView.visibility = View.INVISIBLE
+
+//                val containerParamsDed = holder.binding.barIn.deductibleSlide.layoutParams as ConstraintLayout.LayoutParams
+//                containerParamsDed.endToEnd = holder.binding.barIn.coinsurance.id
+//                holder.binding.barIn.deductibleView.layoutParams =
+//                    ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT - 8, 20)
+
+                val containerParams = holder.binding.barIn.coinsurance.layoutParams as ConstraintLayout.LayoutParams
+                containerParams.startToStart = ConstraintLayout.LayoutParams.UNSET
+                holder.binding.barIn.coinsurance.layoutParams = containerParams
+
+                val containerParamsView = holder.binding.barIn.deductibleView.layoutParams as ConstraintLayout.LayoutParams
+                containerParamsView.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
+                holder.binding.barIn.deductibleView.layoutParams = containerParamsView
+
+                coinsuranceMainWidth = 0.0
+                val containerParamsEnd = holder.binding.barIn.linearLayout2.layoutParams as ConstraintLayout.LayoutParams
+                containerParamsEnd.marginEnd = -2
+                containerParamsEnd.startToEnd = ConstraintLayout.LayoutParams.UNSET
+                containerParamsEnd.endToEnd = ConstraintLayout.LayoutParams.UNSET
+                containerParamsEnd.topToBottom = holder.binding.barIn.coinsuranceView.id
+                containerParamsEnd.endToEnd = holder.binding.barIn.deductibleView.id
+                holder.binding.barIn.linearLayout2.layoutParams = containerParamsEnd
+
+                val containerParamsText = holder.binding.barIn.textView23.layoutParams as ConstraintLayout.LayoutParams
+                containerParamsText.topToBottom = holder.binding.barIn.linearLayout2.id
+                containerParamsText.endToStart = holder.binding.barIn.linearLayout2.id
+                holder.binding.barIn.textView23.layoutParams = containerParamsText
+            } else {
+                val containerParamsEnd = holder.binding.barIn.linearLayout2.layoutParams as ConstraintLayout.LayoutParams
+                containerParamsEnd.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
+                containerParamsEnd.startToEnd = holder.binding.barIn.deductibleSlide.id
+                holder.binding.barIn.linearLayout2.layoutParams = containerParamsEnd
+            }
+
+            if ((barInfo.familyExpenses!!.familyOonDeductibleMaxAmount ?: 0.0) &gt;= (barInfo.familyExpenses!!.familyOonOutOfPocketMaxAmount ?: 0.0)) {
+//                deductibleMainWidthOon = (holder.binding.barOut.main.layoutParams.width - 8).toDouble()
+                deductibleMainWidthOon = 0.0
+                holder.binding.barOut.deductibleSlide.visibility = View.GONE
+                holder.binding.barOut.coinsuranceView.visibility = View.INVISIBLE
+
+//                val containerParamsDed = holder.binding.barIn.deductibleSlide.layoutParams as ConstraintLayout.LayoutParams
+//                containerParamsDed.endToEnd = holder.binding.barIn.coinsurance.id
+//                holder.binding.barIn.deductibleView.layoutParams =
+//                    ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT - 8, 20)
+
+                val containerParams = holder.binding.barOut.coinsurance.layoutParams as ConstraintLayout.LayoutParams
+                containerParams.startToStart = ConstraintLayout.LayoutParams.UNSET
+                holder.binding.barOut.coinsurance.layoutParams = containerParams
+
+                val containerParamsView = holder.binding.barOut.deductibleView.layoutParams as ConstraintLayout.LayoutParams
+                containerParamsView.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
+                holder.binding.barOut.deductibleView.layoutParams = containerParamsView
+
+                coinsuranceMainWidth = 0.0
+                val containerParamsEnd = holder.binding.barOut.linearLayout2.layoutParams as ConstraintLayout.LayoutParams
+                containerParamsEnd.marginEnd = -2
+                containerParamsEnd.startToEnd = ConstraintLayout.LayoutParams.UNSET
+                containerParamsEnd.endToEnd = ConstraintLayout.LayoutParams.UNSET
+                containerParamsEnd.topToBottom = holder.binding.barOut.coinsuranceView.id
+                containerParamsEnd.endToEnd = holder.binding.barOut.deductibleView.id
+                holder.binding.barOut.linearLayout2.layoutParams = containerParamsEnd
+
+                val containerParamsText = holder.binding.barOut.textView23.layoutParams as ConstraintLayout.LayoutParams
+                containerParamsText.topToBottom = holder.binding.barOut.linearLayout2.id
+                containerParamsText.endToStart = holder.binding.barOut.linearLayout2.id
+                holder.binding.barOut.textView23.layoutParams = containerParamsText
+            } else {
+                val containerParamsEnd = holder.binding.barOut.linearLayout2.layoutParams as ConstraintLayout.LayoutParams
+                containerParamsEnd.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
+                containerParamsEnd.startToEnd = holder.binding.barOut.deductibleSlide.id
+                holder.binding.barOut.linearLayout2.layoutParams = containerParamsEnd
+            }
+            holder.binding.inBar = InNetworkBarDetails(
+                barInfo.familyExpenses!!.coinsurance,
+                barInfo.familyExpenses!!.familyDeductibleMaxAmount?.toFloat() ?: 0.0f,
+                barInfo.familyExpenses!!.familyOutOfPocketMaxAmount?.toFloat() ?: 0.0f,
+                deductibleMainWidth.toInt(),
+                deductibleWidth.toInt(),
+                coinsuranceMainWidth.toInt(),
+                oopWidth.toInt(),
+                coinsuranceMainWidth.toInt(),
+                0f,
+                100f, holder.itemView.context.getString(R.string.family)
+            )
+            if ((barInfo.familyExpenses!!.familyDeductibleMaxAmount ?: 0.0) &gt;= (barInfo.familyExpenses!!.familyOutOfPocketMaxAmount ?: 0.0)) {
+                holder.binding.barIn.coinsuranceView.visibility = View.INVISIBLE
+            } else {
+                val containerParamsText = holder.binding.barIn.textView23.layoutParams as ConstraintLayout.LayoutParams
+                containerParamsText.topToBottom = ConstraintLayout.LayoutParams.UNSET
+                containerParamsText.topToBottom = holder.binding.barIn.deductibleSlide.id
+                containerParamsText.endToStart = ConstraintLayout.LayoutParams.UNSET
+                containerParamsText.startToStart = holder.binding.barIn.deductibleView.id
+                holder.binding.barIn.textView23.layoutParams = containerParamsText
+            }
+            holder.binding.outBar = OutNetworkBarDetails(
+                barInfo.familyExpenses!!.oonCoinsurance,
+                barInfo.familyExpenses!!.familyOonDeductibleMaxAmount?.toFloat() ?: 0.0f,
+                barInfo.familyExpenses!!.familyOonOutOfPocketMaxAmount?.toFloat() ?: 0.0f,
+                deductibleMainWidthOon.toInt(),
+                deductibleWidthOon.toInt(),
+                coinsuranceMainWidthOon.toInt(),
+                oopWidthOon.toInt(),
+                coinsuranceMainWidthOon.toInt(),
+                0f,
+                100f, holder.itemView.context.getString(R.string.family)
+            )
+
+            if ((barInfo.familyExpenses!!.familyOonDeductibleMaxAmount ?: 0.0) &gt;= (barInfo.familyExpenses!!.familyOonOutOfPocketMaxAmount ?: 0.0)) {
+                holder.binding.barOut.coinsuranceView.visibility = View.INVISIBLE
+            } else {
+                val containerParamsOut = holder.binding.barOut.textView23.layoutParams as ConstraintLayout.LayoutParams
+                containerParamsOut.topToBottom = holder.binding.barOut.deductibleSlide.id
+                containerParamsOut.endToStart = ConstraintLayout.LayoutParams.UNSET
+                containerParamsOut.startToStart = holder.binding.barOut.deductibleView.id
+                holder.binding.barOut.textView23.layoutParams = containerParamsOut
+            }
+            holder.binding.inGone = barInfo.familyExpenses!!.familyOutOfPocketMaxAmount == null || barInfo.familyExpenses!!.familyOutOfPocketMaxAmount == 0.0
+            holder.binding.outGone = barInfo.familyExpenses!!.familyOonOutOfPocketMaxAmount == null || barInfo.familyExpenses!!.familyOonOutOfPocketMaxAmount == 0.0
+        } else {
+            holder.binding.outGone = true
+            holder.binding.inGone = true
+        }
+        holder.binding.setClickListener {
+            if (eligible &amp;&amp; holder.binding.reasonGone == true) {
+                onClickBenefit(item)
+            }
+        }
+
+        if (!item.benefitLogo.isNullOrEmpty()) {
+            val imageBit = Base64.decode(item.benefitLogo.toByteArray(), Base64.DEFAULT)
+
+            holder.binding.logo.setImageBitmap(
+                BitmapFactory.decodeByteArray(
+                    imageBit,
+                    0,
+                    imageBit.size
+                )
+            )
+        }
+
+        var adapterWork = WorkHourListBenefit()
+
+        holder.binding.workHourList.adapter = adapterWork
+        adapterWork.submitList(item.employerHourDTOList)
+
+        holder.binding.reasonBtn.setOnClickListener {
+            onClickReason(item.reasons)
+        }
+
+        var adapterBenefit = BenefitDependentListAdapter(onClick = { MemberBenefitDto -&gt;
+            Timber.d(holder.itemView.context.getString(R.string.add_dependent_benefit))
+
+            onClick(MemberBenefitDto)
+        })
+
+        holder.binding.memberProfilePicture.adapter = adapterBenefit
+
+        var bubbleMemberList: ArrayList&lt;MemberBenefitDto&gt; = arrayListOf()
+        item.memberBenefitDtoList.let { listItem -&gt;
+
+            var grouped = listItem.groupBy { value -&gt; value.relation }
+            grouped.forEach {
+                it.value.sortedByDescending { item -&gt;
+                    DateUtils.stringServerDateToDate(
+                        item.dateOfBirth.toString()
+                    )
+                }
+                it.value.reversed()
+            }
+
+            bubbleMemberList.clear()
+
+            grouped.forEach {
+                if (it.key.equals(&quot;Insured&quot;, true)) {
+                    bubbleMemberList.add(0, it.value[0])
+                } else if (it.key.equals(&quot;Spouse&quot;, true)) {
+                    if (grouped.containsKey(&quot;Insured&quot;)) {
+                        bubbleMemberList.add(1, it.value[0])
+                    } else {
+                        bubbleMemberList.add(0, it.value[0])
+                    }
+                } else if (it.key.equals(&quot;Child&quot;, true)) {
+                    val dateGroup = it.value.groupBy { date -&gt;
+                        DateUtils.stringServerDateToDate(
+                            date.dateOfBirth.toString()
+                        )
+                    }
+
+                    dateGroup.forEach { item -&gt;
+                        val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }
+                        bubbleMemberList.addAll(sorted)
+                    }
+                }
+            }
+            val tempOthers: ArrayList&lt;MemberBenefitDto&gt; = arrayListOf()
+            grouped.forEach {
+                if (!it.key.equals(&quot;Insured&quot;, true) &amp;&amp; !it.key.equals(
+                        &quot;Spouse&quot;,
+                        true
+                    ) &amp;&amp; !it.key.equals(&quot;Child&quot;, true)
+                ) {
+                    tempOthers.addAll(it.value)
+                }
+            }
+
+            val dateGroup = tempOthers.groupBy { date -&gt;
+                DateUtils.stringServerDateToDate(
+                    date.dateOfBirth.toString()
+                )
+            }
+            dateGroup.forEach { item -&gt;
+                val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }
+                bubbleMemberList.addAll(sorted)
+            }
+        }
+
+        adapterBenefit.submitList(bubbleMemberList)
+
+//        holder.binding.clicked = position == itemCount-1
+    }
+
+    class BenefitViewHolder(
+        val binding: SingleCellBenefitPerMonthBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        //        var toggle = binding.clicked
+        init {
+
+//            binding.clicked = adapterPosition == count
+        }
+    }
+}
+
+<span class="nc" id="L334">private class BenefitDiffCallback : DiffUtil.ItemCallback&lt;BenefitsDTO&gt;() {</span>
+
+    override fun areItemsTheSame(oldItem: BenefitsDTO, newItem: BenefitsDTO): Boolean {
+<span class="nc" id="L337">        return oldItem == newItem</span>
+    }
+
+    override fun areContentsTheSame(oldItem: BenefitsDTO, newItem: BenefitsDTO): Boolean {
+<span class="nc" id="L341">        return oldItem == newItem</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

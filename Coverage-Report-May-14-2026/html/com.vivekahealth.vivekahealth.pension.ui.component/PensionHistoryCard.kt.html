@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PensionHistoryCard.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.pension.ui.component</a> &gt; <span class="el_source">PensionHistoryCard.kt</span></div><h1>PensionHistoryCard.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.pension.ui.component
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.vivekahealth.vivekahealth.pension.data.model.WorkStatus
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.pension.data.model.YearGroup
+import com.vivekahealth.vivekahealth.pension.ui.tagged
+
+@Composable
+fun PensionHistoryCard(
+    data: YearGroup,
+<span class="nc bnc" id="L22" title="All 2 branches missed.">    modifier: Modifier = Modifier</span>
+<span class="nc bnc" id="L23" title="All 18 branches missed.">) {</span>
+<span class="nc bnc" id="L24" title="All 2 branches missed.">    Card(</span>
+
+<span class="nc" id="L26">        modifier = modifier</span>
+<span class="nc" id="L27">            .fillMaxWidth()</span>
+<span class="nc" id="L28">            .tagged(&quot;Pension History Card ${data.period}&quot;),</span>
+<span class="nc" id="L29">        colors = CardDefaults.cardColors(</span>
+<span class="nc" id="L30">            containerColor = Color.White</span>
+        ),
+<span class="nc" id="L32">        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)</span>
+<span class="nc" id="L33">    ) {</span>
+<span class="nc bnc" id="L34" title="All 6 branches missed.">        Column(</span>
+<span class="nc" id="L35">            modifier = Modifier.padding(16.dp)</span>
+        ) {
+            // Header with icon and period
+<span class="nc" id="L38">            Row(</span>
+<span class="nc" id="L39">                verticalAlignment = Alignment.CenterVertically,</span>
+<span class="nc" id="L40">                modifier = Modifier.fillMaxWidth()</span>
+            ) {
+<span class="nc" id="L42">                Icon(</span>
+<span class="nc bnc" id="L43" title="All 6 branches missed.">                    painter = when (WorkStatus.fromGroupType(data.groupType)) {</span>
+<span class="nc" id="L44">                        WorkStatus.VESTED -&gt; painterResource(R.drawable.ic_success_pension)</span>
+<span class="nc" id="L45">                        WorkStatus.BREAK -&gt; painterResource(R.drawable.ic_warning_pension)</span>
+<span class="nc" id="L46">                        WorkStatus.FORFEITED -&gt; painterResource(R.drawable.ic_failed_pension)</span>
+<span class="nc" id="L47">                        else -&gt; {</span>
+<span class="nc" id="L48">                            painterResource(R.drawable.ic_success_pension)</span>
+                        }
+                    },
+<span class="nc" id="L51">                    contentDescription = null,</span>
+<span class="nc bnc" id="L52" title="All 6 branches missed.">                    tint = when (WorkStatus.fromGroupType(data.groupType)) {</span>
+<span class="nc" id="L53">                        WorkStatus.VESTED -&gt; Color(0xFF00D671)</span>
+<span class="nc" id="L54">                        WorkStatus.BREAK -&gt; Color.Black</span>
+<span class="nc" id="L55">                        WorkStatus.FORFEITED -&gt; Color(0xFFEB4848)</span>
+                        else -&gt; {
+<span class="nc" id="L57">                            Color(0xFF00D671)</span>
+                        }
+                    },
+<span class="nc" id="L60">                    modifier = Modifier.size(20.dp)</span>
+                )
+
+<span class="nc" id="L63">                Spacer(modifier = Modifier.width(8.dp))</span>
+
+<span class="nc" id="L65">                Text(</span>
+<span class="nc" id="L66">                    text = data.period + (</span>
+<span class="nc bnc" id="L67" title="All 4 branches missed.">                        &quot; - Break Years&quot;.takeIf {</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">                            WorkStatus.fromGroupType(</span>
+<span class="nc" id="L69">                                data.groupType</span>
+<span class="nc" id="L70">                            ) == WorkStatus.BREAK</span>
+<span class="nc" id="L71">                        } ?: &quot;&quot;</span>
+                        ),
+<span class="nc" id="L73">                    style = MaterialTheme.typography.titleMedium,</span>
+<span class="nc" id="L74">                    fontWeight = FontWeight.Medium,</span>
+<span class="nc bnc" id="L75" title="All 6 branches missed.">                    color = when (WorkStatus.fromGroupType(data.groupType)) {</span>
+<span class="nc" id="L76">                        WorkStatus.VESTED -&gt; Color(0xFF00D671)</span>
+<span class="nc" id="L77">                        WorkStatus.BREAK -&gt; Color.Black</span>
+<span class="nc" id="L78">                        WorkStatus.FORFEITED -&gt; Color(0xFFF44336)</span>
+<span class="nc" id="L79">                        else -&gt; Color(0xFF00D671)</span>
+                    }
+                )
+<span class="nc" id="L82">            }</span>
+
+<span class="nc" id="L84">            Spacer(modifier = Modifier.height(16.dp))</span>
+
+            // Credits and Vesting Stats
+<span class="nc" id="L87">            Row(</span>
+<span class="nc" id="L88">                modifier = Modifier.fillMaxWidth(),</span>
+<span class="nc" id="L89">                horizontalArrangement = Arrangement.SpaceBetween</span>
+            ) {
+<span class="nc" id="L91">                Column(</span>
+<span class="nc" id="L92">                    modifier = Modifier</span>
+<span class="nc" id="L93">                        .weight(1f)</span>
+<span class="nc" id="L94">                        .tagged(&quot;Credits Earned Column ${data.period}&quot;)</span>
+                ) {
+<span class="nc" id="L96">                    Text(</span>
+<span class="nc" id="L97">                        text = stringResource(R.string.credits_earned),</span>
+<span class="nc" id="L98">                        style = MaterialTheme.typography.bodySmall,</span>
+<span class="nc" id="L99">                        color = Color(0xFF757575),</span>
+<span class="nc" id="L100">                        fontSize = 16.sp,</span>
+<span class="nc" id="L101">                        modifier = Modifier.tagged(&quot;Credits Earned Label&quot;)</span>
+                    )
+<span class="nc" id="L103">                    Spacer(modifier = Modifier.height(8.dp))</span>
+<span class="nc" id="L104">                    Text(</span>
+<span class="nc" id="L105">                        text = formatCreditValue(data.totalCredits),</span>
+<span class="nc" id="L106">                        style = MaterialTheme.typography.headlineSmall,</span>
+<span class="nc" id="L107">                        fontWeight = FontWeight.Bold,</span>
+<span class="nc" id="L108">                        color = Color(0xFF212121),</span>
+<span class="nc" id="L109">                        fontSize = 16.sp,</span>
+<span class="nc" id="L110">                        modifier = Modifier.tagged(&quot;Credits Earned Value&quot;)</span>
+                    )
+<span class="nc" id="L112">                }</span>
+
+<span class="nc" id="L114">                Column(</span>
+<span class="nc" id="L115">                    modifier = Modifier</span>
+<span class="nc" id="L116">                        .weight(1f)</span>
+<span class="nc" id="L117">                        .tagged(&quot;Vesting Chips Column ${data.period}&quot;),</span>
+<span class="nc" id="L118">                    horizontalAlignment = Alignment.Start</span>
+                ) {
+<span class="nc" id="L120">                    Text(</span>
+<span class="nc" id="L121">                        text = stringResource(R.string.vesting_chips),</span>
+<span class="nc" id="L122">                        style = MaterialTheme.typography.bodySmall,</span>
+<span class="nc" id="L123">                        color = Color(0xFF757575),</span>
+<span class="nc" id="L124">                        fontSize = 16.sp,</span>
+<span class="nc" id="L125">                        modifier = Modifier.tagged(&quot;Vesting Chips Label&quot;)</span>
+
+                    )
+<span class="nc" id="L128">                    Spacer(modifier = Modifier.height(8.dp))</span>
+
+<span class="nc" id="L130">                    Text(</span>
+<span class="nc" id="L131">                        text = formatCreditValue(data.totalVesting),</span>
+<span class="nc" id="L132">                        style = MaterialTheme.typography.headlineSmall,</span>
+<span class="nc" id="L133">                        fontWeight = FontWeight.Bold,</span>
+<span class="nc" id="L134">                        color = Color(0xFF212121),</span>
+<span class="nc" id="L135">                        fontSize = 16.sp,</span>
+<span class="nc" id="L136">                        modifier = Modifier.tagged(&quot;Vesting Chips Value&quot;)</span>
+
+                    )
+<span class="nc" id="L139">                }</span>
+<span class="nc" id="L140">            }</span>
+
+<span class="nc" id="L142">            val notes = data.note</span>
+
+            // Bottom section (description or additional info)
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            notes?.let {</span>
+<span class="nc" id="L146">                Spacer(modifier = Modifier.height(12.dp))</span>
+
+<span class="nc" id="L148">                Card(</span>
+<span class="nc" id="L149">                    colors = CardDefaults.cardColors(</span>
+<span class="nc bnc" id="L150" title="All 6 branches missed.">                        containerColor = when (WorkStatus.fromGroupType(data.groupType)) {</span>
+<span class="nc" id="L151">                            WorkStatus.VESTED -&gt; Color(0xFFE0FFF0)</span>
+<span class="nc" id="L152">                            WorkStatus.BREAK -&gt; Color(0xFFF8F8F8)</span>
+<span class="nc" id="L153">                            WorkStatus.FORFEITED -&gt; Color(0x20EB4848)</span>
+<span class="nc" id="L154">                            else -&gt; Color(0xFFE0FFF0)</span>
+                        }
+                    ),
+<span class="nc" id="L157">                    modifier = Modifier.fillMaxWidth()</span>
+<span class="nc" id="L158">                ) {</span>
+<span class="nc bnc" id="L159" title="All 6 branches missed.">                    Column(</span>
+<span class="nc" id="L160">                        modifier = Modifier.padding(12.dp)</span>
+                    ) {
+<span class="nc" id="L162">                        Text(</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                            text = notes.title ?: &quot;&quot;,</span>
+<span class="nc" id="L164">                            style = MaterialTheme.typography.bodyMedium,</span>
+<span class="nc" id="L165">                            fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L166">                            color = Color.Black</span>
+                        )
+
+<span class="nc bnc" id="L169" title="All 8 branches missed.">                        if (notes.text?.isNotEmpty() == true) {</span>
+<span class="nc" id="L170">                            Spacer(modifier = Modifier.height(4.dp))</span>
+<span class="nc" id="L171">                            Text(</span>
+<span class="nc" id="L172">                                text = notes.text,</span>
+<span class="nc" id="L173">                                style = MaterialTheme.typography.bodySmall,</span>
+<span class="nc" id="L174">                                color = Color(0xFF757575)</span>
+                            )
+                        }
+<span class="nc" id="L177">                    }</span>
+<span class="nc" id="L178">                }</span>
+<span class="nc" id="L179">            }</span>
+<span class="nc" id="L180">        }</span>
+<span class="nc" id="L181">    }</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

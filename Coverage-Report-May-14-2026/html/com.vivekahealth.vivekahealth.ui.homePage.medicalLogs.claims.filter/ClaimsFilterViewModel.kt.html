@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClaimsFilterViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.claims.filter</a> &gt; <span class="el_source">ClaimsFilterViewModel.kt</span></div><h1>ClaimsFilterViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.claims.filter
+
+import android.content.SharedPreferences
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.data.local.VivekaDatabase
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.disposables.CompositeDisposable
+import java.util.*
+import javax.inject.Inject
+import kotlin.collections.ArrayList
+
+<span class="fc" id="L19">class ClaimsFilterViewModel @Inject constructor(</span>
+<span class="fc" id="L20">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L21">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L22">    private val vivekaDatabase: VivekaDatabase</span>
+<span class="fc" id="L23">) : ViewModel(), Observable {</span>
+
+<span class="fc" id="L25">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L27">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="fc" id="L29">    private val _navigateToPres = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToPres: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L31">        get() = _navigateToPres</span>
+
+<span class="pc" id="L33">    var claimsTypes: ArrayList&lt;String&gt; = arrayListOf()</span>
+<span class="pc" id="L34">    var claimsStatus: ArrayList&lt;String&gt; = arrayListOf()</span>
+
+<span class="fc" id="L36">    private val _navigateToDocFilter = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToDocFilter: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L38">        get() = _navigateToDocFilter</span>
+
+<span class="fc" id="L40">    private val _navigateToClear = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToClear: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L42">        get() = _navigateToClear</span>
+
+    var professional: Boolean = false
+<span class="fc" id="L45">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L47">            field = value</span>
+
+<span class="fc" id="L49">            callbacks.notifyCallbacks(this, BR.professional, null)</span>
+<span class="fc" id="L50">        }</span>
+
+    var facility: Boolean = false
+<span class="fc" id="L53">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L55">            field = value</span>
+
+<span class="fc" id="L57">            callbacks.notifyCallbacks(this, BR.facility, null)</span>
+<span class="fc" id="L58">        }</span>
+
+    var newOpt: Boolean = false
+<span class="fc" id="L61">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L63">            field = value</span>
+
+<span class="fc" id="L65">            callbacks.notifyCallbacks(this, BR.newOpt, null)</span>
+<span class="fc" id="L66">        }</span>
+
+    var pending: Boolean = false
+<span class="fc" id="L69">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L71">            field = value</span>
+
+<span class="fc" id="L73">            callbacks.notifyCallbacks(this, BR.pending, null)</span>
+<span class="fc" id="L74">        }</span>
+
+    var paid: Boolean = false
+<span class="fc" id="L77">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L79">            field = value</span>
+
+<span class="fc" id="L81">            callbacks.notifyCallbacks(this, BR.paid, null)</span>
+<span class="fc" id="L82">        }</span>
+
+    var rejected: Boolean = false
+<span class="fc" id="L85">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L87">            field = value</span>
+
+<span class="fc" id="L89">            callbacks.notifyCallbacks(this, BR.rejected, null)</span>
+<span class="fc" id="L90">        }</span>
+    var count: Int = 0
+<span class="fc" id="L92">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L94">            field = value</span>
+
+<span class="fc" id="L96">            callbacks.notifyCallbacks(this, BR.count, null)</span>
+<span class="fc" id="L97">        }</span>
+
+    fun loadSetting() {
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        for (item in claimsTypes) {</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">            if (item.equals(&quot;2&quot;, true)) {</span>
+<span class="nc" id="L102">                professional = true</span>
+            }
+<span class="nc bnc" id="L104" title="All 2 branches missed.">            if (item.equals(&quot;1&quot;, true)) {</span>
+<span class="nc" id="L105">                facility = true</span>
+            }
+        }
+
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        for (item in claimsStatus) {</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">            if (item.equals(&quot;new&quot;, true)) {</span>
+<span class="nc" id="L111">                newOpt = true</span>
+            }
+<span class="nc bnc" id="L113" title="All 2 branches missed.">            if (item.equals(&quot;pending&quot;, true)) {</span>
+<span class="nc" id="L114">                pending = true</span>
+            }
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            if (item.equals(&quot;paid&quot;, true)) {</span>
+<span class="nc" id="L117">                paid = true</span>
+            }
+<span class="nc bnc" id="L119" title="All 2 branches missed.">            if (item.equals(&quot;denied&quot;, true)) {</span>
+<span class="nc" id="L120">                rejected = true</span>
+            }
+        }
+<span class="nc" id="L123">        count = claimsStatus.size + claimsTypes.size</span>
+<span class="nc" id="L124">    }</span>
+
+    fun countSelected() {
+<span class="nc" id="L127">        count = claimsStatus.size + claimsTypes.size</span>
+<span class="nc" id="L128">    }</span>
+    fun newOpt() {
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        newOpt = !newOpt</span>
+
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        if (newOpt) {</span>
+<span class="nc" id="L133">            claimsStatus.add(&quot;new&quot;)</span>
+<span class="nc" id="L134">        } else {</span>
+<span class="nc" id="L135">            claimsStatus.removeAt(claimsStatus.indexOf(&quot;new&quot;))</span>
+        }
+<span class="nc" id="L137">        countSelected()</span>
+<span class="nc" id="L138">    }</span>
+
+    fun pen() {
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        pending = !pending</span>
+
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if (pending) {</span>
+<span class="nc" id="L144">            claimsStatus.add(&quot;pending&quot;)</span>
+<span class="nc" id="L145">        } else {</span>
+<span class="nc" id="L146">            claimsStatus.removeAt(claimsStatus.indexOf(&quot;pending&quot;))</span>
+        }
+<span class="nc" id="L148">        countSelected()</span>
+<span class="nc" id="L149">    }</span>
+
+    fun paid() {
+<span class="nc bnc" id="L152" title="All 2 branches missed.">        paid = !paid</span>
+
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        if (paid) {</span>
+<span class="nc" id="L155">            claimsStatus.add(&quot;paid&quot;)</span>
+<span class="nc" id="L156">        } else {</span>
+<span class="nc" id="L157">            claimsStatus.removeAt(claimsStatus.indexOf(&quot;paid&quot;))</span>
+        }
+<span class="nc" id="L159">        countSelected()</span>
+<span class="nc" id="L160">    }</span>
+
+    fun rejected() {
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        rejected = !rejected</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        if (rejected) {</span>
+<span class="nc" id="L165">            claimsStatus.add(&quot;denied&quot;)</span>
+<span class="nc" id="L166">        } else {</span>
+<span class="nc" id="L167">            claimsStatus.removeAt(claimsStatus.indexOf(&quot;denied&quot;))</span>
+        }
+<span class="nc" id="L169">        countSelected()</span>
+<span class="nc" id="L170">    }</span>
+
+    fun pro() {
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        professional = !professional</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">        if (professional) {</span>
+<span class="nc" id="L175">            claimsTypes.add(&quot;2&quot;)</span>
+<span class="nc" id="L176">        } else {</span>
+<span class="nc" id="L177">            claimsTypes.removeAt(claimsTypes.indexOf(&quot;2&quot;))</span>
+        }
+<span class="nc" id="L179">        countSelected()</span>
+<span class="nc" id="L180">    }</span>
+
+    fun facility() {
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        facility = !facility</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">        if (facility) {</span>
+<span class="nc" id="L185">            claimsTypes.add(&quot;1&quot;)</span>
+<span class="nc" id="L186">        } else {</span>
+<span class="nc" id="L187">            claimsTypes.removeAt(claimsTypes.indexOf(&quot;1&quot;))</span>
+        }
+
+<span class="nc" id="L190">        countSelected()</span>
+<span class="nc" id="L191">    }</span>
+    fun apply() {
+<span class="fc" id="L193">        _navigateToDocFilter.value = Event(Unit)</span>
+<span class="fc" id="L194">    }</span>
+
+    fun close() {
+<span class="fc" id="L197">        _navigateToPres.value = Event(Unit)</span>
+<span class="fc" id="L198">    }</span>
+
+    fun clear() {
+<span class="fc" id="L201">        professional = false</span>
+<span class="fc" id="L202">        facility = false</span>
+<span class="fc" id="L203">        newOpt = false</span>
+<span class="fc" id="L204">        pending = false</span>
+<span class="fc" id="L205">        paid = false</span>
+<span class="fc" id="L206">        rejected = false</span>
+<span class="fc" id="L207">        claimsTypes.clear()</span>
+<span class="fc" id="L208">        claimsStatus.clear()</span>
+<span class="fc" id="L209">        count = 0</span>
+<span class="fc" id="L210">        _navigateToClear.value = Event(Unit)</span>
+<span class="fc" id="L211">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L214">        callbacks.add(callback)</span>
+<span class="nc" id="L215">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L218">        callbacks.remove(callback)</span>
+<span class="nc" id="L219">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L222">        super.onCleared()</span>
+<span class="nc" id="L223">        compositeDisposable.dispose()</span>
+<span class="nc" id="L224">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

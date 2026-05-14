@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>YearListNewAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.benefit.adapter</a> &gt; <span class="el_source">YearListNewAdapter.kt</span></div><h1>YearListNewAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.benefit.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.databinding.YearListBinding
+
+class YearListNewAdapter(private var onClick: (Int) -&gt; Unit, private var currentYear: Int) : ListAdapter&lt;Int, RecyclerView.ViewHolder&gt;(
+    YearDiffCallback()
+) {
+
+    var currentYearMutable = currentYear
+    var selectedPosition: Int = 0
+    var lastSelected: Int = -1
+    var count: Int = 0
+    var currentYearPos: Int = 0
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return YearViewHolder(
+            YearListBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            ),
+            onClick,
+            selectedPosition,
+            count
+        )
+    }
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+    fun currentYear(year: Int) {
+        currentYearMutable = year
+        notifyItemChanged(currentList.indexOf(currentYearMutable))
+        notifyItemChanged(currentList.indexOf(year))
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = getItem(position)
+
+        count = itemCount - 1
+        (holder as YearViewHolder).binding.setClickListener {
+//            notifyItemChanged(selectedPosition)
+//            holder.binding.clicked = true
+//
+//            if (lastSelected == -1) {
+//                notifyItemChanged(itemCount - 1)
+//
+//                lastSelected = position
+//            } else {
+//                notifyItemChanged(lastSelected)
+//                lastSelected = position
+//            }
+//            selectedPosition = position
+
+            onClick(item)
+            notifyItemChanged(position)
+        }
+
+        holder.binding.clicked = item == currentYearMutable
+        if (item == currentYearMutable) {
+            selectedPosition = position
+        }
+        holder.binding.work = item
+
+//        holder.binding.clicked = position == itemCount-1
+    }
+
+    fun selectYear(year: Int) {
+        var selected = currentList.indexOf(year)
+        notifyItemChanged(selectedPosition)
+
+        if (lastSelected == -1) {
+            notifyItemChanged(itemCount - 1)
+
+            lastSelected = selected
+        } else {
+            notifyItemChanged(lastSelected)
+            lastSelected = selected
+        }
+
+        selectedPosition = selected
+
+        onClick(currentList[selected])
+        notifyItemChanged(selected)
+    }
+
+    class YearViewHolder(
+        val binding: YearListBinding,
+        private val onClick: (Int) -&gt; Unit,
+        private var selectedPosition: Int,
+        private var count: Int
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        //        var toggle = binding.clicked
+        init {
+
+//            binding.clicked = adapterPosition == count
+        }
+    }
+}
+<span class="nc" id="L105">private class YearDiffCallback : DiffUtil.ItemCallback&lt;Int&gt;() {</span>
+
+    override fun areItemsTheSame(oldItem: Int, newItem: Int): Boolean {
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        return oldItem == newItem</span>
+    }
+
+    override fun areContentsTheSame(oldItem: Int, newItem: Int): Boolean {
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        return oldItem == newItem</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

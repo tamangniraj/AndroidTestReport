@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Constants.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils</a> &gt; <span class="el_source">Constants.kt</span></div><h1>Constants.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils
+
+import com.vivekahealth.vivekahealth.BuildConfig
+
+object Constants {
+    const val SET_BIO_METRIC_ON_LOGIN = &quot;set_biometric_on_login&quot;
+    const val REQUEST_IMAGE_CAPTURE = 1
+    const val REQUEST_PICK_IMAGE = 2
+    const val REQUEST_PICK_FILE = 3
+<span class="pc" id="L10">    var showBiometric = true</span>
+<span class="fc" id="L11">    var hasShownSSNFlowThisSession = false</span>
+
+    const val TimeStampReg = &quot;time_stamp_reg&quot;
+    const val RegistrationPrev = &quot;register_user_prev&quot;
+    const val MY_PERMISSIONS_REQUEST_CAMERA = 0
+    const val PERMISSION_REQUEST_NOTIFICATION = 13
+    const val Registration = &quot;register_user&quot;
+    const val ExpirationTime = &quot;expiration_time&quot;
+    const val PhoneNumberIsLandline = &quot;phoneNumberIsLandline&quot;
+    const val ShowErrorMessage = &quot;showErrorMessage&quot;
+    const val errorMessage = &quot;errorMessage&quot;
+
+    const val LanguagePref = &quot;_languagePref&quot;
+//    const val biometricPref = &quot;_bio_permission_requested&quot;
+
+    const val dependent = &quot;dependent&quot;
+    const val enroll = &quot;enroll&quot;
+    const val enrollPrev = &quot;enroll_prev&quot;
+    const val emailLogin = &quot;email_login_v2&quot;
+    const val encodedPassword = &quot;encoded_password_v2&quot;
+    const val encodedEmail = &quot;encoded_email_v2&quot;
+    const val skippedProfileUpload = &quot;_skipped_profile_upload&quot;
+    const val REQUEST_DEVICE_PROMPT = &quot;REQUEST_DEVICE_PROMPT&quot;
+    const val IS_MAGIC_LOGIN = &quot;IS_MAGIC_LOGIN&quot;
+    const val MAGIC_TEMP_TOKEN = &quot;MAGIC_TEMP_TOKEN&quot;
+    const val SHOWN_HOME_TUT_FOR_SESSION = &quot;SHOWN_HOME_TUT_FOR_SESSION&quot;
+    const val SHOWN_MEDICAL_TUT_FOR_SESSION = &quot;SHOWN_MEDICAL_TUT_FOR_SESSION&quot;
+    const val SHOWN_MORE_TUT_FOR_SESSION = &quot;SHOWN_MORE_TUT_FOR_SESSION&quot;
+    const val SHOWN_ACC_DET_TUT_FOR_SESSION = &quot;SHOWN_ACC_DET_TUT_FOR_SESSION&quot;
+    const val SHOWN_FIND_CARE_TUT_FOR_SESSION = &quot;SHOWN_FIND_CARE_TUT_FOR_SESSION&quot;
+    const val SHOWN_CALENDAR_TUT_FOR_SESSION = &quot;SHOWN_CALENDAR_TUT_FOR_SESSION&quot;
+    const val SHOWN_BENEFITS_TUT_FOR_SESSION = &quot;SHOWN_BENEFITS_TUT_FOR_SESSION&quot;
+    const val SHOWN_CLAIMS_TUT_FOR_SESSION = &quot;SHOWN_CLAIMS_TUT_FOR_SESSION&quot;
+    const val SHOWN_DIAGNOSIS_TUT_FOR_SESSION = &quot;SHOWN_DIAGNOSIS_TUT_FOR_SESSION&quot;
+    const val SHOWN_PRESCRIPTION_TUT_FOR_SESSION = &quot;SHOWN_PRESCRIPTION_TUT_FOR_SESSION&quot;
+    const val HAS_SHOWN_SPLASH = &quot;HAS_SHOWN_SPLASH&quot;
+
+    const val BROADCAST_NOTIFICATION_COUNT = &quot;com.vivekahealth.NOTIFICATION_ACTION&quot;
+    const val register = &quot;register_user&quot;
+
+    const val registration_user_left_at = &quot;registration_user_left_at&quot;
+
+    const val ContinueCoverage = &quot;ContinueCoverage&quot;
+    const val ContinueCoverageTemp = &quot;ContinueCoverage_temp&quot;
+    const val continueRegistrationStarted = &quot;continue_registration_started&quot;
+
+    const val maritalStatus = &quot;maritalStatus&quot;
+    const val maritalStatusTemp = &quot;maritalStatus&quot;
+    const val Signature = &quot;Signature&quot;
+    const val member_id_should_enroll = &quot;memberId_shouldEnroll&quot;
+    const val SUCCESS_CODE = &quot;200&quot;
+    const val ERROR_CODE = &quot;400&quot;
+
+    const val ACCESS_TOKEN = &quot;access_token&quot;
+    const val TOKEN_TYPE = &quot;token_type&quot;
+    const val EXPIRES_IN = &quot;expires_in&quot;
+    const val SCOPE = &quot;scope&quot;
+    const val IS_GUEST = &quot;is_guest&quot;
+    const val APIS_HEADER = &quot;apis_header&quot;
+
+    const val LATITUDE = &quot;latitude&quot;
+    const val LONGITUDE = &quot;longitude&quot;
+    const val LOCATIONSTRING = &quot;location&quot;
+
+    const val enroll_f_name = &quot;enroll_f_name&quot;
+    const val enroll_l_name = &quot;enroll_l_name&quot;
+    const val enroll_member_id = &quot;enroll_member_id&quot;
+    const val enroll_memebr_ssn = &quot;enroll_member_ssn&quot;
+    const val enroll_missing_gender = &quot;enroll_missing_gender&quot;
+
+    const val enroll_reqDocs = &quot;enroll_req_docs&quot;
+    const val enroll_member_dob = &quot;enroll_member_dob&quot;
+    const val continue_enrollment = &quot;continue_enrollment&quot;
+
+    const val GUEST_USER_DETAIL = &quot;guest_user_detail_&quot;
+    const val VERIFY_IDENTITY_POPUP_SHOWN = &quot;verify_identity_popup_shown_&quot;
+
+    const val FIREBASE_TOKEN = &quot;FIREBASE_TOKEN&quot;
+    const val USER_EMAIL = &quot;USER_EMAIL&quot;
+    const val USER_CLIENT_ID = &quot;USER_CLIENT_ID&quot;
+    const val USER_NAME_INVERTED = &quot;USER_NAME_INVERTED&quot;
+    const val USER_NAME_FULL = &quot;USER_NAME_FULL&quot;
+    const val USER_COUNTRY_CODE = &quot;USER_COUNTRY_CODE&quot;
+    const val USER_PHONE = &quot;USER_PHONE&quot;
+
+    const val SELF_ID_PRIMARY = &quot;SELF_ID_PRIMARY&quot;
+    const val TRIGGER = &quot;trigger&quot;
+    const val F_NAME = &quot; F_NAME=&quot;
+    const val L_NAME = &quot;L_NAME&quot;
+    const val LOGGED_IN = &quot;LOGGED_IN&quot;
+    const val IS_DEPENDENT = &quot;IS_DEPENDENT&quot;
+    const val GEOFENCING_VALUES = &quot;GEOFENCING_VALUES&quot;
+    const val GEOFENCING_RESPONSE = &quot;GEOFENCING_RESPONSE&quot;
+
+    const val GEOFENCE_FLOW = &quot;GEOFENCING_FLOW&quot;
+<span class="fc" id="L106">    var once: Boolean = true</span>
+
+<span class="fc" id="L108">    var IS_OFFLINE = false</span>
+<span class="fc" id="L109">    var showCardsOnlyIfEligible = true</span>
+
+<span class="fc" id="L111">    var hasHoursBank = false</span>
+<span class="fc" id="L112">    var LoggedIn = false</span>
+<span class="pc" id="L113">    var appAppInForground = false</span>
+
+    @JvmField
+<span class="fc" id="L116">    var deviceID = &quot;&quot;</span>
+
+    @JvmField
+<span class="fc" id="L119">    var clientID = BuildConfig.CLIENT_ID</span>
+
+    @JvmField
+<span class="fc" id="L122">    var deviceModel = &quot;&quot;</span>
+
+    @JvmField
+<span class="fc" id="L125">    var versionNumber = &quot;&quot;</span>
+
+    @JvmField
+<span class="fc" id="L128">    var androidVersion = &quot;&quot;</span>
+
+    @JvmField
+<span class="fc" id="L131">    var apiVersion = &quot;3&quot;</span>
+
+    @JvmField
+<span class="fc" id="L134">    var modelMani = &quot;&quot;</span>
+
+    @JvmField
+<span class="fc" id="L137">    var deviceUUID = &quot;&quot;</span>
+    const val USER_CURRENT_LAT = &quot;AppConstants.USER_CURRENT_LAT&quot;
+    const val USER_CURRENT_LON = &quot;AppConstants.USER_CURRENT_LON&quot;
+
+    const val DEFAULT_LAT =
+        40.724291 // TODO Set default lat long to GreenPoint 40.724291, -73.949597
+
+    const val DEFAULT_LON = -73.949597
+
+    const val USER_ID = &quot;USER_ID&quot;
+    const val USER_SELECTED_LANGUAGE = &quot;USER_SELECTED_LANGUAGE&quot;
+    const val USER_SELECTED_LANGUAGE_CODE = &quot;USER_SELECTED_LANGUAGE_CODE&quot;
+
+    const val USER_SELECTED_LANGUAGE_PRIMARY = &quot;USER_SELECTED_LANGUAGE&quot;
+
+    const val USER_LANGUAGE_OVERRIDE = &quot;USER_LANGUAGE_OVERRIDE&quot;
+    const val USER_LANGUAGE_PREF_UPDATED = &quot;USER_LANGUAGE_PREF_UPDATED&quot;
+
+//    Constants.BASE_URL
+    const val ALGORITHM: String = &quot;AES/CBC/PKCS5Padding&quot;
+    const val KEY_ALGORITHM: String = &quot;AES&quot;
+
+    const val KEY = &quot;1Hbfh667adfDEJ78&quot;
+    const val KEY_PASSWORD = &quot;KEY_PASSWORD_V2&quot;
+    const val KEY_USERNAME = &quot;KEY_USERNAME&quot;
+
+    const val BASE_URL = &quot;https://mobile.vivekahealth.com/uat/app-server/&quot;
+
+    const val PROD_BASE_URL = &quot;https://mobile.vivekahealth.com/app-server/&quot;
+
+<span class="pc" id="L167">    var FIRST_NAME = &quot;User&quot;</span>
+
+<span class="fc" id="L169">    var CLIENT_DISCLAIMER = &quot;&quot;</span>
+<span class="pc" id="L170">    var BENEFIT_ROLLING_PERIOD = 12</span>
+<span class="fc" id="L171">    var CLIENT_DISCLAIMER_BILL_PREVIEW = &quot;&quot;</span>
+
+    // by default medical log menus should be shown
+<span class="fc" id="L174">    var HIDE_MEDICAL_LOG = false</span>
+<span class="pc" id="L175">    var SHOW_BANKED_HOURS = false</span>
+<span class="fc" id="L176">    var TRANSPERENCY = false</span>
+<span class="nc" id="L177">    var SKIP_CACHE: Boolean = false</span>
+
+    const val INACTIVITY_TIME_STAMP = &quot;INACTIVITY_TIME_STAMP&quot;
+    const val INACTIVITY_MINUTES = 15.0f
+//    const val BASE_URL = &quot;http://192.168.1.34:8081/appserver/&quot;
+
+    const val STATUS_SUCCESS = &quot;SUCCESS&quot;
+    const val STATUS_ERROR = &quot;ERROR&quot;
+
+    const val CHANNEL_PHONE = &quot;PHONE&quot;
+    const val CHANNEL_EMAIL = &quot;EMAIL&quot;
+    const val CHANNEL_VOICE = &quot;VOICE&quot; // 2
+    const val BIO_PERMISSION_REQUESTED = &quot;_bio_permission_requested&quot;
+    const val MEMBER_ID = &quot;memberID&quot;
+    const val EMAIL_VERIFIED = &quot;_email_verified&quot;
+    const val GUEST_USERNAME = &quot;guest_username&quot;
+
+<span class="fc" id="L194">    var CURRENT_LANGUAGE: String? = &quot;en&quot;</span>
+<span class="fc" id="L195">    var LOCAL_LANG_MODIFIED: String ? = null</span>
+    const val APOLOGY_MESSAGE = &quot;Apologies! Something went wrong. Please try again later. We're working on fixing the issue. Thank you for your patience.&quot;
+    const val APOLOGY_CHECK_CONNECTION = &quot;Unable to establish a secure connection. Please check your internet connection or try again later.&quot;
+
+    const val SSN_REGEX = &quot;^(?!000|666)[0-8][0-9]{2}(?!00)[0-9]{2}(?!0000)[0-9]{4}$&quot;
+    const val SSN_REGEX_WITH_TIN = &quot;^(?!000|666)[0-9][0-9]{2}(?!00)[0-9]{2}(?!0000)[0-9]{4}$&quot;
+
+    const val RESTART_ENROLLMENT = &quot;ENROLLMENT_REJECTED&quot;
+    const val COMPLETE_ENROLLMENT = &quot;ENROLLMENT_ACCEPTED&quot;
+
+<span class="nc" id="L205">    var LOCATION_PERMISSION_SHOWN = false</span>
+<span class="nc" id="L206">    var NOTIFICATION_PERMISSION_SHOWN = false</span>
+
+    // SMS Retriever API constants
+    const val BROADCAST_SMS_OTP = &quot;com.vivekahealth.SMS_OTP_ACTION&quot;
+    const val EXTRA_OTP_CODE = &quot;otp_code&quot;
+    const val OPT_OUT_SURVEY = &quot;_has_opt_out_survey&quot;
+}
+
+object EnrollmentStatus {
+    const val NOT_ENROLLED = 1
+    const val ACCEPTED = 2
+    const val PENDING = 3
+    const val REJECTED = 4
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

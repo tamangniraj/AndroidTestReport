@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FilterSheetModule.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.benefit.filter.di</a> &gt; <span class="el_source">FilterSheetModule.kt</span></div><h1>FilterSheetModule.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.benefit.filter.di
+
+import android.content.Context
+import android.content.SharedPreferences
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.filter.FilterSheetFragment
+import com.vivekahealth.vivekahealth.ui.homePage.service.HomeService
+import dagger.Module
+import dagger.Provides
+import dagger.android.ContributesAndroidInjector
+import okhttp3.OkHttpClient
+
+<span class="nc" id="L13">@Module</span>
+abstract class FilterSheetModule {
+
+    @ContributesAndroidInjector
+    abstract fun contributesFilterSheetFragment(): FilterSheetFragment
+
+    companion object {
+        @JvmStatic
+        @Provides
+        fun provideSortSheetService(
+            context: Context,
+            gson: Gson,
+            builder: OkHttpClient.Builder,
+            sharedPreferences: SharedPreferences
+<span class="nc" id="L27">        ): HomeService = HomeService(</span>
+<span class="nc" id="L28">            context = context,</span>
+<span class="nc" id="L29">            gson = gson,</span>
+<span class="nc" id="L30">            builder = builder,</span>
+<span class="nc" id="L31">            preferences = sharedPreferences</span>
+<span class="nc" id="L32">        )</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

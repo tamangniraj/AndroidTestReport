@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InsuranceCardAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.insuranceCard.adapter</a> &gt; <span class="el_source">InsuranceCardAdapter.kt</span></div><h1>InsuranceCardAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.insuranceCard.adapter
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.util.Base64
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.navigation.Navigation
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.remote.home.ValueInsurance
+import com.vivekahealth.vivekahealth.databinding.SingleCardViewBinding
+import com.vivekahealth.vivekahealth.ui.homePage.insuranceCard.InsuranceCardsFragmentDirections
+import com.vivekahealth.vivekahealth.utils.OnSwipeTouchListener
+import java.net.URLDecoder
+
+class InsuranceCardAdapter :
+    ListAdapter&lt;ValueInsurance, InsuranceCardAdapter.InsuranceCardViewHolder&gt;(
+        InsuranceCardDiffCallback()
+    ) {
+    lateinit var context: Context
+    var count: Boolean = true
+    var selectedPosition: Int = 0
+    lateinit var cardAdapter: InsuranceCardFlipAdapter
+    private val itemHeights = mutableMapOf&lt;Int, Int&gt;()
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): InsuranceCardViewHolder {
+        context = parent.context
+        return InsuranceCardViewHolder(
+            SingleCardViewBinding.inflate(
+                LayoutInflater.from(context),
+                parent,
+                false
+            )
+        )
+    }
+
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+
+    @SuppressLint(&quot;ClickableViewAccessibility&quot;)
+    override fun onBindViewHolder(holder: InsuranceCardViewHolder, position: Int) {
+        val item = getItem(position)
+
+        item.back?.let {
+            item.front?.let {
+                val cards = mutableListOf(item.back!!, item.front!!)
+                cardAdapter = InsuranceCardFlipAdapter(
+                    cards
+                )
+
+                with(holder.binding) {
+                    easyFlipView.setOnFlipListener { _, newCurrentSide -&gt;
+
+                        tvSwipeInfo.text = if (newCurrentSide.name == &quot;BACK_SIDE&quot;) {
+                            context.getString(R.string.swipe_to_see_front)
+                        } else {
+                            context.getString(
+                                R.string.swipe_to_see_back
+                            )
+                        }
+                    }
+
+                    wvFront.setOnTouchListener(object : OnSwipeTouchListener(
+                        holder.itemView.context
+                    ) {
+                            override fun onSwipeLeft() {
+                                easyFlipView.flipTheView()
+                            }
+                            override fun onSwipeRight() {
+                                easyFlipView.flipTheView()
+                            }
+                        })
+                    wvBack.setOnTouchListener(object : OnSwipeTouchListener(
+                        holder.itemView.context
+                    ) {
+                            override fun onSwipeLeft() {
+                                easyFlipView.flipTheView()
+                            }
+                            override fun onSwipeRight() {
+                                easyFlipView.flipTheView()
+                            }
+                        })
+
+                    val card = item
+                    val webSettingsF: WebSettings = wvFront.settings
+                    webSettingsF.javaScriptEnabled = true
+
+                    val webSettingsB: WebSettings = wvBack.settings
+                    webSettingsB.javaScriptEnabled = true
+
+                    wvFront.clearCache(true)
+                    wvBack.clearCache(true)
+                    wvFront.isClickable = true
+                    wvBack.isClickable = true
+
+                    wvBack.webViewClient = object : WebViewClient() {
+                        override fun shouldOverrideUrlLoading(view: WebView, url: String?): Boolean {
+                            val shouldHandleDeepLink = url?.contains(&quot;app.vivekahealth.com&quot;) ?: false
+                            return if (shouldHandleDeepLink) {
+                                handleDeeplink(view, url ?: &quot;&quot;)
+                                true
+                            } else {
+                                view.context.startActivity(
+                                    Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                )
+                                true
+                            }
+                        }
+
+                        override fun onLoadResource(view: WebView?, url: String?) {
+                        }
+                    }
+
+                    wvFront.webViewClient = object : WebViewClient() {
+                        override fun shouldOverrideUrlLoading(view: WebView, url: String?): Boolean {
+                            val shouldHandleDeepLink = url?.contains(&quot;app.vivekahealth.com&quot;) ?: false
+                            return if (shouldHandleDeepLink) {
+                                handleDeeplink(view, url ?: &quot;&quot;)
+                                true
+                            } else {
+                                view.context.startActivity(
+                                    Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                )
+                                true
+                            }
+                        }
+
+                        override fun onLoadResource(view: WebView?, url: String?) {
+                        }
+                    }
+
+                    val base64Front = Base64.encodeToString(
+                        card.front!!.toByteArray(),
+                        Base64.DEFAULT
+                    )
+                    val htmlDecoded = String(Base64.decode(base64Front, Base64.DEFAULT))
+                    wvFront.loadDataWithBaseURL(
+                        null,
+                        htmlDecoded,
+                        &quot;text/html&quot;,
+                        &quot;utf-8&quot;,
+                        null
+                    )
+
+                    val base64Back = Base64.encodeToString(
+                        card.back!!.toByteArray(),
+                        Base64.DEFAULT
+                    )
+                    val htmlDecodedBack = String(Base64.decode(base64Back, Base64.DEFAULT))
+                    wvBack.loadDataWithBaseURL(
+                        null,
+                        htmlDecodedBack,
+                        &quot;text/html&quot;,
+                        &quot;utf-8&quot;,
+                        null
+                    )
+
+                    flipButton.setOnClickListener {
+                        easyFlipView.flipTheView()
+                    }
+                }
+            }
+        }
+    }
+
+    fun handleDeeplink(view: WebView, url: String) {
+        val decodedUrl = URLDecoder.decode(url, &quot;UTF-8&quot;)
+        val dynamicLink = Uri.parse(decodedUrl)
+        val path = dynamicLink.path
+        val queryParams = dynamicLink.queryParameterNames
+        if (path.contentEquals(&quot;/customMenu&quot;, true)) {
+            var menuName = &quot;&quot;
+            var menuTypeId = &quot;1&quot;
+            for (q in queryParams) {
+                if (q.equals(&quot;menuName&quot;, true)) {
+                    menuName = dynamicLink.getQueryParameter(q) ?: &quot;&quot;
+                }
+                if (q.equals(&quot;menuType&quot;, true)) {
+                    menuTypeId = (dynamicLink.getQueryParameter(q) ?: &quot;1&quot;)
+                }
+            }
+            val directToCustomMenu =
+                InsuranceCardsFragmentDirections.actionInsuranceCardsFragmentToDynamicMenuFragment(
+                    menuTypeId,
+                    menuName
+                )
+            Navigation.findNavController(view).navigate(directToCustomMenu)
+        }
+    }
+
+    class InsuranceCardViewHolder(
+        val binding: SingleCardViewBinding
+    ) : RecyclerView.ViewHolder(binding.root)
+}
+
+<span class="nc" id="L205">private class InsuranceCardDiffCallback : DiffUtil.ItemCallback&lt;ValueInsurance&gt;() {</span>
+
+    override fun areItemsTheSame(oldItem: ValueInsurance, newItem: ValueInsurance): Boolean {
+<span class="nc" id="L208">        return oldItem.benefitType == newItem.benefitType</span>
+    }
+
+    override fun areContentsTheSame(oldItem: ValueInsurance, newItem: ValueInsurance): Boolean {
+<span class="nc" id="L212">        return oldItem == newItem</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

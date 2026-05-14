@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PracticeAddress.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew</a> &gt; <span class="el_source">PracticeAddress.kt</span></div><h1>PracticeAddress.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew
+
+<span class="fc" id="L3">data class PracticeAddress(</span>
+<span class="pc" id="L4">    val addressStatus: String? = &quot;&quot;,</span>
+<span class="pc" id="L5">    val checkEnrollment: Boolean = false,</span>
+<span class="pc" id="L6">    val city: String? = &quot;&quot;,</span>
+<span class="pc" id="L7">    val country: String? = &quot;&quot;,</span>
+<span class="pc" id="L8">    val current: String? = null,</span>
+<span class="pc" id="L9">    val latitude: String? = null,</span>
+<span class="pc" id="L10">    val links: List&lt;String?&gt;? = null,</span>
+<span class="pc" id="L11">    val longitude: String? = &quot;&quot;,</span>
+<span class="pc" id="L12">    val originalAddress: String? = &quot;&quot;,</span>
+<span class="pc" id="L13">    val postalCode: String? = &quot;&quot;,</span>
+<span class="pc" id="L14">    val selfId: String? = &quot;&quot;,</span>
+<span class="pc" id="L15">    val state: String? = &quot;&quot;,</span>
+<span class="pc" id="L16">    val street1: String? = &quot;&quot;,</span>
+<span class="pc" id="L17">    val street2: String? = &quot;&quot;,</span>
+<span class="pc" id="L18">    val type: String? = &quot;&quot;,</span>
+<span class="pc" id="L19">    val zip: String? = &quot;&quot;,</span>
+<span class="pc" id="L20">    val zipExtension: String? = &quot;&quot;</span>
+<span class="fc" id="L21">) {</span>
+    fun secondStreet(): String {
+<span class="pc bpc" id="L23" title="1 of 6 branches missed.">        return if (!street2.isNullOrEmpty()) {</span>
+<span class="fc" id="L24">            &quot;$street2, &quot;</span>
+        } else {
+<span class="fc" id="L26">            &quot;&quot;</span>
+        }
+    }
+<span class="pc bfc" id="L29" title="All 6 branches covered.">    var address = street1?.let { &quot;$it, &quot; } + secondStreet() + city?.let { &quot;$it, &quot; } + state?.let { &quot;$it, &quot; } + postalCode</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

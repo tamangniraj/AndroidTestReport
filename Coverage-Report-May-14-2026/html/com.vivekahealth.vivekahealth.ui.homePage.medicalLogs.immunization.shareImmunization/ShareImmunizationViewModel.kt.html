@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShareImmunizationViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.immunization.shareImmunization</a> &gt; <span class="el_source">ShareImmunizationViewModel.kt</span></div><h1>ShareImmunizationViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.immunization.shareImmunization
+
+import android.content.SharedPreferences
+import android.content.res.Resources
+import android.text.Editable
+import android.text.TextWatcher
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.ShareCardResponse
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Constants.APOLOGY_CHECK_CONNECTION
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.flow.filterNotNull
+import java.io.File
+import java.util.ArrayList
+import okhttp3.ResponseBody
+import org.apache.commons.lang3.StringUtils
+import javax.inject.Inject
+
+<span class="fc" id="L32">class ShareImmunizationViewModel @Inject constructor(</span>
+<span class="fc" id="L33">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L34">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L35">    private val resources: Resources</span>
+<span class="fc" id="L36">) : ViewModel(), Observable {</span>
+
+<span class="pc" id="L38">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L40">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="fc" id="L42">    var title: String = &quot;&quot;</span>
+<span class="nc" id="L43">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L45">            field = value</span>
+<span class="nc" id="L46">            callbacks.notifyCallbacks(this, BR.title, null)</span>
+<span class="nc" id="L47">        }</span>
+
+<span class="fc" id="L49">    private val _navigateToOk = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToOK: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L51">        get() = _navigateToOk</span>
+
+<span class="nc" id="L53">    var loadedFile: Boolean = false</span>
+<span class="fc" id="L54">    private val _navigateToPDFDownloaded = MutableLiveData&lt;Event&lt;ResponseBody&gt;&gt;()</span>
+    val navigateToPDFDownloaded: LiveData&lt;Event&lt;ResponseBody&gt;&gt;
+<span class="nc" id="L56">        get() = _navigateToPDFDownloaded</span>
+
+<span class="fc" id="L58">    private val _navigateToNoCards = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToNoCards: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L60">        get() = _navigateToNoCards</span>
+
+<span class="fc" id="L62">    private val _navigateToShareNeeded = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val navigateToShareNeeded: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L64">        get() = _navigateToShareNeeded</span>
+
+    private var _emailResponse =
+<span class="fc" id="L67">        MutableLiveData&lt;Event&lt;ShareCardResponse&gt;&gt;()</span>
+    val emailResponse: LiveData&lt;Event&lt;ShareCardResponse&gt;&gt;
+<span class="nc" id="L69">        get() = _emailResponse</span>
+
+<span class="fc" id="L71">    private val _bubbleListGeneratedNew = MutableLiveData&lt;Event&lt;List&lt;MemberInfo&gt;&gt;&gt;()</span>
+    val bubbleListGeneratedNew: LiveData&lt;Event&lt;List&lt;MemberInfo&gt;&gt;&gt;
+<span class="nc" id="L73">        get() = _bubbleListGeneratedNew</span>
+
+<span class="pc" id="L75">    var dependentMemberList: ArrayList&lt;MemberInfo&gt; = ArrayList()</span>
+<span class="pc" id="L76">    var eligibleDependentMemberList: ArrayList&lt;MemberInfo&gt; = ArrayList()</span>
+<span class="pc" id="L77">    var listForDependentAdapter: List&lt;MemberInfo&gt; = listOf()</span>
+<span class="fc" id="L78">    private val _dependentListGenerated = MutableLiveData&lt;Event&lt;List&lt;MemberInfo&gt;&gt;&gt;()</span>
+    val dependentListGenerated: LiveData&lt;Event&lt;List&lt;MemberInfo&gt;&gt;&gt;
+<span class="nc" id="L80">        get() = _dependentListGenerated</span>
+
+<span class="pc" id="L82">    var memberInfoDb = homeRepository.getMemberSid(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()).filterNotNull().asLiveData()</span>
+<span class="fc" id="L83">    private var selectedMemberId: String = &quot;&quot;</span>
+
+<span class="fc" id="L85">    var showTitleEmail: Boolean = true</span>
+<span class="nc" id="L86">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L88">            field = value</span>
+<span class="nc" id="L89">            callbacks.notifyCallbacks(this, BR.showTitleEmail, null)</span>
+<span class="nc" id="L90">        }</span>
+
+<span class="nc" id="L92">    var myFile: File? = null</span>
+
+<span class="fc" id="L94">    var showEmail: Boolean = true</span>
+<span class="nc" id="L95">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L97">            field = value</span>
+<span class="nc" id="L98">            callbacks.notifyCallbacks(this, BR.showEmail, null)</span>
+<span class="nc" id="L99">        }</span>
+
+<span class="fc" id="L101">    var memberInfo: MemberInfo = MemberInfo()</span>
+<span class="nc" id="L102">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L104">            field = value</span>
+<span class="nc" id="L105">            callbacks.notifyCallbacks(this, BR.memberInfo, null)</span>
+<span class="nc" id="L106">        }</span>
+
+    var loading: Boolean = false
+<span class="nc" id="L109">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L111">            field = value</span>
+<span class="nc" id="L112">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L113">        }</span>
+
+<span class="fc" id="L115">    private val _emailChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val emailChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L117">        get() = _emailChanged</span>
+
+<span class="fc" id="L119">    var sendEmail: String = &quot;&quot;</span>
+<span class="nc" id="L120">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L122">            field = value</span>
+<span class="nc" id="L123">            callbacks.notifyCallbacks(this, BR.sendEmail, null)</span>
+<span class="nc" id="L124">        }</span>
+
+<span class="nc" id="L126">    @get:Bindable</span>
+<span class="fc" id="L127">    val emailTextWatcher = object : TextWatcher {</span>
+<span class="nc" id="L128">        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}</span>
+<span class="nc" id="L129">        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L131">            _emailChanged.value = Event(s.toString())</span>
+<span class="nc" id="L132">        }</span>
+    }
+
+    fun onCrossClicked() {
+<span class="nc" id="L136">        _navigateToOk.value = Event(Unit)</span>
+<span class="nc" id="L137">    }</span>
+
+    fun loadData(memberInfo: MemberInfo) {
+<span class="nc" id="L140">        dependentMemberList.clear()</span>
+<span class="nc" id="L141">        var member = memberInfo</span>
+<span class="nc" id="L142">        member.isSelected = true</span>
+<span class="nc" id="L143">        member.firstName += &quot;  ${resources.getString(R.string.you)}&quot;</span>
+<span class="nc" id="L144">        dependentMemberList.add(member)</span>
+
+<span class="nc" id="L146">        selectedMemberId = memberInfo.selfId</span>
+
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        memberInfo.dependentsArrayList?.sortByDescending {</span>
+            DateUtils.stringServerDateToDate(it.birthDate.toString())
+        }
+
+<span class="nc bnc" id="L152" title="All 2 branches missed.">        memberInfo.dependentsArrayList?.reverse()</span>
+
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        memberInfo.dependentsArrayList?.let { it1 -&gt;</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">            for (memberItem in it1) {</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                if (memberItem.memberRelationship.equals(&quot;Insured&quot;, true)) {</span>
+<span class="nc" id="L157">                    dependentMemberList.add(0, memberItem)</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">                } else if (StringUtils.equalsIgnoreCase(memberItem.memberRelationship, &quot;Spouse&quot;)) {</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">                    if (memberItem.memberRelationship.equals(&quot;Insured&quot;, true)) {</span>
+<span class="nc" id="L160">                        dependentMemberList.add(0, memberItem)</span>
+                    } else {
+<span class="nc" id="L162">                        dependentMemberList.add(1, memberItem)</span>
+                    }
+                } else {
+<span class="nc" id="L165">                    dependentMemberList.add(memberItem)</span>
+                }
+            }
+
+<span class="nc" id="L169">            var grouped = dependentMemberList.groupBy { it.memberRelationship }</span>
+<span class="nc" id="L170">            grouped.forEach {</span>
+<span class="nc" id="L171">                it.value.sortedByDescending { item -&gt;</span>
+                    DateUtils.stringServerDateToDate(item.birthDate.toString())
+                }
+<span class="nc" id="L174">                it.value.reversed()</span>
+<span class="nc" id="L175">            }</span>
+
+<span class="nc" id="L177">            dependentMemberList.clear()</span>
+
+<span class="nc" id="L179">            grouped.forEach {</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">                if (it.key.equals(&quot;Insured&quot;, true)) {</span>
+<span class="nc" id="L181">                    dependentMemberList.add(0, it.value[0])</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">                } else if (it.key.equals(&quot;Spouse&quot;, true)) {</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">                    if (grouped.containsKey(&quot;Insured&quot;)) {</span>
+<span class="nc" id="L184">                        dependentMemberList.add(1, it.value[0])</span>
+                    } else {
+<span class="nc" id="L186">                        dependentMemberList.add(0, it.value[0])</span>
+                    }
+<span class="nc bnc" id="L188" title="All 2 branches missed.">                } else if (it.key.equals(&quot;Child&quot;, true)) {</span>
+<span class="nc" id="L189">                    val dateGroup = it.value.groupBy { date -&gt;</span>
+<span class="nc" id="L190">                        DateUtils.stringServerDateToDate(date.birthDate.toString())</span>
+                    }
+
+<span class="nc" id="L193">                    dateGroup.forEach { item -&gt;</span>
+<span class="nc" id="L194">                        val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }</span>
+<span class="nc" id="L195">                        dependentMemberList.addAll(sorted)</span>
+<span class="nc" id="L196">                    }</span>
+                }
+<span class="nc" id="L198">            }</span>
+
+<span class="nc" id="L200">            val tempOthers: ArrayList&lt;MemberInfo&gt; = arrayListOf()</span>
+<span class="nc" id="L201">            grouped.forEach {</span>
+<span class="nc bnc" id="L202" title="All 6 branches missed.">                if (!it.key.equals(&quot;Insured&quot;, true) &amp;&amp; !it.key.equals(&quot;Spouse&quot;, true) &amp;&amp; !it.key.equals(</span>
+<span class="nc" id="L203">                        &quot;Child&quot;,</span>
+<span class="nc" id="L204">                        true</span>
+                    )
+                ) {
+<span class="nc" id="L207">                    tempOthers.addAll(it.value)</span>
+                }
+<span class="nc" id="L209">            }</span>
+
+<span class="nc" id="L211">            val dateGroup = tempOthers.groupBy { date -&gt;</span>
+<span class="nc" id="L212">                DateUtils.stringServerDateToDate(date.birthDate.toString())</span>
+            }
+<span class="nc" id="L214">            dateGroup.forEach { item -&gt;</span>
+<span class="nc" id="L215">                val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }</span>
+<span class="nc" id="L216">                dependentMemberList.addAll(sorted)</span>
+<span class="nc" id="L217">            }</span>
+<span class="nc" id="L218">        }</span>
+
+        // Eligible member only
+<span class="nc" id="L221">        eligibleDependentMemberList.clear()</span>
+<span class="nc bnc" id="L222" title="All 2 branches missed.">        for (member1 in dependentMemberList) {</span>
+<span class="nc" id="L223">            eligibleDependentMemberList.add(member1)</span>
+        }
+
+<span class="nc" id="L226">        var grouped = eligibleDependentMemberList.groupBy { it.memberRelationship }</span>
+<span class="nc" id="L227">        grouped.forEach {</span>
+<span class="nc" id="L228">            it.value.sortedByDescending { DateUtils.stringServerDateToDate(it.birthDate.toString()) }</span>
+<span class="nc" id="L229">            it.value.reversed()</span>
+<span class="nc" id="L230">        }</span>
+
+<span class="nc" id="L232">        eligibleDependentMemberList.clear()</span>
+
+<span class="nc" id="L234">        grouped.forEach {</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">            if (it.key.equals(&quot;Insured&quot;, true)) {</span>
+<span class="nc" id="L236">                eligibleDependentMemberList.add(0, it.value[0])</span>
+<span class="nc bnc" id="L237" title="All 2 branches missed.">            } else if (it.key.equals(&quot;Spouse&quot;, true)) {</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">                if (grouped.containsKey(&quot;Insured&quot;)) {</span>
+<span class="nc" id="L239">                    eligibleDependentMemberList.add(1, it.value[0])</span>
+                } else {
+<span class="nc" id="L241">                    eligibleDependentMemberList.add(0, it.value[0])</span>
+                }
+<span class="nc bnc" id="L243" title="All 2 branches missed.">            } else if (it.key.equals(&quot;Child&quot;, true)) {</span>
+<span class="nc" id="L244">                val dateGroup = it.value.groupBy { date -&gt;</span>
+<span class="nc" id="L245">                    DateUtils.stringServerDateToDate(date.birthDate.toString())</span>
+                }
+
+<span class="nc" id="L248">                dateGroup.forEach { item -&gt;</span>
+<span class="nc" id="L249">                    val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }</span>
+<span class="nc" id="L250">                    eligibleDependentMemberList.addAll(sorted)</span>
+<span class="nc" id="L251">                }</span>
+            }
+<span class="nc" id="L253">        }</span>
+<span class="nc" id="L254">        val tempOthers: ArrayList&lt;MemberInfo&gt; = arrayListOf()</span>
+<span class="nc" id="L255">        grouped.forEach {</span>
+<span class="nc bnc" id="L256" title="All 6 branches missed.">            if (!it.key.equals(&quot;Insured&quot;, true) &amp;&amp; !it.key.equals(&quot;Spouse&quot;, true) &amp;&amp; !it.key.equals(</span>
+<span class="nc" id="L257">                    &quot;Child&quot;,</span>
+<span class="nc" id="L258">                    true</span>
+                )
+            ) {
+<span class="nc" id="L261">                tempOthers.addAll(it.value)</span>
+            }
+<span class="nc" id="L263">        }</span>
+
+<span class="nc" id="L265">        val dateGroup = tempOthers.groupBy { date -&gt;</span>
+<span class="nc" id="L266">            DateUtils.stringServerDateToDate(date.birthDate.toString())</span>
+        }
+<span class="nc" id="L268">        dateGroup.forEach { item -&gt;</span>
+<span class="nc" id="L269">            val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }</span>
+<span class="nc" id="L270">            eligibleDependentMemberList.addAll(sorted)</span>
+<span class="nc" id="L271">        }</span>
+
+<span class="nc" id="L273">        listForDependentAdapter = eligibleDependentMemberList.toList()</span>
+<span class="nc" id="L274">        _dependentListGenerated.value = Event(listForDependentAdapter)</span>
+<span class="nc" id="L275">    }</span>
+
+    fun sendInformation() {
+<span class="nc bnc" id="L278" title="All 2 branches missed.">        if (showEmail) {</span>
+<span class="nc" id="L279">            compositeDisposable.add(</span>
+<span class="nc" id="L280">                homeRepository.shareVaccinationCards(</span>
+<span class="nc" id="L281">                    selectedMemberId,</span>
+<span class="nc" id="L282">                    sendEmail</span>
+<span class="nc" id="L283">                ).subscribeOn(</span>
+<span class="nc" id="L284">                    Schedulers.io()</span>
+                )
+<span class="nc" id="L286">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L287">                    .doOnSubscribe {</span>
+<span class="nc" id="L288">                        loading = true</span>
+<span class="nc" id="L289">                    }</span>
+<span class="nc" id="L290">                    .subscribe({ it -&gt;</span>
+
+<span class="nc" id="L292">                        loading = false</span>
+
+<span class="nc" id="L294">                        _emailResponse.value = Event(it)</span>
+<span class="nc" id="L295">                    }, {</span>
+<span class="nc" id="L296">                        loading = false</span>
+<span class="nc" id="L297">                        errorMessage(it.message)</span>
+<span class="nc" id="L298">                    })</span>
+            )
+        } else {
+<span class="nc" id="L301">            compositeDisposable.add(</span>
+<span class="nc" id="L302">                homeRepository.downloadVaccinePDF(</span>
+<span class="nc" id="L303">                    selectedMemberId</span>
+<span class="nc" id="L304">                ).subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L305">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L306">                    .doOnSubscribe {</span>
+<span class="nc" id="L307">                        loading = true</span>
+<span class="nc" id="L308">                    }</span>
+<span class="nc" id="L309">                    .subscribe({ it -&gt;</span>
+<span class="nc" id="L310">                        loading = false</span>
+<span class="nc" id="L311">                        _navigateToPDFDownloaded.value = Event(it)</span>
+<span class="nc" id="L312">                    }, {</span>
+<span class="nc" id="L313">                        loading = false</span>
+//
+<span class="nc" id="L315">                        errorMessage(it.message)</span>
+<span class="nc" id="L316">                    })</span>
+            )
+        }
+<span class="nc" id="L319">    }</span>
+
+    fun errorMessage(message: String?) {
+<span class="nc" id="L322">        val errorMessage = when {</span>
+<span class="nc bnc" id="L323" title="All 6 branches missed.">            message?.contains(&quot;Unable to resolve host&quot;) == true ||</span>
+<span class="nc bnc" id="L324" title="All 6 branches missed.">                message?.contains(&quot;Failed to connect to&quot;) == true ||</span>
+<span class="nc bnc" id="L325" title="All 6 branches missed.">                message?.contains(</span>
+<span class="nc" id="L326">                &quot;Software caused connection abort&quot;</span>
+<span class="nc" id="L327">            ) == true ||</span>
+<span class="nc bnc" id="L328" title="All 2 branches missed.">                message.equals(</span>
+<span class="nc" id="L329">                    &quot;timeout&quot;</span>
+                )
+            -&gt;
+<span class="nc" id="L332">                APOLOGY_CHECK_CONNECTION</span>
+<span class="nc bnc" id="L333" title="All 2 branches missed.">            else -&gt; message ?: &quot;Registration failed. Please try again.&quot;</span>
+        }
+
+<span class="nc" id="L336">        _navigateToShareNeeded.value = Event(errorMessage)</span>
+<span class="nc" id="L337">    }</span>
+
+    fun setSelectedMember(memberInfo: MemberInfo) {
+<span class="nc" id="L340">        val index = eligibleDependentMemberList.indexOf(memberInfo)</span>
+
+<span class="nc bnc" id="L342" title="All 2 branches missed.">        for (item in eligibleDependentMemberList) {</span>
+<span class="nc bnc" id="L343" title="All 2 branches missed.">            if (eligibleDependentMemberList.indexOf(item) == index) {</span>
+<span class="nc" id="L344">                eligibleDependentMemberList[index].apply {</span>
+<span class="nc" id="L345">                    isSelected = true</span>
+<span class="nc" id="L346">                }</span>
+            } else {
+<span class="nc" id="L348">                eligibleDependentMemberList[eligibleDependentMemberList.indexOf(item)].apply {</span>
+<span class="nc" id="L349">                    isSelected = false</span>
+<span class="nc" id="L350">                }</span>
+            }
+        }
+
+<span class="nc" id="L354">        listForDependentAdapter = eligibleDependentMemberList.toList()</span>
+<span class="nc" id="L355">        _bubbleListGeneratedNew.value = Event(listForDependentAdapter)</span>
+
+<span class="nc" id="L357">        selectedMemberId = memberInfo.selfId</span>
+<span class="nc" id="L358">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L361">        callbacks.add(callback)</span>
+<span class="nc" id="L362">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L365">        callbacks.remove(callback)</span>
+<span class="nc" id="L366">    }</span>
+
+    fun clearEmail() {
+<span class="nc" id="L369">        _emailChanged.value = Event(&quot;&quot;)</span>
+<span class="nc" id="L370">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L373">        super.onCleared()</span>
+<span class="nc" id="L374">        compositeDisposable.clear()</span>
+<span class="nc" id="L375">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

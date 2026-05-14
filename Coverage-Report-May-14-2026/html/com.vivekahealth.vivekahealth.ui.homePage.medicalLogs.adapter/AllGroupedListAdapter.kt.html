@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AllGroupedListAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.adapter</a> &gt; <span class="el_source">AllGroupedListAdapter.kt</span></div><h1>AllGroupedListAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.data.remote.home.BenefitsDTO
+import com.vivekahealth.vivekahealth.databinding.MedicalLogsAllCellBinding
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.adapter.WorkHourListBenefit
+import timber.log.Timber
+
+class AllGroupedListAdapter(
+    private var onClick: (Int) -&gt; Unit,
+    var grouped: Map&lt;Any, List&lt;Any&gt;&gt;,
+    listMain: ArrayList&lt;List&lt;Any&gt;&gt;,
+    var flat: List&lt;Any&gt;,
+    var viewTypeList: ArrayList&lt;Int&gt;,
+    var listLength: ArrayList&lt;Int&gt;,
+    var flatList: ArrayList&lt;Any&gt;,
+    var labSize: Int,
+    var prescriptionSize: Int
+) : RecyclerView.Adapter&lt;RecyclerView.ViewHolder&gt;() {
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return BenefitViewHolder(
+            MedicalLogsAllCellBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            )
+        )
+    }
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        (holder as BenefitViewHolder).binding.monthGroup = &quot;&quot;
+        Timber.d(flat[0]::class.java.name)
+        Timber.d(flat[1]::class.java.kotlin.simpleName)
+
+        var adapter = WorkHourListBenefit()
+
+        holder.binding.setClickListener {
+        }
+    }
+
+    class BenefitViewHolder(
+        val binding: MedicalLogsAllCellBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        //        var toggle = binding.clicked
+        init {
+
+//            binding.clicked = adapterPosition == count
+        }
+    }
+
+    override fun getItemCount(): Int {
+        return flatList.size
+    }
+}
+
+<span class="nc" id="L64">private class BenefitDiffCallback : DiffUtil.ItemCallback&lt;BenefitsDTO&gt;() {</span>
+
+    override fun areItemsTheSame(oldItem: BenefitsDTO, newItem: BenefitsDTO): Boolean {
+<span class="nc" id="L67">        return oldItem == newItem</span>
+    }
+
+    override fun areContentsTheSame(oldItem: BenefitsDTO, newItem: BenefitsDTO): Boolean {
+<span class="nc" id="L71">        return oldItem == newItem</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

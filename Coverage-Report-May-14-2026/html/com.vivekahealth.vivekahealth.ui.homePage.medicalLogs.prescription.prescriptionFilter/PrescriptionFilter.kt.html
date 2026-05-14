@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrescriptionFilter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.prescription.prescriptionFilter</a> &gt; <span class="el_source">PrescriptionFilter.kt</span></div><h1>PrescriptionFilter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.prescription.prescriptionFilter
+
+import android.app.Dialog
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.lifecycle.ViewModelProvider
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.vivekahealth.vivekahealth.data.remote.home.medicalLogs.AvailPrescriptionFiltersItem
+import com.vivekahealth.vivekahealth.databinding.PrescriptionFilterFragmentBinding
+import com.vivekahealth.vivekahealth.di.Injectable
+import com.vivekahealth.vivekahealth.ui.BaseBottomSheetDialogFragment
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.prescription.adapter.PrescriptionFilterAdapter
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.prescription.navagator.PrescriptionFilterListener
+import com.vivekahealth.vivekahealth.utils.EventObserver
+import javax.inject.Inject
+
+<span class="nc" id="L20">class PrescriptionFilter : BaseBottomSheetDialogFragment(), Injectable {</span>
+
+    companion object {
+<span class="nc" id="L23">        fun newInstance() = PrescriptionFilter()</span>
+        const val TAG = &quot;PrescriptionFilter&quot;
+    }
+<span class="nc" id="L26">    private val adapterName = PrescriptionFilterAdapter(onClick = {</span>
+
+<span class="nc bnc" id="L28" title="All 2 branches missed.">        if (it.selected) {</span>
+<span class="nc" id="L29">            viewModel.drugNameListID.add(it)</span>
+        } else {
+<span class="nc bnc" id="L31" title="All 2 branches missed.">            if (viewModel.drugNameListID.contains(it)) {</span>
+<span class="nc" id="L32">                viewModel.drugNameListID.remove(it)</span>
+            }
+        }
+<span class="nc" id="L35">        viewModel.count = viewModel.drugNameListID.count() + viewModel.typeListID.count()</span>
+<span class="nc" id="L36">    })</span>
+<span class="nc" id="L37">    private val adapterType = PrescriptionFilterAdapter(onClick = {</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        if (it.selected) {</span>
+<span class="nc" id="L39">            viewModel.typeListID.add(it)</span>
+        } else {
+<span class="nc bnc" id="L41" title="All 2 branches missed.">            if (viewModel.typeListID.contains(it)) {</span>
+<span class="nc" id="L42">                viewModel.typeListID.remove(it)</span>
+            }
+        }
+<span class="nc" id="L45">        viewModel.count = viewModel.drugNameListID.count() + viewModel.typeListID.count()</span>
+<span class="nc" id="L46">    })</span>
+<span class="nc" id="L47">    var filterListener: PrescriptionFilterListener? = null</span>
+
+<span class="nc" id="L49">    var filterOption: List&lt;AvailPrescriptionFiltersItem&gt;? = null</span>
+
+    fun setCallback(
+        filterListener: PrescriptionFilterListener,
+        filterOption: List&lt;AvailPrescriptionFiltersItem&gt;?
+    ) {
+<span class="nc" id="L55">        this.filterListener = filterListener</span>
+<span class="nc" id="L56">        this.filterOption = filterOption</span>
+<span class="nc" id="L57">    }</span>
+    private lateinit var binding: PrescriptionFilterFragmentBinding
+
+    private lateinit var viewModel: PrescriptionFilterViewModel
+<span class="nc" id="L61">    var sentfilter = false</span>
+
+<span class="nc" id="L63">    @Inject</span>
+<span class="nc" id="L64">    lateinit var viewModelFactory: ViewModelProvider.Factory</span>
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+<span class="nc" id="L71">        binding = PrescriptionFilterFragmentBinding.inflate(inflater, container, false)</span>
+<span class="nc" id="L72">        return binding.root</span>
+    }
+    override fun onCreate(savedInstanceState: Bundle?) {
+<span class="nc" id="L75">        super.onCreate(savedInstanceState)</span>
+<span class="nc" id="L76">    }</span>
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+<span class="nc" id="L79">        val dialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog</span>
+
+<span class="nc" id="L81">        dialog.setOnShowListener {</span>
+<span class="nc" id="L82">            val bottomSheet = dialog.findViewById&lt;View&gt;(</span>
+<span class="nc" id="L83">                com.google.android.material.R.id.design_bottom_sheet</span>
+            )
+
+<span class="nc bnc" id="L86" title="All 2 branches missed.">            bottomSheet?.let {</span>
+<span class="nc" id="L87">                val behavior = BottomSheetBehavior.from(it)</span>
+
+<span class="nc" id="L89">                behavior.state = BottomSheetBehavior.STATE_EXPANDED</span>
+<span class="nc" id="L90">                behavior.isHideable = true</span>
+<span class="nc" id="L91">                behavior.skipCollapsed = true</span>
+<span class="nc" id="L92">                behavior.isDraggable = false</span>
+<span class="nc" id="L93">            }</span>
+<span class="nc" id="L94">        }</span>
+<span class="nc" id="L95">        return dialog</span>
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+<span class="nc" id="L99">        super.onActivityCreated(savedInstanceState)</span>
+<span class="nc" id="L100">        viewModel = ViewModelProvider(this, viewModelFactory).get(</span>
+<span class="nc" id="L101">            PrescriptionFilterViewModel::class.java</span>
+        )
+
+<span class="nc" id="L104">        binding.viewModel = viewModel</span>
+
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        val inStore = arguments?.getBoolean(&quot;inStoreSelected&quot;)</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        val mailOrder = arguments?.getBoolean(&quot;mailOrderSelected&quot;)</span>
+
+<span class="nc bnc" id="L109" title="All 6 branches missed.">        if (!filterOption.isNullOrEmpty()) {</span>
+<span class="nc" id="L110">            val groupedName = filterOption!!.filter { value -&gt;</span>
+<span class="nc" id="L111">                value.filterType.equals(&quot;drugName&quot;, true)</span>
+            }
+
+<span class="nc" id="L114">            val groupedType = filterOption!!.filter { value -&gt;</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                !value.filterType.equals(&quot;drugName&quot;, true)</span>
+            }
+
+<span class="nc" id="L118">            viewModel.groupedName = groupedName</span>
+<span class="nc" id="L119">            viewModel.groupedType = groupedType</span>
+
+<span class="nc" id="L121">            var count = 0</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">            for (item in groupedName) {</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">                if (item.selected) {</span>
+<span class="nc" id="L124">                    count += 1</span>
+<span class="nc" id="L125">                    viewModel.drugNameListID.add(item)</span>
+                }
+            }
+
+<span class="nc bnc" id="L129" title="All 2 branches missed.">            for (item in groupedType) {</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">                if (item.selected) {</span>
+<span class="nc" id="L131">                    count += 1</span>
+<span class="nc" id="L132">                    viewModel.typeListID.add(item)</span>
+                }
+            }
+<span class="nc" id="L135">            viewModel.count = count</span>
+
+<span class="nc bnc" id="L137" title="All 2 branches missed.">            viewModel.showTypeHeader = groupedType.isNotEmpty()</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">            viewModel.showNameHeader = groupedName.isNotEmpty()</span>
+
+<span class="nc" id="L140">            binding.filterList.adapter = adapterName</span>
+<span class="nc" id="L141">            binding.filterList.hasFixedSize()</span>
+
+<span class="nc" id="L143">            binding.typeList.adapter = adapterType</span>
+<span class="nc" id="L144">            binding.typeList.hasFixedSize()</span>
+<span class="nc" id="L145">            adapterName.submitList(viewModel.groupedName)</span>
+
+<span class="nc" id="L147">            adapterType.submitList(viewModel.groupedType)</span>
+        }
+
+//        if (inStore != null) {
+//            viewModel.inStore = inStore
+//
+//        }
+//
+//        if (mailOrder != null) {
+//            viewModel.mailOrder = mailOrder
+//
+//        }
+//
+
+<span class="nc" id="L161">        viewModel.navigateToClear.observe(</span>
+<span class="nc" id="L162">            viewLifecycleOwner,</span>
+<span class="nc" id="L163">            EventObserver {</span>
+<span class="nc bnc" id="L164" title="All 6 branches missed.">                if (!viewModel.groupedName.isNullOrEmpty()) {</span>
+<span class="nc" id="L165">                    adapterName.submitList(viewModel.groupedName)</span>
+<span class="nc" id="L166">                    adapterType.notifyDataSetChanged()</span>
+                }
+
+<span class="nc bnc" id="L169" title="All 6 branches missed.">                if (!viewModel.groupedType.isNullOrEmpty()) {</span>
+<span class="nc" id="L170">                    adapterType.submitList(viewModel.groupedType)</span>
+<span class="nc" id="L171">                    adapterName.notifyDataSetChanged()</span>
+                }
+<span class="nc" id="L173">            }</span>
+        )
+<span class="nc" id="L175">        viewModel.navigateToPres.observe(</span>
+<span class="nc" id="L176">            viewLifecycleOwner,</span>
+<span class="nc" id="L177">            EventObserver {</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">                filterListener?.onClose()</span>
+<span class="nc" id="L179">            }</span>
+        )
+<span class="nc" id="L181">        viewModel.navigateToDocFilter.observe(</span>
+<span class="nc" id="L182">            viewLifecycleOwner,</span>
+<span class="nc" id="L183">            EventObserver {</span>
+//            if(!viewModel.drugNameListIDFinal.isNullOrEmpty() or !viewModel.typeListIDFinal.isNullOrEmpty()) {
+<span class="nc" id="L185">                filterListener!!.applyFilter(</span>
+<span class="nc" id="L186">                    viewModel.drugNameListIDFinal,</span>
+<span class="nc" id="L187">                    viewModel.typeListIDFinal</span>
+                )
+//            }
+<span class="nc" id="L190">            }</span>
+        )
+<span class="nc" id="L192">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

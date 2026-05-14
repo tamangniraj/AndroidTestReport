@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OtherDetails.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.remote.register</a> &gt; <span class="el_source">OtherDetails.kt</span></div><h1>OtherDetails.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.remote.register
+
+import com.google.gson.annotations.SerializedName
+
+<span class="fc" id="L5">data class OtherDetails(</span>
+<span class="pc" id="L6">    @SerializedName(&quot;clientId&quot;)</span>
+<span class="pc" id="L7">    var clientId: String? = null,</span>
+
+<span class="pc" id="L9">    @SerializedName(&quot;clientName&quot;)</span>
+<span class="pc" id="L10">    var clientName: String? = null,</span>
+
+<span class="pc" id="L12">    @SerializedName(&quot;clientContactNumber&quot;)</span>
+<span class="pc" id="L13">    var clientContactNumber: String? = null,</span>
+
+<span class="pc" id="L15">    @SerializedName(&quot;enrollDate&quot;)</span>
+<span class="pc" id="L16">    var enrollDate: String? = null,</span>
+
+<span class="fc" id="L18">    @SerializedName(&quot;sessionId&quot;)</span>
+<span class="fc" id="L19">    val sessionId: String = &quot;&quot;,</span>
+
+<span class="pc" id="L21">    @SerializedName(&quot;app_name&quot;)</span>
+<span class="pc" id="L22">    var appName: String? = null,</span>
+
+<span class="pc" id="L24">    @SerializedName(&quot;alternate_app_available&quot;)</span>
+<span class="pc" id="L25">    public var alternativeAppAvailable: String? = null,</span>
+
+<span class="pc" id="L27">    @SerializedName(&quot;android&quot;)</span>
+<span class="pc" id="L28">    var android: String? = null,</span>
+
+<span class="pc" id="L30">    @SerializedName(&quot;disableGuestRegistration&quot;)</span>
+<span class="pc" id="L31">    var disableGuestRegistration: String? = null,</span>
+
+<span class="pc" id="L33">    @SerializedName(&quot;firstName&quot;)</span>
+<span class="pc" id="L34">    var firstName: String? = null,</span>
+
+<span class="pc" id="L36">    @SerializedName(&quot;lastName&quot;)</span>
+<span class="pc" id="L37">    var lastName: String? = null,</span>
+
+<span class="pc" id="L39">    @SerializedName(&quot;date&quot;)</span>
+<span class="pc" id="L40">    var date: String? = null</span>
+
+<span class="fc" id="L42">)</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

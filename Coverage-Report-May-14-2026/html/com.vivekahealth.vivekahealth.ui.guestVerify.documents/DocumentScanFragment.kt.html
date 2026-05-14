@@ -1,0 +1,1459 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocumentScanFragment.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.guestVerify.documents</a> &gt; <span class="el_source">DocumentScanFragment.kt</span></div><h1>DocumentScanFragment.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.guestVerify.documents
+
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Paint
+import android.os.Bundle
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.vivekahealth.vivekahealth.FirebaseTags
+import android.os.Handler
+import android.os.Looper
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
+import com.google.android.material.button.MaterialButton
+import com.vivekahealth.vivekahealth.mlkit.DocumentClassifier
+import com.google.mlkit.vision.barcode.BarcodeScanner
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode.FORMAT_PDF417
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.face.FaceDetection
+import com.google.mlkit.vision.face.FaceDetector
+import com.google.mlkit.vision.face.FaceDetectorOptions
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.TextRecognizer
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.adapters.setLicensePlaceholder
+import com.vivekahealth.vivekahealth.data.local.guest.LoadingState
+import com.vivekahealth.vivekahealth.data.local.guest.UploadState
+import com.vivekahealth.vivekahealth.databinding.FragmentDocumentScanBinding
+import com.vivekahealth.vivekahealth.di.Injectable
+import com.vivekahealth.vivekahealth.mlkit.BwBackgroundRemover
+import com.vivekahealth.vivekahealth.mlkit.IdNormalizer
+import com.vivekahealth.vivekahealth.mlkit.InsuranceCardExtractor
+import com.vivekahealth.vivekahealth.mlkit.InsuranceTextClassifier
+import com.vivekahealth.vivekahealth.ui.BaseFragment
+import com.vivekahealth.vivekahealth.ui.alternetApp.AlternateAppPromptFragment
+import com.vivekahealth.vivekahealth.ui.guestVerify.GuestVerifyActivity
+import com.vivekahealth.vivekahealth.ui.guestVerify.SharedViewModel
+import com.vivekahealth.vivekahealth.ui.guestVerify.additional.AdditionZipRequiredDialog
+import com.vivekahealth.vivekahealth.ui.guestVerify.additional.AdditionalFullAddressDialog
+import com.vivekahealth.vivekahealth.ui.guestVerify.additional.RetakeFrontLicenseDialog
+import com.vivekahealth.vivekahealth.ui.guestVerify.additional.SentToCustomerSupportDialog
+import com.vivekahealth.vivekahealth.ui.guestVerify.selfie.AlreadyRegisteredAlertDialog
+import com.vivekahealth.vivekahealth.ui.guestVerify.selfie.SelfieCaptureFragmentDirections
+import com.vivekahealth.vivekahealth.ui.login.LoginActivity
+import com.vivekahealth.vivekahealth.ui.step.StepCounterViewModel
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.DialogListener
+import com.vivekahealth.vivekahealth.utils.DialogUtils
+import com.vivekahealth.vivekahealth.utils.EventObserver
+import com.vivekahealth.vivekahealth.utils.HelperUtils.hasPermission
+import io.reactivex.android.schedulers.AndroidSchedulers
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import android.net.Uri
+import com.vivekahealth.vivekahealth.ui.guestVerify.documents.scanner.DocumentScannerClient
+import com.vivekahealth.vivekahealth.ui.guestVerify.documents.scanner.GmsDocumentScannerClient
+import javax.inject.Inject
+import kotlin.getValue
+
+open class DocumentScanFragment : BaseFragment(), Injectable {
+
+    protected open fun getDocumentType(): DocumentType =
+        navArgs&lt;DocumentScanFragmentArgs&gt;().value.documentType
+
+    protected open fun requestCameraPermission() {
+        (requireActivity() as GuestVerifyActivity).cameraRequest()
+    }
+
+    protected open fun isFromHomePage(): Boolean {
+        return (requireActivity() as GuestVerifyActivity).fromHomePage
+    }
+
+    protected open fun onSsnFailed(bitmap: Bitmap) {
+        showManualInputFragment()
+    }
+
+    protected open fun onFrontCaptured(originalBitmap: Bitmap) {}
+
+    protected open fun onNavigateToNext() {
+        val documentType = getDocumentType()
+        logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_DOC_NEXT_CLICKED) {
+            putString(&quot;doc_type&quot;, documentType.name)
+        }
+        // if already uploaded the previous image, continue
+        if (documentType == DocumentType.DL_FRONT) {
+            sharedViewModel.frontImage.value?.let {
+                if (it.bitmap != null &amp;&amp; it.bitmapUploadedId != null) {
+                    findNavController().navigate(
+                        R.id.action_documentFrontFragment_to_documentBackFragment
+                    )
+                    return
+                }
+            }
+        } else if (documentType == DocumentType.DL_BACK) {
+            sharedViewModel.backImage.value?.let { bckIt -&gt;
+                if (bckIt.bitmap != null &amp;&amp; bckIt.bitmapUploadedId != null) {
+                    sharedViewModel.ssnImage.value?.let { ssnIt -&gt;
+                        if (ssnIt.bitmap != null &amp;&amp; ssnIt.bitmapUploadedId != null) {
+                            findNavController().navigate(
+                                R.id.action_documentBackFragment_to_documentSnnFragment
+                            )
+                        } else {
+                            if (bckIt.requiredSnn == true) {
+//                                            stepCounterViewModel.enableSSN(true)
+                                findNavController().navigate(
+                                    R.id.action_documentBackFragment_to_documentSnnFragment
+                                )
+                            } else {
+                                findNavController().navigate(
+                                    R.id.action_documentBackFragment_to_selfieCapture
+                                )
+                            }
+                        }
+                    } ?: run {
+                        if (bckIt.requiredSnn == true) {
+                            findNavController().navigate(
+                                R.id.action_documentBackFragment_to_documentSnnFragment
+                            )
+                        } else {
+                            findNavController().navigate(
+                                R.id.action_documentBackFragment_to_selfieCapture
+                            )
+                        }
+                    }
+                    return
+                }
+            }
+        } else if (documentType == DocumentType.SSN) {
+            sharedViewModel.ssnImage.value?.let {
+                if (it.bitmap != null &amp;&amp; it.bitmapUploadedId != null) {
+                    findNavController().navigate(
+                        R.id.action_documentBackFragment_to_selfieCapture
+                    )
+                    return
+                }
+            }
+        }
+
+        if (sharedViewModel.token.value == null) {
+            Toast.makeText(
+                requireContext(),
+                &quot;Session id Not found &quot;,
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        /**
+         *  handle front doc upload and processing in the background {@see com.vivekahealth.vivekahealth.ui.guestVerify.SharedViewModel}
+         *  and allow moving forward if this is the first time uploading the front and not coming from failed back and front
+         */
+        if (documentType == DocumentType.DL_FRONT &amp;&amp;
+            !sharedViewModel.hasSuccessfullyProcessedFront &amp;&amp;
+            !sharedViewModel.isComingFromFailedBackCheck
+        ) {
+            sharedViewModel.frontImage.value?.let {
+                sharedViewModel.uploadFrontAndProcess(
+                    documentType,
+                    it.bitmap,
+                    sharedViewModel.token.value!!
+                )
+            }
+            findNavController().navigate(
+                R.id.action_documentFrontFragment_to_documentBackFragment
+            )
+            return
+        }
+
+        // handle upload and processing in foreground
+        if (documentType == DocumentType.DL_FRONT) {
+            sharedViewModel.frontImage?.value?.let {
+                viewModel.uploadDocumentWithQR(
+                    documentType,
+                    it.bitmap,
+                    sharedViewModel.token.value!!,
+                    it.driverLicense,
+                    null,
+                    null,
+                    null
+                )
+            } ?: run {
+                Toast.makeText(
+                    requireContext(),
+                    &quot;File Not found &quot;,
+                    Toast.LENGTH_SHORT
+                ).show()
+                return
+            }
+        } else if (documentType == DocumentType.DL_BACK) {
+            sharedViewModel.backImage?.value?.let {
+                viewModel.uploadDocumentWithQR(
+                    documentType,
+                    it.bitmap,
+                    sharedViewModel.token.value!!,
+                    it.driverLicense,
+                    it.rawQRString,
+                    null,
+                    it.verifiedBarCodeInServer
+                )
+            } ?: run {
+                Toast.makeText(
+                    requireContext(),
+                    &quot;File Not found &quot;,
+                    Toast.LENGTH_SHORT
+                ).show()
+                return
+            }
+        } else if (documentType == DocumentType.SSN || documentType == DocumentType.SSN_ONLY) {
+            sharedViewModel.ssnImage?.value?.let {
+                viewModel.uploadDocumentWithQR(
+                    documentType,
+                    it.bitmap,
+                    sharedViewModel.token.value!!,
+                    null,
+                    null,
+                    it.ssn,
+                    null,
+                    it.isSsn
+                )
+            } ?: run {
+                Toast.makeText(
+                    requireContext(),
+                    &quot;File Not found &quot;,
+                    Toast.LENGTH_SHORT
+                ).show()
+                return
+            }
+        }
+    }
+
+    protected open fun onNavigateToBack(documentType: DocumentType) {
+        logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_DOC_BACK_CLICKED) {
+            putString(&quot;doc_type&quot;, documentType.name)
+        }
+        when (documentType) {
+            DocumentType.DL_FRONT -&gt; requireActivity().onBackPressed()
+            DocumentType.DL_BACK -&gt; findNavController().navigateUp()
+            DocumentType.SSN -&gt; {
+                findNavController().navigateUp()
+            }
+
+            DocumentType.SSN_ONLY -&gt; {
+                requireActivity().onBackPressed()
+            }
+
+            else -&gt; {
+            }
+        }
+    }
+
+    protected open fun onSsnExtracted(
+        ssn: Bitmap?,
+        type: String?,
+        id: String?,
+        name: String?,
+        isManualInput: Boolean
+    ) {
+        logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_SSN_EXTRACTED)
+
+        if (isManualInput) {
+            viewModel.onNextClicked()
+        }
+    }
+
+    protected lateinit var binding: FragmentDocumentScanBinding
+
+    protected lateinit var viewModel: DocumentScanViewModel
+
+    @Inject
+    lateinit var viewModelFactory: ViewModelProvider.Factory
+
+    @Inject
+    lateinit var firebaseAnalytics: FirebaseAnalytics
+
+    private var onScanPageCaptured: ((Uri, DocumentType) -&gt; Unit)? = null
+
+    @set:Inject
+    internal var scannerClient: DocumentScannerClient = GmsDocumentScannerClient()
+        set(value) {
+            field = value
+            // Re-register with the stored callback when the client is swapped (e.g. in tests)
+            onScanPageCaptured?.let { cb -&gt; value.register(this, cb) }
+        }
+
+    companion object {
+        fun newInstance() = DocumentScanFragment()
+    }
+
+    var barcodeScanner: BarcodeScanner? = null
+    var faceDetector: FaceDetector? = null
+    var textRecognizer: TextRecognizer? = null
+
+    private lateinit var documentClassifier: DocumentClassifier
+    private lateinit var textClassifier: InsuranceTextClassifier
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        binding = FragmentDocumentScanBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    protected val sharedViewModel: SharedViewModel by activityViewModels(null) { viewModelFactory }
+
+    private val stepCounterViewModel: StepCounterViewModel by activityViewModels()
+
+    private fun logGuestVerifyEvent(eventName: String, additionalParams: Bundle.() -&gt; Unit = {}) {
+        val bundle = Bundle().apply {
+            putString(FirebaseTags.PARAM_TOKEN, sharedViewModel.token.value ?: &quot;&quot;)
+            additionalParams()
+        }
+        firebaseAnalytics.logEvent(eventName, bundle)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        viewModel = ViewModelProvider(this, viewModelFactory).get(
+            DocumentScanViewModel::class.java
+        )
+
+        val documentType = getDocumentType()
+        viewModel.documentType = documentType
+        binding.documentType = documentType
+        binding.executePendingBindings()
+
+        if (documentType == DocumentType.SSN || documentType == DocumentType.SSN_ONLY) {
+            updateScanTitleAndDescription(documentType)
+        }
+
+        // Log screen view
+        logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_DOC_SCREEN_VIEW) {
+            putString(&quot;doc_type&quot;, documentType.name)
+        }
+
+        binding.viewModel = this@DocumentScanFragment.viewModel
+
+        barcodeScanner = BarcodeScanning
+            .getClient(
+                BarcodeScannerOptions.Builder()
+                    .setBarcodeFormats(FORMAT_PDF417)
+                    .build()
+            )
+
+        val options = FaceDetectorOptions.Builder()
+            .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_NONE)
+            .build()
+        faceDetector = FaceDetection.getClient(options)
+
+        textRecognizer = TextRecognition.getClient(TextRecognizerOptions.Builder().build())
+
+        onScanPageCaptured = { uri, docType -&gt;
+            logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_DOC_CAPTURED) {
+                putString(&quot;doc_type&quot;, docType.name)
+            }
+            val imageStream = requireActivity().contentResolver?.openInputStream(uri)
+            val originalBitmap = BitmapFactory.decodeStream(imageStream)
+            binding.previewMedia.setImageBitmap(originalBitmap)
+
+            when {
+                docType == DocumentType.DL_FRONT -&gt; {
+                    binding.nextEnable = true
+                    sharedViewModel.updateFrontImage(originalBitmap)
+                    onFrontCaptured(originalBitmap)
+                }
+                docType == DocumentType.DL_BACK -&gt; extractBarCodeData(originalBitmap)
+                docType == DocumentType.SSN || docType == DocumentType.SSN_ONLY -&gt; {
+                    extractId(
+                        originalBitmap,
+                        onResult = { bitmap, type, id, name, isManualInput -&gt;
+                            binding.nextEnable = true
+                            binding.previewMedia.setImageBitmap(bitmap)
+                            var normalized = id
+                            if (type == &quot;INSURANCE&quot;) {
+                                id?.let {
+                                    val normalizedResult = IdNormalizer().normalize(id)
+                                    normalized = normalizedResult.normalized
+                                }
+                            }
+                            sharedViewModel.updateSSNImage(bitmap, normalized, type == &quot;SSN&quot;)
+                            onSsnExtracted(bitmap, type, id, name, isManualInput)
+                        },
+                        onError = { _ -&gt;
+                            sharedViewModel.clearSsn()
+                            onSsnFailed(originalBitmap)
+                        }
+                    )
+                }
+                else -&gt; {}
+            }
+        }
+        scannerClient.register(this, onScanPageCaptured!!)
+
+        viewModel.navigateToSkip.observe(
+            viewLifecycleOwner,
+            Observer {
+                it.getContentIfNotHandled()?.let {
+                    logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_DOC_SKIP_CLICKED) {
+                        putString(&quot;doc_type&quot;, documentType.name)
+                    }
+                    if (documentType == DocumentType.SSN) {
+                        Constants.hasShownSSNFlowThisSession = true
+                        findNavController().navigate(
+                            R.id.action_documentSsnFragment_to_selfieCapture
+                        )
+                    } else {
+                        requireActivity().onBackPressed()
+                    }
+                }
+            }
+        )
+
+        viewModel.navigateToNext.observe(
+            viewLifecycleOwner,
+            Observer {
+                it.getContentIfNotHandled()?.let {
+                    onNavigateToNext()
+                }
+            }
+        )
+
+        var disposable = viewModel.status.observeOn(AndroidSchedulers.mainThread())
+            .subscribe {
+                // show progress only if in front driving while back has failed or any other document except front
+                if (sharedViewModel.isComingFromFailedBackCheck || documentType != DocumentType.DL_FRONT) {
+                    var message = &quot;&quot;
+
+                    if (it == LoadingState.UPLOAD) {
+                        message = getString(R.string.uploading_your_file_please_wait)
+                    } else if (it == LoadingState.PROCESS) {
+                        message = getString(R.string.processing_document)
+                    }
+
+                    showLoadingFrag(message)
+                }
+            }
+
+        viewModel.addToDisposable(disposable)
+
+        viewModel.uploadState.observe(viewLifecycleOwner) { state -&gt;
+
+            state.getContentIfNotHandled()?.let {
+                when (it) {
+                    is UploadState.Error -&gt; {
+                        dismissDialog()
+                        viewModel.resetState()
+
+                        val message = if (it.message.contains(&quot;Unable to resolve host&quot;)) {
+                            getString(R.string.unable_to_proceed_please_try_again_later)
+                        } else if (it.message.contains(&quot;timeout&quot;) || it.message.startsWith(
+                                &quot;Failed to connect to&quot;
+                            )
+                        ) {
+                            getString(R.string.no_internet_msg)
+                        } else {
+                            it.message
+                        }
+                        if (documentType == DocumentType.DL_FRONT &amp;&amp; sharedViewModel.isComingFromFailedBackCheck) {
+                            viewModel.attemptNumber = viewModel.attemptNumber.plus(1)
+                            if (viewModel.attemptNumber &gt; 2) {
+                                showRetakeFront(true)
+                            } else {
+                                showOkMessageDialog(requireContext(), message)
+                                binding.nextEnable = false
+                            }
+                            return@observe
+                        }
+                        showOkMessageDialog(requireContext(), message)
+                    }
+
+                    UploadState.Idle -&gt; {
+                    }
+
+                    is UploadState.SuccessScan -&gt; {
+                        binding.nextEnable = true
+                        dismissDialog()
+
+                        sharedViewModel.updateVerifiedBarCodeInServer(
+                            &quot;${DateUtils.getCurrentLocalTime()}&quot;
+                        )
+                    }
+
+                    is UploadState.FailedScan -&gt; {
+                        if (viewModel.attemptNumber == 3) {
+                            binding.nextEnable = true
+                            dismissDialog()
+
+                            sharedViewModel.updateVerifiedBarCodeInServer(
+                                &quot;${DateUtils.getCurrentLocalTime()}&quot;
+                            )
+                        } else {
+                            sharedViewModel.clearBack()
+
+                            val message = if (it.msg.contains(&quot;Unable to resolve host&quot;)) {
+                                getString(R.string.unable_to_proceed_please_try_again_later)
+                            } else {
+                                it.msg
+                            }
+
+                            showOkMessageDialog(requireContext(), message)
+
+                            viewModel.attemptNumber = viewModel.attemptNumber.plus(1)
+                        }
+                    }
+
+                    is UploadState.Success -&gt; {
+                        dismissDialog()
+                        if (documentType == DocumentType.DL_FRONT) {
+                            sharedViewModel.updateSuccessTokenFront(
+                                &quot;${DateUtils.getCurrentLocalTime()}&quot;
+                            )
+                            /**
+                             * Since this can happen only front previously failed and back failed and
+                             * user is reuploading front, we need to call verify and additional details
+                             * */
+                            sharedViewModel.hasSuccessfullyProcessedFront = true
+                            viewModel.verifyAndAdditionalDetails(
+                                token = sharedViewModel.token.value!!
+                            )
+                        } else if (documentType == DocumentType.DL_BACK) {
+                            sharedViewModel.updateSuccessTokenBack(
+                                &quot;${DateUtils.getCurrentLocalTime()}&quot;,
+                                &quot;qr successful&quot;,
+                                it.additionalRequirement?.requiresAdditionalId ?: false
+                            )
+                        } else if (documentType == DocumentType.SSN) {
+                            sharedViewModel.updateSuccessTokenSSN(
+                                &quot;${DateUtils.getCurrentLocalTime()}&quot;
+                            )
+                        }
+
+                        if (documentType == DocumentType.DL_FRONT) {
+                            /**
+                             * do nothing here as verify and additional details is being called
+                             * handles the navigation in viewModel.reUploadFrontVerifiedAndAdditionalDetails
+                             * */
+//                            findNavController().navigate(
+//                                R.id.action_documentFrontFragment_to_documentBackFragment
+//                            )
+                        } else if (documentType == DocumentType.SSN) {
+                            findNavController().navigate(
+                                R.id.action_documentSsnFragment_to_selfieCapture
+                            )
+                        } else if (documentType == DocumentType.SSN_ONLY) {
+                            /**
+                             * Call identify after successful SSN details upload
+                             * */
+                            viewModel.identify(sharedViewModel.token.value!!)
+                        } else if (documentType == DocumentType.DL_BACK) {
+                            // check for the additional Requiremnt here
+                            it.additionalRequirement?.let { additionalRequirementResponse -&gt;
+
+                                stepCounterViewModel.enableSSN(
+                                    additionalRequirementResponse.requiresAdditionalId
+                                )
+
+                                if (additionalRequirementResponse.requiresAdditionalId) {
+                                    findNavController().navigate(
+                                        R.id.action_documentBackFragment_to_documentSnnFragment
+                                    )
+                                } else {
+                                    findNavController().navigate(
+                                        R.id.action_documentBackFragment_to_selfieCapture
+                                    )
+                                }
+                            } ?: run {
+                                findNavController().navigate(
+                                    R.id.action_documentBackFragment_to_selfieCapture
+                                )
+                            }
+                        }
+
+                        viewModel.resetState()
+                    }
+
+                    is UploadState.Loading -&gt; {
+                    }
+
+                    else -&gt; {
+                    }
+                }
+            }
+        }
+
+        viewModel.openCamera.observe(
+            viewLifecycleOwner,
+            EventObserver {
+                logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_DOC_CAPTURE_CLICKED) {
+                    putString(&quot;doc_type&quot;, documentType.name)
+                }
+                // check camera persmission here
+                if (!requireActivity().hasPermission(Manifest.permission.CAMERA)) {
+                    requestCameraPermission()
+                } else {
+                    showPicker()
+                    // Your delayed logic
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        when (documentType) {
+                            DocumentType.DL_FRONT -&gt; sharedViewModel.clearFront()
+                            DocumentType.DL_BACK -&gt; sharedViewModel.clearBack()
+                            DocumentType.SSN -&gt; {
+                                sharedViewModel.clearSsn()
+                            }
+
+                            else -&gt; {
+                            }
+                        }
+                    }, 200)
+                }
+            }
+        )
+
+        viewModel.navigateToBack.observe(
+            viewLifecycleOwner,
+            EventObserver {
+                onNavigateToBack(getDocumentType())
+            }
+        )
+
+        if (documentType == DocumentType.DL_FRONT) {
+            sharedViewModel.frontImage.observe(viewLifecycleOwner) {
+                it?.let {
+                    binding.imageCaptured = true
+                    binding.nextEnable = true
+                    binding.previewMedia.post {
+                        binding.previewMedia.setImageBitmap(it.bitmap)
+                    }
+                } ?: run {
+                    sharedViewModel.hasSuccessfullyProcessedFront = false
+                    binding.imageCaptured = false
+                    binding.nextEnable = false
+                    binding.previewMedia.setLicensePlaceholder(documentType)
+                }
+            }
+        } else if (documentType == DocumentType.DL_BACK) {
+            sharedViewModel.backImage.observe(viewLifecycleOwner) {
+                it?.let {
+                    binding.imageCaptured = true
+                    binding.nextEnable = true
+                    binding.previewMedia.post {
+                        binding.previewMedia.setImageBitmap(it.bitmap)
+                    }
+                } ?: run {
+                    binding.previewMedia.post {
+                        binding.previewMedia.setImageBitmap(null)
+                        binding.previewMedia.setLicensePlaceholder(documentType)
+                        binding.imageCaptured = false
+                        binding.nextEnable = false
+                    }
+                }
+            }
+        } else if (documentType == DocumentType.SSN || documentType == DocumentType.SSN_ONLY) {
+            // this two line for on view created
+            binding.nextEnable =
+                enableForEmptySSN(documentType) || sharedViewModel.ssnImage.value != null
+            binding.materialButton3.text = if (documentType == DocumentType.SSN_ONLY) {
+                getString(R.string.proceed)
+            } else {
+                if (sharedViewModel.ssnImage.value?.ssn != null) {
+                    getString(R.string.proceed)
+                } else {
+                    getString(
+                        R.string.skip_for_now
+                    )
+                }
+            }
+
+            sharedViewModel.ssnImage.observe(viewLifecycleOwner) {
+                // observe the change
+                binding.nextEnable = enableForEmptySSN(documentType) || it?.ssn != null
+                binding.materialButton3.text = if (documentType == DocumentType.SSN_ONLY) {
+                    getString(R.string.proceed)
+                } else {
+                    if (it?.ssn != null) {
+                        getString(R.string.proceed)
+                    } else {
+                        getString(
+                            R.string.skip_for_now
+                        )
+                    }
+                }
+                it?.let {
+                    binding.imageCaptured = true
+                    binding.previewMedia.post {
+                        binding.previewMedia.setImageBitmap(it.bitmap)
+                    }
+                } ?: run {
+                    binding.previewMedia.post {
+                        binding.previewMedia.setImageBitmap(null)
+                        binding.previewMedia.setLicensePlaceholder(documentType)
+                        binding.imageCaptured = false
+                    }
+                }
+            }
+        }
+
+        documentClassifier = DocumentClassifier(requireContext())
+        documentClassifier.loadModel()
+
+        textClassifier = InsuranceTextClassifier(requireContext())
+
+        viewModel.reUploadFrontVerifiedAndAdditionalDetails.observe(
+            viewLifecycleOwner,
+            EventObserver {
+                dismissDialog()
+                if (it.requiresAdditionalId) {
+                    // mark the failed back scan success so that back is not uploaded
+                    sharedViewModel.updateVerifiedBarCodeInServer(
+                        &quot;${DateUtils.getCurrentLocalTime()}&quot;
+                    )
+                    sharedViewModel.updateSuccessTokenBack(
+                        &quot;${DateUtils.getCurrentLocalTime()}&quot;,
+                        &quot;qr successful&quot;,
+                        true
+                    )
+                    // update step for SSN
+                    stepCounterViewModel.enableSSN(true)
+                    // first navigate to back (to maintain up navigation)
+                    findNavController().navigate(
+                        R.id.action_documentFrontFragment_to_documentBackFragment
+                    )
+                    // then navigate to SSN
+                    findNavController().navigate(
+                        R.id.action_documentBackFragment_to_documentSnnFragment
+                    )
+                } else {
+                    // mark the failed back scan success so that back is not uploaded
+                    sharedViewModel.updateVerifiedBarCodeInServer(
+                        &quot;${DateUtils.getCurrentLocalTime()}&quot;
+                    )
+                    sharedViewModel.updateSuccessTokenBack(
+                        &quot;${DateUtils.getCurrentLocalTime()}&quot;,
+                        &quot;qr successful&quot;,
+                        false
+                    )
+                    // update step for SSN
+                    stepCounterViewModel.enableSSN(false)
+                    // first navigate to back (to maintain up navigation)
+                    findNavController().navigate(
+                        R.id.action_documentFrontFragment_to_documentBackFragment
+                    )
+                    // then navigate to Selfie
+                    findNavController().navigate(R.id.action_documentBackFragment_to_selfieCapture)
+                }
+            }
+        )
+
+        viewModel.reUploadFrontVerifyAndAdditionalDetailsError.observe(
+            viewLifecycleOwner,
+            EventObserver {
+                dismissDialog()
+                val message = if (it.contains(&quot;Unable to resolve host&quot;)) {
+                    getString(R.string.unable_to_proceed_please_try_again_later)
+                } else {
+                    it
+                }
+
+                showOkMessageDialog(requireContext(), message)
+                binding.nextEnable = false
+            }
+        )
+        viewModel.showAlternateAppAvailable.observe(
+            viewLifecycleOwner,
+            EventObserver { errorResponse -&gt;
+                val alternateAppDialog = AlternateAppPromptFragment.newInstance(
+                    errorResponse.errorDescription,
+                    errorResponse.otherDetails?.android,
+                    errorResponse.otherDetails?.appName
+                )
+                alternateAppDialog.show(childFragmentManager, &quot;altApp&quot;)
+            }
+        )
+
+        viewModel.showSuccessDialog.observe(
+            viewLifecycleOwner,
+            EventObserver {
+                showSuccessfulDialog()
+            }
+        )
+
+        viewModel.navigateToManualId.observe(
+            viewLifecycleOwner,
+            EventObserver {
+                showManualInputFragment()
+            }
+        )
+
+        // This is only when ssn was skipped and user logged in and is redirected to SSN_ONLY
+        viewModel.guestSkipSsnUploadState.observe(viewLifecycleOwner) { uploadState -&gt;
+            uploadState.getContentIfNotHandled()?.let {
+                when (it) {
+                    is UploadState.Error -&gt; {
+                        dismissDialog()
+                        viewModel.resetState()
+                        if (it.message.isNotEmpty()) {
+                            DialogUtils(
+                                requireContext(),
+                                object : DialogListener {
+                                    override fun onNeutralClicked() {
+                                    }
+
+                                    override fun onPositiveClicked() {
+                                    }
+
+                                    override fun onNegativeClicked() {
+                                    }
+                                }
+                            ).dialog(it.message, getString(R.string.ok), &quot;&quot;, &quot;&quot;)
+                        }
+                    }
+
+                    UploadState.Idle -&gt; {
+                    }
+
+                    is UploadState.Success -&gt; {
+                        showSuccessfulDialog()
+                    }
+
+                    is UploadState.Uploaded -&gt; {
+                        sharedViewModel.updateSuccessTokenSelfie(
+                            &quot;${DateUtils.getCurrentLocalTime()}&quot;
+                        )
+                    }
+
+                    is UploadState.AddZip -&gt; {
+                        dismissDialog()
+                        showAdditionalVerificationDialog_Zip()
+                    }
+
+                    is UploadState.AddAddress -&gt; {
+                        dismissDialog()
+                        showAdditionalVerificationDialog_Address()
+                    }
+
+                    is UploadState.CustomerSupport -&gt; {
+                        dismissDialog()
+                        showSentToCustomerSupport()
+                    }
+
+                    is UploadState.NoMatchAddZip -&gt; {
+                        dismissDialog()
+                        showAdditionalVerificationDialog_Zip(true)
+                    }
+
+                    is UploadState.NoMatchAddAddress -&gt; {
+                        dismissDialog()
+                        showAdditionalVerificationDialog_Address(true)
+                    }
+
+                    is UploadState.MemberAlreadyRegistered -&gt; {
+                        dismissDialog()
+                        showMemberAlreadyRegistered(it.email)
+                    }
+
+                    is UploadState.Loading -&gt; {
+                        val message = when (it.state) {
+                            LoadingState.UPLOAD -&gt; getString(
+                                R.string.uploading_your_file_please_wait
+                            )
+
+                            LoadingState.VERIFY -&gt; getString(R.string.verifying_your_information)
+                            LoadingState.IDENTIFY -&gt; getString(R.string.identifying_user_details)
+                            else -&gt; &quot;&quot;
+                        }
+
+                        showLoadingFrag(message)
+                    }
+
+                    else -&gt; {
+                    }
+                }
+            }
+        }
+    }
+
+    fun showPicker() {
+        scannerClient.startScan(
+            requireActivity(),
+            getDocumentType()
+        ) { e -&gt;
+            Toast.makeText(requireContext(), &quot;Failed to scan: ${e.message}&quot;, Toast.LENGTH_SHORT)
+                .show()
+        }
+    }
+
+    // return image, type, id, isManualInput
+    fun extractId(
+        originalBitmap: Bitmap,
+        onResult: (Bitmap?, String?, String?, String?, Boolean) -&gt; Unit,
+        onError: (String?) -&gt; Unit
+    ) {
+        val timedResult = onResult
+        val timedError = onError
+
+        val inputImage = InputImage.fromBitmap(originalBitmap, 0)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            // Step 1: Run image classifier
+            val imageResults = withContext(Dispatchers.IO) {
+                documentClassifier.classify(originalBitmap)
+            }
+
+            if (imageResults.isEmpty()) {
+                timedError(&quot;Failed to detect card type&quot;)
+                return@launch
+            }
+
+            val imageTop = imageResults[0] // top label from image model
+            val imageInsuranceConf = imageResults.find { it.index == 0 }?.confidence ?: 0f
+
+            // Step 2: Run OCR → text classifier
+            recognizer.process(inputImage)
+                .addOnSuccessListener { visionText -&gt;
+                    val ocrText = visionText.text
+                    val textResult = textClassifier.classify(ocrText)
+                    val textLabel = textResult?.label ?: &quot;Other&quot;
+
+                    // Step 3: Fusion decision logic
+                    val finalType = when {
+                        // image(Insurance) + text(Insurance) = Insurance
+                        imageTop.label == &quot;Insurance&quot; &amp;&amp; textLabel == &quot;Insurance&quot; -&gt; &quot;Insurance&quot;
+
+                        // image(SSN) + text(Other) = SSN
+                        imageTop.label == &quot;SSN&quot; &amp;&amp; textLabel == &quot;Other&quot; &amp;&amp; imageTop.confidence &gt; 0.60f -&gt; &quot;SSN&quot;
+
+                        // image(Other) + text(Other) = Other
+                        imageTop.label == &quot;Other&quot; &amp;&amp; textLabel == &quot;Other&quot; -&gt; &quot;Other&quot;
+
+                        // image(Other) + text(Insurance) + image:insurance &gt; 10% = Insurance
+                        imageTop.label == &quot;Other&quot; &amp;&amp; textLabel == &quot;Insurance&quot; &amp;&amp; imageInsuranceConf &gt; 0.10f -&gt; &quot;Insurance&quot;
+
+                        // image(SSN) + text(Insurance) + image:insurance &gt; 10% = Insurance
+                        imageTop.label == &quot;SSN&quot; &amp;&amp; textLabel == &quot;Insurance&quot; &amp;&amp; imageInsuranceConf &gt; 0.10f -&gt; &quot;Insurance&quot;
+
+                        // image(Insurance) + text(Other) + image:insurance &gt; 50% = Insurance
+                        imageTop.label == &quot;Insurance&quot; &amp;&amp; textLabel == &quot;Other&quot; &amp;&amp; imageInsuranceConf &gt; 0.50f -&gt; &quot;Insurance&quot;
+
+                        // All other cases = Other
+                        else -&gt; &quot;Other&quot;
+                    }
+                    val allowedTypes = sharedViewModel.allowedDocumentTypes
+                    val allowedFinalType = when {
+                        finalType == &quot;Insurance&quot; &amp;&amp; !allowedTypes.contains(&quot;InsuranceCard&quot;) -&gt; &quot;Other&quot;
+                        finalType == &quot;SSN&quot; &amp;&amp; !allowedTypes.contains(&quot;SSN&quot;) -&gt; &quot;Other&quot;
+                        else -&gt; finalType
+                    }
+
+                    when (allowedFinalType) {
+                        &quot;Insurance&quot; -&gt; extractInsuranceCard(inputImage, timedResult, timedError)
+                        &quot;SSN&quot; -&gt; extractSSN(inputImage, originalBitmap, timedResult, timedError)
+                        else -&gt; {
+                            val errorMsg = when {
+                                allowedTypes.contains(&quot;SSN&quot;) &amp;&amp; !allowedTypes.contains(
+                                    &quot;InsuranceCard&quot;
+                                ) -&gt;
+                                    &quot;We couldn't detect a valid Social Security card. Please make sure you're uploading the correct document and that it's fully visible in the photo.&quot;
+
+                                allowedTypes.contains(&quot;InsuranceCard&quot;) &amp;&amp; !allowedTypes.contains(
+                                    &quot;SSN&quot;
+                                ) -&gt;
+                                    &quot;We couldn't detect a valid insurance card. Please make sure you're uploading the correct document and that it's fully visible in the photo.&quot;
+
+                                else -&gt;
+                                    &quot;We couldn't detect a valid Social Security card or insurance card. Please make sure you're uploading the correct document and that it's fully visible in the photo.&quot;
+                            }
+                            timedError(errorMsg)
+                        }
+                    }
+                }
+                .addOnFailureListener { e -&gt;
+                    // Fallback: use image classifier only
+                    val allowedTypes = sharedViewModel.allowedDocumentTypes
+
+                    when (imageTop.label) {
+                        &quot;Insurance&quot; -&gt; {
+                            if (allowedTypes.contains(&quot;InsuranceCard&quot;)) {
+                                timedError(
+                                    &quot;We can see your insurance card, but the text is too blurry to read. Please take a clearer photo, making sure the card is in focus and well-lit.&quot;
+                                )
+                            } else {
+                                timedError(
+                                    &quot;We couldn't detect a valid Social Security card. Please make sure you're uploading the correct document and that it's fully visible in the photo.&quot;
+                                )
+                            }
+                        }
+
+                        &quot;SSN&quot; -&gt; {
+                            if (allowedTypes.contains(&quot;SSN&quot;)) {
+                                timedError(
+                                    &quot;We can see your Social Security card, but the text is too blurry to read. Please take a clearer photo, making sure the card is in focus and well-lit.&quot;
+                                )
+                            } else {
+                                timedError(
+                                    &quot;We couldn't detect a valid insurance card. Please make sure you're uploading the correct document and that it's fully visible in the photo.&quot;
+                                )
+                            }
+                        }
+
+                        else -&gt; {
+                            timedError(
+                                &quot;We couldn't read the text from your document. Please try taking another photo with good lighting and make sure the document is flat and in focus.&quot;
+                            )
+                        }
+                    }
+                }
+        }
+    }
+
+    val recognizer = TextRecognition.getClient(TextRecognizerOptions.Builder().build())
+
+    fun extractSSN(
+        inputImage: InputImage,
+        originalBitmap: Bitmap,
+        onResult: (Bitmap?, String?, String?, String?, Boolean) -&gt; Unit,
+        onError: (String?) -&gt; Unit
+    ) {
+        lifecycleScope.launch {
+            var foundSSN: String? = null
+
+            val result = withContext(Dispatchers.Default) {
+                BwBackgroundRemover.processIterative(originalBitmap) { bitmap -&gt;
+                    withContext(Dispatchers.IO) {
+                        runCatching {
+                            recognizer.process(InputImage.fromBitmap(bitmap, 0)).await().text
+                        }.getOrDefault(&quot;&quot;)
+                    }
+                }
+            }
+            result.finalSsn?.let {
+                foundSSN = it
+            }
+
+            if (foundSSN != null) {
+                onResult(inputImage.bitmapInternal, &quot;SSN&quot;, foundSSN, &quot;&quot;, false)
+            } else {
+                showManualInputFragment(&quot;SSN&quot;)
+            }
+        }
+    }
+
+    fun extractInsuranceCard(
+        inputImage: InputImage,
+        onResult: (Bitmap?, String?, String?, String?, Boolean) -&gt; Unit,
+        onError: (String?) -&gt; Unit
+    ) {
+        recognizer.process(inputImage)
+            .addOnSuccessListener { visionText -&gt;
+                val extractor = InsuranceCardExtractor()
+
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val result = withContext(Dispatchers.IO) {
+                        // Heavy processing off the main thread
+                        val extractedData = extractor.extractFromDocument(visionText)
+
+                        Pair(
+                            if (extractedData.memberIds.isNotEmpty()) extractedData.memberIds[0] else null,
+                            if (extractedData.names.isNotEmpty()) extractedData.names[0] else null
+                        )
+                    }
+
+                    // Back on main thread, safe for UI updates
+                    if (result.first != null &amp;&amp; result.first != &quot;N/A&quot;) {
+                        onResult(
+                            inputImage.bitmapInternal,
+                            &quot;INSURANCE&quot;,
+                            result.first,
+                            result.second,
+                            false
+                        )
+                    } else {
+                        showManualInputFragment(&quot;InsuranceCard&quot;)
+                    }
+                }
+            }
+            .addOnFailureListener {
+                viewModel.logFailedDocumentScanAttempt(
+                    sharedViewModel.token.value!!,
+                    DocumentType.SSN_ONLY
+                )
+
+                onError(
+                    &quot;We couldn't find a valid ID number on your insurance card. Please make sure the entire card is visible and the photo is clear and in focus.&quot;
+                )
+            }
+    }
+
+    private fun extractBarCodeData(bitmap: Bitmap) {
+        // if success only enable the next
+        barcodeScanner?.process(InputImage.fromBitmap(convertToGrayscale(bitmap), 0))
+            ?.addOnSuccessListener {
+                val filteredList = it.filter { it.driverLicense != null }
+
+                if (filteredList.size &gt; 1) {
+                    // Do something when more than one item has a non-null driverLicense
+                    showOkMessageDialog(
+                        requireContext(),
+                        getString(R.string.multiple_cards_detected_please_try_again)
+                    )
+
+                    return@addOnSuccessListener
+                }
+
+                if (it.any { it.driverLicense != null }) {
+                    var item = it.find { it.driverLicense != null }
+                    logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_BARCODE_SUCCESS)
+
+                    binding.nextEnable = true
+                    sharedViewModel.updateBackImage(
+                        bitmap,
+                        item?.driverLicense,
+                        item
+                    )
+                    onBarcodeDetected(item?.driverLicense)
+                } else {
+                    onBarcodeExtractionFailed(bitmap)
+                }
+            }
+            ?.addOnFailureListener {
+                viewModel.logFailedDocumentScanAttempt(
+                    sharedViewModel.token.value!!,
+                    DocumentType.DL_BACK
+                )
+                showOkMessageDialog(
+                    requireContext(),
+                    getString(R.string.fail_to_extract_the_barcode_data)
+                )
+            }
+    }
+
+    private fun updateScanTitleAndDescription(documentType: DocumentType) {
+        val allowedTypes = sharedViewModel.allowedDocumentTypes
+        val hasSsn = allowedTypes.contains(&quot;SSN&quot;)
+        val hasInsurance = allowedTypes.contains(&quot;InsuranceCard&quot;)
+
+        val titleRes: Int
+        val descRes: Int
+
+        when {
+            hasSsn &amp;&amp; hasInsurance -&gt; return // both allowed — keep data-binding defaults
+            hasSsn -&gt; {
+                titleRes = if (documentType == DocumentType.SSN_ONLY) {
+                    R.string.your_ssn_card_only_is_required
+                } else {
+                    R.string.scan_ssn_only
+                }
+                descRes = R.string.please_align_ssn_only_within_the_frame
+            }
+
+            hasInsurance -&gt; {
+                titleRes = if (documentType == DocumentType.SSN_ONLY) {
+                    R.string.your_insurance_card_only_is_required
+                } else {
+                    R.string.scan_insurance_only
+                }
+                descRes = R.string.please_align_insurance_only_within_the_frame
+            }
+
+            else -&gt; return
+        }
+
+        binding.textViewTitle.text = getString(titleRes)
+        binding.tvText.text = getString(descRes)
+    }
+
+    private fun showManualInputFragment(type: String = &quot;&quot;) {
+        val bundle = android.os.Bundle().apply { putString(&quot;type&quot;, type) }
+        findNavController().navigate(
+            R.id.action_documentSsnFragment_to_manualIdFragment,
+            bundle
+        )
+    }
+
+    private fun showSentToCustomerSupport() {
+        val dialog = SentToCustomerSupportDialog(
+            object :
+                SentToCustomerSupportDialog.OnDialogActionListener {
+                override fun onCancelClicked() {
+                }
+
+                override fun onNextClicked() {
+                    if (isFromHomePage()) {
+                        requireActivity().setResult(Activity.RESULT_OK)
+                        requireActivity().finish()
+                    } else {
+                        val intent = Intent(requireContext(), LoginActivity::class.java)
+                        intent.flags =
+                            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        intent.putExtra(&quot;email_to_prefill&quot;, sharedViewModel.email)
+                        startActivity(intent)
+
+                        // Close all activities
+                        requireActivity().finishAffinity()
+                    }
+                }
+            },
+            isFromHomePage(),
+            sharedViewModel.email
+        )
+
+        dialog.show(childFragmentManager, &quot;SentToCustomerSupport&quot;)
+    }
+
+    private fun showRetakeFront(promptExit: Boolean = false) {
+        val popup = RetakeFrontLicenseDialog.newInstance(promptExit)
+        popup.setListener(object :
+                RetakeFrontLicenseDialog.OnDialogActionListener {
+                override fun onNextClicked() {
+                    sharedViewModel.isComingFromFailedBackCheck = true
+                    sharedViewModel.clearFront()
+                    findNavController().navigateUp()
+                }
+
+                override fun onCancelClicked() {
+                    requireActivity().setResult(Activity.RESULT_OK)
+                    requireActivity().finish()
+                }
+            })
+
+        popup.isCancelable = false
+        popup.show(childFragmentManager, &quot;retakeFrontLicenseDialog&quot;)
+    }
+
+    private fun showAdditionalVerificationDialog_Zip(isNoMatch: Boolean = false) {
+        // Inflate the dialog layout
+        val dialog = AdditionZipRequiredDialog(
+            object : AdditionZipRequiredDialog.OnDialogActionListener {
+                override fun onCancelClicked() {
+                }
+
+                override fun onNextClicked() {
+                    stepCounterViewModel.enableZip(true)
+
+                    findNavController().navigate(
+                        R.id.action_selfieCaptureFragment_to_zipUpdateFragment
+                    ) // Navigate
+                }
+            },
+            isNoMatch
+        )
+        dialog.show(childFragmentManager, &quot;AdditionZipRequiredDialog&quot;)
+    }
+
+    private fun showAdditionalVerificationDialog_Address(isNoMatch: Boolean = false) {
+        // Inflate the dialog layout
+        val dialog = AdditionalFullAddressDialog(
+            object : AdditionalFullAddressDialog.OnDialogActionListener {
+                override fun onCancelClicked() {
+                }
+
+                override fun onNextClicked() {
+                    stepCounterViewModel.enableFullAddress(true)
+
+                    findNavController().navigate(
+                        SelfieCaptureFragmentDirections.actionSelfieCaptureFragmentToZipUpdateFragment(
+                            isFull = true,
+                            paramsZip = &quot;&quot;
+                        )
+                    )
+                }
+            },
+            isNoMatch
+        )
+        dialog.show(childFragmentManager, &quot;AdditionalFullAddressDialog&quot;)
+    }
+
+    var alreadyRegisteredDialog: AlreadyRegisteredAlertDialog? = null
+    var lastEmail: String? = null
+
+    private fun showMemberAlreadyRegistered(email: String) {
+        lastEmail = email
+        alreadyRegisteredDialog = AlreadyRegisteredAlertDialog.newInstance(
+            sharedViewModel.token.value!!,
+            email
+        )
+
+        alreadyRegisteredDialog?.isCancelable = false
+
+        alreadyRegisteredDialog?.setResetLoginAction {
+            alreadyRegisteredDialog?.dismiss()
+            finishAndOpenLoginPage(it)
+        }
+
+        alreadyRegisteredDialog?.setReRegisterAction {
+            alreadyRegisteredDialog?.dismiss()
+            viewModel.identify(sharedViewModel.token.value!!, true)
+        }
+
+        alreadyRegisteredDialog?.show(childFragmentManager, &quot;alreadyRegisteredAlertDialog&quot;)
+    }
+
+    fun finishAndOpenLoginPage(email: String) {
+        val intent = Intent(requireContext(), LoginActivity::class.java)
+        intent.putExtra(&quot;email&quot;, email) // Add this line to pass the email
+        startActivity(intent)
+        requireActivity().finishAffinity()
+    }
+
+    private fun showSuccessfulDialog() {
+        logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_COMPLETED)
+        // Inflate the dialog layout
+        var dialogView = layoutInflater.inflate(R.layout.dialog_verification_successful, null)
+
+        if (isFromHomePage()) {
+            dialogView = layoutInflater.inflate(
+                R.layout.dialog_verification_successful_guest,
+                null
+            )
+        } else {
+            val txtSubtext: TextView = dialogView.findViewById(R.id.txtSubText)
+            val email = sharedViewModel.email ?: &quot;&quot;
+            val messageText = getString(
+                R.string.check_your_email_at_and_click_the_link_in_the_email_to_activate_your_account,
+                email
+            )
+            val spannableString = android.text.SpannableString(messageText)
+            val emailStart = messageText.indexOf(email)
+            if (emailStart != -1 &amp;&amp; email.isNotEmpty()) {
+                spannableString.setSpan(
+                    android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                    emailStart,
+                    emailStart + email.length,
+                    android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+            txtSubtext.text = spannableString
+        }
+
+        // Create the dialog
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .create()
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.setCancelable(false)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        // Find views in the dialog
+        val proceedToLogin: MaterialButton = dialogView.findViewById(R.id.proceedToLoginButton)
+        proceedToLogin.setOnClickListener {
+            dialog.dismiss()
+            val intent = Intent(requireContext(), LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+
+            // Close all activities
+            requireActivity().finishAffinity()
+        }
+
+        // Show the dialog
+        dialog.show()
+    }
+
+    open fun enableForEmptySSN(documentType: DocumentType): Boolean {
+        return (documentType == DocumentType.SSN)
+    }
+
+    /** Called when a DL barcode is successfully detected. Override to handle the data. */
+    protected open fun onBarcodeDetected(
+        driverLicense: com.google.mlkit.vision.barcode.common.Barcode.DriverLicense?
+    ) = Unit
+
+    open fun onBarcodeExtractionFailed(bitmap: Bitmap) {
+        logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_BARCODE_FAILED) {
+            putInt(&quot;attempt_number&quot;, viewModel.attemptNumber)
+        }
+
+        sharedViewModel.token.value?.let {
+            viewModel.logFailedDocumentScanAttempt(
+                it,
+                DocumentType.DL_BACK
+            )
+        }
+
+        binding.nextEnable = false
+
+        if (viewModel.attemptNumber == 3) {
+            binding.nextEnable = true
+            // mark the back scan as successful
+            sharedViewModel.updateBackImage(
+                bitmap,
+                null,
+                null
+            )
+            sharedViewModel.updateVerifiedBarCodeInServer(
+                &quot;${DateUtils.getCurrentLocalTime()}&quot;
+            )
+            /**
+             * Since back scan failed more than twice, we now check whether front has
+             * been successfully processed. If the front has also failed then we show the
+             * user a dialog informing they need to upload front again
+             * */
+            if (!sharedViewModel.hasSuccessfullyProcessedFront) {
+                showRetakeFront()
+            }
+        } else {
+            showOkMessageDialog(
+                requireContext(),
+                getString(
+                    R.string.we_couldn_t_read_the_barcode_please_try_again_and_make_sure_the_barcode_is_clearly_visible_well_lit_and_not_blurred
+                )
+            )
+            sharedViewModel.clearBack()
+            viewModel.attemptNumber = viewModel.attemptNumber.plus(1)
+        }
+    }
+}
+
+fun convertToGrayscale(bitmap: Bitmap): Bitmap {
+    // Create a new Bitmap with the same size as the original
+<span class="nc" id="L1431">    val grayscaleBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)</span>
+
+    // Create a Canvas to draw the original bitmap onto the new one
+<span class="nc" id="L1434">    val canvas = Canvas(grayscaleBitmap)</span>
+
+    // Create a ColorMatrix for grayscale conversion
+<span class="nc" id="L1437">    val colorMatrix = ColorMatrix()</span>
+<span class="nc" id="L1438">    colorMatrix.setSaturation(0f) // Set saturation to 0 to get grayscale</span>
+
+    // Create a Paint object and set the ColorMatrix filter
+<span class="nc" id="L1441">    val paint = Paint()</span>
+<span class="nc" id="L1442">    paint.colorFilter = ColorMatrixColorFilter(colorMatrix)</span>
+
+    // Draw the original bitmap onto the canvas using the paint (which applies the grayscale filter)
+<span class="nc" id="L1445">    canvas.drawBitmap(bitmap, 0f, 0f, paint)</span>
+
+<span class="nc" id="L1447">    return grayscaleBitmap</span>
+}
+
+enum class DocumentType {
+<span class="fc" id="L1451">    DL_FRONT,</span>
+<span class="fc" id="L1452">    DL_BACK,</span>
+<span class="fc" id="L1453">    SSN,</span>
+<span class="fc" id="L1454">    SSN_ONLY,</span>
+<span class="fc" id="L1455">    SELFIE,</span>
+<span class="fc" id="L1456">    SELFIE_MANUAL,</span>
+<span class="fc" id="L1457">    INSURANCE_CARD</span>
+<span class="nc" id="L1458">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

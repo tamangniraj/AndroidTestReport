@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StepRegSuccessLoginViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.login.successReg</a> &gt; <span class="el_source">StepRegSuccessLoginViewModel.kt</span></div><h1>StepRegSuccessLoginViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.login.successReg
+
+import android.content.SharedPreferences
+import android.text.Editable
+import android.text.TextWatcher
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.data.remote.register.RegisterUser
+import com.vivekahealth.vivekahealth.data.remote.register.DataResponse
+import com.vivekahealth.vivekahealth.ui.register.step3.repository.EmailRepository
+import com.vivekahealth.vivekahealth.ui.register.step8.repository.RegisterRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Coroutines
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.remote.APIResponse
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
+import kotlinx.coroutines.Job
+import org.apache.commons.lang3.StringUtils
+
+<span class="nc" id="L29">class StepRegSuccessLoginViewModel @Inject constructor(</span>
+<span class="nc" id="L30">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L31">    private val emailRepository: EmailRepository,</span>
+<span class="nc" id="L32">    private val registerRepository: RegisterRepository</span>
+<span class="nc" id="L33">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L35">    var gson = Gson()</span>
+<span class="nc" id="L36">    var user = RegisterUser()</span>
+    private lateinit var job: Job
+<span class="nc" id="L38">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L40">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L42">    private val _emailChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+
+    val emailChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L45">        get() = _emailChanged</span>
+
+<span class="nc" id="L47">    private val _changeEnable = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val changeEnable: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L49">        get() = _changeEnable</span>
+<span class="nc" id="L50">    private val _navigateToLogin = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToLogin: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L52">        get() = _navigateToLogin</span>
+
+<span class="nc" id="L54">    private val _navigateToReRegister = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+    val navigateToReRegister: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
+<span class="nc" id="L56">        get() = _navigateToReRegister</span>
+
+<span class="nc" id="L58">    private val _navigateToResend = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+    val navigateToResend: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
+<span class="nc" id="L60">        get() = _navigateToResend</span>
+
+<span class="nc" id="L62">    private val _navigateToSuccess = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+    val navigateToSuccess: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
+<span class="nc" id="L64">        get() = _navigateToSuccess</span>
+<span class="nc" id="L65">    var email: String = &quot;&quot;</span>
+<span class="nc" id="L66">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L68">            field = value</span>
+<span class="nc" id="L69">            callbacks.notifyCallbacks(this, BR.email, null)</span>
+<span class="nc" id="L70">        }</span>
+
+<span class="nc" id="L72">    var originalEmail = &quot;&quot;</span>
+<span class="nc" id="L73">    var firstTextChange: Boolean = false</span>
+
+<span class="nc" id="L75">    var count = 0</span>
+
+<span class="nc" id="L77">    @get:Bindable</span>
+<span class="nc" id="L78">    val emailTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L81">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L83">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L85">            _emailChanged.value = Event(s.toString())</span>
+<span class="nc" id="L86">            firstTextChange = true</span>
+<span class="nc" id="L87">            count += 1</span>
+<span class="nc" id="L88">        }</span>
+    }
+
+<span class="nc" id="L91">    var updateEnabled = false</span>
+
+<span class="nc" id="L93">    var Done = false</span>
+<span class="nc" id="L94">    var cancel = false</span>
+    fun checkEmail() {
+<span class="nc" id="L96">        compositeDisposable.add(</span>
+<span class="nc" id="L97">            emailRepository.verifyEmail(email)</span>
+<span class="nc" id="L98">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L99">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L100">                .doOnSubscribe {</span>
+<span class="nc" id="L101">                    _navigateToReRegister.value = APIResponse&lt;DataResponse&gt;().loading()</span>
+<span class="nc" id="L102">                }</span>
+<span class="nc" id="L103">                .subscribe({</span>
+//                            val gson = Gson()
+//                            val regEdit = preferences.edit();
+//
+//                            val regString = preferences.getString(Constants.Registration, &quot;&quot;)
+//
+//                            val user = gson.fromJson(regString, RegisterUser::class.java)
+//                            user.email = email
+//
+//                            val userString = gson.toJson(user)
+//
+//                            regEdit.putString(Constants.Registration, userString)
+//                            regEdit.apply()
+
+<span class="nc" id="L117">                    saveEmail()</span>
+<span class="nc" id="L118">                    _navigateToReRegister.value = APIResponse&lt;DataResponse&gt;().success(it)</span>
+<span class="nc" id="L119">                }, {</span>
+<span class="nc" id="L120">                    _navigateToReRegister.value = APIResponse&lt;DataResponse&gt;().error(</span>
+<span class="nc" id="L121">                        it.localizedMessage!!</span>
+                    )
+<span class="nc" id="L123">                })</span>
+        )
+<span class="nc" id="L125">    }</span>
+
+    fun reSend() {
+<span class="nc" id="L128">        compositeDisposable.add(</span>
+<span class="nc" id="L129">            registerRepository.reSendEmail(email)</span>
+<span class="nc" id="L130">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L131">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L132">                .doOnSubscribe {</span>
+<span class="nc" id="L133">                    _navigateToResend.value = APIResponse&lt;DataResponse&gt;().loading()</span>
+<span class="nc" id="L134">                }</span>
+<span class="nc" id="L135">                .subscribe({</span>
+<span class="nc" id="L136">                    _navigateToResend.value = APIResponse&lt;DataResponse&gt;().success(it)</span>
+<span class="nc" id="L137">                }, {</span>
+<span class="nc" id="L138">                    _navigateToResend.value = APIResponse&lt;DataResponse&gt;().error(</span>
+<span class="nc" id="L139">                        it.localizedMessage!!</span>
+                    )
+<span class="nc" id="L141">                })</span>
+        )
+<span class="nc" id="L143">    }</span>
+
+    fun reRegister() {
+<span class="nc" id="L146">        compositeDisposable.add(</span>
+<span class="nc" id="L147">            registerRepository.registerUser(user)</span>
+<span class="nc" id="L148">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L149">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L150">                .doOnSubscribe {</span>
+<span class="nc" id="L151">                    _navigateToSuccess.value = APIResponse&lt;DataResponse&gt;().loading()</span>
+<span class="nc" id="L152">                }</span>
+<span class="nc" id="L153">                .subscribe({</span>
+<span class="nc" id="L154">                    originalEmail = email</span>
+
+<span class="nc" id="L156">                    _navigateToSuccess.value = APIResponse&lt;DataResponse&gt;().success(it)</span>
+<span class="nc" id="L157">                }, {</span>
+<span class="nc" id="L158">                    _navigateToSuccess.value = APIResponse&lt;DataResponse&gt;().error(</span>
+<span class="nc" id="L159">                        it.localizedMessage!!</span>
+                    )
+<span class="nc" id="L161">                })</span>
+        )
+<span class="nc" id="L163">    }</span>
+
+    fun loadData() {
+<span class="nc" id="L166">        job = Coroutines.ioToMainThread(</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">            {</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">                if (!StringUtils.equals(preferences.getString(Constants.register, &quot;&quot;), &quot;&quot;)) {</span>
+<span class="nc" id="L169">                    user = gson.fromJson(</span>
+<span class="nc" id="L170">                        preferences.getString(Constants.register, &quot;&quot;),</span>
+<span class="nc" id="L171">                        RegisterUser::class.java</span>
+                    )
+                }
+
+<span class="nc" id="L175">                firstTextChange = false</span>
+<span class="nc" id="L176">            },</span>
+            {
+<span class="nc" id="L178">                email = user.email.toString()</span>
+<span class="nc" id="L179">                originalEmail = email</span>
+<span class="nc" id="L180">            }</span>
+        )
+<span class="nc" id="L182">    }</span>
+    fun saveEmail() {
+<span class="nc" id="L184">        user.email = email</span>
+<span class="nc" id="L185">        val regString = gson.toJson(user)</span>
+<span class="nc" id="L186">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L187">        regEdit.putString(Constants.Registration, regString)</span>
+<span class="nc" id="L188">        regEdit.apply()</span>
+<span class="nc" id="L189">    }</span>
+    fun onBackClicked() {
+<span class="nc" id="L191">    }</span>
+
+    fun removeReg() {
+<span class="nc" id="L194">        val regString = gson.toJson(user)</span>
+<span class="nc" id="L195">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L196">        regEdit.putString(Constants.Registration, &quot;&quot;)</span>
+<span class="nc" id="L197">        regEdit.apply()</span>
+<span class="nc" id="L198">    }</span>
+    fun resendEmail() {
+<span class="nc" id="L200">        reSend()</span>
+//        user.resendVerification = &quot;true&quot;
+
+//        reRegister()
+<span class="nc" id="L204">    }</span>
+
+    fun onOkClicked() {
+<span class="nc" id="L207">        removeReg()</span>
+
+<span class="nc" id="L209">        _navigateToLogin.value = Event(Unit)</span>
+<span class="nc" id="L210">    }</span>
+
+    fun onUpdateClicked() {
+<span class="nc bnc" id="L213" title="All 2 branches missed.">        if (Done) {</span>
+<span class="nc" id="L214">            checkEmail()</span>
+<span class="nc bnc" id="L215" title="All 2 branches missed.">        } else if (cancel) {</span>
+<span class="nc" id="L216">            _changeEnable.value = Event(Unit)</span>
+        } else {
+<span class="nc bnc" id="L218" title="All 2 branches missed.">            if (!updateEnabled) {</span>
+<span class="nc" id="L219">                updateEnabled = true</span>
+
+<span class="nc" id="L221">                _changeEnable.value = Event(Unit)</span>
+            } else {
+<span class="nc" id="L223">                _changeEnable.value = Event(Unit)</span>
+            }
+        }
+<span class="nc" id="L226">    }</span>
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L228">        callbacks.add(callback)</span>
+<span class="nc" id="L229">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L232">        callbacks.remove(callback)</span>
+<span class="nc" id="L233">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L236">        super.onCleared()</span>
+<span class="nc" id="L237">        compositeDisposable.dispose()</span>
+<span class="nc" id="L238">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

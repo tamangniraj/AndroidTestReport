@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GuardianNursesViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.guardianNurses</a> &gt; <span class="el_source">GuardianNursesViewModel.kt</span></div><h1>GuardianNursesViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.guardianNurses
+
+import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.ViewModel
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
+import com.bumptech.glide.request.transition.DrawableCrossFadeTransition
+import com.vivekahealth.vivekahealth.ui.homePage.documents.repository.DocumentRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
+import timber.log.Timber
+
+<span class="fc" id="L25">class GuardianNursesViewModel @Inject constructor(</span>
+<span class="fc" id="L26">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L27">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L28">    private val documentRepository: DocumentRepository</span>
+<span class="fc" id="L29">) : ViewModel(), Observable {</span>
+<span class="fc" id="L30">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="pc" id="L31">    var imageBitmap: Bitmap? = null</span>
+
+<span class="fc" id="L33">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+    var loading: Boolean = false
+<span class="fc" id="L35">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L37">            field = value</span>
+<span class="nc" id="L38">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L39">        }</span>
+<span class="fc" id="L40">    var selfId1: String? = &quot;&quot;</span>
+<span class="fc" id="L41">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L43">            field = value</span>
+<span class="fc" id="L44">            callbacks.notifyCallbacks(this, BR.selfId1, null)</span>
+<span class="fc" id="L45">        }</span>
+<span class="fc" id="L46">    var selfId2: String? = &quot;&quot;</span>
+<span class="fc" id="L47">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L49">            field = value</span>
+<span class="fc" id="L50">            callbacks.notifyCallbacks(this, BR.selfId2, null)</span>
+<span class="fc" id="L51">        }</span>
+<span class="pc" id="L52">    var documentType: String = &quot;downloadAttachment&quot;</span>
+
+<span class="nc" id="L54">    @get:Bindable</span>
+<span class="fc" id="L55">    val listener = object : RequestListener&lt;Drawable&gt; {</span>
+        override fun onLoadFailed(
+            e: GlideException?,
+            model: Any?,
+            target: Target&lt;Drawable&gt;?,
+            isFirstResource: Boolean
+        ): Boolean {
+<span class="nc" id="L62">            loading = false</span>
+
+<span class="nc" id="L64">            return false</span>
+        }
+
+        override fun onResourceReady(
+            resource: Drawable?,
+            model: Any?,
+            target: Target&lt;Drawable&gt;?,
+            dataSource: DataSource?,
+            isFirstResource: Boolean
+        ): Boolean {
+<span class="nc" id="L74">            imageBitmap = (resource as BitmapDrawable).bitmap</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">            target?.onResourceReady(</span>
+<span class="nc" id="L76">                resource,</span>
+<span class="nc" id="L77">                DrawableCrossFadeTransition(10, isFirstResource)</span>
+            )
+<span class="nc" id="L79">            loading = false</span>
+
+<span class="nc" id="L81">            return true</span>
+        }
+    }
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L86">        callbacks.remove(callback)</span>
+<span class="nc" id="L87">    }</span>
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L89">        callbacks.add(callback)</span>
+<span class="nc" id="L90">    }</span>
+
+    fun getDocuments() {
+<span class="nc" id="L93">        compositeDisposable.add(</span>
+<span class="nc" id="L94">            documentRepository.getDocumentOld(</span>
+<span class="nc" id="L95">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc" id="L96">                &quot;&quot;,</span>
+<span class="nc" id="L97">                85</span>
+            )
+<span class="nc" id="L99">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L100">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L101">                .doOnSubscribe {</span>
+<span class="nc" id="L102">                    loading = true</span>
+<span class="nc" id="L103">                }</span>
+<span class="nc" id="L104">                .subscribe({</span>
+<span class="nc" id="L105">                    Timber.d(it.toString())</span>
+
+<span class="nc bnc" id="L107" title="All 2 branches missed.">                    if (it.values[0].type.equals(&quot;ATTACHMENT&quot;, true)) {</span>
+<span class="nc" id="L108">                        selfId1 = it.values[0].selfId</span>
+                    }
+<span class="nc bnc" id="L110" title="All 2 branches missed.">                    if (it.values[1].type.equals(&quot;ATTACHMENT&quot;, true)) {</span>
+<span class="nc" id="L111">                        selfId2 = it.values[1].selfId</span>
+                    }
+<span class="nc" id="L113">                    loading = false</span>
+<span class="nc" id="L114">                }, {</span>
+<span class="nc" id="L115">                    Timber.d(it.toString())</span>
+
+<span class="nc" id="L117">                    loading = false</span>
+<span class="nc" id="L118">                })</span>
+        )
+<span class="nc" id="L120">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L123">        super.onCleared()</span>
+<span class="nc" id="L124">        compositeDisposable.dispose()</span>
+<span class="nc" id="L125">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

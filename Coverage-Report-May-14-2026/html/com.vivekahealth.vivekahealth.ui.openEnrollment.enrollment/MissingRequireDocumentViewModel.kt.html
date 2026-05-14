@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MissingRequireDocumentViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment</a> &gt; <span class="el_source">MissingRequireDocumentViewModel.kt</span></div><h1>MissingRequireDocumentViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment
+
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.vivekahealth.vivekahealth.data.local.enroll.ListDoc
+import com.vivekahealth.vivekahealth.data.remote.enroll.DocumentUploadSuccessEnroll
+import com.vivekahealth.vivekahealth.data.remote.enroll.MissingDocumentPerson
+import com.vivekahealth.vivekahealth.data.remote.enroll.Person
+import com.vivekahealth.vivekahealth.ui.guestHome.repository.GuestHomeRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.remote.APIResponse
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import okhttp3.MultipartBody
+import javax.inject.Inject
+
+<span class="nc" id="L24">class MissingRequireDocumentViewModel @Inject constructor(</span>
+<span class="nc" id="L25">    private val homeRepository: HomeRepository,</span>
+<span class="nc" id="L26">    private val guestHomeRepository: GuestHomeRepository</span>
+<span class="nc" id="L27">) : ViewModel() {</span>
+
+<span class="nc" id="L29">    private val compositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L31">    private val _documents = MutableLiveData&lt;List&lt;MissingDocumentPerson&gt;&gt;()</span>
+<span class="nc" id="L32">    val documents: LiveData&lt;List&lt;MissingDocumentPerson&gt;&gt; get() = _documents</span>
+
+<span class="nc" id="L34">    private val _loading = MutableLiveData&lt;Boolean&gt;()</span>
+<span class="nc" id="L35">    val loading: LiveData&lt;Boolean&gt; get() = _loading</span>
+
+<span class="nc" id="L37">    private val _error = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+<span class="nc" id="L38">    val error: LiveData&lt;Event&lt;String&gt;&gt; get() = _error</span>
+
+<span class="nc" id="L40">    private val _uploadResult = MutableLiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt;()</span>
+<span class="nc" id="L41">    val uploadResult: LiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt; get() = _uploadResult</span>
+
+<span class="nc" id="L43">    private val _navigateToSuccess = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="nc" id="L44">    val navigateToSuccess: LiveData&lt;Event&lt;Unit&gt;&gt; get() = _navigateToSuccess</span>
+
+<span class="nc" id="L46">    var currentItem: ListDoc = ListDoc()</span>
+<span class="nc" id="L47">    var currentPerson: Person = Person()</span>
+<span class="nc" id="L48">    lateinit var filePart: MultipartBody.Part</span>
+
+    private var debounceJob: Job? = null
+    private var isDebouncing = false
+
+    fun fetchRequiredDocuments() {
+<span class="nc" id="L54">        compositeDisposable.add(</span>
+<span class="nc" id="L55">            guestHomeRepository.getMissingRequiredDocuments()</span>
+<span class="nc" id="L56">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L57">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L58">                .doOnSubscribe { _loading.value = true }</span>
+<span class="nc" id="L59">                .subscribe({ response -&gt;</span>
+<span class="nc" id="L60">                    _documents.value = response.documentList</span>
+<span class="nc" id="L61">                    _loading.value = false</span>
+<span class="nc" id="L62">                }, { throwable -&gt;</span>
+<span class="nc" id="L63">                    _loading.value = false</span>
+<span class="nc" id="L64">                    _error.value = Event(</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">                        throwable.localizedMessage ?: &quot;An unexpected error occurred.&quot;</span>
+                    )
+<span class="nc" id="L67">                })</span>
+        )
+<span class="nc" id="L69">    }</span>
+
+<span class="nc" id="L71">    fun uploadDocument(enrollmentId: Long? = null) {</span>
+<span class="nc" id="L72">        singleClick {</span>
+<span class="nc" id="L73">            compositeDisposable.add(</span>
+<span class="nc" id="L74">                guestHomeRepository.uploadOpenFile(</span>
+<span class="nc" id="L75">                    filePart,</span>
+<span class="nc" id="L76">                    currentItem.id.toString(),</span>
+<span class="nc" id="L77">                    enrollmentId</span>
+                )
+<span class="nc" id="L79">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L80">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L81">                    .doOnSubscribe {</span>
+<span class="nc" id="L82">                        _uploadResult.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().loading()</span>
+<span class="nc" id="L83">                    }</span>
+<span class="nc" id="L84">                    .subscribe({</span>
+<span class="nc" id="L85">                        _uploadResult.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().success(it)</span>
+<span class="nc" id="L86">                    }, {</span>
+<span class="nc" id="L87">                        _uploadResult.value = APIResponse&lt;DocumentUploadSuccessEnroll&gt;().error(</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">                            it.localizedMessage ?: &quot;An unexpected error occurred.&quot;</span>
+                        )
+<span class="nc" id="L90">                    })</span>
+            )
+<span class="nc" id="L92">        }</span>
+<span class="nc" id="L93">    }</span>
+
+    fun onDoneClicked() {
+<span class="nc" id="L96">        singleClick { _navigateToSuccess.value = Event(Unit) }</span>
+<span class="nc" id="L97">    }</span>
+
+    private fun singleClick(action: () -&gt; Unit) {
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        if (isDebouncing) return</span>
+<span class="nc" id="L101">        action()</span>
+<span class="nc" id="L102">        isDebouncing = true</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        debounceJob?.cancel()</span>
+<span class="nc" id="L104">        debounceJob = viewModelScope.launch {</span>
+<span class="nc" id="L105">            delay(500L)</span>
+<span class="nc" id="L106">            isDebouncing = false</span>
+<span class="nc" id="L107">        }</span>
+<span class="nc" id="L108">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L111">        super.onCleared()</span>
+<span class="nc" id="L112">        compositeDisposable.dispose()</span>
+<span class="nc" id="L113">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

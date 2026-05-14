@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PhoneCodeRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.register.step1.repository</a> &gt; <span class="el_source">PhoneCodeRepository.kt</span></div><h1>PhoneCodeRepository.kt</h1><pre class="source lang-java linenums">
+
+package com.vivekahealth.vivekahealth.ui.register.step1.repository
+
+import com.vivekahealth.vivekahealth.data.remote.guest.RequestOtpSendParams
+import com.vivekahealth.vivekahealth.data.remote.guest.ResponseOtpReceiveParams
+import com.vivekahealth.vivekahealth.data.remote.guest.Source
+import com.vivekahealth.vivekahealth.data.remote.guest.VerifyOtpReceiveParams
+import com.vivekahealth.vivekahealth.data.remote.guest.VerifyOtpSendParams
+import com.vivekahealth.vivekahealth.data.remote.register.TempCode
+import com.vivekahealth.vivekahealth.ui.register.step1.service.PhoneService
+import io.reactivex.Single
+import retrofit2.Response
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * Repository that handles User objects.
+ */
+@Singleton
+<span class="fc" id="L21">class PhoneCodeRepository @Inject constructor(</span>
+<span class="fc" id="L22">    private val phoneService: PhoneService</span>
+) {
+
+<span class="fc" id="L25">    fun getCode(phone: String, countryCode: String, channel: String): Single&lt;TempCode&gt; = phoneService.getCodeApi().getCode(</span>
+<span class="fc" id="L26">        phone,</span>
+<span class="fc" id="L27">        countryCode,</span>
+<span class="fc" id="L28">        true,</span>
+<span class="fc" id="L29">        channel</span>
+<span class="fc" id="L30">    )</span>
+
+    fun requestOTPV2(
+        to: String,
+        countryCode: String?,
+        channel: String,
+        captchaToken: String?,
+        registrationId: String,
+        isCheckConsent: Boolean?,
+        source: Source?
+    ): Single&lt;Response&lt;ResponseOtpReceiveParams&gt;&gt; {
+<span class="fc" id="L41">        return phoneService.getCodeApi().requestOTP(</span>
+<span class="fc" id="L42">            RequestOtpSendParams(</span>
+<span class="fc" id="L43">                to = to,</span>
+<span class="fc" id="L44">                countryCode = countryCode,</span>
+<span class="fc bfc" id="L45" title="All 4 branches covered.">                channel = if (channel == &quot;PHONE&quot;) 1 else if (channel == &quot;VOICE&quot;) 2 else 3,</span>
+<span class="fc" id="L46">                registrationId = registrationId,</span>
+<span class="fc" id="L47">                captchaToken = captchaToken,</span>
+<span class="fc" id="L48">                smsConsent = isCheckConsent,</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">                source = source?.value</span>
+            )
+        )
+    }
+
+<span class="fc" id="L54">    fun verifyCode(phone: String, tempUuid: String, Code: String, expirationTime: String): Single&lt;TempCode&gt; = phoneService.getCodeApi().verifyCode(</span>
+<span class="fc" id="L55">        phone,</span>
+<span class="fc" id="L56">        tempUuid,</span>
+<span class="fc" id="L57">        Code,</span>
+<span class="fc" id="L58">        expirationTime</span>
+<span class="fc" id="L59">    )</span>
+
+    fun verifyCodeV2(
+        id: String,
+        registrationId: String?,
+        attemptId: String,
+        code: String,
+        channel: String
+    ): Single&lt;Response&lt;VerifyOtpReceiveParams&gt;&gt; {
+<span class="fc" id="L68">        return phoneService.getCodeApi().verifyOTP(</span>
+<span class="fc" id="L69">            VerifyOtpSendParams(</span>
+<span class="fc" id="L70">                registrationId = registrationId,</span>
+<span class="fc" id="L71">                attemptId = attemptId,</span>
+<span class="fc" id="L72">                to = id,</span>
+<span class="fc" id="L73">                otpCode = code,</span>
+<span class="fc bfc" id="L74" title="All 4 branches covered.">                channel = if (channel == &quot;PHONE&quot;) 1 else if (channel == &quot;VOICE&quot;) 2 else 3</span>
+            )
+        )
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Value.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew</a> &gt; <span class="el_source">Value.kt</span></div><h1>Value.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew
+
+<span class="pc bpc" id="L3" title="36 of 76 branches missed.">data class Value(</span>
+<span class="pc" id="L4">    var address1: String? = null,</span>
+<span class="pc" id="L5">    var address2: String? = null,</span>
+<span class="pc" id="L6">    var addressType: String? = null,</span>
+<span class="pc" id="L7">    var addresses: List&lt;String&gt;? = null,</span>
+<span class="pc" id="L8">    var boardCertified: String? = null,</span>
+<span class="pc" id="L9">    var categories: List&lt;String&gt;? = null,</span>
+<span class="pc" id="L10">    var cellNumber: String? = null,</span>
+<span class="pc" id="L11">    var city: String? = null,</span>
+<span class="pc" id="L12">    var clientId: String? = null,</span>
+<span class="pc" id="L13">    var county: String? = null,</span>
+<span class="pc" id="L14">    var displayName: String? = null,</span>
+<span class="pc" id="L15">    var distance: String? = null,</span>
+<span class="pc" id="L16">    var effectiveFromDate: String? = null,</span>
+<span class="pc" id="L17">    var effectiveToDate: String? = null,</span>
+<span class="pc" id="L18">    var favourite: String? = null,</span>
+<span class="pc" id="L19">    var federalTaxId: String? = null,</span>
+<span class="pc" id="L20">    var fileName: String? = null,</span>
+<span class="pc" id="L21">    var firstName: String? = null,</span>
+<span class="pc" id="L22">    var fullAddress: String? = null,</span>
+<span class="pc" id="L23">    var fullOfficeName: String? = null,</span>
+<span class="pc" id="L24">    var gender: String? = null,</span>
+<span class="pc" id="L25">    var lastName: String? = null,</span>
+<span class="pc" id="L26">    var latitude: String? = null,</span>
+<span class="pc" id="L27">    var longitude: String? = null,</span>
+<span class="pc" id="L28">    var mailingAddress: MailingAddress? = null,</span>
+<span class="pc" id="L29">    var middleName: String? = null,</span>
+<span class="pc" id="L30">    var npi: String? = null,</span>
+<span class="pc" id="L31">    var nsa: Nsa? = null,</span>
+<span class="pc" id="L32">    var priceSource: String? = null,</span>
+<span class="pc" id="L33">    var officeName: String? = null,</span>
+<span class="pc" id="L34">    var officeType: String? = null,</span>
+<span class="pc" id="L35">    var otherProviderDetails: String? = null,</span>
+<span class="pc" id="L36">    var otherTaxonomies: List&lt;String&gt;? = null,</span>
+<span class="pc" id="L37">    var otherTaxonomiesCategories: List&lt;String&gt;? = null,</span>
+<span class="pc" id="L38">    var phoneNumber: String? = null,</span>
+<span class="pc" id="L39">    var postalCode: String? = null,</span>
+<span class="pc" id="L40">    var practiceAddress: PracticeAddress? = null,</span>
+<span class="pc" id="L41">    var preferred: String? = null,</span>
+<span class="pc" id="L42">    var primaryTaxonomy: String? = null,</span>
+<span class="pc" id="L43">    var primaryTaxonomyCategory: String? = null,</span>
+<span class="pc" id="L44">    var primaryTaxonomyCode: String? = null,</span>
+<span class="pc" id="L45">    var provFaxPhone: String? = null,</span>
+<span class="pc" id="L46">    var providerId: String? = null,</span>
+<span class="pc" id="L47">    var providerNetwork: String? = null,</span>
+<span class="pc" id="L48">    var sortPriority: Int? = null,</span>
+<span class="pc" id="L49">    var specialities: List&lt;String&gt;? = null,</span>
+<span class="pc" id="L50">    var specialityCode1: String? = null,</span>
+<span class="pc" id="L51">    var specialityCode2: String? = null,</span>
+<span class="pc" id="L52">    var specialityCode3: String? = null,</span>
+<span class="pc" id="L53">    var specialityCode4: String? = null,</span>
+<span class="pc" id="L54">    var specialityDescription1: String? = null,</span>
+<span class="pc" id="L55">    var specialityDescription2: String? = null,</span>
+<span class="pc" id="L56">    var specialityDescription3: String? = null,</span>
+<span class="pc" id="L57">    var specialityDescription4: String? = null,</span>
+<span class="pc" id="L58">    var specialityFocusCode1: String? = null,</span>
+<span class="pc" id="L59">    var specialityFocusCode2: String? = null,</span>
+<span class="pc" id="L60">    var specialityFocusDescription1: String? = null,</span>
+<span class="pc" id="L61">    var specialityFocusDescription2: String? = null,</span>
+<span class="pc" id="L62">    var ssn: String? = null,</span>
+<span class="pc" id="L63">    var state: String? = null,</span>
+<span class="pc" id="L64">    var telephone: String? = null,</span>
+<span class="pc" id="L65">    var varidated: String? = null,</span>
+<span class="pc" id="L66">    var w9: String? = null,</span>
+<span class="pc" id="L67">    var webUrl: String? = null,</span>
+<span class="pc" id="L68">    var zip: String? = null,</span>
+<span class="pc" id="L69">    var zipCode: String? = null,</span>
+<span class="pc" id="L70">    var zipExtension: String? = null,</span>
+<span class="pc" id="L71">    var selected: Boolean = false,</span>
+<span class="pc" id="L72">    var ein: String? = &quot;&quot;,</span>
+<span class="pc" id="L73">    var einName: String? = &quot;&quot;</span>
+<span class="fc" id="L74">) {</span>
+    fun secondStreet(): String {
+<span class="fc bfc" id="L76" title="All 6 branches covered.">        return if (!address2.isNullOrEmpty()) {</span>
+<span class="fc" id="L77">            &quot;$address2, &quot;</span>
+        } else {
+<span class="fc" id="L79">            &quot;&quot;</span>
+        }
+    }
+    fun addressValue(): PracticeAddress {
+<span class="fc" id="L83">        return PracticeAddress(</span>
+<span class="fc" id="L84">            street1 = address1,</span>
+<span class="fc" id="L85">            street2 = address2,</span>
+<span class="fc" id="L86">            city = city,</span>
+<span class="fc" id="L87">            state = state,</span>
+<span class="fc" id="L88">            postalCode = postalCode</span>
+        )
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

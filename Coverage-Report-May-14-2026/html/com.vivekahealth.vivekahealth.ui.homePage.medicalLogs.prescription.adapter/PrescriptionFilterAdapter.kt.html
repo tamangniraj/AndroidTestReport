@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrescriptionFilterAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.prescription.adapter</a> &gt; <span class="el_source">PrescriptionFilterAdapter.kt</span></div><h1>PrescriptionFilterAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.prescription.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.data.remote.home.*
+import com.vivekahealth.vivekahealth.data.remote.home.medicalLogs.AvailPrescriptionFiltersItem
+import com.vivekahealth.vivekahealth.databinding.*
+import java.util.*
+import timber.log.Timber
+
+class PrescriptionFilterAdapter(private var onClick: (AvailPrescriptionFiltersItem) -&gt; Unit) : ListAdapter&lt;AvailPrescriptionFiltersItem, RecyclerView.ViewHolder&gt;(
+    FilterPrescriptionDiffCallback()
+) {
+
+    var maxWidth: Int = 0
+    var selectedPosition: Int = 0
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return PrescriptionFilterViewHolder(
+            SingleItemPrescriptionFilterBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            )
+        )
+    }
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = getItem(position)
+
+        (holder as PrescriptionFilterViewHolder).binding.filter = item
+        holder.binding.setClickListener {
+            Timber.d(itemCount.toString())
+            item.selected = !item.selected
+            holder.binding.checkBox.isChecked = item.selected
+            onClick(item)
+            selectedPosition = position
+        }
+    }
+
+    class PrescriptionFilterViewHolder(
+        val binding: SingleItemPrescriptionFilterBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        init {
+        }
+    }
+}
+
+<span class="nc" id="L56">private class FilterPrescriptionDiffCallback : DiffUtil.ItemCallback&lt;AvailPrescriptionFiltersItem&gt;() {</span>
+
+    override fun areItemsTheSame(
+        oldItem: AvailPrescriptionFiltersItem,
+        newItem: AvailPrescriptionFiltersItem
+    ): Boolean {
+<span class="nc" id="L62">        return oldItem == newItem</span>
+    }
+
+    override fun areContentsTheSame(
+        oldItem: AvailPrescriptionFiltersItem,
+        newItem: AvailPrescriptionFiltersItem
+    ): Boolean {
+<span class="nc" id="L69">        return oldItem.id == newItem.id</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

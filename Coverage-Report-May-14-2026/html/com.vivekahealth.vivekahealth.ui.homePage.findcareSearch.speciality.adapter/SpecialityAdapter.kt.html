@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SpecialityAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.adapter</a> &gt; <span class="el_source">SpecialityAdapter.kt</span></div><h1>SpecialityAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.databinding.SpecialityDesignBinding
+
+class SpecialityAdapter(
+    private var onClick:
+        (String) -&gt; Unit
+) :
+    ListAdapter&lt;String, RecyclerView.ViewHolder&gt;(ValueListDiffCallback()) {
+
+    var selectedPosition: Int = 0
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return SpecialityViewHolder(
+            SpecialityDesignBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            ),
+            onClick
+        )
+    }
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = getItem(position)
+
+        (holder as SpecialityViewHolder).binding.setClickListener {
+            onClick(item)
+        }
+
+        (holder as SpecialityViewHolder).binding.item = item
+    }
+
+    class SpecialityViewHolder(
+        val binding: SpecialityDesignBinding,
+        private val onClick: (String) -&gt; Unit
+    ) : RecyclerView.ViewHolder(binding.root)
+}
+
+<span class="nc" id="L48">private class ValueListDiffCallback : DiffUtil.ItemCallback&lt;String&gt;() {</span>
+    override fun areItemsTheSame(oldItem: String, newItem: String): Boolean {
+<span class="nc" id="L50">        return oldItem == newItem</span>
+    }
+
+    override fun areContentsTheSame(oldItem: String, newItem: String): Boolean {
+<span class="nc" id="L54">        return oldItem == newItem</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

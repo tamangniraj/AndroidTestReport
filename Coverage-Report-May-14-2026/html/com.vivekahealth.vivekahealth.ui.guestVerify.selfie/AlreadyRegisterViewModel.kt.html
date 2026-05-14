@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AlreadyRegisterViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.guestVerify.selfie</a> &gt; <span class="el_source">AlreadyRegisterViewModel.kt</span></div><h1>AlreadyRegisterViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.guestVerify.selfie
+
+import android.content.SharedPreferences
+import android.text.Editable
+import android.text.TextWatcher
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.data.local.guest.LoadingState
+import com.vivekahealth.vivekahealth.data.local.guest.UploadState
+import com.vivekahealth.vivekahealth.data.remote.login.ErrorResponse
+import com.vivekahealth.vivekahealth.ui.guestVerify.repository.GuestUploadRepository
+import com.vivekahealth.vivekahealth.ui.register.step3.repository.EmailRepository
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+<span class="nc" id="L27">class AlreadyRegisterViewModel @Inject constructor(</span>
+<span class="nc" id="L28">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L29">    val emailRepository: EmailRepository,</span>
+<span class="nc" id="L30">    val guestRepository: GuestUploadRepository,</span>
+<span class="nc" id="L31">    private val gson: Gson</span>
+<span class="nc" id="L32">) : ViewModel(), Observable {</span>
+<span class="nc" id="L33">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="nc" id="L34">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+    var loading: Boolean = false
+<span class="nc" id="L37">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L39">            field = value</span>
+<span class="nc" id="L40">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L41">        }</span>
+
+<span class="nc" id="L43">    private val _uploadState = MutableLiveData&lt;Event&lt;UploadState&gt;&gt;()</span>
+<span class="nc" id="L44">    val uploadState: LiveData&lt;Event&lt;UploadState&gt;&gt; get() = _uploadState</span>
+
+<span class="nc" id="L46">    private val _emailChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val emailChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L48">        get() = _emailChanged</span>
+
+<span class="nc" id="L50">    var email: String = &quot;&quot;</span>
+
+<span class="nc" id="L52">    val emailTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L55">        }</span>
+
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L58">        }</span>
+
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L61">            _emailChanged.value = Event(s.toString().trim())</span>
+<span class="nc" id="L62">        }</span>
+    }
+
+    fun validateRegisteredEmail(sessionId: String, email: String) {
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        viewModelScope.launch {</span>
+<span class="nc" id="L67">            compositeDisposable.add(</span>
+<span class="nc" id="L68">                guestRepository.validateRegisteredEmail(sessionId, email)</span>
+<span class="nc" id="L69">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L70">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L71">                    .doOnSubscribe {</span>
+<span class="nc" id="L72">                        _uploadState.value = Event(UploadState.Loading(LoadingState.RESET))</span>
+<span class="nc" id="L73">                    }.subscribe({</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">                        if (it.isSuccessful) {</span>
+<span class="nc bnc" id="L75" title="All 4 branches missed.">                            val message = it.body()?.message ?: &quot;&quot;</span>
+<span class="nc" id="L76">                            _uploadState.value = Event(</span>
+<span class="nc" id="L77">                                UploadState.ResetSuccess(email, message)</span>
+                            )
+                        } else {
+<span class="nc" id="L80">                            val errorResponse: ErrorResponse = gson.fromJson(</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">                                it.errorBody()?.string(),</span>
+<span class="nc" id="L82">                                ErrorResponse::class.java</span>
+                            )
+<span class="nc" id="L84">                            _uploadState.value = Event(</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">                                UploadState.ResetError(errorResponse.error_description ?: &quot;&quot;)</span>
+                            )
+                        }
+<span class="nc" id="L88">                    }, { error -&gt;</span>
+<span class="nc" id="L89">                        _uploadState.value = Event(</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">                            UploadState.ResetError(error.message ?: &quot;&quot;)</span>
+                        )
+<span class="nc" id="L92">                    })</span>
+
+            )
+<span class="nc" id="L95">        }</span>
+<span class="nc" id="L96">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L99">        callbacks.add(callback)</span>
+<span class="nc" id="L100">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L103">        callbacks.remove(callback)</span>
+<span class="nc" id="L104">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

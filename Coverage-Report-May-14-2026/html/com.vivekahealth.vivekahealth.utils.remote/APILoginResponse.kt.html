@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>APILoginResponse.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils.remote</a> &gt; <span class="el_source">APILoginResponse.kt</span></div><h1>APILoginResponse.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils.remote
+
+import androidx.annotation.Nullable
+
+<span class="fc" id="L5">class APILoginResponse&lt;T&gt;() {</span>
+
+<span class="fc" id="L7">    lateinit var status: Status</span>
+
+<span class="pc" id="L9">    var data: T? = null</span>
+
+<span class="pc" id="L11">    var error: String? = null</span>
+
+<span class="fc" id="L13">    constructor(status: Status, @Nullable data: T?, @Nullable error: String?) : this() {</span>
+<span class="fc" id="L14">        this.status = status</span>
+<span class="fc" id="L15">        this.data = data</span>
+<span class="fc" id="L16">        this.error = error</span>
+<span class="fc" id="L17">    }</span>
+
+    fun loading(): APILoginResponse&lt;T&gt; {
+<span class="fc" id="L20">        return APILoginResponse&lt;T&gt;(Status.LOADING, null, null)</span>
+    }
+
+    fun success(data: T): APILoginResponse&lt;T&gt; {
+<span class="fc" id="L24">        return APILoginResponse&lt;T&gt;(Status.SUCCESS, data, null)</span>
+    }
+
+    fun error(error: String, data: T): APILoginResponse&lt;T&gt; {
+<span class="fc" id="L28">        return APILoginResponse&lt;T&gt;(Status.ERROR, data, error)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

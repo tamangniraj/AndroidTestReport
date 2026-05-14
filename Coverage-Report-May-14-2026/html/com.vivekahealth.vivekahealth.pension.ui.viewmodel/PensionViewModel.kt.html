@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PensionViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.pension.ui.viewmodel</a> &gt; <span class="el_source">PensionViewModel.kt</span></div><h1>PensionViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.pension.ui.viewmodel
+
+import android.content.Context
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.data.remote.PensionErrorResponse
+import com.vivekahealth.vivekahealth.pension.data.model.AvailableOptions
+import com.vivekahealth.vivekahealth.pension.data.model.RetirementOption
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import com.vivekahealth.vivekahealth.pension.data.repository.PensionRepository
+import com.vivekahealth.vivekahealth.pension.data.model.SummaryImpactData
+import com.vivekahealth.vivekahealth.pension.data.model.SurvivorOptionConfig
+import com.vivekahealth.vivekahealth.pension.data.model.UserData
+import com.vivekahealth.vivekahealth.pension.data.model.WorkHistorySummary
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import timber.log.Timber
+import java.io.File
+import java.io.FileOutputStream
+import javax.inject.Inject
+
+<span class="fc" id="L30">class PensionViewModel @Inject constructor(</span>
+<span class="fc" id="L31">    private val repository: PensionRepository,</span>
+<span class="fc" id="L32">    private val analytics: FirebaseAnalytics</span>
+<span class="fc" id="L33">) : ViewModel() {</span>
+
+<span class="fc" id="L35">    private val compositeDisposable = CompositeDisposable()</span>
+
+<span class="fc" id="L37">    private val _isLoading = MutableStateFlow(false)</span>
+<span class="pc" id="L38">    val isLoading: StateFlow&lt;Boolean&gt; = _isLoading.asStateFlow()</span>
+
+<span class="fc" id="L40">    private val _error = MutableStateFlow&lt;String?&gt;(null)</span>
+<span class="pc" id="L41">    val error: StateFlow&lt;String?&gt; = _error.asStateFlow()</span>
+
+    // Reactive userData that resets when member ID changes
+<span class="fc" id="L44">    private val _userData = MutableStateFlow(UserData())</span>
+<span class="pc" id="L45">    val userData: StateFlow&lt;UserData&gt; = _userData.asStateFlow()</span>
+
+<span class="pc" id="L47">    val hasPensionData: StateFlow&lt;Boolean&gt; = repository.hasPensionData</span>
+
+<span class="fc" id="L49">    private val _currentMemberId = MutableStateFlow&lt;String?&gt;(null)</span>
+<span class="fc" id="L50">    private val _summaryImpactDataFromDb = MutableStateFlow&lt;SummaryImpactData?&gt;(null)</span>
+<span class="fc" id="L51">    val summaryImpactDataFromDb: StateFlow&lt;SummaryImpactData?&gt; = _summaryImpactDataFromDb.asStateFlow()</span>
+
+    // Work History state
+<span class="fc" id="L54">    private val _workHistoryFromDb = MutableStateFlow&lt;WorkHistorySummary?&gt;(null)</span>
+<span class="pc" id="L55">    val workHistoryFromDb: StateFlow&lt;WorkHistorySummary?&gt; = _workHistoryFromDb.asStateFlow()</span>
+
+<span class="fc" id="L57">    private val _isLoadingWorkHistory = MutableStateFlow(false)</span>
+<span class="pc" id="L58">    val isLoadingWorkHistory: StateFlow&lt;Boolean&gt; = _isLoadingWorkHistory.asStateFlow()</span>
+
+<span class="fc" id="L60">    private val _workHistoryError = MutableStateFlow&lt;String?&gt;(null)</span>
+<span class="pc" id="L61">    val workHistoryError: StateFlow&lt;String?&gt; = _workHistoryError.asStateFlow()</span>
+
+    // Pension Config state
+<span class="fc" id="L64">    private val _availableOptions = MutableStateFlow&lt;AvailableOptions?&gt;(</span>
+<span class="fc" id="L65">        null</span>
+    )
+<span class="nc" id="L67">    val survivorOptionsFromDb: StateFlow&lt;AvailableOptions?&gt; =</span>
+<span class="fc" id="L68">        _availableOptions.asStateFlow()</span>
+
+<span class="fc" id="L70">    private val _isLoadingConfig = MutableStateFlow(false)</span>
+<span class="pc" id="L71">    val isLoadingConfig: StateFlow&lt;Boolean&gt; = _isLoadingConfig.asStateFlow()</span>
+
+<span class="fc" id="L73">    private val _configError = MutableStateFlow&lt;String?&gt;(null)</span>
+<span class="pc" id="L74">    val configError: StateFlow&lt;String?&gt; = _configError.asStateFlow()</span>
+
+    // Pension Estimate state
+<span class="fc" id="L77">    private val _pensionEstimate = MutableStateFlow&lt;com.vivekahealth.vivekahealth.pension.data.model.PensionEstimateResponse?&gt;(</span>
+<span class="fc" id="L78">        null</span>
+    )
+<span class="nc" id="L80">    val pensionEstimate: StateFlow&lt;com.vivekahealth.vivekahealth.pension.data.model.PensionEstimateResponse?&gt; =</span>
+<span class="fc" id="L81">        _pensionEstimate.asStateFlow()</span>
+
+<span class="fc" id="L83">    private val _isLoadingEstimate = MutableStateFlow(false)</span>
+<span class="pc" id="L84">    val isLoadingEstimate: StateFlow&lt;Boolean&gt; = _isLoadingEstimate.asStateFlow()</span>
+
+<span class="fc" id="L86">    private val _estimateError = MutableStateFlow&lt;String?&gt;(null)</span>
+<span class="pc" id="L87">    val estimateError: StateFlow&lt;String?&gt; = _estimateError.asStateFlow()</span>
+
+    // Debounce job for estimate API calls
+    private var estimateJob: kotlinx.coroutines.Job? = null
+
+    // Download Pension Application state
+<span class="fc" id="L93">    private val _isDownloadingApplication = MutableStateFlow(false)</span>
+<span class="pc" id="L94">    val isDownloadingApplication: StateFlow&lt;Boolean&gt; = _isDownloadingApplication.asStateFlow()</span>
+
+<span class="fc" id="L96">    private val _downloadError = MutableStateFlow&lt;String?&gt;(null)</span>
+<span class="pc" id="L97">    val downloadError: StateFlow&lt;String?&gt; = _downloadError.asStateFlow()</span>
+
+<span class="fc" id="L99">    private val _downloadedPdfFile = MutableStateFlow&lt;File?&gt;(null)</span>
+<span class="pc" id="L100">    val downloadedPdfFile: StateFlow&lt;File?&gt; = _downloadedPdfFile.asStateFlow()</span>
+
+<span class="fc" id="L102">    init {</span>
+        // Clear userData when member ID changes to a different member
+<span class="fc" id="L104">        viewModelScope.launch {</span>
+<span class="fc" id="L105">            var previousMemberId: String? = null</span>
+<span class="pc" id="L106">            _currentMemberId.collect { newMemberId -&gt;</span>
+<span class="pc bpc" id="L107" title="3 of 6 branches missed.">                if (newMemberId != null &amp;&amp; previousMemberId != null &amp;&amp; newMemberId != previousMemberId) {</span>
+                    // Different member detected - reset userData
+<span class="nc" id="L109">                    _userData.value = UserData()</span>
+<span class="nc" id="L110">                    repository.clearPensionData()</span>
+                }
+<span class="fc" id="L112">                previousMemberId = newMemberId</span>
+<span class="fc" id="L113">            }</span>
+        }
+
+        // Observe database changes for current member using flatMapLatest to switch between members
+<span class="fc" id="L117">        viewModelScope.launch {</span>
+<span class="fc" id="L118">            _currentMemberId</span>
+<span class="fc" id="L119">                .flatMapLatest { memberId -&gt;</span>
+                    if (memberId != null) {
+                        repository.getSummaryImpactData(memberId)
+                    } else {
+                        flowOf(null)
+                    }
+                }
+<span class="fc" id="L126">                .collect { data -&gt;</span>
+<span class="fc" id="L127">                    _summaryImpactDataFromDb.value = data</span>
+<span class="fc" id="L128">                }</span>
+<span class="nc" id="L129">        }</span>
+
+        // Observe work history from database
+<span class="fc" id="L132">        viewModelScope.launch {</span>
+<span class="fc" id="L133">            _currentMemberId</span>
+<span class="fc" id="L134">                .flatMapLatest { memberId -&gt;</span>
+                    if (memberId != null) {
+                        repository.getWorkHistoryFromDb(memberId)
+                    } else {
+                        flowOf(null)
+                    }
+                }
+<span class="fc" id="L141">                .collect { data -&gt;</span>
+<span class="fc" id="L142">                    _workHistoryFromDb.value = data</span>
+<span class="fc" id="L143">                }</span>
+<span class="nc" id="L144">        }</span>
+
+        // Observe pension config from database
+<span class="fc" id="L147">        viewModelScope.launch {</span>
+<span class="fc" id="L148">            _currentMemberId</span>
+<span class="fc" id="L149">                .flatMapLatest { memberId -&gt;</span>
+                    if (memberId != null) {
+                        repository.getPensionConfigFromDb(memberId)
+                    } else {
+                        flowOf(null)
+                    }
+                }
+<span class="fc" id="L156">                .collect { data -&gt;</span>
+<span class="fc" id="L157">                    _availableOptions.value = data</span>
+<span class="fc" id="L158">                }</span>
+<span class="nc" id="L159">        }</span>
+<span class="fc" id="L160">    }</span>
+
+    fun setCurrentMemberId(memberId: String) {
+<span class="fc" id="L163">        _currentMemberId.value = memberId</span>
+<span class="fc" id="L164">    }</span>
+
+    fun fetchPensionData(memberId: String) {
+<span class="fc" id="L167">        setCurrentMemberId(memberId)</span>
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">        viewModelScope.launch {</span>
+<span class="fc" id="L169">            compositeDisposable.add(</span>
+<span class="fc" id="L170">                repository.getPensionMemberData(memberId)</span>
+<span class="fc" id="L171">                    .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L172">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L173">                    .doOnSubscribe {</span>
+<span class="fc" id="L174">                        _isLoading.value = true</span>
+<span class="fc" id="L175">                        _error.value = null</span>
+<span class="fc" id="L176">                    }</span>
+<span class="fc" id="L177">                    .subscribe({ response -&gt;</span>
+<span class="fc" id="L178">                        _isLoading.value = false</span>
+
+<span class="fc bfc" id="L180" title="All 2 branches covered.">                        if (response.isSuccessful) {</span>
+                            // Update local userData with pension member response
+<span class="fc" id="L182">                            _userData.value = _userData.value.copy(</span>
+<span class="fc" id="L183">                                pensionMemberResponse = response.body()</span>
+                            )
+
+<span class="pc bpc" id="L186" title="1 of 2 branches missed.">                            response.body()?.let {</span>
+<span class="fc" id="L187">                                repository.updatePensionData(it)</span>
+<span class="fc" id="L188">                            }</span>
+                            // Also update repository to keep hasPensionData in sync
+
+                            // Save SummaryImpactData to database
+<span class="fc" id="L192">                            viewModelScope.launch {</span>
+<span class="fc" id="L193">                                val summaryImpactData = userData.value.summaryImpactData</span>
+<span class="fc" id="L194">                                repository.saveSummaryImpactData(memberId, summaryImpactData)</span>
+<span class="fc" id="L195">                            }</span>
+                        } else {
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">                            if (response.code() == 403) {</span>
+<span class="fc" id="L198">                                viewModelScope.launch {</span>
+<span class="fc" id="L199">                                    repository.deleteSummaryImpactData(memberId)</span>
+<span class="fc" id="L200">                                }</span>
+                            }
+                        }
+
+<span class="fc" id="L204">                        Timber.d(&quot;Pension data fetched successfully for member: $memberId&quot;)</span>
+<span class="pc" id="L205">                    }, { throwable -&gt;</span>
+<span class="nc" id="L206">                        _isLoading.value = false</span>
+<span class="nc" id="L207">                        _error.value = throwable.message</span>
+<span class="nc" id="L208">                        Timber.e(throwable, &quot;Error fetching pension data for member: $memberId&quot;)</span>
+<span class="nc" id="L209">                    })</span>
+            )
+<span class="fc" id="L211">        }</span>
+<span class="fc" id="L212">    }</span>
+
+    fun updateRetirementAge(retirementAge: RetirementOption) {
+<span class="nc" id="L215">        _userData.value = _userData.value.copy(</span>
+<span class="nc" id="L216">            selectedRetirementAge = retirementAge</span>
+        )
+<span class="nc" id="L218">    }</span>
+
+    fun updateExpectedHours(hours: String) {
+<span class="nc" id="L221">        _userData.value = _userData.value.copy(</span>
+<span class="nc" id="L222">            expectedHours = hours</span>
+        )
+<span class="nc" id="L224">    }</span>
+
+    fun updateSurvivorBenefit(benefit: SurvivorOptionConfig?) {
+<span class="nc" id="L227">        _userData.value = _userData.value.copy(</span>
+<span class="nc" id="L228">            selectedSurvivorBenefit = benefit</span>
+        )
+<span class="nc" id="L230">    }</span>
+
+    fun clearPensionData() {
+<span class="nc" id="L233">        _userData.value = UserData()</span>
+<span class="nc" id="L234">        repository.clearPensionData()</span>
+<span class="nc" id="L235">    }</span>
+
+    // Work History methods
+    fun fetchWorkHistory(memberId: String) {
+<span class="nc" id="L239">        setCurrentMemberId(memberId)</span>
+<span class="nc" id="L240">        viewModelScope.launch {</span>
+            // Check if data exists in database first
+<span class="nc" id="L242">            val existingData = repository.getWorkHistoryFromDbOnce(memberId)</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">            val hasExistingData = existingData != null</span>
+
+<span class="nc" id="L245">            compositeDisposable.add(</span>
+<span class="nc" id="L246">                repository.getWorkHistorySummary(memberId)</span>
+<span class="nc" id="L247">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L248">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">                    .doOnSubscribe {</span>
+                        // Only show loading if no data exists in database
+<span class="nc bnc" id="L251" title="All 2 branches missed.">                        if (!hasExistingData) {</span>
+<span class="nc" id="L252">                            _isLoadingWorkHistory.value = true</span>
+                        }
+<span class="nc" id="L254">                        _workHistoryError.value = null</span>
+<span class="nc" id="L255">                    }</span>
+<span class="nc" id="L256">                    .subscribe({ response -&gt;</span>
+                        // Save to database - the StateFlow will automatically update via the database Flow
+<span class="nc" id="L258">                        viewModelScope.launch {</span>
+<span class="nc" id="L259">                            repository.saveWorkHistory(memberId, response)</span>
+                            // Loading will be automatically hidden when the UI detects the updated data from StateFlow
+<span class="nc" id="L261">                            _isLoadingWorkHistory.value = false</span>
+<span class="nc" id="L262">                            Timber.d(</span>
+<span class="nc" id="L263">                                &quot;Work history fetched and saved successfully for member: $memberId&quot;</span>
+                            )
+<span class="nc" id="L265">                        }</span>
+<span class="nc" id="L266">                    }, { throwable -&gt;</span>
+<span class="nc" id="L267">                        _isLoadingWorkHistory.value = false</span>
+<span class="nc" id="L268">                        _workHistoryError.value = throwable.message</span>
+<span class="nc" id="L269">                        Timber.e(throwable, &quot;Error fetching work history for member: $memberId&quot;)</span>
+<span class="nc" id="L270">                    })</span>
+            )
+<span class="nc" id="L272">        }</span>
+<span class="nc" id="L273">    }</span>
+
+    fun clearWorkHistoryError() {
+<span class="nc" id="L276">        _workHistoryError.value = null</span>
+<span class="nc" id="L277">    }</span>
+
+    // Pension Config methods
+    fun fetchPensionConfig(memberId: String) {
+<span class="nc" id="L281">        setCurrentMemberId(memberId)</span>
+<span class="pc" id="L282">        viewModelScope.launch {</span>
+            // Check if data exists in database first
+<span class="fc" id="L284">            val existingData = repository.getPensionConfigFromDbOnce(memberId)</span>
+<span class="pc bpc" id="L285" title="1 of 2 branches missed.">            val hasExistingData = existingData != null</span>
+
+<span class="fc" id="L287">            compositeDisposable.add(</span>
+<span class="fc" id="L288">                repository.getPensionConfig(memberId)</span>
+<span class="fc" id="L289">                    .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L290">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">                    .doOnSubscribe {</span>
+                        // Only show loading if no data exists in database
+<span class="pc bpc" id="L293" title="1 of 2 branches missed.">                        if (!hasExistingData) {</span>
+<span class="fc" id="L294">                            _isLoadingConfig.value = true</span>
+                        }
+<span class="fc" id="L296">                        _configError.value = null</span>
+<span class="fc" id="L297">                    }</span>
+<span class="fc" id="L298">                    .subscribe({ response -&gt;</span>
+                        // Save survivor options to database
+<span class="fc" id="L300">                        viewModelScope.launch {</span>
+<span class="pc bpc" id="L301" title="1 of 2 branches missed.">                            response.availableOptions?.let { options -&gt;</span>
+<span class="fc" id="L302">                                repository.savePensionConfig(memberId, options)</span>
+<span class="fc" id="L303">                                _isLoadingConfig.value = false</span>
+<span class="fc" id="L304">                                Timber.d(</span>
+<span class="fc" id="L305">                                    &quot;Pension config fetched and saved successfully for member: $memberId&quot;</span>
+                                )
+<span class="pc" id="L307">                            } ?: run {</span>
+<span class="nc" id="L308">                                _isLoadingConfig.value = false</span>
+<span class="nc" id="L309">                                Timber.w(</span>
+<span class="nc" id="L310">                                    &quot;No survivor options in config response for member: $memberId&quot;</span>
+                                )
+<span class="nc" id="L312">                            }</span>
+<span class="fc" id="L313">                        }</span>
+<span class="pc" id="L314">                    }, { throwable -&gt;</span>
+<span class="nc" id="L315">                        _isLoadingConfig.value = false</span>
+<span class="nc" id="L316">                        _configError.value = throwable.message</span>
+<span class="nc" id="L317">                        Timber.e(throwable, &quot;Error fetching pension config for member: $memberId&quot;)</span>
+<span class="nc" id="L318">                    })</span>
+            )
+<span class="fc" id="L320">        }</span>
+<span class="nc" id="L321">    }</span>
+
+    fun clearConfigError() {
+<span class="nc" id="L324">        _configError.value = null</span>
+<span class="nc" id="L325">    }</span>
+
+    fun clearRunning() {
+<span class="nc bnc" id="L328" title="All 2 branches missed.">        estimateJob?.cancel()</span>
+<span class="nc" id="L329">        compositeDisposable.clear()</span>
+<span class="nc" id="L330">    }</span>
+
+    // Pension Estimate methods
+    fun fetchPensionEstimate(
+        memberId: String,
+        retirementOption: RetirementOption?,
+        survivorOptionCode: String?,
+        expectedHoursPerYear: Double?,
+        maritalStatus: String?
+    ) {
+<span class="nc" id="L340">        setCurrentMemberId(memberId)</span>
+
+        // Cancel previous job if exists
+<span class="nc bnc" id="L343" title="All 2 branches missed.">        estimateJob?.cancel()</span>
+
+        // Launch new job with debounce
+<span class="nc" id="L346">        estimateJob = viewModelScope.launch {</span>
+            // Debounce delay
+<span class="nc" id="L348">            kotlinx.coroutines.delay(500)</span>
+
+<span class="nc" id="L350">            val request = com.vivekahealth.vivekahealth.pension.data.model.PensionEstimateRequest(</span>
+<span class="nc bnc" id="L351" title="All 2 branches missed.">                retirementAge = retirementOption?.age,</span>
+<span class="nc bnc" id="L352" title="All 2 branches missed.">                pensionType = retirementOption?.pensionType,</span>
+<span class="nc" id="L353">                survivorOption = survivorOptionCode,</span>
+<span class="nc" id="L354">                projectionsEnabled = true,</span>
+<span class="nc" id="L355">                expectedHoursPerYear = expectedHoursPerYear,</span>
+<span class="nc" id="L356">                maritalStatus = maritalStatus</span>
+            )
+
+<span class="nc" id="L359">            compositeDisposable.add(</span>
+<span class="nc" id="L360">                repository.getPensionEstimate(memberId, request)</span>
+<span class="nc" id="L361">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L362">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L363">                    .doOnSubscribe {</span>
+<span class="nc" id="L364">                        _isLoadingEstimate.value = true</span>
+<span class="nc" id="L365">                        _estimateError.value = null</span>
+<span class="nc" id="L366">                    }</span>
+<span class="nc" id="L367">                    .subscribe({ response -&gt;</span>
+
+<span class="nc bnc" id="L369" title="All 2 branches missed.">                        if (response.isSuccessful) {</span>
+<span class="nc" id="L370">                            _pensionEstimate.value = response.body()</span>
+                        } else {
+<span class="nc" id="L372">                            val errorResponse: PensionErrorResponse = Gson().fromJson(</span>
+<span class="nc bnc" id="L373" title="All 2 branches missed.">                                response.errorBody()?.string(),</span>
+<span class="nc" id="L374">                                PensionErrorResponse::class.java</span>
+                            )
+<span class="nc bnc" id="L376" title="All 2 branches missed.">                            errorResponse.message?.let {</span>
+<span class="nc" id="L377">                                _estimateError.value = it</span>
+<span class="nc" id="L378">                            }</span>
+                        }
+
+<span class="nc" id="L381">                        _isLoadingEstimate.value = false</span>
+
+<span class="nc" id="L383">                        Timber.d(&quot;Pension estimate fetched successfully for member: $memberId&quot;)</span>
+<span class="nc" id="L384">                    }, { throwable -&gt;</span>
+<span class="nc" id="L385">                        _isLoadingEstimate.value = false</span>
+<span class="nc" id="L386">                        _estimateError.value = throwable.message</span>
+<span class="nc" id="L387">                        Timber.e(throwable, &quot;Error fetching pension estimate for member: $memberId&quot;)</span>
+<span class="nc" id="L388">                    })</span>
+            )
+<span class="nc" id="L390">        }</span>
+<span class="nc" id="L391">    }</span>
+
+    fun clearEstimateError() {
+<span class="nc" id="L394">        _estimateError.value = null</span>
+<span class="nc" id="L395">    }</span>
+
+    // Download Pension Application
+    fun downloadPensionApplication(context: Context, memberId: String) {
+<span class="nc" id="L399">        setCurrentMemberId(memberId)</span>
+<span class="nc" id="L400">        compositeDisposable.add(</span>
+<span class="nc" id="L401">            repository.downloadPensionApplication(memberId)</span>
+<span class="nc" id="L402">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L403">                .map { responseBody -&gt;</span>
+<span class="nc" id="L404">                    try {</span>
+                        // Save the file to cache directory
+<span class="nc" id="L406">                        val file = File(context.cacheDir, &quot;Pension Application.pdf&quot;)</span>
+<span class="nc" id="L407">                        val inputStream = responseBody.byteStream()</span>
+<span class="nc" id="L408">                        val outputStream = FileOutputStream(file)</span>
+
+<span class="nc" id="L410">                        inputStream.use { input -&gt;</span>
+<span class="nc" id="L411">                            outputStream.use { output -&gt;</span>
+<span class="nc" id="L412">                                input.copyTo(output)</span>
+<span class="nc" id="L413">                            }</span>
+                        }
+<span class="nc" id="L415">                        file</span>
+<span class="nc" id="L416">                    } catch (e: Exception) {</span>
+<span class="nc" id="L417">                        _isDownloadingApplication.value = false</span>
+<span class="nc bnc" id="L418" title="All 2 branches missed.">                        _downloadError.value = e.message ?: &quot;Failed to save downloaded file&quot;</span>
+<span class="nc" id="L419">                        Timber.e(e, &quot;Error saving downloaded file for member: $memberId&quot;)</span>
+<span class="nc" id="L420">                        null</span>
+<span class="nc" id="L421">                    }</span>
+                }
+<span class="nc" id="L423">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L424">                .doOnSubscribe {</span>
+<span class="nc" id="L425">                    _isDownloadingApplication.value = true</span>
+<span class="nc" id="L426">                    _downloadError.value = null</span>
+<span class="nc" id="L427">                    _downloadedPdfFile.value = null</span>
+<span class="nc" id="L428">                }</span>
+<span class="nc" id="L429">                .subscribe({ file -&gt;</span>
+<span class="nc bnc" id="L430" title="All 2 branches missed.">                    file?.let {</span>
+<span class="nc" id="L431">                        _downloadedPdfFile.value = file</span>
+<span class="nc" id="L432">                        _isDownloadingApplication.value = false</span>
+<span class="nc" id="L433">                        Timber.d(</span>
+<span class="nc" id="L434">                            &quot;Pension application downloaded successfully for member: $memberId&quot;</span>
+                        )
+<span class="nc" id="L436">                    }</span>
+<span class="nc" id="L437">                }, { throwable -&gt;</span>
+<span class="nc" id="L438">                    _isDownloadingApplication.value = false</span>
+<span class="nc" id="L439">                    _downloadError.value = throwable.message</span>
+<span class="nc" id="L440">                    Timber.e(</span>
+<span class="nc" id="L441">                        throwable,</span>
+<span class="nc" id="L442">                        &quot;Error downloading pension application for member: $memberId&quot;</span>
+                    )
+<span class="nc" id="L444">                })</span>
+        )
+<span class="nc" id="L446">    }</span>
+
+    fun clearDownloadError() {
+<span class="nc" id="L449">        _downloadError.value = null</span>
+<span class="nc" id="L450">    }</span>
+
+    fun clearDownloadedPdfFile() {
+<span class="nc" id="L453">        _downloadedPdfFile.value = null</span>
+<span class="nc" id="L454">    }</span>
+
+    fun logEvent(event: String) {
+<span class="nc" id="L457">        analytics.logEvent(event, null)</span>
+<span class="nc" id="L458">    }</span>
+
+    override fun onCleared() {
+<span class="fc" id="L461">        super.onCleared()</span>
+<span class="fc" id="L462">        compositeDisposable.dispose()</span>
+<span class="fc" id="L463">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

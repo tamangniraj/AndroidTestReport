@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HomeUIModule.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.di</a> &gt; <span class="el_source">HomeUIModule.kt</span></div><h1>HomeUIModule.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.di
+
+import com.vivekahealth.vivekahealth.di.ActivityScope
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.uploadDocuments.uploadUI.di.DocumentUploadModule
+import com.vivekahealth.vivekahealth.ui.guestAccNdetails.di.GuestAccountDetailsModule
+import com.vivekahealth.vivekahealth.ui.guestHome.di.GuestHomeModule
+import com.vivekahealth.vivekahealth.ui.homePage.HomePageActivity
+import com.vivekahealth.vivekahealth.ui.homePage.about.di.AboutModule
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.addressChange.di.AddressChangeModule
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.changePassword.di.ChangePasswordModule
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.changePhoneNumber.code.di.CodePhoneChangeModule
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.changePhoneNumber.phone.di.PhoneChangeModule
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.dependentPicture.di.DependentProfileModule
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.di.AccountDetailsModule
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.emailPassword.di.EmailPasswordModule
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.pickerBottomSheet.di.PickerBottomSheetModule
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.pickerBottomSheet.remove.di.RemovePickerBottomSheetModule
+import com.vivekahealth.vivekahealth.ui.homePage.addDependent.dependentList.di.ListModule
+import com.vivekahealth.vivekahealth.ui.homePage.addDependent.di.AddDependentModule
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.benefitDetails.di.BenefitDetailsModule
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.calenderYear.di.YearSheetModule
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.di.BenefitWorkModule
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.disclaimer.di.BenefitDisclaimerModule
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.filter.di.FilterSheetModule
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.yearTiles.di.YearTilesModule
+import com.vivekahealth.vivekahealth.ui.homePage.benefitSPD.di.BenefitSPDModule
+import com.vivekahealth.vivekahealth.ui.homePage.billPreview.di.BillPreviewModule
+import com.vivekahealth.vivekahealth.ui.homePage.billPreview.di.PriceBreakdownModule
+import com.vivekahealth.vivekahealth.ui.homePage.disclaimer.di.DisclaimerModule
+import com.vivekahealth.vivekahealth.ui.homePage.documents.di.DocumentsModule
+import com.vivekahealth.vivekahealth.ui.homePage.documents.documentFilter.di.DocumentFilterModule
+import com.vivekahealth.vivekahealth.ui.homePage.documents.documentSubmit.di.SubmitDocumentModule
+import com.vivekahealth.vivekahealth.ui.homePage.documents.documentSubmit.documentPicker.di.DocumentPickerModule
+import com.vivekahealth.vivekahealth.ui.homePage.documents.documentView.di.DocumentViewModule
+import com.vivekahealth.vivekahealth.ui.homePage.documents.pdfViewer.di.PDFViewerModule
+import com.vivekahealth.vivekahealth.ui.homePage.documents.pendingUpload.di.SubmitPendingDocumentModule
+import com.vivekahealth.vivekahealth.ui.homePage.documents.sortSheet.di.SortSheetModule
+import com.vivekahealth.vivekahealth.ui.homePage.documents.successDocumentUpload.di.SuccessDocumentUploadModule
+import com.vivekahealth.vivekahealth.ui.homePage.dynamicMenu.di.DynamicMenuModule
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.billPreview.deiveryOption.di.BillPreviewOptionModule
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.billPreview.disclaimer.di.BillPreviewDisclaimerModule
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.billPreview.enterValue.di.PriceEnterModule
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.di.FindCareLogsModule
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.filter.di.FindCareFilterModule
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.map.di.MapViewModule
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.searchLocation.searchLocationUi.di.EnterLocationModule
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.selectSpecialty.di.SelectSpecialityModule
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.selectSpecialty.subSpeciality.di.SelectSubSpecialityModule
+import com.vivekahealth.vivekahealth.ui.homePage.findcareMyDoctorViewAll.di.FindAllModule
+import com.vivekahealth.vivekahealth.ui.homePage.findcareMyDoctorViewAll.di.SpecialitySpecialityDetailsLogsModule
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.di.FindCareSearchLogsModule
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.di.ProcedureLogsModule
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.di.SpecialityLogsModule
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityprofile.di.SpecialityProfileLogsModule
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.speciality.specialityprofile.selectedProcedureList.di.SelectedProcedureModule
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality.di.SelectSpecialityLogsModule
+import com.vivekahealth.vivekahealth.ui.homePage.findcareWeb.di.HtmlFindCareModule
+import com.vivekahealth.vivekahealth.ui.homePage.guardianNurses.di.GuardianNursesModule
+import com.vivekahealth.vivekahealth.ui.homePage.helpFaq.customerCare.chatLanguageSetting.di.ChatSettingModule
+import com.vivekahealth.vivekahealth.ui.homePage.helpFaq.customerCare.di.ChatModule
+import com.vivekahealth.vivekahealth.ui.homePage.helpFaq.di.HelpAndFaqModule
+import com.vivekahealth.vivekahealth.ui.homePage.helpFaq.documentSend.di.SubmitDocumentChatModule
+import com.vivekahealth.vivekahealth.ui.homePage.home.di.HomeModule
+import com.vivekahealth.vivekahealth.ui.homePage.home.lightWeight.di.LightWeightModule
+import com.vivekahealth.vivekahealth.ui.homePage.home.profilePictureUpload.di.ProfilePictureUploadFragmentModule
+import com.vivekahealth.vivekahealth.ui.homePage.home.switcherDisclaimer.di.SwitcherDisclaimerModule
+import com.vivekahealth.vivekahealth.ui.homePage.home.welcomeTutorial.di.WelcomeTutorialModule
+import com.vivekahealth.vivekahealth.ui.homePage.informationSharing.di.SharingModule
+import com.vivekahealth.vivekahealth.ui.homePage.insuranceCard.di.InsuranceCardModule
+import com.vivekahealth.vivekahealth.ui.homePage.languageTranslate.di.LanguageModule
+import com.vivekahealth.vivekahealth.ui.homePage.maritialStatus.di.MaritalStatusModule
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.all.di.MedicalLogsAllModule
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.claims.details.di.ClaimsDetailsModule
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.claims.di.ClaimsModule
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.claims.filter.di.ClaimsFilterModule
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.di.MedicalLogsModule
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.diagnosis.details.di.DiagnosisDetailsModule
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.diagnosis.di.DiagnosisModule
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.diagnosis.filter.di.DiagnosisFilterModule
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.immunization.di.ImmunizationModule
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.prescription.di.PrescriptionModule
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.prescription.prescriptionFilter.di.PrescriptionFilterModule
+import com.vivekahealth.vivekahealth.ui.homePage.messageCenter.di.MessageCenterModule
+import com.vivekahealth.vivekahealth.ui.homePage.more.di.MoreModule
+import com.vivekahealth.vivekahealth.ui.homePage.paperless.di.GoPaperlessModule
+import com.vivekahealth.vivekahealth.ui.homePage.primaryDevicePrompt.di.PrimaryDevicePromptModule
+import com.vivekahealth.vivekahealth.ui.homePage.resetPasswordPrompt.di.ResetPasswordPromptModule
+import com.vivekahealth.vivekahealth.ui.homePage.saveMoney.di.SaveMoneyModule
+import com.vivekahealth.vivekahealth.ui.homePage.saveMoney.email.di.EmailViewModule
+import com.vivekahealth.vivekahealth.ui.homePage.shareBenefit.di.ShareModule
+import com.vivekahealth.vivekahealth.ui.homePage.shareBenefit.mailDialog.di.MailDialogModule
+import com.vivekahealth.vivekahealth.ui.homePage.shareBenefit.mailRequestSuccess.di.MailSuccessModule
+import com.vivekahealth.vivekahealth.ui.homePage.shareBenefit.shareBenefitDisclaimer.di.ShareDisclaimerModule
+import com.vivekahealth.vivekahealth.ui.homePage.talonRewards.di.RewardsModule
+import com.vivekahealth.vivekahealth.ui.homePage.termsAndCondition.di.TermsAndConditionModule
+import dagger.Module
+import dagger.android.ContributesAndroidInjector
+
+<span class="nc" id="L99">@Module</span>
+abstract class HomeUIModule {
+
+    @ActivityScope
+    @ContributesAndroidInjector(
+        modules = [
+            HomeModule::class, AddDependentModule::class, BenefitWorkModule::class, BenefitDetailsModule::class, InsuranceCardModule::class, AccountDetailsModule::class, MoreModule::class, PickerBottomSheetModule::class, DocumentUploadModule::class, ChangePasswordModule::class, EmailPasswordModule::class, DependentProfileModule::class, DocumentsModule::class, TermsAndConditionModule::class, SubmitDocumentModule::class, DocumentFilterModule::class, SortSheetModule::class, AboutModule::class, DisclaimerModule::class, SubmitPendingDocumentModule::class, DocumentPickerModule::class, SuccessDocumentUploadModule::class, PDFViewerModule::class, DocumentViewModule::class, MedicalLogsModule::class,
+            MedicalLogsAllModule::class, PrescriptionModule::class, PrescriptionFilterModule::class, DiagnosisModule::class,
+            ClaimsModule::class, ListModule::class, DiagnosisFilterModule::class, ClaimsFilterModule::class, ClaimsDetailsModule::class, DiagnosisDetailsModule::class,
+            SharingModule::class, ShareModule::class, ShareDisclaimerModule::class, LanguageModule::class, AddressChangeModule::class, DynamicMenuModule::class, GoPaperlessModule::class, MailDialogModule::class, MailSuccessModule::class, MessageCenterModule::class,
+            GuardianNursesModule::class, RewardsModule::class, SaveMoneyModule::class, EmailViewModule::class, BenefitSPDModule::class, CodePhoneChangeModule::class, PhoneChangeModule::class, SwitcherDisclaimerModule::class, HelpAndFaqModule::class, ChatModule::class, HtmlFindCareModule::class, MaritalStatusModule::class, FindCareLogsModule::class,
+            SelectSpecialityLogsModule::class, SpecialityLogsModule::class, ProcedureLogsModule::class,
+            FindCareSearchLogsModule::class,
+            SpecialityProfileLogsModule::class,
+            SelectedProcedureModule::class,
+            SpecialitySpecialityDetailsLogsModule::class,
+            FindAllModule::class, MapViewModule::class,
+            ProfilePictureUploadFragmentModule::class,
+            BillPreviewOptionModule::class, BillPreviewDisclaimerModule::class, FindCareFilterModule::class, EnterLocationModule::class,
+            BenefitDisclaimerModule::class, RemovePickerBottomSheetModule::class, PriceEnterModule::class, SelectSpecialityModule::class, SelectSubSpecialityModule::class, LightWeightModule::class, PrimaryDevicePromptModule::class, ChatSettingModule::class,
+            ResetPasswordPromptModule::class, FilterSheetModule::class, YearSheetModule::class, YearTilesModule::class, SubmitDocumentChatModule::class, BillPreviewModule::class, PriceBreakdownModule::class, WelcomeTutorialModule::class,
+            GuestHomeModule::class,
+            GuestAccountDetailsModule::class,
+            ImmunizationModule::class
+
+        ]
+    )
+
+    abstract fun contributesHomePageActivity(): HomePageActivity
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

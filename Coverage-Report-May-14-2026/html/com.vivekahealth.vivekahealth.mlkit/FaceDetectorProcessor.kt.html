@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FaceDetectorProcessor.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.mlkit</a> &gt; <span class="el_source">FaceDetectorProcessor.kt</span></div><h1>FaceDetectorProcessor.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.mlkit
+import android.content.Context
+import android.graphics.Bitmap
+import android.util.Log
+import com.google.android.gms.tasks.Task
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.face.Face
+import com.google.mlkit.vision.face.FaceDetection
+import com.google.mlkit.vision.face.FaceDetector
+import com.google.mlkit.vision.face.FaceDetectorOptions
+import com.google.mlkit.vision.face.FaceLandmark
+
+object FaceStatus {
+    const val PARTIAL_FACE = -4
+    const val EMPTY_FACE = -3
+    const val MULTIPLE_FACE = -2
+    const val DIFFERENT_FACE = 0
+    const val CLEAR = -1
+    const val BLINK_DONE = 1
+    const val MOVE_DONE = 2
+    const val SMILE_DONE = 3
+    const val CAPTURE = 4
+    const val VERIFICATION_DONE = 5
+}
+
+/** Face Detector Demo.  */
+<span class="nc" id="L27">class FaceDetectorProcessor(</span>
+    context: Context,
+    detectorOptions: FaceDetectorOptions?,
+    onStepCompleteDetected: OnStepCompleteDetected
+) :
+<span class="nc" id="L32">    VisionProcessorBase&lt;List&lt;Face&gt;&gt;(context) {</span>
+
+    private var stepCompleteDetected: OnStepCompleteDetected
+    private val detector: FaceDetector
+
+<span class="nc" id="L37">    init {</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        val options = detectorOptions</span>
+<span class="nc" id="L39">            ?: FaceDetectorOptions.Builder()</span>
+<span class="nc" id="L40">                .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)</span>
+<span class="nc" id="L41">                .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)</span>
+<span class="nc" id="L42">                .enableTracking()</span>
+<span class="nc" id="L43">                .build()</span>
+
+<span class="nc" id="L45">        detector = FaceDetection.getClient(options)</span>
+
+<span class="nc" id="L47">        stepCompleteDetected = onStepCompleteDetected</span>
+<span class="nc" id="L48">    }</span>
+
+    override fun stop() {
+<span class="nc" id="L51">        super.stop()</span>
+<span class="nc" id="L52">        detector.close()</span>
+<span class="nc" id="L53">    }</span>
+
+    override fun detectInImage(image: InputImage): Task&lt;List&lt;Face&gt;&gt; {
+<span class="nc" id="L56">        return detector.process(image)</span>
+    }
+
+    private var trackingId: Int? = null
+
+<span class="nc" id="L61">    var lookLeft: Boolean = false</span>
+<span class="nc" id="L62">    var lookRight: Boolean = false</span>
+<span class="nc" id="L63">    var centered: Boolean = false</span>
+
+<span class="nc" id="L65">    var countSelfie = 0</span>
+<span class="nc" id="L66">    val THERESHOLD_COUNT = 7</span>
+
+    fun clearLast() {
+<span class="nc" id="L69">        trackingId = null</span>
+<span class="nc" id="L70">        countSelfie = 0</span>
+<span class="nc" id="L71">        lookLeft = false</span>
+<span class="nc" id="L72">        lookRight = false</span>
+<span class="nc" id="L73">        centered = false</span>
+<span class="nc" id="L74">    }</span>
+
+    override fun onSuccessOriginal(
+        faces: List&lt;Face&gt;,
+        graphicOverlay: GraphicOverlay,
+        originalImage: Bitmap?
+    ) {
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (faces.isEmpty()) {</span>
+<span class="nc" id="L82">            return</span>
+        }
+
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (faces.size &gt; 1) {</span>
+<span class="nc" id="L86">            stepCompleteDetected.onStep(FaceStatus.MULTIPLE_FACE, null, originalImage)</span>
+<span class="nc" id="L87">            return</span>
+        }
+
+<span class="nc" id="L90">        val face = faces[0]</span>
+
+//        graphicOverlay.add(FaceGraphic(graphicOverlay, face))
+
+        // check if the face is center and visible
+<span class="nc" id="L95">        val direction = face.getLeftPercentage()</span>
+<span class="nc" id="L96">        val directionRight = face.getRightPercentage()</span>
+<span class="nc" id="L97">        val centerProgress = face.centerProgress()</span>
+
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (!centered) {</span>
+<span class="nc" id="L100">            stepCompleteDetected.onRotateHead(face, HeadDirection.CENTER, centerProgress)</span>
+        }
+
+<span class="nc bnc" id="L103" title="All 6 branches missed.">        if (face.isFullFace() &amp;&amp; face.isCenterFace(originalImage) &amp;&amp; face.isLookingCenter()) {</span>
+            // check if phone is
+
+//            if (countSelfie &lt; THERESHOLD_COUNT) {
+// //                graphicOverlay.add(FaceGraphic(graphicOverlay, face))
+//            }
+
+<span class="nc" id="L110">            countSelfie++</span>
+
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            if (countSelfie == THERESHOLD_COUNT) {</span>
+<span class="nc" id="L113">                trackingId = face.trackingId</span>
+<span class="nc" id="L114">                stepCompleteDetected.onStep(FaceStatus.CAPTURE, face, originalImage)</span>
+<span class="nc" id="L115">                centered = true</span>
+<span class="nc" id="L116">                stepCompleteDetected.onRotateHead(face, HeadDirection.CENTER, 100f)</span>
+            }
+        } else {
+            // center your face
+<span class="nc" id="L120">            stepCompleteDetected.onStep(FaceStatus.PARTIAL_FACE, null, originalImage)</span>
+        }
+
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (countSelfie &lt; THERESHOLD_COUNT) {</span>
+            // center your face
+<span class="nc" id="L125">            stepCompleteDetected.onStep(FaceStatus.PARTIAL_FACE, null, originalImage)</span>
+<span class="nc" id="L126">            return</span>
+        }
+
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        if (trackingId != face.trackingId) {</span>
+<span class="nc" id="L130">            stepCompleteDetected.onStep(FaceStatus.DIFFERENT_FACE, null, originalImage)</span>
+<span class="nc" id="L131">            return</span>
+        }
+
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (!lookLeft) {</span>
+<span class="nc" id="L135">            stepCompleteDetected.onRotateHead(face, HeadDirection.LEFT, direction)</span>
+        }
+
+<span class="nc bnc" id="L138" title="All 4 branches missed.">        if (direction == 100f) {</span>
+<span class="nc" id="L139">            lookLeft = true</span>
+        }
+
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        if (!lookRight) {</span>
+<span class="nc" id="L143">            stepCompleteDetected.onRotateHead(face, HeadDirection.RIGHT, directionRight)</span>
+        }
+
+<span class="nc bnc" id="L146" title="All 4 branches missed.">        if (directionRight == 100f) {</span>
+<span class="nc" id="L147">            lookRight = true</span>
+        }
+
+<span class="nc bnc" id="L150" title="All 4 branches missed.">        if (lookLeft &amp;&amp; lookRight) {</span>
+<span class="nc" id="L151">            stepCompleteDetected.onStep(FaceStatus.VERIFICATION_DONE, face, originalImage)</span>
+        }
+<span class="nc" id="L153">    }</span>
+
+    // Function to calculate how far the face is from the center (based on yaw and pitch)
+<span class="nc" id="L156">    fun Face.centerProgress(</span>
+<span class="nc" id="L157">        yawThreshold: Float = 5f,</span>
+<span class="nc" id="L158">        pitchThreshold: Float = 5f,</span>
+<span class="nc" id="L159">        maxDeviation: Float = 25f</span>
+    ): Float {
+        // Get the yaw (horizontal rotation around Y-axis) and pitch (vertical rotation around X-axis)
+<span class="nc" id="L162">        val yaw = headEulerAngleY</span>
+<span class="nc" id="L163">        val pitch = headEulerAngleX</span>
+
+        // Check if both yaw and pitch are within their respective thresholds
+<span class="nc bnc" id="L166" title="All 4 branches missed.">        val isCenteredYaw = yaw in -yawThreshold..yawThreshold</span>
+<span class="nc bnc" id="L167" title="All 4 branches missed.">        val isCenteredPitch = pitch in -pitchThreshold..pitchThreshold</span>
+
+        // If both yaw and pitch are within thresholds, return 100% (fully centered)
+<span class="nc bnc" id="L170" title="All 4 branches missed.">        if (isCenteredYaw &amp;&amp; isCenteredPitch) {</span>
+<span class="nc" id="L171">            return 99f</span>
+        }
+
+        // Calculate how far the yaw and pitch are from the center
+<span class="nc" id="L175">        val yawDeviation = Math.abs(yaw) - yawThreshold</span>
+<span class="nc" id="L176">        val pitchDeviation = Math.abs(pitch) - pitchThreshold</span>
+
+        // Calculate percentage based on how far yaw and pitch deviate from the thresholds
+<span class="nc bnc" id="L179" title="All 2 branches missed.">        val yawPercentage = if (yawDeviation &gt; 0) {</span>
+<span class="nc" id="L180">            (yawDeviation / maxDeviation) * 99f</span>
+        } else {
+<span class="nc" id="L182">            0f</span>
+        }
+
+<span class="nc bnc" id="L185" title="All 2 branches missed.">        val pitchPercentage = if (pitchDeviation &gt; 0) {</span>
+<span class="nc" id="L186">            (pitchDeviation / maxDeviation) * 99f</span>
+        } else {
+<span class="nc" id="L188">            0f</span>
+        }
+
+        // The total deviation is the maximum of yaw or pitch deviation percentage
+<span class="nc" id="L192">        val totalDeviation = Math.max(yawPercentage, pitchPercentage)</span>
+
+        // Return the inverse of the deviation (100% is centered, 0% is fully turned)
+<span class="nc" id="L195">        return (100f - totalDeviation).coerceIn(0f, 99f)</span>
+    }
+
+    // Function to check if the face is centered in the image
+<span class="nc" id="L199">    fun Face.isLookingCenter(yawThreshold: Float = 15f, pitchThreshold: Float = 15f): Boolean {</span>
+        // Get Euler angles (yaw, pitch)
+<span class="nc" id="L201">        val yaw = headEulerAngleY</span>
+<span class="nc" id="L202">        val pitch = headEulerAngleX</span>
+
+        // Check if the yaw (rotation around Y-axis) and pitch (rotation around X-axis) are within thresholds
+<span class="nc bnc" id="L205" title="All 12 branches missed.">        return yaw in -yawThreshold..yawThreshold &amp;&amp; pitch in -pitchThreshold..pitchThreshold</span>
+    }
+
+    fun Face.isCenterFace(original: Bitmap?): Boolean {
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        original?.let {</span>
+<span class="nc" id="L210">            val faceCenterX = this.boundingBox.centerX().toFloat()</span>
+<span class="nc" id="L211">            val faceCenterY = this.boundingBox.centerY().toFloat()</span>
+
+<span class="nc" id="L213">            val imageCenterX = original.width / 2f</span>
+<span class="nc" id="L214">            val imageCenterY = original.height / 2f</span>
+
+<span class="nc" id="L216">            val threshold = 30f</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">            val isCentered = kotlin.math.abs(faceCenterX - imageCenterX) &lt; threshold &amp;&amp;</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                kotlin.math.abs(faceCenterY - imageCenterY) &lt; threshold</span>
+<span class="nc" id="L219">            return isCentered</span>
+        }
+
+<span class="nc" id="L222">        return false</span>
+    }
+
+    fun Face?.getLeftPercentage(): Float {
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        if (this == null) return 0f</span>
+
+<span class="nc" id="L228">        val yaw = this.headEulerAngleY // Yaw (left/right head movement)</span>
+
+        // If yaw is less than 0 (head looking left), return percentage based on how far left
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        return if (yaw &lt; 0) {</span>
+<span class="nc" id="L232">            val percentage = ((-yaw) / 40 * 100).coerceIn(0f, 100f) // Normalize to 0-100%</span>
+<span class="nc" id="L233">            percentage</span>
+        } else {
+<span class="nc" id="L235">            0f // If head is looking right or centered, return 0</span>
+        }
+    }
+
+    fun Face?.getRightPercentage(): Float {
+<span class="nc bnc" id="L240" title="All 2 branches missed.">        if (this == null) return 0f</span>
+
+<span class="nc" id="L242">        val yaw = this.headEulerAngleY // Yaw (left/right head movement)</span>
+
+        // If yaw is greater than 0 (head looking right), return percentage based on how far right
+<span class="nc bnc" id="L245" title="All 2 branches missed.">        return if (yaw &gt; 0) {</span>
+<span class="nc" id="L246">            val percentage = ((yaw) / 40 * 100).coerceIn(0f, 100f) // Normalize to 0-100%</span>
+<span class="nc" id="L247">            percentage</span>
+        } else {
+<span class="nc" id="L249">            0f // If head is looking left or centered, return 0</span>
+        }
+    }
+
+    fun Face.isFullFace(): Boolean {
+        // Get face landmarks (eyes, nose, etc.)
+<span class="nc" id="L255">        val landmarks = allLandmarks</span>
+<span class="nc bnc" id="L256" title="All 6 branches missed.">        val leftEye = landmarks.find { it.landmarkType == FaceLandmark.LEFT_EYE }</span>
+<span class="nc bnc" id="L257" title="All 6 branches missed.">        val rightEye = landmarks.find { it.landmarkType == FaceLandmark.RIGHT_EYE }</span>
+<span class="nc bnc" id="L258" title="All 6 branches missed.">        val noseBase = landmarks.find { it.landmarkType == FaceLandmark.NOSE_BASE }</span>
+<span class="nc bnc" id="L259" title="All 6 branches missed.">        val mouthLeft = landmarks.find { it.landmarkType == FaceLandmark.MOUTH_LEFT }</span>
+<span class="nc bnc" id="L260" title="All 6 branches missed.">        val mouthRight = landmarks.find { it.landmarkType == FaceLandmark.MOUTH_RIGHT }</span>
+
+        // Check if key landmarks are present (this ensures the face is not occluded)
+<span class="nc bnc" id="L263" title="All 10 branches missed.">        if (leftEye == null || rightEye == null || noseBase == null || mouthLeft == null || mouthRight == null) {</span>
+<span class="nc" id="L264">            return false</span>
+        }
+
+        // Check if Euler Y angle is near 0 (face looking straight)
+<span class="nc" id="L268">        val eulerY = headEulerAngleY</span>
+<span class="nc bnc" id="L269" title="All 2 branches missed.">        if (Math.abs(eulerY) &gt; 15) { // 15-degree tolerance for tilt</span>
+<span class="nc" id="L270">            return false</span>
+        }
+
+        // The face is considered full and straight if all landmarks are visible and Euler Y angle is minimal
+<span class="nc" id="L274">        return true</span>
+    }
+
+    override fun onFailure(e: Exception) {
+<span class="nc" id="L278">        Log.e(TAG, &quot;Face detection failed $e&quot;)</span>
+<span class="nc" id="L279">    }</span>
+
+    companion object {
+        private const val TAG = &quot;FaceDetectorProcessor&quot;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

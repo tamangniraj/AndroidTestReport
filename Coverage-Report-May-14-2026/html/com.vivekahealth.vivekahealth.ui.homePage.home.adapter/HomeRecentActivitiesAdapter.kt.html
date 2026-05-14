@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HomeRecentActivitiesAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.home.adapter</a> &gt; <span class="el_source">HomeRecentActivitiesAdapter.kt</span></div><h1>HomeRecentActivitiesAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.home.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.data.remote.home.*
+import com.vivekahealth.vivekahealth.databinding.*
+
+<span class="fc" id="L9">sealed class ItemType(val value: Int) {</span>
+<span class="fc" id="L10">    object Diagnosis : ItemType(0)</span>
+<span class="fc" id="L11">    object Prescription : ItemType(1)</span>
+<span class="nc" id="L12">    object Lab : ItemType(2)</span>
+<span class="nc" id="L13">    object Claims : ItemType(3)</span>
+}
+class HomeRecentActivitiesAdapter(
+    private var onClick: (ItemType, String?) -&gt; Unit
+) :
+    RecyclerView.Adapter&lt;RecyclerView.ViewHolder&gt;() {
+
+    private var listMain: ArrayList&lt;List&lt;Any&gt;&gt; = arrayListOf()
+    private var listLength: ArrayList&lt;Int&gt; = arrayListOf()
+    private var viewTypeList: ArrayList&lt;ItemType&gt; = arrayListOf()
+    private var flatList: ArrayList&lt;Any&gt; = arrayListOf()
+    private var labSize: Int = 0
+    private var prescriptionSize: Int = 0
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        val binding = when (viewType) {
+            ItemType.Diagnosis.value -&gt; RecentDiagnosisCardItemViewBinding.inflate(
+                inflater,
+                parent,
+                false
+            )
+            ItemType.Prescription.value -&gt; RecentPrescriptionCardItemViewBinding.inflate(
+                inflater,
+                parent,
+                false
+            )
+            ItemType.Lab.value -&gt; RecentLabResultCardItemViewBinding.inflate(
+                inflater,
+                parent,
+                false
+            )
+            ItemType.Claims.value -&gt; RecentClaimsCardItemViewBinding.inflate(
+                inflater,
+                parent,
+                false
+            )
+            else -&gt; throw IllegalArgumentException(&quot;Unknown viewType: $viewType&quot;)
+        }
+
+        return when (viewType) {
+            ItemType.Diagnosis.value -&gt; ViewDiagnosisViewHolder(
+                binding as RecentDiagnosisCardItemViewBinding
+            )
+            ItemType.Prescription.value -&gt; ViewPrescriptionViewHolder(
+                binding as RecentPrescriptionCardItemViewBinding
+            )
+            ItemType.Lab.value -&gt; ViewLabViewHolder(binding as RecentLabResultCardItemViewBinding)
+            ItemType.Claims.value -&gt; ViewClaimsViewHolder(
+                binding as RecentClaimsCardItemViewBinding
+            )
+            else -&gt; throw IllegalArgumentException(&quot;Unknown viewType: $viewType&quot;)
+        }
+    }
+
+    override fun getItemCount(): Int {
+        return listLength.size
+    }
+
+    fun updateData(
+        list: ArrayList&lt;List&lt;Any&gt;&gt;,
+        listLength1: ArrayList&lt;Int&gt;,
+        flat: ArrayList&lt;Any&gt;,
+        lab: Int,
+        prescription: Int
+    ) {
+        listMain = list
+        listLength = listLength1
+        flatList = flat
+        labSize = lab
+        prescriptionSize = prescription
+        notifyDataSetChanged()
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = flatList[position]
+        when (item) {
+            is DiagnosisHistoryQuickView -&gt; {
+                (holder as ViewDiagnosisViewHolder).binding.viewModel = item
+                holder.binding.setClickListener {
+                    onClick(ItemType.Diagnosis, item.icd10Code.code)
+                }
+            }
+            is PrescriptionQuickView -&gt; {
+                (holder as ViewPrescriptionViewHolder).binding.viewModel = item
+                (holder as ViewPrescriptionViewHolder).binding.totalPres =
+                    (prescriptionSize - 1).toString()
+                (holder as ViewPrescriptionViewHolder).binding.setClickListener {
+                    onClick(ItemType.Prescription, item.drugCode)
+                }
+            }
+            is LabResultQuickView -&gt; {
+                (holder as ViewLabViewHolder).binding.viewModel = item
+                (holder as ViewLabViewHolder).binding.totalTest = (labSize - 1).toString()
+                (holder as ViewLabViewHolder).binding.setClickListener {
+                    onClick(ItemType.Lab, item.resultCode)
+                }
+            }
+            is ClaimsQuickView -&gt; {
+                (holder as ViewClaimsViewHolder).binding.viewModel = item
+                (holder as ViewClaimsViewHolder).binding.setClickListener {
+                    onClick(ItemType.Claims, item.claimNumber)
+                }
+            }
+        }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        return when (flatList[position]) {
+            is DiagnosisHistoryQuickView -&gt; ItemType.Diagnosis.value
+            is PrescriptionQuickView -&gt; ItemType.Prescription.value
+            is LabResultQuickView -&gt; ItemType.Lab.value
+            is ClaimsQuickView -&gt; ItemType.Claims.value
+            else -&gt; ItemType.Claims.value
+        }
+    }
+
+    private inner class ViewClaimsViewHolder(
+        val binding: RecentClaimsCardItemViewBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+        // Handle ViewClaimsViewHolder
+    }
+
+    private inner class ViewDiagnosisViewHolder(
+        val binding: RecentDiagnosisCardItemViewBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+        // Handle ViewDiagnosisViewHolder
+    }
+
+    private inner class ViewLabViewHolder(
+        val binding: RecentLabResultCardItemViewBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+        // Handle ViewLabViewHolder
+    }
+
+    private inner class ViewPrescriptionViewHolder(
+        val binding: RecentPrescriptionCardItemViewBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+        // Handle ViewPrescriptionViewHolder
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,699 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PensionEstimateScreen.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.pension.ui.screens</a> &gt; <span class="el_source">PensionEstimateScreen.kt</span></div><h1>PensionEstimateScreen.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.pension.ui.screens
+
+import android.annotation.SuppressLint
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import com.vivekahealth.vivekahealth.pension.ui.component.PersonalInformationInputCard
+import com.vivekahealth.vivekahealth.pension.ui.component.ProjectionSummaryCard
+import com.vivekahealth.vivekahealth.pension.ui.component.SurvivorBenefitsSelector
+import com.vivekahealth.vivekahealth.pension.ui.viewmodel.PensionViewModel
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
+import com.vivekahealth.vivekahealth.FirebaseTags
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.pension.data.model.SurvivorOptionConfig
+import com.vivekahealth.vivekahealth.pension.ui.PensionResultComposeActivity
+import com.vivekahealth.vivekahealth.pension.ui.component.PrimaryButton
+import com.vivekahealth.vivekahealth.pension.ui.component.formatCreditValue
+import com.vivekahealth.vivekahealth.pension.ui.tagged
+import com.vivekahealth.vivekahealth.ui.component.OfflineScaffold
+import com.vivekahealth.vivekahealth.utils.LanguageUtils
+
+@OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint(&quot;UnusedMaterial3ScaffoldPaddingParameter&quot;)
+@Composable
+fun PensionEstimateScreen(
+    memberId: String,
+    onClosePressed: () -&gt; Unit,
+    viewModel: PensionViewModel,
+<span class="nc bnc" id="L59" title="All 2 branches missed.">    isOffline: Boolean = false</span>
+<span class="nc bnc" id="L60" title="All 32 branches missed.">) {</span>
+<span class="nc" id="L61">    val context = LocalContext.current</span>
+<span class="nc" id="L62">    val focusManager = LocalFocusManager.current</span>
+<span class="nc" id="L63">    val userData by viewModel.userData.collectAsStateWithLifecycle()</span>
+<span class="nc" id="L64">    val availableOptions by viewModel.survivorOptionsFromDb.collectAsStateWithLifecycle()</span>
+
+<span class="nc" id="L66">    val isLoadingEstimates by viewModel.isLoadingEstimate.collectAsStateWithLifecycle()</span>
+
+<span class="nc" id="L68">    var showOfflineErrorDialog by remember { mutableStateOf(false) }</span>
+<span class="nc" id="L69">    var showNotEligibleDialog by remember { mutableStateOf(false) }</span>
+<span class="nc" id="L70">    var showSpousalConsentDialog by remember { mutableStateOf(false) }</span>
+<span class="nc" id="L71">    var pendingSurvivorOption by remember {</span>
+<span class="nc" id="L72">        mutableStateOf&lt;com.vivekahealth.vivekahealth.pension.data.model.SurvivorOptionConfig?&gt;(</span>
+<span class="nc" id="L73">            null</span>
+<span class="nc" id="L74">        )</span>
+    }
+<span class="nc" id="L76">    var previousOfflineState by remember { mutableStateOf(isOffline) }</span>
+
+    // Log screen view
+<span class="nc bnc" id="L79" title="All 8 branches missed.">    LaunchedEffect(Unit) {</span>
+<span class="nc" id="L80">        viewModel.logEvent(com.vivekahealth.vivekahealth.FirebaseTags.PENSION_ESTIMATE_SCREEN_VIEW)</span>
+<span class="nc" id="L81">    }</span>
+
+    // Set default values when first loaded
+<span class="nc bnc" id="L84" title="All 8 branches missed.">    LaunchedEffect(availableOptions) {</span>
+<span class="nc bnc" id="L85" title="All 6 branches missed.">        if (userData.selectedSurvivorBenefit == null &amp;&amp; availableOptions?.survivorOptions != null) {</span>
+<span class="nc" id="L86">            viewModel.updateSurvivorBenefit(</span>
+<span class="nc bnc" id="L87" title="All 8 branches missed.">                availableOptions?.survivorOptions?.findLast { it.isDefault == true }</span>
+            )
+        }
+
+<span class="nc bnc" id="L91" title="All 6 branches missed.">        if (userData.expectedHours == null &amp;&amp; availableOptions?.expectedHours != null) {</span>
+<span class="nc bnc" id="L92" title="All 4 branches missed.">            viewModel.updateExpectedHours(availableOptions?.expectedHours?.expectedHours.toString())</span>
+        }
+
+<span class="nc bnc" id="L95" title="All 6 branches missed.">        if (userData.selectedRetirementAge == null &amp;&amp; availableOptions?.retirementOptions != null) {</span>
+<span class="nc bnc" id="L96" title="All 10 branches missed.">            availableOptions?.retirementOptions?.findLast { it.isDefault == true }?.let {</span>
+<span class="nc" id="L97">                viewModel.updateRetirementAge(it)</span>
+<span class="nc" id="L98">            }</span>
+        }
+<span class="nc" id="L100">    }</span>
+
+<span class="nc" id="L102">    val pensionEstimate by viewModel.pensionEstimate.collectAsStateWithLifecycle()</span>
+
+<span class="nc" id="L104">    val selectedRetirementAge = userData.selectedRetirementAge</span>
+<span class="nc" id="L105">    val expectedHours = userData.expectedHours</span>
+<span class="nc" id="L106">    val selectedBenefit = userData.selectedSurvivorBenefit</span>
+
+    // Validation logic
+<span class="nc bnc" id="L109" title="All 8 branches missed.">    val isValidExpectedHours = expectedHours?.isNotEmpty() == true &amp;&amp;</span>
+<span class="nc bnc" id="L110" title="All 4 branches missed.">        expectedHours?.toDoubleOrNull() != null &amp;&amp;</span>
+<span class="nc bnc" id="L111" title="All 6 branches missed.">        ((expectedHours?.toDoubleOrNull() ?: 0.0) &gt;= 0.0)</span>
+<span class="nc bnc" id="L112" title="All 4 branches missed.">    val isCalculateEnabled = isValidExpectedHours &amp;&amp; !isLoadingEstimates</span>
+<span class="nc bnc" id="L113" title="All 4 branches missed.">    val min = availableOptions?.expectedHours?.minHours</span>
+<span class="nc bnc" id="L114" title="All 4 branches missed.">    val max = availableOptions?.expectedHours?.maxHours</span>
+    // Fetch pension estimate when retirement age, survivor option, or expected hours change
+<span class="nc" id="L116">    LaunchedEffect(</span>
+<span class="nc" id="L117">        selectedRetirementAge,</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">        selectedBenefit?.optionCode,</span>
+<span class="nc bnc" id="L119" title="All 8 branches missed.">        expectedHours</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">    ) {</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        val maritalStatus = userData.pensionMemberResponse?.maritalStatus</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        val survivorOptionCode = selectedBenefit?.optionCode</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        val expectedHoursPerYear = expectedHours?.toDoubleOrNull()</span>
+
+<span class="nc bnc" id="L125" title="All 8 branches missed.">        val hasError = expectedHours?.toDoubleOrNull()?.let { hours -&gt;</span>
+<span class="nc bnc" id="L126" title="All 8 branches missed.">            (min == null || hours &gt;= min) &amp;&amp; (max == null || hours &lt;= max)</span>
+<span class="nc" id="L127">        } != true</span>
+        // Only call API if we have all required data
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        if (!hasError) {</span>
+<span class="nc" id="L130">            viewModel.fetchPensionEstimate(</span>
+<span class="nc" id="L131">                memberId = memberId,</span>
+<span class="nc" id="L132">                retirementOption = selectedRetirementAge,</span>
+<span class="nc" id="L133">                survivorOptionCode = survivorOptionCode,</span>
+<span class="nc" id="L134">                expectedHoursPerYear = expectedHoursPerYear,</span>
+<span class="nc" id="L135">                maritalStatus = maritalStatus</span>
+            )
+        } else {
+<span class="nc" id="L138">            viewModel.clearRunning()</span>
+        }
+<span class="nc" id="L140">    }</span>
+
+<span class="nc bnc" id="L142" title="All 12 branches missed.">    LaunchedEffect(isOffline) {</span>
+<span class="nc bnc" id="L143" title="All 8 branches missed.">        if (previousOfflineState &amp;&amp; !isOffline &amp;&amp; memberId.isNotEmpty()) {</span>
+            // Changed from offline to online - fetch fresh data
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            val maritalStatus = userData.pensionMemberResponse?.maritalStatus</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">            val survivorOptionCode = selectedBenefit?.optionCode</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">            val expectedHoursPerYear = expectedHours?.toDoubleOrNull()</span>
+
+            // Only call API if we have all required data
+
+<span class="nc bnc" id="L151" title="All 8 branches missed.">            val hasError = expectedHours?.toDoubleOrNull()?.let { hours -&gt;</span>
+<span class="nc bnc" id="L152" title="All 8 branches missed.">                (min == null || hours &gt;= min) &amp;&amp; (max == null || hours &lt;= max)</span>
+<span class="nc" id="L153">            } != true</span>
+
+<span class="nc bnc" id="L155" title="All 2 branches missed.">            if (!hasError) {</span>
+<span class="nc" id="L156">                viewModel.fetchPensionEstimate(</span>
+<span class="nc" id="L157">                    memberId = memberId,</span>
+<span class="nc" id="L158">                    retirementOption = selectedRetirementAge,</span>
+<span class="nc" id="L159">                    survivorOptionCode = survivorOptionCode,</span>
+<span class="nc" id="L160">                    expectedHoursPerYear = expectedHoursPerYear,</span>
+<span class="nc" id="L161">                    maritalStatus = maritalStatus</span>
+                )
+            }
+        }
+<span class="nc" id="L165">        previousOfflineState = isOffline</span>
+<span class="nc" id="L166">    }</span>
+
+<span class="nc bnc" id="L168" title="All 2 branches missed.">    OfflineScaffold(</span>
+<span class="nc" id="L169">        isOffline = isOffline,</span>
+<span class="nc" id="L170">        containerColor = Color(0xFFF8F8F8),</span>
+<span class="nc" id="L171">        contentWindowInsets = WindowInsets(0, 0, 0, 0),</span>
+<span class="nc" id="L172">        topBar = {</span>
+<span class="nc bnc" id="L173" title="All 6 branches missed.">            Column(</span>
+<span class="nc" id="L174">                modifier = Modifier</span>
+<span class="nc" id="L175">                    .fillMaxWidth()</span>
+<span class="nc" id="L176">                    .background(color = Color.White)</span>
+<span class="nc" id="L177">                    .windowInsetsPadding(WindowInsets.statusBars)</span>
+            ) {
+<span class="nc" id="L179">                Box(</span>
+<span class="nc" id="L180">                    modifier = Modifier</span>
+<span class="nc" id="L181">                        .fillMaxWidth()</span>
+<span class="nc" id="L182">                        .padding(12.dp)</span>
+<span class="nc" id="L183">                        .tagged(&quot;Pension Estimate Header&quot;)</span>
+                ) {
+<span class="nc" id="L185">                    IconButton(</span>
+<span class="nc" id="L186">                        onClick = onClosePressed,</span>
+<span class="nc" id="L187">                        modifier = Modifier</span>
+<span class="nc" id="L188">                            .align(Alignment.CenterStart)</span>
+<span class="nc" id="L189">                            .tagged(&quot;Close Button&quot;)</span>
+<span class="nc" id="L190">                    ) {</span>
+<span class="nc bnc" id="L191" title="All 8 branches missed.">                        Icon(</span>
+<span class="nc" id="L192">                            painter = painterResource(R.drawable.ic_baseline_close_24),</span>
+<span class="nc" id="L193">                            contentDescription = &quot;Close&quot;,</span>
+<span class="nc" id="L194">                            tint = Color.Black,</span>
+<span class="nc" id="L195">                            modifier = Modifier.padding(8.dp)</span>
+<span class="nc" id="L196">                        )</span>
+<span class="nc" id="L197">                    }</span>
+
+<span class="nc" id="L199">                    Text(</span>
+<span class="nc" id="L200">                        text = stringResource(</span>
+<span class="nc" id="L201">                            R.string.pension_estimate</span>
+                        ),
+<span class="nc" id="L203">                        color = Color.Black,</span>
+<span class="nc" id="L204">                        fontSize = 18.sp,</span>
+<span class="nc" id="L205">                        fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L206">                        textAlign = TextAlign.Center,</span>
+<span class="nc" id="L207">                        modifier = Modifier</span>
+<span class="nc" id="L208">                            .align(Alignment.Center)</span>
+<span class="nc" id="L209">                            .padding(horizontal = 56.dp)</span>
+<span class="nc" id="L210">                            .tagged(&quot;Pension Estimate Title&quot;)</span>
+                    )
+<span class="nc" id="L212">                }</span>
+<span class="nc" id="L213">                HorizontalDivider(color = Color(0xFFf8f8f8), thickness = 2.dp)</span>
+<span class="nc" id="L214">            }</span>
+<span class="nc" id="L215">        }</span>
+<span class="nc" id="L216">    ) { paddingValues -&gt;</span>
+
+<span class="nc bnc" id="L218" title="All 6 branches missed.">        LazyColumn(</span>
+<span class="nc" id="L219">            modifier = Modifier</span>
+<span class="nc" id="L220">                .padding(paddingValues)</span>
+<span class="nc" id="L221">                .windowInsetsPadding(WindowInsets.ime)</span>
+<span class="nc" id="L222">                .fillMaxSize()</span>
+<span class="nc" id="L223">        ) {</span>
+<span class="nc" id="L224">            item {</span>
+<span class="nc bnc" id="L225" title="All 8 branches missed.">                PersonalInformationInputCard(</span>
+<span class="nc bnc" id="L226" title="All 10 branches missed.">                    selectedRetirementAge = selectedRetirementAge ?: availableOptions?.retirementOptions?.findLast { it.isDefault == true },</span>
+<span class="nc bnc" id="L227" title="All 4 branches missed.">                    retirementOption = availableOptions?.retirementOptions ?: emptyList(),</span>
+<span class="nc" id="L228">                    expectedHours = expectedHours,</span>
+<span class="nc" id="L229">                    currentHours = formatCreditValue(</span>
+<span class="nc bnc" id="L230" title="All 6 branches missed.">                        availableOptions?.expectedHours?.currentYearHours ?: 0.0</span>
+                    ),
+<span class="nc bnc" id="L232" title="All 4 branches missed.">                    editableExpectedHour = availableOptions?.expectedHours?.isEditable,</span>
+<span class="nc bnc" id="L233" title="All 4 branches missed.">                    min = availableOptions?.expectedHours?.minHours,</span>
+<span class="nc bnc" id="L234" title="All 4 branches missed.">                    max = availableOptions?.expectedHours?.maxHours,</span>
+<span class="nc" id="L235">                    onRetirementAgeChange = {</span>
+<span class="nc" id="L236">                        viewModel.updateRetirementAge(it)</span>
+<span class="nc" id="L237">                    },</span>
+<span class="nc" id="L238">                    onExpectedHoursChange = {</span>
+<span class="nc" id="L239">                        viewModel.updateExpectedHours(it)</span>
+<span class="nc" id="L240">                    },</span>
+<span class="nc" id="L241">                    viewModel = viewModel</span>
+<span class="nc" id="L242">                )</span>
+<span class="nc" id="L243">            }</span>
+
+<span class="nc" id="L245">            item {</span>
+<span class="nc bnc" id="L246" title="All 8 branches missed.">                Spacer(modifier = Modifier.height(8.dp))</span>
+<span class="nc" id="L247">            }</span>
+
+<span class="nc" id="L249">            item {</span>
+<span class="nc bnc" id="L250" title="All 8 branches missed.">                SurvivorBenefitsSelector(</span>
+<span class="nc" id="L251">                    selectedBenefit = selectedBenefit,</span>
+<span class="nc bnc" id="L252" title="All 2 branches missed.">                    survivorOptions = availableOptions?.survivorOptions,</span>
+<span class="nc" id="L253">                    onBenefitSelected = { selectedOption -&gt;</span>
+                        // Check if we need to show spousal consent dialog
+<span class="nc bnc" id="L255" title="All 2 branches missed.">                        if (selectedOption.requiresSpouseConsent == true) {</span>
+                            // Store pending selection and show dialog
+<span class="nc" id="L257">                            pendingSurvivorOption = selectedOption</span>
+<span class="nc" id="L258">                            showSpousalConsentDialog = true</span>
+                        } else {
+                            // No dialog needed, update immediately
+<span class="nc" id="L261">                            viewModel.updateSurvivorBenefit(selectedOption)</span>
+                        }
+<span class="nc" id="L263">                    },</span>
+<span class="nc" id="L264">                    viewModel = viewModel</span>
+<span class="nc" id="L265">                )</span>
+<span class="nc" id="L266">            }</span>
+
+<span class="nc" id="L268">            item {</span>
+<span class="nc bnc" id="L269" title="All 8 branches missed.">                Spacer(modifier = Modifier.height(8.dp))</span>
+<span class="nc" id="L270">            }</span>
+
+<span class="nc" id="L272">            item {</span>
+<span class="nc bnc" id="L273" title="All 12 branches missed.">                pensionEstimate?.projectionSummary?.let {</span>
+<span class="nc" id="L274">                    ProjectionSummaryCard(</span>
+<span class="nc bnc" id="L275" title="All 4 branches missed.">                        yearsToRetirement = pensionEstimate?.projectionSummary?.yearsToRetirement,</span>
+<span class="nc bnc" id="L276" title="All 4 branches missed.">                        additionalCreditsExpected = pensionEstimate?.projectionSummary?.additionalCreditsExpected,</span>
+<span class="nc bnc" id="L277" title="All 4 branches missed.">                        totalProjectedCredits = pensionEstimate?.projectionSummary?.totalProjectedCredits,</span>
+<span class="nc bnc" id="L278" title="All 4 branches missed.">                        infoMessage = pensionEstimate?.projectionSummary?.projectionSummaryNote,</span>
+<span class="nc bnc" id="L279" title="All 6 branches missed.">                        errorMessage = pensionEstimate?.forfeitureImpact?.impactDescription ?: &quot;&quot;,</span>
+<span class="nc" id="L280">                        isCalculateEnabled = isCalculateEnabled,</span>
+<span class="nc" id="L281">                        isLoading = isLoadingEstimates,</span>
+<span class="nc" id="L282">                        onCalculateClick = {</span>
+//                        // Get current language
+<span class="nc" id="L284">                        },</span>
+<span class="nc" id="L285">                        viewModel = viewModel</span>
+                    )
+<span class="nc" id="L287">                }</span>
+<span class="nc" id="L288">            }</span>
+
+<span class="nc" id="L290">            item {</span>
+<span class="nc bnc" id="L291" title="All 6 branches missed.">                Spacer(modifier = Modifier.height(12.dp))</span>
+
+<span class="nc bnc" id="L293" title="All 2 branches missed.">                PrimaryButton(</span>
+<span class="nc" id="L294">                    modifier = Modifier.padding(horizontal = 16.dp),</span>
+<span class="nc bnc" id="L295" title="All 2 branches missed.">                    text = stringResource(R.string.calculate),</span>
+<span class="nc" id="L296">                    onClick = {</span>
+                        // Dismiss keyboard first
+<span class="nc" id="L298">                        focusManager.clearFocus()</span>
+
+<span class="nc bnc" id="L300" title="All 2 branches missed.">                        viewModel?.logEvent(FirebaseTags.PENSION_CALCULATE_CLICK)</span>
+
+                        // Check eligibility first
+<span class="nc bnc" id="L303" title="All 4 branches missed.">                        if (selectedRetirementAge?.isEligible == false) {</span>
+<span class="nc" id="L304">                            showNotEligibleDialog = true</span>
+                        } else {
+<span class="nc bnc" id="L306" title="All 2 branches missed.">                            pensionEstimate?.let {</span>
+<span class="nc" id="L307">                                val currentLanguage = LanguageUtils.getCurrentLanguageCode(context)</span>
+                                // Create intent and launch activity
+
+<span class="nc" id="L310">                                val intent = PensionResultComposeActivity.createIntent(</span>
+<span class="nc" id="L311">                                    context = context,</span>
+<span class="nc" id="L312">                                    pensionData = it,</span>
+<span class="nc" id="L313">                                    pensionType = formatPensionType(</span>
+<span class="nc bnc" id="L314" title="All 2 branches missed.">                                        selectedRetirementAge?.pensionType</span>
+                                    ),
+<span class="nc" id="L316">                                    languageCode = currentLanguage</span>
+                                )
+<span class="nc" id="L318">                                context.startActivity(intent)</span>
+<span class="nc" id="L319">                            } ?: run {</span>
+<span class="nc bnc" id="L320" title="All 2 branches missed.">                                if (isOffline) {</span>
+<span class="nc" id="L321">                                    showOfflineErrorDialog = true</span>
+                                }
+<span class="nc" id="L323">                            }</span>
+                        }
+<span class="nc" id="L325">                    },</span>
+<span class="nc" id="L326">                    enabled = isCalculateEnabled,</span>
+<span class="nc" id="L327">                    isLoading = isLoadingEstimates</span>
+<span class="nc" id="L328">                )</span>
+<span class="nc" id="L329">            }</span>
+
+<span class="nc" id="L331">            item {</span>
+<span class="nc bnc" id="L332" title="All 8 branches missed.">                Spacer(modifier = Modifier.height(48.dp))</span>
+<span class="nc" id="L333">            }</span>
+<span class="nc" id="L334">        }</span>
+
+        // Offline Error Dialog
+<span class="nc bnc" id="L337" title="All 2 branches missed.">        if (showOfflineErrorDialog) {</span>
+<span class="nc" id="L338">            AlertDialog(</span>
+<span class="nc" id="L339">                onDismissRequest = { showOfflineErrorDialog = false },</span>
+<span class="nc" id="L340">                text = {</span>
+<span class="nc bnc" id="L341" title="All 8 branches missed.">                    Text(text = stringResource(R.string.no_internet))</span>
+<span class="nc" id="L342">                },</span>
+<span class="nc" id="L343">                confirmButton = {</span>
+<span class="nc bnc" id="L344" title="All 8 branches missed.">                    TextButton(</span>
+<span class="nc" id="L345">                        onClick = { showOfflineErrorDialog = false }</span>
+<span class="nc" id="L346">                    ) {</span>
+<span class="nc bnc" id="L347" title="All 8 branches missed.">                        Text(stringResource(R.string.ok))</span>
+<span class="nc" id="L348">                    }</span>
+<span class="nc" id="L349">                },</span>
+<span class="nc" id="L350">                containerColor = Color.White,</span>
+<span class="nc" id="L351">                shape = RoundedCornerShape(4.dp)</span>
+
+            )
+        }
+
+        // Not Eligible Dialog
+<span class="nc bnc" id="L357" title="All 2 branches missed.">        if (showNotEligibleDialog) {</span>
+<span class="nc" id="L358">            NotEligibleDialog(</span>
+<span class="nc" id="L359">                selectedRetirementAge = selectedRetirementAge,</span>
+<span class="nc bnc" id="L360" title="All 8 branches missed.">                eligibleOption = availableOptions?.retirementOptions?.find { it.isEligible == true },</span>
+<span class="nc" id="L361">                onDismiss = { showNotEligibleDialog = false }</span>
+            )
+        }
+
+        // Spousal Consent Dialog
+<span class="nc bnc" id="L366" title="All 2 branches missed.">        if (showSpousalConsentDialog) {</span>
+<span class="nc bnc" id="L367" title="All 2 branches missed.">            SpousalConsentDialog(</span>
+<span class="nc" id="L368">                pendingSurvivorOption,</span>
+<span class="nc" id="L369">                onDismiss = {</span>
+<span class="nc" id="L370">                    showSpousalConsentDialog = false</span>
+                    // Don't update viewModel - keep previous selection
+<span class="nc" id="L372">                    pendingSurvivorOption = null</span>
+<span class="nc" id="L373">                },</span>
+<span class="nc" id="L374">                onContinue = {</span>
+<span class="nc" id="L375">                    showSpousalConsentDialog = false</span>
+                    // Update viewModel with pending selection
+<span class="nc bnc" id="L377" title="All 2 branches missed.">                    pendingSurvivorOption?.let { viewModel.updateSurvivorBenefit(it) }</span>
+<span class="nc" id="L378">                    pendingSurvivorOption = null</span>
+<span class="nc" id="L379">                }</span>
+            )
+<span class="nc" id="L381">        }</span>
+<span class="nc" id="L382">    }</span>
+<span class="nc bnc" id="L383" title="All 2 branches missed.">}</span>
+
+fun formatPensionType(pensionType: String?): String {
+<span class="nc bnc" id="L386" title="All 2 branches missed.">    return pensionType</span>
+<span class="nc bnc" id="L387" title="All 2 branches missed.">        ?.replace(&quot;_&quot;, &quot; &quot;)</span>
+<span class="nc bnc" id="L388" title="All 2 branches missed.">        ?.lowercase()</span>
+<span class="nc bnc" id="L389" title="All 2 branches missed.">        ?.split(&quot; &quot;)</span>
+<span class="nc bnc" id="L390" title="All 6 branches missed.">        ?.joinToString(&quot; &quot;) { it.replaceFirstChar { char -&gt; char.uppercase() } }</span>
+<span class="nc" id="L391">        ?: &quot;&quot;</span>
+}
+
+private fun isUserMarried(
+    maritalStatuses: List&lt;com.vivekahealth.vivekahealth.pension.data.model.MaritalStatus&gt;?
+): Boolean {
+<span class="nc bnc" id="L397" title="All 2 branches missed.">    return maritalStatuses</span>
+<span class="nc bnc" id="L398" title="All 6 branches missed.">        ?.firstOrNull { it.isDefault == true &amp;&amp; it.statusCode == &quot;MARRIED&quot; } != null</span>
+}
+
+@Composable
+<span class="nc bnc" id="L402" title="All 12 branches missed.">private fun RequirementsList(requirementsText: String) {</span>
+<span class="nc" id="L403">    val requirements = remember(requirementsText) {</span>
+<span class="nc" id="L404">        requirementsText</span>
+<span class="nc" id="L405">            .split(Regex(&quot;[\\n,]&quot;))</span>
+<span class="nc" id="L406">            .map { it.trim().removePrefix(&quot;•&quot;).removePrefix(&quot;-&quot;).trim() }</span>
+<span class="nc bnc" id="L407" title="All 2 branches missed.">            .filter { it.isNotBlank() }</span>
+    }
+
+<span class="nc" id="L410">    Column(modifier = Modifier.fillMaxWidth()) {</span>
+<span class="nc" id="L411">        requirements.forEach { requirement -&gt;</span>
+<span class="nc" id="L412">            Row(</span>
+<span class="nc" id="L413">                modifier = Modifier</span>
+<span class="nc" id="L414">                    .fillMaxWidth()</span>
+<span class="nc" id="L415">                    .padding(vertical = 4.dp),</span>
+<span class="nc" id="L416">                verticalAlignment = Alignment.Top</span>
+            ) {
+<span class="nc" id="L418">                Text(</span>
+<span class="nc" id="L419">                    text = &quot;• &quot;,</span>
+<span class="nc" id="L420">                    fontSize = 14.sp,</span>
+<span class="nc" id="L421">                    color = Color.Black</span>
+                )
+<span class="nc" id="L423">                Text(</span>
+<span class="nc" id="L424">                    text = requirement,</span>
+<span class="nc" id="L425">                    fontSize = 14.sp,</span>
+<span class="nc" id="L426">                    color = Color.Black,</span>
+<span class="nc" id="L427">                    modifier = Modifier.weight(1f)</span>
+                )
+<span class="nc" id="L429">            }</span>
+<span class="nc" id="L430">        }</span>
+<span class="nc" id="L431">    }</span>
+<span class="nc bnc" id="L432" title="All 2 branches missed.">}</span>
+
+@Composable
+private fun NotEligibleDialog(
+    selectedRetirementAge: com.vivekahealth.vivekahealth.pension.data.model.RetirementOption?,
+    eligibleOption: com.vivekahealth.vivekahealth.pension.data.model.RetirementOption ?,
+    onDismiss: () -&gt; Unit
+<span class="nc bnc" id="L439" title="All 18 branches missed.">) {</span>
+<span class="nc bnc" id="L440" title="All 2 branches missed.">    AlertDialog(</span>
+<span class="nc" id="L441">        onDismissRequest = onDismiss,</span>
+<span class="nc bnc" id="L442" title="All 8 branches missed.">        confirmButton = {},</span>
+<span class="nc" id="L443">        text = {</span>
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Warning Icon
+                Icon(
+                    painter = painterResource(R.drawable.alert),
+                    contentDescription = &quot;Warning&quot;,
+                    modifier = Modifier.size(80.dp),
+                    tint = Color.Unspecified
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Title
+                Text(
+                    text = stringResource(
+                        R.string.not_eligible_title
+                    ),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val formatted = formatPensionType(selectedRetirementAge?.pensionType ?: &quot;&quot;)
+                // Description
+                Text(
+                    text = stringResource(R.string.not_eligible_description, formatted),
+                    fontSize = 14.sp,
+                    color = colorResource(R.color.TextGrey),
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Requirements Section
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                        .background(
+                            colorResource(R.color.background_reg),
+                            RoundedCornerShape(4.dp)
+                        ).padding(8.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        text = stringResource(R.string.required_section_title),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    selectedRetirementAge?.requirements?.let { requirements -&gt;
+                        RequirementsList(requirements)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Deferred Pension Option Section
+                eligibleOption?.pensionType?.let { pensionType -&gt;
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Text(
+                            text = stringResource(R.string.you_may_qualify_for),
+                            fontSize = 14.sp,
+                            color = colorResource(R.color.TextGrey)
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        val formattedType = formatPensionType(pensionType)
+                        Text(
+                            text = formattedType,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.Black
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // OK Button
+                PrimaryButton(
+                    text = stringResource(R.string.ok),
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+<span class="nc" id="L541">        containerColor = Color.White,</span>
+<span class="nc" id="L542">        shape = RoundedCornerShape(16.dp),</span>
+<span class="nc" id="L543">        properties = DialogProperties(usePlatformDefaultWidth = false),</span>
+<span class="nc" id="L544">        modifier = Modifier</span>
+<span class="nc" id="L545">            .fillMaxWidth()</span>
+<span class="nc" id="L546">            .padding(horizontal = 16.dp).tagged(&quot;Not Eligible Dialog&quot;)</span>
+    )
+<span class="nc bnc" id="L548" title="All 2 branches missed.">}</span>
+
+@Composable
+private fun SpousalConsentDialog(
+    survivorOptionConfig: SurvivorOptionConfig?,
+    onDismiss: () -&gt; Unit,
+    onContinue: () -&gt; Unit
+<span class="nc bnc" id="L555" title="All 20 branches missed.">) {</span>
+<span class="nc bnc" id="L556" title="All 2 branches missed.">    AlertDialog(</span>
+<span class="nc" id="L557">        onDismissRequest = onDismiss,</span>
+<span class="nc bnc" id="L558" title="All 8 branches missed.">        confirmButton = {},</span>
+<span class="nc" id="L559">        text = {</span>
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Alert Icon (same as NotEligibleDialog)
+                Icon(
+                    painter = painterResource(R.drawable.alert),
+                    contentDescription = &quot;Alert&quot;,
+                    modifier = Modifier.size(80.dp),
+                    tint = Color.Unspecified
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Title
+                Text(
+                    text = survivorOptionConfig?.spouseConsentInfo?.heading ?: stringResource(
+                        R.string.spousal_consent_required
+                    ),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                HorizontalDivider()
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Required Documents Section
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        text = stringResource(R.string.required_documents),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    survivorOptionConfig?.spouseConsentInfo?.requiredDocuments?.forEach {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_checked),
+                                contentDescription = &quot;Check&quot;,
+                                modifier = Modifier.size(20.dp),
+                                tint = colorResource(R.color.primaryLight)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = it.name ?: &quot;&quot;,
+                                fontSize = 14.sp,
+                                color = Color.Black
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Important Note Box
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(
+                            colorResource(R.color.primaryUltraLight),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .border(
+                            1.dp,
+                            colorResource(R.color.primaryLight),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(12.dp)
+                ) {
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                append(stringResource(R.string.important))
+                                append(&quot; &quot;)
+                            }
+                            append(survivorOptionConfig?.spouseConsentInfo?.note ?: &quot;&quot;)
+                        },
+                        fontSize = 13.sp,
+                        color = Color.Black, // Darker blue text
+                        lineHeight = 18.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Buttons Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Cancel Button
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f)
+<span class="nc" id="L672">                    ) {</span>
+<span class="nc bnc" id="L673" title="All 8 branches missed.">                        Text(</span>
+<span class="nc" id="L674">                            text = stringResource(R.string.cancel),</span>
+<span class="nc" id="L675">                            fontSize = 16.sp,</span>
+<span class="nc" id="L676">                            fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L677">                            color = Color(0xFF16bdfc)</span>
+<span class="nc" id="L678">                        )</span>
+<span class="nc" id="L679">                    }</span>
+
+                    // Continue Button
+                    PrimaryButton(
+                        text = stringResource(R.string.continue_button),
+                        onClick = onContinue,
+                        padding = 8.dp,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        },
+<span class="nc" id="L691">        containerColor = Color.White,</span>
+<span class="nc" id="L692">        shape = RoundedCornerShape(16.dp),</span>
+<span class="nc" id="L693">        properties = DialogProperties(usePlatformDefaultWidth = false),</span>
+<span class="nc" id="L694">        modifier = Modifier</span>
+<span class="nc" id="L695">            .fillMaxWidth()</span>
+<span class="nc" id="L696">            .padding(horizontal = 16.dp).tagged(&quot;Spousal Consent Dialog&quot;)</span>
+    )
+<span class="nc bnc" id="L698" title="All 2 branches missed.">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

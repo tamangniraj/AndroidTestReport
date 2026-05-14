@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SurveysViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.surveys</a> &gt; <span class="el_source">SurveysViewModel.kt</span></div><h1>SurveysViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.surveys
+
+import android.content.SharedPreferences
+import androidx.core.content.edit
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.data.remote.login.GenericErrorResponse
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
+
+<span class="fc" id="L22">class SurveysViewModel @Inject constructor(</span>
+<span class="fc" id="L23">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L24">    private val preferences: SharedPreferences</span>
+<span class="fc" id="L25">) : ViewModel(), Observable {</span>
+
+<span class="fc" id="L27">    private val _dataReceived = MutableLiveData&lt;Event&lt;MemberSurveysResponse&gt;&gt;()</span>
+    val dataReceived: LiveData&lt;Event&lt;MemberSurveysResponse&gt;&gt;
+<span class="fc" id="L29">        get() = _dataReceived</span>
+
+<span class="fc" id="L31">    private val _newSurveyAvailable = MutableLiveData&lt;Event&lt;SurveyStatusResponse&gt;&gt;()</span>
+    val newSurveyAvailable: LiveData&lt;Event&lt;SurveyStatusResponse&gt;&gt;
+<span class="fc" id="L33">        get() = _newSurveyAvailable</span>
+
+<span class="fc" id="L35">    private val _onCloseClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val onCloseClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L37">        get() = _onCloseClicked</span>
+
+<span class="fc" id="L39">    private val _goToSurveysClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val goToSurveysClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L41">        get() = _goToSurveysClicked</span>
+
+<span class="fc" id="L43">    private val _surveyOptOutComplete = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val surveyOptOutComplete: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L45">        get() = _surveyOptOutComplete</span>
+<span class="fc" id="L46">    private val _surveyOptOutError = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val surveyOptOutError: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="fc" id="L48">        get() = _surveyOptOutError</span>
+
+<span class="pc" id="L50">    var isFetchingSplash: Boolean = false</span>
+
+    var loading: Boolean = false
+<span class="fc" id="L53">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L55">            field = value</span>
+<span class="nc" id="L56">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L57">        }</span>
+    var isCallingOptOut: Boolean = false
+<span class="fc" id="L59">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L61">            field = value</span>
+<span class="nc" id="L62">            callbacks.notifyCallbacks(this, BR.callingOptOut, null)</span>
+<span class="nc" id="L63">        }</span>
+    var hasUserOptedOut: Boolean = false
+<span class="fc" id="L65">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L67">            field = value</span>
+<span class="nc" id="L68">            callbacks.notifyCallbacks(this, BR.hasUserOptedOut, null)</span>
+<span class="nc" id="L69">        }</span>
+<span class="pc" id="L70">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L72">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+    fun fetchSurveys() {
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        if (!Constants.IS_OFFLINE) {</span>
+<span class="nc" id="L76">            compositeDisposable.add(</span>
+<span class="nc" id="L77">                homeRepository.getSurveys()</span>
+<span class="nc" id="L78">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L79">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L80">                    .subscribe({</span>
+<span class="nc bnc" id="L81" title="All 4 branches missed.">                        if (it.isSuccessful &amp;&amp; it.body() != null) {</span>
+<span class="nc" id="L82">                            _dataReceived.value = Event(it.body()!!)</span>
+                        }
+<span class="nc" id="L84">                    }, {})</span>
+            )
+        }
+<span class="fc" id="L87">    }</span>
+
+    fun fetchSplashScreens() {
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">        if (!Constants.IS_OFFLINE) {</span>
+<span class="nc" id="L91">            compositeDisposable.add(</span>
+<span class="nc" id="L92">                homeRepository.getSplashScreens()</span>
+<span class="nc" id="L93">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L94">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L95">                    .doOnSubscribe {</span>
+<span class="nc" id="L96">                        isFetchingSplash = true</span>
+<span class="nc" id="L97">                    }</span>
+<span class="nc" id="L98">                    .doFinally {</span>
+<span class="nc" id="L99">                        isFetchingSplash = false</span>
+<span class="nc" id="L100">                    }</span>
+<span class="nc" id="L101">                    .subscribe({</span>
+<span class="nc bnc" id="L102" title="All 4 branches missed.">                        if (it.isSuccessful &amp;&amp; it.body() != null) {</span>
+<span class="nc" id="L103">                            _dataReceived.value = Event(it.body()!!)</span>
+                        }
+<span class="nc" id="L105">                    }, {})</span>
+
+            )
+        }
+<span class="fc" id="L109">    }</span>
+
+    fun getSurveyStatus() {
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">        if (!Constants.IS_OFFLINE) {</span>
+<span class="nc" id="L113">            compositeDisposable.add(</span>
+<span class="nc" id="L114">                homeRepository.getSurveyStatus()</span>
+<span class="nc" id="L115">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L116">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L117">                    .subscribe({</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                        if (it.isSuccessful) {</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">                            it.body()?.let {</span>
+                                // save in preference for opt out
+<span class="nc" id="L121">                                preferences.edit()</span>
+<span class="nc" id="L122">                                    .putBoolean(</span>
+<span class="nc" id="L123">                                        preferences.getString(Constants.MEMBER_ID, &quot;&quot;) + Constants.OPT_OUT_SURVEY,</span>
+<span class="nc" id="L124">                                        it.hasOptedOut</span>
+                                    )
+<span class="nc" id="L126">                                    .apply()</span>
+<span class="nc" id="L127">                                _newSurveyAvailable.value = Event(it)</span>
+<span class="nc" id="L128">                            }</span>
+                        } else {
+                        }
+<span class="nc" id="L131">                    }, {</span>
+<span class="nc" id="L132">                    })</span>
+            )
+        }
+<span class="fc" id="L135">    }</span>
+
+    fun optOutSurvey(optOut: Boolean) {
+<span class="nc" id="L138">        isCallingOptOut = true</span>
+<span class="nc" id="L139">        compositeDisposable.add(</span>
+<span class="nc" id="L140">            homeRepository.optOutSurvey(</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">                preferences.getString(Constants.MEMBER_ID, &quot;&quot;) ?: &quot;&quot;,</span>
+<span class="nc" id="L142">                optOut</span>
+            )
+<span class="nc" id="L144">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L145">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L146">                .subscribe({</span>
+<span class="nc" id="L147">                    isCallingOptOut = false</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                    if (it.isSuccessful) {</span>
+<span class="nc" id="L149">                        hasUserOptedOut = optOut</span>
+<span class="nc" id="L150">                        preferences.edit(commit = true) {</span>
+<span class="nc" id="L151">                            putBoolean(</span>
+<span class="nc" id="L152">                                preferences.getString(</span>
+<span class="nc" id="L153">                                    Constants.MEMBER_ID,</span>
+<span class="nc" id="L154">                                    &quot;&quot;</span>
+                                ) + Constants.OPT_OUT_SURVEY,
+<span class="nc" id="L156">                                hasUserOptedOut</span>
+                            )
+<span class="nc" id="L158">                        }</span>
+<span class="nc" id="L159">                        _surveyOptOutComplete.value = Event(Unit)</span>
+                    } else {
+<span class="nc" id="L161">                        try {</span>
+<span class="nc" id="L162">                            val errorResponse: GenericErrorResponse = Gson().fromJson(</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                                it.errorBody()?.string(),</span>
+<span class="nc" id="L164">                                GenericErrorResponse::class.java</span>
+                            )
+<span class="nc" id="L166">                            _surveyOptOutError.value = Event(errorResponse.getErrorMessage())</span>
+<span class="nc" id="L167">                        } catch (e: Exception) {</span>
+<span class="nc" id="L168">                            e.printStackTrace()</span>
+                        }
+                    }
+<span class="nc" id="L171">                }, {</span>
+<span class="nc" id="L172">                    isCallingOptOut = false</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">                    _surveyOptOutError.value = Event(it.message ?: &quot;&quot;)</span>
+<span class="nc" id="L174">                })</span>
+        )
+<span class="nc" id="L176">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L179">        callbacks.remove(callback)</span>
+<span class="nc" id="L180">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L183">        callbacks.add(callback)</span>
+<span class="nc" id="L184">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L187">        super.onCleared()</span>
+<span class="nc" id="L188">        compositeDisposable.dispose()</span>
+<span class="nc" id="L189">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ApiResponseDb.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils.remote</a> &gt; <span class="el_source">ApiResponseDb.kt</span></div><h1>ApiResponseDb.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (C) 2017 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.vivekahealth.vivekahealth.utils.remote
+
+import java.util.regex.Pattern
+import retrofit2.Response
+import timber.log.Timber
+
+/**
+ * Common class used by API responses.
+ * @param &lt;T&gt; the type of the response object
+&lt;/T&gt; */
+@Suppress(&quot;unused&quot;) // T is used in extending classes
+sealed class ApiResponseDb&lt;T&gt; {
+    companion object {
+        fun &lt;T&gt; create(error: Throwable): ApiErrorResponse&lt;T&gt; {
+<span class="fc bfc" id="L31" title="All 2 branches covered.">            return ApiErrorResponse(error.message ?: &quot;unknown error&quot;)</span>
+        }
+
+        fun &lt;T&gt; create(response: Response&lt;T&gt;): ApiResponseDb&lt;T&gt; {
+<span class="fc bfc" id="L35" title="All 2 branches covered.">            return if (response.isSuccessful) {</span>
+<span class="fc" id="L36">                val body = response.body()</span>
+<span class="pc bpc" id="L37" title="1 of 4 branches missed.">                if (body == null || response.code() == 204) {</span>
+<span class="fc" id="L38">                    ApiEmptyResponse()</span>
+                } else {
+<span class="fc" id="L40">                    ApiSuccessResponse(</span>
+<span class="fc" id="L41">                        body = body,</span>
+<span class="fc" id="L42">                        linkHeader = response.headers().get(&quot;link&quot;)</span>
+                    )
+                }
+            } else {
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">                val msg = response.errorBody()?.string()</span>
+<span class="pc bpc" id="L47" title="1 of 6 branches missed.">                val errorMsg = if (msg.isNullOrEmpty()) {</span>
+<span class="fc" id="L48">                    response.message()</span>
+                } else {
+<span class="fc" id="L50">                    msg</span>
+                }
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">                ApiErrorResponse(errorMsg ?: &quot;unknown error&quot;)</span>
+            }
+        }
+    }
+}
+
+/**
+ * separate class for HTTP 204 responses so that we can make ApiSuccessResponse's body non-null.
+ */
+<span class="fc" id="L61">class ApiEmptyResponse&lt;T&gt; : ApiResponseDb&lt;T&gt;()</span>
+
+<span class="fc" id="L63">data class ApiSuccessResponse&lt;T&gt;(</span>
+<span class="fc" id="L64">    val body: T,</span>
+<span class="pc" id="L65">    val links: Map&lt;String, String&gt;</span>
+<span class="fc" id="L66">) : ApiResponseDb&lt;T&gt;() {</span>
+<span class="fc" id="L67">    constructor(body: T, linkHeader: String?) : this(</span>
+<span class="fc" id="L68">        body = body,</span>
+<span class="pc bpc" id="L69" title="1 of 4 branches missed.">        links = linkHeader?.extractLinks() ?: emptyMap()</span>
+<span class="fc" id="L70">    )</span>
+
+<span class="fc" id="L72">    val nextPage: Int? by lazy(LazyThreadSafetyMode.NONE) {</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        links[NEXT_LINK]?.let { next -&gt;</span>
+<span class="fc" id="L74">            val matcher = PAGE_PATTERN.matcher(next)</span>
+<span class="pc bpc" id="L75" title="1 of 4 branches missed.">            if (!matcher.find() || matcher.groupCount() != 1) {</span>
+<span class="fc" id="L76">                null</span>
+            } else {
+<span class="fc" id="L78">                try {</span>
+<span class="fc" id="L79">                    Integer.parseInt(matcher.group(1)!!)</span>
+<span class="nc" id="L80">                } catch (ex: NumberFormatException) {</span>
+<span class="nc" id="L81">                    Timber.w(&quot;cannot parse next page from %s&quot;, next)</span>
+<span class="pc" id="L82">                    null</span>
+                }
+<span class="fc" id="L84">            }</span>
+<span class="fc" id="L85">        }</span>
+    }
+
+    companion object {
+<span class="fc" id="L89">        private val LINK_PATTERN = Pattern.compile(&quot;&lt;([^&gt;]*)&gt;[\\s]*;[\\s]*rel=\&quot;([a-zA-Z0-9]+)\&quot;&quot;)</span>
+<span class="fc" id="L90">        private val PAGE_PATTERN = Pattern.compile(&quot;\\bpage=(\\d+)&quot;)</span>
+        private const val NEXT_LINK = &quot;next&quot;
+
+        private fun String.extractLinks(): Map&lt;String, String&gt; {
+<span class="fc" id="L94">            val links = mutableMapOf&lt;String, String&gt;()</span>
+<span class="fc" id="L95">            val matcher = LINK_PATTERN.matcher(this)</span>
+
+<span class="fc bfc" id="L97" title="All 2 branches covered.">            while (matcher.find()) {</span>
+<span class="fc" id="L98">                val count = matcher.groupCount()</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">                if (count == 2) {</span>
+<span class="fc" id="L100">                    links[matcher.group(2)!!] = matcher.group(1)!!</span>
+                }
+            }
+<span class="fc" id="L103">            return links</span>
+        }
+    }
+}
+
+<span class="fc" id="L108">data class ApiErrorResponse&lt;T&gt;(val errorMessage: String) : ApiResponseDb&lt;T&gt;()</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

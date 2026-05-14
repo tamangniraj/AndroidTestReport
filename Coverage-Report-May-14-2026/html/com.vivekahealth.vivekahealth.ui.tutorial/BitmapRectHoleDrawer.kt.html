@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BitmapRectHoleDrawer.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.tutorial</a> &gt; <span class="el_source">BitmapRectHoleDrawer.kt</span></div><h1>BitmapRectHoleDrawer.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.tutorial
+
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.RectF
+
+<span class="fc" id="L12">class BitmapRectHoleDrawer(</span>
+    backgroundColor: Int,
+    holeWidth: Int,
+    holeHeight: Int,
+<span class="pc" id="L16">    var mWidth: Int = 0,</span>
+<span class="pc" id="L17">    var mHeight: Int = 0,</span>
+<span class="pc" id="L18">    var mX: Int = 0,</span>
+<span class="pc" id="L19">    var mY: Int = 0,</span>
+<span class="pc" id="L20">    var cornerRadius: Float = 40f</span>
+<span class="fc" id="L21">) : RectHoleDrawer(</span>
+<span class="fc" id="L22">    backgroundColor,</span>
+<span class="fc" id="L23">    holeWidth,</span>
+<span class="fc" id="L24">    holeHeight</span>
+) {
+
+    private var mBitmap: Bitmap? = null
+
+    private fun prepareBitmap(width: Int, height: Int) {
+<span class="pc bpc" id="L30" title="3 of 4 branches missed.">        if (mWidth != width || mHeight != height) {</span>
+<span class="fc" id="L31">            mWidth = width</span>
+<span class="fc" id="L32">            mHeight = height</span>
+
+<span class="fc" id="L34">            mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888)</span>
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">            mBitmap?.eraseColor(Color.TRANSPARENT)</span>
+
+<span class="fc" id="L37">            val c = Canvas(mBitmap!!)</span>
+<span class="fc" id="L38">            c.drawColor(mBackgroundColor)</span>
+
+<span class="fc" id="L40">            val p = Paint(Paint.ANTI_ALIAS_FLAG)</span>
+<span class="fc" id="L41">            p.style = Paint.Style.FILL</span>
+<span class="fc" id="L42">            p.color = -0x1</span>
+<span class="fc" id="L43">            p.xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)</span>
+<span class="fc" id="L44">            val corners = floatArrayOf(</span>
+<span class="fc" id="L45">                cornerRadius,</span>
+<span class="fc" id="L46">                cornerRadius, // Top left radius in px</span>
+<span class="fc" id="L47">                cornerRadius,</span>
+<span class="fc" id="L48">                cornerRadius, // Top right radius in px</span>
+<span class="fc" id="L49">                cornerRadius,</span>
+<span class="fc" id="L50">                cornerRadius, // Bottom right radius in px</span>
+<span class="fc" id="L51">                cornerRadius,</span>
+<span class="fc" id="L52">                cornerRadius // Bottom left radius in px</span>
+            )
+<span class="fc" id="L54">            val path = Path()</span>
+<span class="fc" id="L55">            path.addRoundRect(</span>
+<span class="fc" id="L56">                RectF(</span>
+<span class="fc" id="L57">                    mX.toFloat(),</span>
+<span class="fc" id="L58">                    mY.toFloat(),</span>
+<span class="fc" id="L59">                    mX + rectWidth.toFloat(),</span>
+<span class="fc" id="L60">                    mY - rectHeight.toFloat()</span>
+                ),
+<span class="fc" id="L62">                corners,</span>
+<span class="fc" id="L63">                Path.Direction.CW</span>
+            )
+<span class="fc" id="L65">            c.drawPath(path, p)</span>
+        }
+<span class="fc" id="L67">    }</span>
+
+    override fun draw(c: Canvas, width: Int, height: Int) {
+<span class="fc" id="L70">        prepareBitmap(width, height)</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        mBitmap?.let {</span>
+<span class="fc" id="L72">            c.drawBitmap(it, 0f, 0f, null)</span>
+<span class="fc" id="L73">        }</span>
+<span class="fc" id="L74">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

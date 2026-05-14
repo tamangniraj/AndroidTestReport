@@ -1,0 +1,704 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MoreViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.more</a> &gt; <span class="el_source">MoreViewModel.kt</span></div><h1>MoreViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.more
+
+import android.content.SharedPreferences
+import androidx.core.content.edit
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.viewModelScope
+import com.vivekahealth.vivekahealth.data.local.VivekaDatabase
+import com.vivekahealth.vivekahealth.data.remote.home.ClientDetailResponse
+import com.vivekahealth.vivekahealth.data.remote.home.LanguageList
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.data.remote.home.more.ClientMenuConfig
+import com.vivekahealth.vivekahealth.ui.guestHome.repository.GuestHomeRepository
+import com.vivekahealth.vivekahealth.ui.homePage.documents.repository.DocumentRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
+
+<span class="fc" id="L31">class MoreViewModel @javax.inject.Inject constructor(</span>
+<span class="fc" id="L32">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L33">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L34">    private val guestHomeRepository: GuestHomeRepository,</span>
+<span class="fc" id="L35">    private val documentRepository: DocumentRepository,</span>
+<span class="fc" id="L36">    private val vivekaDatabase: VivekaDatabase</span>
+<span class="fc" id="L37">) : ViewModel(), Observable {</span>
+
+<span class="fc" id="L39">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L41">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="fc" id="L43">    private val _navigateToAccount = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+
+    val navigateToAccount: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L46">        get() = _navigateToAccount</span>
+
+<span class="fc" id="L48">    private val _navigateToSharing = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToSharing: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L50">        get() = _navigateToSharing</span>
+
+<span class="fc" id="L52">    private val _navigateToLanguage = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToLanguage: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L54">        get() = _navigateToLanguage</span>
+<span class="fc" id="L55">    private val _navigateToDoc = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToDoc: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L57">        get() = _navigateToDoc</span>
+<span class="fc" id="L58">    private val _navigateToLogOut = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToLogOut: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L60">        get() = _navigateToLogOut</span>
+
+<span class="fc" id="L62">    private val _navigateToHelp = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToHelp: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L64">        get() = _navigateToHelp</span>
+
+<span class="fc" id="L66">    private val _navigateToSurveys = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToSurveys: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L68">        get() = _navigateToSurveys</span>
+
+<span class="fc" id="L70">    private val _navigateToSaveMoney = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToSaveMoney: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L72">        get() = _navigateToSaveMoney</span>
+<span class="fc" id="L73">    private val _navigateToNurses = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToNurses: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L75">        get() = _navigateToNurses</span>
+<span class="fc" id="L76">    private val _navigateToTalon = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToTalon: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L78">        get() = _navigateToTalon</span>
+
+<span class="fc" id="L80">    private val _navigateToBenefits = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBenefits: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L82">        get() = _navigateToBenefits</span>
+
+<span class="fc" id="L84">    private val _navigateToPaperless = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToPaperless: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L86">        get() = _navigateToPaperless</span>
+<span class="fc" id="L87">    private val _navigateToInsurance = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+
+    val navigateToInsurance: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L90">        get() = _navigateToInsurance</span>
+
+<span class="fc" id="L92">    private val _navigateToRewards = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToRewards: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L94">        get() = _navigateToRewards</span>
+<span class="fc" id="L95">    private val _navigateToPrice = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToPrice: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L97">        get() = _navigateToPrice</span>
+
+<span class="fc" id="L99">    private val _navigateToFingerPrint = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToFingerPrint: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L101">        get() = _navigateToFingerPrint</span>
+<span class="fc" id="L102">    private val _navigateToTelemedicine = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToTelemedicine: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L104">        get() = _navigateToTelemedicine</span>
+<span class="fc" id="L105">    private val _checkAppUpdate = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val checkAppUpdate: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L107">        get() = _checkAppUpdate</span>
+<span class="fc" id="L108">    private val _activeCustomMenus = MutableLiveData&lt;Event&lt;List&lt;ClientMenuConfig&gt;&gt;&gt;()</span>
+    val activeCustomMenus: LiveData&lt;Event&lt;List&lt;ClientMenuConfig&gt;&gt;&gt;
+<span class="fc" id="L110">        get() = _activeCustomMenus</span>
+
+<span class="pc" id="L112">    var activeCustomSubMenus: List&lt;ClientMenuConfig&gt;? = null</span>
+
+<span class="fc" id="L114">    private var currentActiveMenuList: List&lt;ClientMenuConfig&gt; = emptyList()</span>
+
+<span class="fc" id="L116">    private var memberInfoList = homeRepository.getMemberFromDb().asLiveData()</span>
+
+<span class="pc" id="L118">    var memberInfoDb =</span>
+<span class="fc" id="L119">        homeRepository.getMemberSid(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="pc" id="L120">            .filterNotNull().asLiveData()</span>
+
+<span class="pc" id="L122">    var clientInfoDb =</span>
+<span class="fc" id="L123">        homeRepository.getClientDetail(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="pc" id="L124">            .filterNotNull().asLiveData()</span>
+<span class="fc" id="L125">    var memberInfo: MemberInfo = MemberInfo()</span>
+<span class="fc" id="L126">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L128">            field = value</span>
+<span class="fc" id="L129">            callbacks.notifyCallbacks(this, BR.memberInfo, null)</span>
+<span class="fc" id="L130">        }</span>
+
+<span class="fc" id="L132">    var config: ClientDetailResponse? = ClientDetailResponse()</span>
+<span class="fc" id="L133">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L135">            field = value</span>
+<span class="fc" id="L136">            callbacks.notifyCallbacks(this, BR.config, null)</span>
+<span class="fc" id="L137">        }</span>
+<span class="fc" id="L138">    var transperancy: Boolean = Constants.TRANSPERENCY</span>
+<span class="fc" id="L139">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L141">            field = value</span>
+<span class="fc" id="L142">            callbacks.notifyCallbacks(this, BR.transperancy, null)</span>
+<span class="fc" id="L143">        }</span>
+
+<span class="fc" id="L145">    var guestUser: Boolean = preferences.getBoolean(Constants.IS_GUEST, false)</span>
+<span class="fc" id="L146">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L148">            field = value</span>
+<span class="nc" id="L149">            callbacks.notifyCallbacks(this, BR.guestUser, null)</span>
+<span class="nc" id="L150">        }</span>
+
+    var chatCount: Int = 0
+<span class="fc" id="L153">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L155">            field = value</span>
+<span class="nc" id="L156">            callbacks.notifyCallbacks(this, BR.chatCount, null)</span>
+<span class="nc" id="L157">        }</span>
+
+    var docCount: Int = 0
+<span class="fc" id="L160">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L162">            field = value</span>
+<span class="fc" id="L163">            callbacks.notifyCallbacks(this, BR.docCount, null)</span>
+<span class="fc" id="L164">        }</span>
+
+    var biometricEnabled: Boolean = false
+<span class="fc" id="L167">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L169">            field = value</span>
+<span class="fc" id="L170">            callbacks.notifyCallbacks(this, BR.biometricEnabled, null)</span>
+<span class="fc" id="L171">        }</span>
+
+    var goPaperlessIndicator: Boolean = false
+<span class="fc" id="L174">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L176">            field = value</span>
+<span class="fc" id="L177">            callbacks.notifyCallbacks(this, BR.goPaperlessIndicator, null)</span>
+<span class="fc" id="L178">        }</span>
+
+    var hasUnion: Boolean = false
+<span class="fc" id="L181">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L183">            field = value</span>
+<span class="fc" id="L184">            callbacks.notifyCallbacks(this, BR.hasUnion, null)</span>
+<span class="fc" id="L185">        }</span>
+
+<span class="fc" id="L187">    var language: String = &quot;&quot;</span>
+<span class="fc" id="L188">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L190">            field = value</span>
+<span class="fc" id="L191">            callbacks.notifyCallbacks(this, BR.language, null)</span>
+<span class="fc" id="L192">        }</span>
+    var hasGuardianNurse: Boolean = false
+<span class="fc" id="L194">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L196">            field = value</span>
+<span class="fc" id="L197">            callbacks.notifyCallbacks(this, BR.hasGuardianNurse, null)</span>
+<span class="fc" id="L198">        }</span>
+<span class="pc" id="L199">    var listLang: ArrayList&lt;LanguageList&gt; = arrayListOf()</span>
+
+    var hasBenefit: Boolean = false
+<span class="fc" id="L202">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L204">            field = value</span>
+<span class="fc" id="L205">            callbacks.notifyCallbacks(this, BR.hasBenefit, null)</span>
+<span class="fc" id="L206">        }</span>
+    var hasRewards: Boolean = false
+<span class="fc" id="L208">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L210">            field = value</span>
+<span class="fc" id="L211">            callbacks.notifyCallbacks(this, BR.hasRewards, null)</span>
+<span class="fc" id="L212">        }</span>
+    var hasTelemedicine: Boolean = false
+<span class="fc" id="L214">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L216">            field = value</span>
+<span class="fc" id="L217">            callbacks.notifyCallbacks(this, BR.hasTelemedicine, null)</span>
+<span class="fc" id="L218">        }</span>
+    var hasComparison: Boolean = false
+<span class="fc" id="L220">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L222">            field = value</span>
+<span class="fc" id="L223">            callbacks.notifyCallbacks(this, BR.hasComparison, null)</span>
+<span class="fc" id="L224">        }</span>
+
+    var hasBiometric: Boolean = false
+<span class="fc" id="L227">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L229">            field = value</span>
+<span class="fc" id="L230">            callbacks.notifyCallbacks(this, BR.hasBiometric, null)</span>
+<span class="fc" id="L231">        }</span>
+    var hasSaveMoney: Boolean = false
+<span class="fc" id="L233">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L235">            field = value</span>
+<span class="fc" id="L236">            callbacks.notifyCallbacks(this, BR.hasSaveMoney, null)</span>
+<span class="fc" id="L237">        }</span>
+    var hasInsurance: Boolean = false
+<span class="fc" id="L239">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L241">            field = value</span>
+<span class="fc" id="L242">            callbacks.notifyCallbacks(this, BR.hasInsurance, null)</span>
+<span class="fc" id="L243">        }</span>
+
+    var surveyEnabled: Boolean = false
+<span class="fc" id="L246">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L248">            field = value</span>
+<span class="fc" id="L249">            callbacks.notifyCallbacks(this, BR.surveyEnabled, null)</span>
+<span class="fc" id="L250">        }</span>
+
+<span class="fc" id="L252">    private val _tutorialsAdded = MutableLiveData(false)</span>
+    val tutorialsAdded: LiveData&lt;Boolean&gt;
+<span class="fc" id="L254">        get() = _tutorialsAdded</span>
+
+<span class="fc" id="L256">    private val _showTutorial = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val showTutorial: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L258">        get() = _showTutorial</span>
+
+    private var addedMoreTutorial = false
+<span class="nc" id="L261">    var tutorialShown = false</span>
+    fun addMoreTutorial() {
+<span class="fc" id="L263">        addedMoreTutorial = true</span>
+<span class="fc" id="L264">        updateTutorialAdditionStatus()</span>
+<span class="fc" id="L265">    }</span>
+
+    private fun updateTutorialAdditionStatus() {
+<span class="fc" id="L268">        _tutorialsAdded.value = addedMoreTutorial</span>
+<span class="fc" id="L269">    }</span>
+
+    private fun showTutorialIfConditionMatched() {
+<span class="fc" id="L272">        val isGuestLogin = preferences.getBoolean(Constants.IS_GUEST, false)</span>
+<span class="pc bpc" id="L273" title="1 of 2 branches missed.">        val isNotShownForSession = !preferences.getBoolean(</span>
+<span class="fc" id="L274">            Constants.SHOWN_MORE_TUT_FOR_SESSION,</span>
+<span class="fc" id="L275">            false</span>
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">        ) &amp;&amp; !tutorialShown</span>
+<span class="pc bpc" id="L277" title="2 of 4 branches missed.">        if (!isGuestLogin &amp;&amp; isNotShownForSession</span>
+        ) {
+<span class="fc" id="L279">            _showTutorial.value = Event(Unit)</span>
+<span class="fc" id="L280">            tutorialShown = true</span>
+<span class="fc" id="L281">            preferences.edit { putBoolean(Constants.SHOWN_MORE_TUT_FOR_SESSION, true) }</span>
+        }
+<span class="fc" id="L283">    }</span>
+
+    fun dontShowTutorial() {
+<span class="nc" id="L286">        preferences.edit { putBoolean(memberInfo.selfId + &quot;moreTutorialShown&quot;, true) }</span>
+<span class="nc" id="L287">    }</span>
+
+    fun resetTutorial() {
+<span class="fc" id="L290">        _tutorialsAdded.value = false</span>
+<span class="fc" id="L291">    }</span>
+
+    fun shouldShowTutorial(): Boolean {
+<span class="pc bpc" id="L294" title="1 of 2 branches missed.">        return !preferences.getBoolean(memberInfo.selfId + &quot;moreTutorialShown&quot;, false)</span>
+    }
+
+<span class="fc" id="L297">    init {</span>
+<span class="fc" id="L298">        biometricEnabled = preferences.getBoolean(</span>
+//            preferences.getString(&quot;memberID&quot;, &quot;&quot;) + Constants.biometricPref,
+<span class="fc" id="L300">            preferences.getString(Constants.USER_EMAIL, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,</span>
+<span class="fc" id="L301">            false</span>
+        )
+
+<span class="fc" id="L304">        viewModelScope.launch {</span>
+<span class="fc bfc" id="L305" title="All 2 branches covered.">            if (homeRepository.getMemberSid(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="fc" id="L306">                .firstOrNull() == null</span>
+            ) {
+<span class="fc" id="L308">                compositeDisposable.add(</span>
+<span class="fc" id="L309">                    homeRepository.getMember()</span>
+<span class="fc" id="L310">                        .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L311">                        .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="pc" id="L312">                        .subscribe({</span>
+<span class="nc bnc" id="L313" title="All 2 branches missed.">                            if (!Constants.IS_OFFLINE) {</span>
+<span class="nc" id="L314">                                homeRepository.insertMember(it)</span>
+                            }
+<span class="pc" id="L316">                        }, {</span>
+<span class="nc" id="L317">                        })</span>
+                )
+            }
+<span class="fc" id="L320">        }</span>
+<span class="fc" id="L321">    }</span>
+
+    fun logOutCallGuest() {
+<span class="nc" id="L324">        compositeDisposable.add(</span>
+<span class="nc" id="L325">            guestHomeRepository.getLogoutGuest()</span>
+<span class="nc" id="L326">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L327">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L328">                .doOnSubscribe</span>
+<span class="nc" id="L329">                {</span>
+<span class="nc" id="L330">                }</span>
+<span class="nc" id="L331">                .subscribe(</span>
+<span class="nc" id="L332">                    {</span>
+<span class="nc" id="L333">                    },</span>
+<span class="nc" id="L334">                    {</span>
+<span class="nc" id="L335">                    }</span>
+                )
+        )
+<span class="nc" id="L338">    }</span>
+
+    fun logOutCall() {
+<span class="fc" id="L341">        compositeDisposable.add(</span>
+<span class="fc" id="L342">            homeRepository.getLogout()</span>
+<span class="fc" id="L343">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L344">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L345">                .doOnSubscribe</span>
+<span class="fc" id="L346">                {</span>
+<span class="fc" id="L347">                }</span>
+<span class="fc" id="L348">                .subscribe(</span>
+<span class="pc" id="L349">                    {</span>
+<span class="nc" id="L350">                    },</span>
+<span class="fc" id="L351">                    {</span>
+<span class="fc" id="L352">                    }</span>
+                )
+        )
+<span class="fc" id="L355">    }</span>
+
+    fun createList(
+        afrikan: String,
+        amheric: String,
+        armenian: String,
+        assamese: String,
+        bangla: String,
+        baskhir: String,
+        basque: String,
+        bosnian: String,
+        bulgerian: String,
+        burmese: String,
+        catalan: String,
+        chinease: String,
+        croatian: String,
+        czech: String,
+        danish: String,
+        dutch: String,
+        english: String,
+        estonian: String,
+        farose: String,
+        fijian: String,
+        filipino: String,
+        finnish: String,
+        french: String,
+        galician: String,
+        georgian: String,
+        german: String,
+        greek: String,
+        gujrati: String,
+        haitian_creole: String,
+        hindi: String,
+        hungarian: String,
+        icelandic: String,
+        indonesian: String,
+        inuktitut: String,
+        irish: String,
+        italian: String,
+        japanese: String,
+        kannada: String,
+        kazakh: String,
+        khmer: String,
+        korean: String,
+        kyrgyz: String,
+        lao: String,
+        latvian: String,
+        lithuanian: String,
+        macedonian: String,
+        malagasy: String,
+        malay: String,
+        malayalam: String,
+        maltese: String,
+        maori: String,
+        marathi: String,
+        nepal: String,
+        norwegian: String,
+        odia: String,
+        polish: String,
+        portuguese: String,
+        punjabi: String,
+        romanian: String,
+        russian: String,
+        samoan: String,
+        serbian: String,
+        slovak: String,
+        slovenian: String,
+        somali: String,
+        spanish: String,
+        swahili: String,
+        swedish: String,
+        tahitian: String,
+        tamil: String,
+        tatar: String,
+        telugu: String,
+        thai: String,
+        tigringya: String,
+        tongan: String,
+        turkish: String,
+        turkman: String,
+        upperSorbian: String,
+        ukrainian: String,
+        uzbek: String,
+        vietnamese: String,
+        welsh: String,
+        zulu: String
+    ) {
+<span class="fc" id="L442">        listLang.add(LanguageList(afrikan, false, &quot;af&quot;))</span>
+<span class="fc" id="L443">        listLang.add(LanguageList(amheric, false, &quot;am&quot;))</span>
+<span class="fc" id="L444">        listLang.add(LanguageList(armenian, false, &quot;hy&quot;))</span>
+<span class="fc" id="L445">        listLang.add(LanguageList(assamese, false, &quot;as&quot;))</span>
+<span class="fc" id="L446">        listLang.add(LanguageList(bangla, false, &quot;bn&quot;))</span>
+<span class="fc" id="L447">        listLang.add(LanguageList(baskhir, false, &quot;ga&quot;))</span>
+<span class="fc" id="L448">        listLang.add(LanguageList(basque, false, &quot;eu&quot;))</span>
+<span class="fc" id="L449">        listLang.add(LanguageList(bosnian, false, &quot;bs&quot;))</span>
+<span class="fc" id="L450">        listLang.add(LanguageList(bulgerian, false, &quot;bg&quot;))</span>
+<span class="fc" id="L451">        listLang.add(LanguageList(burmese, false, &quot;my&quot;))</span>
+<span class="fc" id="L452">        listLang.add(LanguageList(catalan, false, &quot;ca&quot;))</span>
+<span class="fc" id="L453">        listLang.add(LanguageList(chinease, false, &quot;zh&quot;))</span>
+<span class="fc" id="L454">        listLang.add(LanguageList(croatian, false, &quot;hr&quot;))</span>
+<span class="fc" id="L455">        listLang.add(LanguageList(czech, false, &quot;cs&quot;))</span>
+<span class="fc" id="L456">        listLang.add(LanguageList(danish, false, &quot;da&quot;))</span>
+<span class="fc" id="L457">        listLang.add(LanguageList(dutch, false, &quot;nl&quot;))</span>
+<span class="fc" id="L458">        listLang.add(LanguageList(english, false, &quot;en&quot;))</span>
+<span class="fc" id="L459">        listLang.add(LanguageList(estonian, false, &quot;et&quot;))</span>
+<span class="fc" id="L460">        listLang.add(LanguageList(farose, false, &quot;fo&quot;))</span>
+<span class="fc" id="L461">        listLang.add(LanguageList(fijian, false, &quot;fj&quot;))</span>
+<span class="fc" id="L462">        listLang.add(LanguageList(filipino, false, &quot;fil&quot;))</span>
+<span class="fc" id="L463">        listLang.add(LanguageList(finnish, false, &quot;fi&quot;))</span>
+<span class="fc" id="L464">        listLang.add(LanguageList(french, false, &quot;fr&quot;))</span>
+<span class="fc" id="L465">        listLang.add(LanguageList(galician, false, &quot;gl&quot;))</span>
+<span class="fc" id="L466">        listLang.add(LanguageList(georgian, false, &quot;ka&quot;))</span>
+<span class="fc" id="L467">        listLang.add(LanguageList(german, false, &quot;de&quot;))</span>
+<span class="fc" id="L468">        listLang.add(LanguageList(greek, false, &quot;el&quot;))</span>
+<span class="fc" id="L469">        listLang.add(LanguageList(gujrati, false, &quot;gu&quot;))</span>
+<span class="fc" id="L470">        listLang.add(LanguageList(haitian_creole, false, &quot;ht&quot;))</span>
+<span class="fc" id="L471">        listLang.add(LanguageList(hindi, false, &quot;hi&quot;))</span>
+<span class="fc" id="L472">        listLang.add(LanguageList(hungarian, false, &quot;hu&quot;))</span>
+<span class="fc" id="L473">        listLang.add(LanguageList(icelandic, false, &quot;is&quot;))</span>
+<span class="fc" id="L474">        listLang.add(LanguageList(indonesian, false, &quot;in&quot;))</span>
+<span class="fc" id="L475">        listLang.add(LanguageList(inuktitut, false, &quot;iu&quot;))</span>
+<span class="fc" id="L476">        listLang.add(LanguageList(irish, false, &quot;ga&quot;))</span>
+<span class="fc" id="L477">        listLang.add(LanguageList(italian, false, &quot;it&quot;))</span>
+<span class="fc" id="L478">        listLang.add(LanguageList(japanese, false, &quot;ja&quot;))</span>
+<span class="fc" id="L479">        listLang.add(LanguageList(kannada, false, &quot;kn&quot;))</span>
+<span class="fc" id="L480">        listLang.add(LanguageList(kazakh, false, &quot;kk&quot;))</span>
+<span class="fc" id="L481">        listLang.add(LanguageList(khmer, false, &quot;km&quot;))</span>
+<span class="fc" id="L482">        listLang.add(LanguageList(korean, false, &quot;ko&quot;))</span>
+<span class="fc" id="L483">        listLang.add(LanguageList(kyrgyz, false, &quot;ky&quot;))</span>
+<span class="fc" id="L484">        listLang.add(LanguageList(lao, false, &quot;lo&quot;))</span>
+<span class="fc" id="L485">        listLang.add(LanguageList(latvian, false, &quot;lv&quot;))</span>
+<span class="fc" id="L486">        listLang.add(LanguageList(lithuanian, false, &quot;lt&quot;))</span>
+<span class="fc" id="L487">        listLang.add(LanguageList(macedonian, false, &quot;mk&quot;))</span>
+<span class="fc" id="L488">        listLang.add(LanguageList(malagasy, false, &quot;mg&quot;))</span>
+<span class="fc" id="L489">        listLang.add(LanguageList(malay, false, &quot;ms&quot;))</span>
+<span class="fc" id="L490">        listLang.add(LanguageList(malayalam, false, &quot;ml&quot;))</span>
+<span class="fc" id="L491">        listLang.add(LanguageList(maltese, false, &quot;mt&quot;))</span>
+<span class="fc" id="L492">        listLang.add(LanguageList(maori, false, &quot;mi&quot;))</span>
+<span class="fc" id="L493">        listLang.add(LanguageList(marathi, false, &quot;mr&quot;))</span>
+<span class="fc" id="L494">        listLang.add(LanguageList(nepal, false, &quot;ne&quot;))</span>
+<span class="fc" id="L495">        listLang.add(LanguageList(norwegian, false, &quot;nb&quot;))</span>
+<span class="fc" id="L496">        listLang.add(LanguageList(odia, false, &quot;or&quot;))</span>
+<span class="fc" id="L497">        listLang.add(LanguageList(polish, false, &quot;pl&quot;))</span>
+<span class="fc" id="L498">        listLang.add(LanguageList(portuguese, false, &quot;pt&quot;))</span>
+<span class="fc" id="L499">        listLang.add(LanguageList(punjabi, false, &quot;pa&quot;))</span>
+<span class="fc" id="L500">        listLang.add(LanguageList(romanian, false, &quot;ro&quot;))</span>
+<span class="fc" id="L501">        listLang.add(LanguageList(russian, false, &quot;ru&quot;))</span>
+<span class="fc" id="L502">        listLang.add(LanguageList(samoan, false, &quot;sm&quot;))</span>
+<span class="fc" id="L503">        listLang.add(LanguageList(serbian, false, &quot;sr&quot;))</span>
+<span class="fc" id="L504">        listLang.add(LanguageList(slovak, false, &quot;sk&quot;))</span>
+<span class="fc" id="L505">        listLang.add(LanguageList(slovenian, false, &quot;sl&quot;))</span>
+<span class="fc" id="L506">        listLang.add(LanguageList(somali, false, &quot;so&quot;))</span>
+<span class="fc" id="L507">        listLang.add(LanguageList(spanish, false, &quot;es&quot;))</span>
+<span class="fc" id="L508">        listLang.add(LanguageList(swahili, false, &quot;sw&quot;))</span>
+<span class="fc" id="L509">        listLang.add(LanguageList(swedish, false, &quot;sv&quot;))</span>
+<span class="fc" id="L510">        listLang.add(LanguageList(tahitian, false, &quot;ty&quot;))</span>
+<span class="fc" id="L511">        listLang.add(LanguageList(tamil, false, &quot;ta&quot;))</span>
+<span class="fc" id="L512">        listLang.add(LanguageList(tatar, false, &quot;tt&quot;))</span>
+<span class="fc" id="L513">        listLang.add(LanguageList(telugu, false, &quot;te&quot;))</span>
+<span class="fc" id="L514">        listLang.add(LanguageList(thai, false, &quot;th&quot;))</span>
+<span class="fc" id="L515">        listLang.add(LanguageList(tigringya, false, &quot;ti&quot;))</span>
+<span class="fc" id="L516">        listLang.add(LanguageList(tongan, false, &quot;to&quot;))</span>
+<span class="fc" id="L517">        listLang.add(LanguageList(turkish, false, &quot;tr&quot;))</span>
+<span class="fc" id="L518">        listLang.add(LanguageList(turkman, false, &quot;tr&quot;))</span>
+<span class="fc" id="L519">        listLang.add(LanguageList(upperSorbian, false, &quot;hsb&quot;))</span>
+<span class="fc" id="L520">        listLang.add(LanguageList(ukrainian, false, &quot;uk&quot;))</span>
+<span class="fc" id="L521">        listLang.add(LanguageList(uzbek, false, &quot;uz&quot;))</span>
+<span class="fc" id="L522">        listLang.add(LanguageList(vietnamese, false, &quot;vi&quot;))</span>
+<span class="fc" id="L523">        listLang.add(LanguageList(welsh, false, &quot;cy&quot;))</span>
+<span class="fc" id="L524">        listLang.add(LanguageList(zulu, false, &quot;zu&quot;))</span>
+
+<span class="fc" id="L526">        val memId = preferences.getString(&quot;memberID&quot;, &quot;&quot;)</span>
+<span class="fc" id="L527">        val tag = &quot;$memId&quot; + Constants.LanguagePref</span>
+
+<span class="fc" id="L529">        val languageCurrent = preferences.getString(tag, &quot;en&quot;)</span>
+
+<span class="fc" id="L531">        listLang.forEach {</span>
+<span class="fc bfc" id="L532" title="All 2 branches covered.">            if (it.code.equals(</span>
+<span class="pc bpc" id="L533" title="1 of 2 branches missed.">                    Constants.CURRENT_LANGUAGE ?: &quot;en&quot;,</span>
+<span class="fc" id="L534">                    true</span>
+                )
+            ) {
+<span class="fc" id="L537">                language = it.name</span>
+            }
+<span class="fc" id="L539">        }</span>
+<span class="fc" id="L540">    }</span>
+
+    fun loadData(memberInfo: MemberInfo) {
+<span class="fc" id="L543">        var member = memberInfo</span>
+<span class="pc bpc" id="L544" title="1 of 2 branches missed.">        hasInsurance = if (Constants.showCardsOnlyIfEligible) {</span>
+<span class="fc" id="L545">            member.isEligible</span>
+        } else {
+<span class="nc" id="L547">            true</span>
+        }
+<span class="fc" id="L549">        goPaperlessIndicator = member.optInEdd</span>
+<span class="fc" id="L550">    }</span>
+
+    fun loadConfig(config: ClientDetailResponse) {
+<span class="fc" id="L553">        showMenu(config)</span>
+<span class="fc" id="L554">    }</span>
+
+    private fun showMenu(member: ClientDetailResponse) {
+<span class="fc" id="L557">        hasUnion = member.hasUnionCard</span>
+<span class="fc" id="L558">        hasSaveMoney = member.showSaveMoney</span>
+<span class="fc" id="L559">        hasGuardianNurse = member.showGuardianNurse</span>
+<span class="fc" id="L560">        hasBenefit = member.showBenefitScreen</span>
+<span class="fc" id="L561">        hasComparison = member.showPriceComparison</span>
+<span class="fc" id="L562">        hasRewards = member.showRewards</span>
+<span class="fc" id="L563">        hasTelemedicine = member.showTelemedicine</span>
+<span class="fc" id="L564">        setupClientCustomMenu(member.activeCustomMenus, member.activeCustomSubMenus)</span>
+<span class="fc" id="L565">        showTutorialIfConditionMatched()</span>
+<span class="fc" id="L566">    }</span>
+
+    fun openAccountDetails() {
+<span class="nc" id="L569">        _navigateToAccount.value = Event(Unit)</span>
+<span class="nc" id="L570">    }</span>
+
+    fun openInsuranceCard() {
+<span class="nc bnc" id="L573" title="All 2 branches missed.">        if (hasInsurance) {</span>
+<span class="nc" id="L574">            _navigateToInsurance.value = Event(Unit)</span>
+        }
+<span class="nc" id="L576">    }</span>
+
+    private fun setupClientCustomMenu(
+        activeCustomMenus: List&lt;ClientMenuConfig&gt;?,
+        activeCustomSubMenus: List&lt;ClientMenuConfig&gt;?
+    ) {
+<span class="pc bpc" id="L582" title="1 of 2 branches missed.">        activeCustomMenus?.let {</span>
+//            for (activeMenu in it) {
+//                val alreadyExists = currentActiveMenuList.contains(activeMenu)
+//                if (!alreadyExists) {
+//                    val list = currentActiveMenuList.toMutableList()
+//                    list.add(activeMenu)
+//                    currentActiveMenuList = list
+//                }
+//            }
+<span class="nc" id="L591">            _activeCustomMenus.value = Event(it)</span>
+<span class="nc" id="L592">        }</span>
+<span class="pc bpc" id="L593" title="1 of 2 branches missed.">        activeCustomSubMenus?.let {</span>
+<span class="nc" id="L594">            this.activeCustomSubMenus = it</span>
+<span class="nc" id="L595">        }</span>
+<span class="fc" id="L596">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="fc" id="L599">        callbacks.add(callback)</span>
+<span class="fc" id="L600">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L603">        callbacks.remove(callback)</span>
+<span class="nc" id="L604">    }</span>
+
+    fun setBiometric() {
+<span class="nc bnc" id="L607" title="All 2 branches missed.">        if (biometricEnabled) {</span>
+<span class="nc" id="L608">            biometricEnabled = false</span>
+<span class="nc" id="L609">            preferences.edit()</span>
+//                .putBoolean(preferences.getString(&quot;memberID&quot;, &quot;&quot;) + Constants.biometricPref, false)
+<span class="nc" id="L611">                .putBoolean(</span>
+<span class="nc" id="L612">                    preferences.getString(Constants.USER_EMAIL, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,</span>
+<span class="nc" id="L613">                    false</span>
+                )
+<span class="nc" id="L615">                .apply()</span>
+        } else {
+<span class="nc" id="L617">            biometricEnabled = true</span>
+<span class="nc" id="L618">            preferences.edit()</span>
+//                .putBoolean(preferences.getString(&quot;memberID&quot;, &quot;&quot;) + Constants.biometricPref, true)
+<span class="nc" id="L620">                .putBoolean(</span>
+<span class="nc" id="L621">                    preferences.getString(Constants.USER_EMAIL, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,</span>
+<span class="nc" id="L622">                    true</span>
+                )
+<span class="nc" id="L624">                .apply()</span>
+        }
+<span class="nc" id="L626">    }</span>
+
+    fun openDocuments() {
+<span class="nc" id="L629">        _navigateToDoc.value = Event(Unit)</span>
+<span class="nc" id="L630">    }</span>
+
+    fun openSharing() {
+<span class="nc" id="L633">        _navigateToSharing.value = Event(Unit)</span>
+<span class="nc" id="L634">    }</span>
+
+    fun openLanguage() {
+<span class="nc" id="L637">        _navigateToLanguage.value = Event(Unit)</span>
+<span class="nc" id="L638">    }</span>
+
+    fun openPrice() {
+<span class="nc" id="L641">        _navigateToPrice.value = Event(Unit)</span>
+<span class="nc" id="L642">    }</span>
+
+    fun fingerPrint() {
+<span class="nc" id="L645">        _navigateToFingerPrint.value = Event(Unit)</span>
+<span class="nc" id="L646">    }</span>
+
+    fun openRewards() {
+<span class="nc bnc" id="L649" title="All 2 branches missed.">        if (memberInfo.clientId.equals(&quot;14&quot;)) {</span>
+<span class="nc" id="L650">            _navigateToTalon.value = Event(Unit)</span>
+<span class="nc bnc" id="L651" title="All 2 branches missed.">        } else if (memberInfo.clientId.equals(&quot;13&quot;)) {</span>
+<span class="nc" id="L652">            _navigateToRewards.value = Event(Unit)</span>
+        }
+<span class="nc" id="L654">    }</span>
+
+    fun benefits() {
+<span class="nc" id="L657">        _navigateToBenefits.value = Event(Unit)</span>
+<span class="nc" id="L658">    }</span>
+
+    fun goPaperless() {
+<span class="nc" id="L661">        _navigateToPaperless.value = Event(Unit)</span>
+<span class="nc" id="L662">    }</span>
+
+    fun openTelemedicine() {
+<span class="nc" id="L665">        _navigateToTelemedicine.value = Event(Unit)</span>
+<span class="nc" id="L666">    }</span>
+
+    fun saveMoney() {
+<span class="nc" id="L669">        _navigateToSaveMoney.value = Event(Unit)</span>
+<span class="nc" id="L670">    }</span>
+
+    fun talon() {
+<span class="nc" id="L673">        _navigateToTalon.value = Event(Unit)</span>
+<span class="nc" id="L674">    }</span>
+
+    fun nurses() {
+<span class="nc" id="L677">        _navigateToNurses.value = Event(Unit)</span>
+<span class="nc" id="L678">    }</span>
+
+    fun help() {
+<span class="nc" id="L681">        _navigateToHelp.value = Event(Unit)</span>
+<span class="nc" id="L682">    }</span>
+
+    fun surveys() {
+<span class="nc" id="L685">        _navigateToSurveys.value = Event(Unit)</span>
+<span class="nc" id="L686">    }</span>
+
+    fun logOut() {
+<span class="fc" id="L689">        _navigateToLogOut.value = Event(Unit)</span>
+<span class="fc" id="L690">    }</span>
+
+    fun appUpdateCheck() {
+<span class="nc" id="L693">        _checkAppUpdate.value = Event(Unit)</span>
+<span class="nc" id="L694">    }</span>
+
+    suspend fun deleteall() {
+<span class="nc" id="L697">        homeRepository.deleteAll()</span>
+<span class="nc" id="L698">    }</span>
+
+    override fun onCleared() {
+<span class="fc" id="L701">        super.onCleared()</span>
+<span class="fc" id="L702">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

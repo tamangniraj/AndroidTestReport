@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FundVerificationModule.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.openEnrollment.di</a> &gt; <span class="el_source">FundVerificationModule.kt</span></div><h1>FundVerificationModule.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.openEnrollment.di
+
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.uploadDocuments.uploadUI.UploadDocumentFragment
+import com.vivekahealth.vivekahealth.ui.guestVerify.documents.ManualIdFragment
+import com.vivekahealth.vivekahealth.ui.guestVerify.manualId.ManualDLFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.employment.EmploymentInformationFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.employment.SelectPlanFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.child.FundChildDOBFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.child.FundChildGenderFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.child.FundChildNameFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.child.FundChildSSNFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.EditDemographicsBottomSheetFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.EditDependentBottomSheetFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.FundDisclaimerSignatureFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.EditEmploymentBottomSheetFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.FundChooseDependentFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.FundDependentStatusFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.FundRequireDocumentFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.MissingRequireDocumentFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.FundReviewDependentDetailsFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.VerifyEditDLAndEmploymentFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.spouse.FundDOBFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.spouse.FundGenderFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.spouse.FundMarriageDateFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.spouse.FundSSNFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment.spouse.FundSpouseNameFragment
+import com.vivekahealth.vivekahealth.ui.openEnrollment.verification.FundManualIdFragment
+import dagger.Module
+import dagger.android.ContributesAndroidInjector
+
+<span class="nc" id="L31">@Module</span>
+abstract class FundVerificationModule {
+
+    @ContributesAndroidInjector
+    abstract fun contributeManualDLFragment(): ManualDLFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeManualIdFragment(): ManualIdFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeFundManualIdFragment(): FundManualIdFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeEmploymentInformationFragment(): EmploymentInformationFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeSelectPlanFragment(): SelectPlanFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeFundDependentStatusFragment(): FundDependentStatusFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeFundChooseDependentFragment(): FundChooseDependentFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeFundReviewDependentDetailsFragment(): FundReviewDependentDetailsFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeFundRequireDocumentFragment(): FundRequireDocumentFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeMissingRequireDocumentFragment(): MissingRequireDocumentFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeVerifyEditDLAndEmploymentFragment(): VerifyEditDLAndEmploymentFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeEditEmploymentBottomSheetFragment(): EditEmploymentBottomSheetFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeEditDemographicsBottomSheetFragment(): EditDemographicsBottomSheetFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeEditDependentBottomSheetFragment(): EditDependentBottomSheetFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeFundDisclaimerSignatureFragment(): FundDisclaimerSignatureFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeFundSpouseNameFragment(): FundSpouseNameFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeFundMarriageDateFragment(): FundMarriageDateFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeFundGenderFragment(): FundGenderFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeFundDOBFragment(): FundDOBFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeFundSSNFragment(): FundSSNFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeUploadDocument(): UploadDocumentFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeFundChildNameFragment(): FundChildNameFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeFundChildDOBFragment(): FundChildDOBFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeFundChildGenderFragment(): FundChildGenderFragment
+
+    @ContributesAndroidInjector
+    abstract fun contributeFundChildSSNFragment(): FundChildSSNFragment
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

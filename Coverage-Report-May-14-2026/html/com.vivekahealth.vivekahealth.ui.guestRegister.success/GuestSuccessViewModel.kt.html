@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GuestSuccessViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.guestRegister.success</a> &gt; <span class="el_source">GuestSuccessViewModel.kt</span></div><h1>GuestSuccessViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.guestRegister.success
+
+import android.content.SharedPreferences
+import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import com.vivekahealth.vivekahealth.data.remote.guest.GuestRegisterUser
+import com.vivekahealth.vivekahealth.data.remote.login.AuthToken
+import com.vivekahealth.vivekahealth.data.remote.login.ErrorResponse
+import com.vivekahealth.vivekahealth.data.remote.login.GenericErrorResponse
+import com.vivekahealth.vivekahealth.data.remote.register.DataResponse
+import com.vivekahealth.vivekahealth.ui.guestRegister.repository.GuestRegisterRepository
+import com.vivekahealth.vivekahealth.ui.login.repository.LoginRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import java.util.regex.Pattern
+import javax.inject.Inject
+
+<span class="nc" id="L31">class GuestSuccessViewModel @Inject constructor(</span>
+<span class="nc" id="L32">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L33">    private val guestRegisterRepository: GuestRegisterRepository,</span>
+<span class="nc" id="L34">    var loginRepository: LoginRepository</span>
+) :
+<span class="nc" id="L36">    ViewModel(), Observable {</span>
+<span class="nc" id="L37">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="nc" id="L38">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L40">    private val _passwordChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val passwordChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L42">        get() = _passwordChanged</span>
+
+<span class="nc" id="L44">    private val _confirmPasswordChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val confirmPasswordChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L46">        get() = _confirmPasswordChanged</span>
+
+<span class="nc" id="L48">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L50">        get() = _navigateToBack</span>
+
+<span class="nc" id="L52">    private val _registerSuccess = MutableLiveData&lt;Event&lt;DataResponse&gt;&gt;()</span>
+    val registerSuccess: LiveData&lt;Event&lt;DataResponse&gt;&gt;
+<span class="nc" id="L54">        get() = _registerSuccess</span>
+
+<span class="nc" id="L56">    private val _loginSuccess = MutableLiveData&lt;Event&lt;AuthToken&gt;&gt;()</span>
+    val loginSuccess: LiveData&lt;Event&lt;AuthToken&gt;&gt;
+<span class="nc" id="L58">        get() = _loginSuccess</span>
+
+<span class="nc" id="L60">    private val _loading = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+    val loading: LiveData&lt;Event&lt;Boolean&gt;&gt;
+<span class="nc" id="L62">        get() = _loading</span>
+
+<span class="nc" id="L64">    private val _error = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val error: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L66">        get() = _error</span>
+
+<span class="nc" id="L68">    val passwordError: Boolean = false</span>
+
+<span class="nc" id="L70">    var gson = Gson()</span>
+
+    private var phone: String? = null
+    private var cCode: String? = null
+<span class="nc" id="L74">    var registrationId: String? = null</span>
+<span class="nc" id="L75">    var email: String? = null</span>
+    private var password: String? = null
+    private var confirmPassword: String? = null
+    private var guestRegisterUser: GuestRegisterUser? = null
+
+<span class="nc" id="L80">    @get:Bindable</span>
+<span class="pc" id="L81">    val passwordTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L84">        }</span>
+
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L87">        }</span>
+
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L90">            _passwordChanged.value = Event(s.toString())</span>
+<span class="nc bnc" id="L91" title="All 4 branches missed.">            if (s.toString().isNotEmpty()) {</span>
+<span class="nc" id="L92">                password = s.toString()</span>
+<span class="nc" id="L93">                updateGuestRegisterUser()</span>
+            }
+<span class="nc" id="L95">        }</span>
+    }
+
+<span class="nc" id="L98">    @get:Bindable</span>
+<span class="pc" id="L99">    val confirmPasswordTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L102">        }</span>
+
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L105">        }</span>
+
+        override fun afterTextChanged(s: Editable) {
+<span class="nc bnc" id="L108" title="All 4 branches missed.">            if (s.toString().isNotEmpty()) {</span>
+<span class="nc" id="L109">                confirmPassword = s.toString()</span>
+<span class="nc" id="L110">                _confirmPasswordChanged.value = Event(confirmPassword!!)</span>
+<span class="nc" id="L111">                updateGuestRegisterUser()</span>
+            }
+<span class="nc" id="L113">        }</span>
+    }
+
+    fun hasUpperAndLower(pass: String): Boolean {
+<span class="nc" id="L117">        val upperLowerPattern = Pattern.compile(&quot;(?=.*[a-z])(?=.*[A-Z])&quot;)</span>
+<span class="nc" id="L118">        return upperLowerPattern.matcher(pass).find()</span>
+    }
+
+    fun hasAtLeastOneNumber(pass: String): Boolean {
+<span class="nc" id="L122">        val atLeastOneNumber = Pattern.compile(&quot;(?=.*\\d)&quot;)</span>
+<span class="nc" id="L123">        return atLeastOneNumber.matcher(pass).find()</span>
+    }
+
+    fun hasOneSpecialCharacter(pass: String): Boolean {
+<span class="nc" id="L127">        val atLeastOneSpecialChar = Pattern.compile(&quot;(?=.*\\W)&quot;)</span>
+<span class="nc" id="L128">        return atLeastOneSpecialChar.matcher(pass).find()</span>
+    }
+
+    fun isAtLeastEightCharLong(pass: String): Boolean {
+<span class="nc" id="L132">        val atLeastEightCharLong = Pattern.compile(&quot;.{8,}&quot;)</span>
+<span class="nc" id="L133">        return atLeastEightCharLong.matcher(pass).find()</span>
+    }
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L137">        callbacks.add(callback)</span>
+<span class="nc" id="L138">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L141">        callbacks.remove(callback)</span>
+<span class="nc" id="L142">    }</span>
+
+    fun onPrevClicked() {
+<span class="nc" id="L145">        _navigateToBack.value = Event(Unit)</span>
+<span class="nc" id="L146">    }</span>
+
+    fun onNextClicked() {
+<span class="nc" id="L149">    }</span>
+
+    fun handleArguments(arguments: Bundle?) {
+<span class="nc bnc" id="L152" title="All 2 branches missed.">        phone = arguments?.getString(&quot;phone&quot;)</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        cCode = arguments?.getString(&quot;cCode&quot;)</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        registrationId = arguments?.getString((&quot;registrationId&quot;))</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        email = arguments?.getString(&quot;email&quot;)</span>
+<span class="nc" id="L156">        updateGuestRegisterUser()</span>
+<span class="nc" id="L157">    }</span>
+
+    private fun updateGuestRegisterUser() {
+<span class="nc" id="L160">        guestRegisterUser =</span>
+<span class="nc" id="L161">            GuestRegisterUser(registrationId, email, phone, cCode, password, confirmPassword)</span>
+<span class="nc" id="L162">    }</span>
+
+    fun saveTokens(data: AuthToken) {
+<span class="nc" id="L165">        preferences.edit().putString(Constants.ACCESS_TOKEN, data.access_token).apply()</span>
+<span class="nc" id="L166">        preferences.edit().putString(Constants.TOKEN_TYPE, data.token_type).apply()</span>
+<span class="nc" id="L167">        preferences.edit().putString(Constants.EXPIRES_IN, data.expires_in).apply()</span>
+<span class="nc" id="L168">        preferences.edit().putString(Constants.SCOPE, data.scope).apply()</span>
+<span class="nc" id="L169">        preferences.edit().putBoolean(Constants.IS_GUEST, data.isGuest).apply()</span>
+<span class="nc" id="L170">    }</span>
+
+    fun saveUserNamePassword() {
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        guestRegisterUser?.let {</span>
+<span class="nc" id="L174">            val encodedEmail = HelperUtils.encrypt(it.email)</span>
+<span class="nc" id="L175">            preferences.edit().putString(Constants.encodedEmail, encodedEmail).apply()</span>
+<span class="nc" id="L176">            val encodedPassword = HelperUtils.encrypt(it.password)</span>
+<span class="nc" id="L177">            preferences.edit().putString(Constants.encodedPassword, encodedPassword).apply()</span>
+<span class="nc" id="L178">        }</span>
+<span class="nc" id="L179">    }</span>
+
+    fun resendEmail(email: String) {
+<span class="nc" id="L182">        compositeDisposable.add(</span>
+<span class="nc" id="L183">            guestRegisterRepository.resendActivationCode(email)</span>
+<span class="nc" id="L184">                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L185">                .doOnSubscribe {</span>
+<span class="nc" id="L186">                    _loading.value = Event(true)</span>
+<span class="nc" id="L187">                }.subscribe({</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">                    if (it.isSuccessful) {</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                        it.body()?.let {</span>
+<span class="nc" id="L190">                            _loading.value = Event(false)</span>
+<span class="nc" id="L191">                            _registerSuccess.value = Event(it)</span>
+<span class="nc" id="L192">                        }</span>
+                    } else {
+<span class="nc" id="L194">                        val errorResponse: GenericErrorResponse = gson.fromJson(</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">                            it.errorBody()?.string(),</span>
+<span class="nc" id="L196">                            GenericErrorResponse::class.java</span>
+                        )
+<span class="nc" id="L198">                        _error.value = Event(</span>
+<span class="nc" id="L199">                            errorResponse.getErrorMessage()</span>
+                        )
+<span class="nc" id="L201">                        _loading.value = Event(false)</span>
+                    }
+<span class="nc" id="L203">                }, {</span>
+                        onError -&gt;
+
+<span class="nc" id="L206">                    _error.value = Event(onError.message.toString())</span>
+<span class="nc" id="L207">                    _loading.value = Event(false)</span>
+<span class="nc" id="L208">                })</span>
+        )
+<span class="nc" id="L210">    }</span>
+
+    fun silentLogin() {
+<span class="nc" id="L213">        compositeDisposable.add(</span>
+<span class="nc" id="L214">            loginRepository.getLogin(</span>
+<span class="nc bnc" id="L215" title="All 4 branches missed.">                guestRegisterUser?.email ?: &quot;&quot;,</span>
+<span class="nc bnc" id="L216" title="All 4 branches missed.">                guestRegisterUser?.password ?: &quot;&quot;,</span>
+<span class="nc" id="L217">                &quot;&quot;,</span>
+<span class="nc" id="L218">                false</span>
+            )
+<span class="nc" id="L220">                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L221">                .doOnSubscribe {</span>
+<span class="nc" id="L222">                    _loading.value = Event(true)</span>
+<span class="nc" id="L223">                }</span>
+<span class="nc" id="L224">                .subscribe({</span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">                    if (it.isSuccessful) {</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">                        it.body()?.let {</span>
+<span class="nc" id="L227">                            saveTokens(it)</span>
+
+<span class="nc" id="L229">                            saveUserNamePassword()</span>
+
+<span class="nc" id="L231">                            _loginSuccess.value = Event(it)</span>
+<span class="nc" id="L232">                        }</span>
+                    } else {
+<span class="nc" id="L234">                        val gson = Gson()</span>
+<span class="nc" id="L235">                        val type = object : TypeToken&lt;ErrorResponse&gt;() {}.type</span>
+<span class="nc" id="L236">                        val errorResponse: ErrorResponse? = gson.fromJson(</span>
+<span class="nc" id="L237">                            it.errorBody()!!.charStream(),</span>
+<span class="nc" id="L238">                            type</span>
+                        )
+<span class="nc bnc" id="L240" title="All 2 branches missed.">                        errorResponse?.let { err -&gt;</span>
+<span class="nc" id="L241">                            _error.value = Event(err.error.toString())</span>
+<span class="nc" id="L242">                        }</span>
+                    }
+<span class="nc" id="L244">                }, {</span>
+<span class="nc" id="L245">                })</span>
+        )
+<span class="nc" id="L247">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

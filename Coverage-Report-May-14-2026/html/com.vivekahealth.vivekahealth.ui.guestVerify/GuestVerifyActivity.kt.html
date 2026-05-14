@@ -1,0 +1,737 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GuestVerifyActivity.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.guestVerify</a> &gt; <span class="el_source">GuestVerifyActivity.kt</span></div><h1>GuestVerifyActivity.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.guestVerify
+
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.res.Configuration
+import android.net.Uri
+import android.os.Bundle
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.vivekahealth.vivekahealth.FirebaseTags
+import android.view.View
+import android.widget.TextView
+import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
+import androidx.biometric.BiometricPrompt
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.NavController
+import androidx.navigation.NavDestination
+import androidx.navigation.findNavController
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.navigateUp
+import com.google.android.material.button.MaterialButton
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.databinding.ActivityGuestVerifyBinding
+import com.vivekahealth.vivekahealth.di.Injectable
+import com.vivekahealth.vivekahealth.ui.BaseActivity
+import com.vivekahealth.vivekahealth.ui.NavigationFragmentManager
+import com.vivekahealth.vivekahealth.ui.guestHome.GuestBiometricRequestDialog
+import com.vivekahealth.vivekahealth.ui.guestHome.VerifyIdentityDialog
+import com.vivekahealth.vivekahealth.ui.guestHome.VerifyIdentityListener
+import com.vivekahealth.vivekahealth.ui.login.LoginActivity
+import com.vivekahealth.vivekahealth.ui.step.StepCounterViewModel
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.DialogListener
+import com.vivekahealth.vivekahealth.utils.DialogUtils
+import com.vivekahealth.vivekahealth.utils.EventObserver
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import com.vivekahealth.vivekahealth.utils.HelperUtils.hasPermission
+import dagger.android.AndroidInjector
+import dagger.android.DispatchingAndroidInjector
+import dagger.android.HasAndroidInjector
+import timber.log.Timber
+import java.util.Locale
+import java.util.concurrent.Executor
+import javax.inject.Inject
+
+class GuestVerifyActivity : BaseActivity(), Injectable, HasAndroidInjector {
+
+    companion object {
+        public const val VERIFICATION_SESSION_TAG = &quot;verification_session_tag&quot;
+        public const val LANGUAGE_TAG = &quot;language_pref&quot;
+        const val EMAIL = &quot;email&quot;
+        const val PASSWORD = &quot;password&quot;
+        public const val FROM_HOME_PAGE = &quot;from_home_page&quot;
+        public const val DOCUMENT_TYPE = &quot;DOCUMENT_TYPE&quot;
+        private const val REQUEST_CAMERA_PERMISSION_REQUEST_CODE = 35
+        private const val REQUEST_FINE_LOCATION_PERMISSIONS_REQUEST_CODE = 34
+    }
+
+    //    private val sharedViewModel: SharedViewModel by viewModels()
+
+    private val stepCounterViewModel: StepCounterViewModel by viewModels()
+
+    private lateinit var appBarConfiguration: AppBarConfiguration
+    private lateinit var binding: ActivityGuestVerifyBinding
+
+    var fromHomePage: Boolean = false
+    var email: String = &quot;&quot;
+    var password: String = &quot;&quot;
+
+    var biometricPopup: GuestBiometricRequestDialog? = null
+    private lateinit var biometricPrompt: BiometricPrompt
+    private lateinit var promptInfo: BiometricPrompt.PromptInfo
+
+    @Inject
+    lateinit var viewModelFactory: ViewModelProvider.Factory
+    private val sharedViewModel: SharedViewModel by viewModels(null) { viewModelFactory }
+
+    private lateinit var viewModel: BiometricPermissionViewModel
+
+    private lateinit var executor: Executor
+
+    @Inject
+    lateinit var fragmentInjector: DispatchingAndroidInjector&lt;Any&gt;
+
+    @Inject
+    lateinit var navigationFragmentManager: NavigationFragmentManager
+
+    @Inject
+    lateinit var firebaseAnalytics: FirebaseAnalytics
+
+    private lateinit var durationTracker: DurationTracker
+
+//    @Inject
+//    lateinit var viewModelProviderFactory: ViewModelProvider.Factory
+
+    override fun attachBaseContext(newBase: Context) {
+        val langCode = Constants.LOCAL_LANG_MODIFIED ?: &quot;&quot;
+        if (langCode.isNotEmpty()) {
+            val locale = Locale(langCode)
+            Locale.setDefault(locale)
+            Timber.d(&quot;Locale1 ${locale.language}&quot;)
+
+            val config = Configuration(newBase.resources.configuration)
+            config.setLocale(locale) // &lt;- API 17+ is okay; fallback below for API 16
+            config.setLayoutDirection(locale)
+
+            val updatedContext = newBase.createConfigurationContext(config)
+            super.attachBaseContext(updatedContext)
+        } else {
+            super.attachBaseContext(newBase)
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+        insetsController.isAppearanceLightStatusBars = true
+        insetsController.isAppearanceLightNavigationBars = true
+
+        super.onCreate(savedInstanceState)
+
+        executor = ContextCompat.getMainExecutor(this)
+
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_guest_verify)
+        setSupportActionBar(binding.toolbar)
+        fromHomePage = intent.getBooleanExtra(FROM_HOME_PAGE, false)
+        email = intent.getStringExtra(EMAIL) ?: &quot;&quot;
+        password = intent.getStringExtra(PASSWORD) ?: &quot;&quot;
+        binding.toolbar.setNavigationOnClickListener {
+            if (isFinishing || isDestroyed) return@setNavigationOnClickListener
+            if (fromHomePage) {
+                this.finish()
+            } else {
+                showCancellationDialog()
+            }
+        }
+        navigationFragmentManager.fragmentManager = supportFragmentManager
+        navigationFragmentManager.containerId = R.id.fragment
+
+        viewModel = ViewModelProvider(this, viewModelFactory).get(
+            BiometricPermissionViewModel::class.java
+        )
+
+        sharedViewModel.updateToken(
+            intent.getStringExtra
+            (VERIFICATION_SESSION_TAG)
+        )
+
+        sharedViewModel.email = email
+
+        // Initialize duration tracker and log flow started
+        durationTracker = DurationTracker(firebaseAnalytics, sharedViewModel)
+        durationTracker.startFlow()
+        logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_STARTED)
+
+        val navController = findNavController(R.id.fragment)
+
+        // Get documentType from intent and set it as start destination argument
+        val documentType = intent.getSerializableExtra(DOCUMENT_TYPE)
+        Timber.d(&quot;language; received $documentType&quot;)
+
+        // Always set the graph programmatically to ensure arguments are passed correctly
+        val navGraph = navController.navInflater.inflate(R.navigation.guest_verify_nav)
+        if (documentType != null) {
+            val bundle = Bundle().apply {
+                putSerializable(&quot;documentType&quot;, documentType)
+            }
+            navController.setGraph(navGraph, bundle)
+        } else {
+            navController.graph = navGraph
+        }
+
+        navController.addOnDestinationChangedListener { _: NavController?, destination: NavDestination, arguments: Bundle? -&gt;
+            val stepPairs = stepCounterViewModel.getStepsTextAndPercent(destination.id, arguments)
+
+            if (stepPairs != null) {
+                binding.txtSteps.visibility = View.VISIBLE
+                binding.simpleProgressBar.visibility = View.VISIBLE
+
+                binding.txtSteps.text = getString(
+                    R.string.steps,
+                    stepPairs.first.toString(),
+                    stepPairs.second.toString()
+                )
+                binding.simpleProgressBar.progress = stepPairs.third.toInt()
+            } else {
+                binding.txtSteps.visibility = View.GONE
+                binding.simpleProgressBar.visibility = View.GONE
+            }
+
+            if (documentType?.toString() == &quot;SSN_ONLY&quot;) {
+                binding.txtSteps.visibility = View.INVISIBLE
+            }
+
+            updateToolbarTitle(getTitleForActivity(destination.id, arguments))
+        }
+
+        viewModel.locationRequest.observe(
+            this,
+            EventObserver {
+                locationRequest()
+            }
+        )
+
+        viewModel.checkBiometricPermission.observe(
+            this,
+            EventObserver {
+                if (biometricPopup != null) {
+                    return@EventObserver
+                }
+
+                val biometricManager = BiometricManager.from(this)
+                when (biometricManager.canAuthenticate(BIOMETRIC_STRONG)) {
+                    BiometricManager.BIOMETRIC_SUCCESS -&gt; {
+                        // App can authenticate using biometrics.
+                        durationTracker.startStep(&quot;biometric_dialog&quot;)
+                        logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_BIOMETRIC_DIALOG_SHOWN)
+                        biometricPopup = GuestBiometricRequestDialog.newInstance()
+                        biometricPopup?.isCancelable = false
+                        biometricPopup?.setCallback(object : VerifyIdentityListener {
+                            override fun onProceed(token: String?) {
+                                logGuestVerifyEvent(
+                                    FirebaseTags.GUEST_VERIFY_BIOMETRIC_PROCEED_CLICKED
+                                )
+                                biometricPrompt = BiometricPrompt(
+                                    this@GuestVerifyActivity,
+                                    executor,
+                                    object : BiometricPrompt.AuthenticationCallback() {
+                                        override fun onAuthenticationError(
+                                            errorCode: Int,
+                                            errString: CharSequence
+                                        ) {
+                                            super.onAuthenticationError(errorCode, errString)
+                                            logGuestVerifyEvent(
+                                                FirebaseTags.GUEST_VERIFY_BIOMETRIC_ERROR
+                                            ) {
+                                                putInt(&quot;error_code&quot;, errorCode)
+                                            }
+                                            viewModel.proceedLocationRequest()
+                                        }
+
+                                        override fun onAuthenticationSucceeded(
+                                            result: BiometricPrompt.AuthenticationResult
+                                        ) {
+                                            super.onAuthenticationSucceeded(result)
+                                            logGuestVerifyEvent(
+                                                FirebaseTags.GUEST_VERIFY_BIOMETRIC_SUCCESS
+                                            )
+                                            if (email.isNotEmpty() &amp;&amp; password.isNotEmpty()) {
+                                                viewModel.saveBiometricPreference(email, password)
+                                            }
+                                            val hasRequestedBiometricKey = sharedPreferences.getString(
+                                                Constants.USER_EMAIL,
+                                                &quot;&quot;
+                                            ) + Constants.BIO_PERMISSION_REQUESTED
+                                            sharedPreferences.edit().putBoolean(
+                                                hasRequestedBiometricKey,
+                                                true
+                                            ).apply()
+                                            viewModel.proceedLocationRequest()
+                                        }
+
+                                        override fun onAuthenticationFailed() {
+                                            super.onAuthenticationFailed()
+                                            logGuestVerifyEvent(
+                                                FirebaseTags.GUEST_VERIFY_BIOMETRIC_FAILED
+                                            )
+                                        }
+                                    }
+                                )
+
+                                promptInfo = BiometricPrompt.PromptInfo.Builder()
+                                    .setTitle(
+                                        getString(
+                                            R.string.biometric_login_for,
+                                            getString(R.string.app_name)
+                                        )
+                                    )
+                                    .setSubtitle(
+                                        getString(
+                                            R.string.log_in_using_your_biometric_credential
+                                        )
+                                    )
+                                    .setNegativeButtonText(getString(R.string.cancel))
+                                    .build()
+
+                                biometricPrompt.authenticate(promptInfo)
+                            }
+
+                            override fun onSkip() {
+                                logGuestVerifyEvent(
+                                    FirebaseTags.GUEST_VERIFY_BIOMETRIC_SKIP_CLICKED
+                                )
+                                viewModel.proceedLocationRequest()
+                            }
+
+                            override fun onError(err: String) {
+                            }
+                        })
+
+                        if (biometricPopup?.isVisible != true) {
+                            biometricPopup?.show(supportFragmentManager, &quot;GuestBiometric&quot;)
+                        }
+                    }
+
+                    BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -&gt; {
+                        // No biometric features available on this device.
+                        viewModel.proceedLocationRequest()
+                    }
+
+                    BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -&gt; {
+                        // Biometric features are currently unavailable.
+                        viewModel.proceedLocationRequest()
+                    }
+
+                    BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -&gt; {
+                        // Should prompt the user to create credentials that your app accepts.
+                        viewModel.proceedLocationRequest()
+                    }
+
+                    BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED -&gt; {
+                        // TODO: is this where we need to re-verify biometric ??
+                    }
+
+                    BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED -&gt; {
+                        viewModel.proceedLocationRequest()
+                    }
+
+                    BiometricManager.BIOMETRIC_STATUS_UNKNOWN -&gt; {
+                        viewModel.proceedLocationRequest()
+                    }
+                }
+            }
+        )
+
+        val hasRequestedBiometricKey = sharedPreferences.getString(Constants.USER_EMAIL, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED
+        val hasAlreadyAskedBiometric = sharedPreferences.getBoolean(hasRequestedBiometricKey, false)
+
+        if (!hasAlreadyAskedBiometric &amp;&amp; documentType?.toString() != &quot;SSN_ONLY&quot;) {
+            viewModel.checkForBiometricPermission(email)
+        } else {
+            viewModel.proceedLocationRequest()
+        }
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        val navController = findNavController(R.id.fragment)
+        return navController.navigateUp(appBarConfiguration) ||
+            super.onSupportNavigateUp()
+    }
+
+    override fun onBackPressed() {
+        if (fromHomePage) {
+            this.finish()
+        } else {
+            showCancellationDialog()
+        }
+    }
+
+    fun updateToolbarTitle(title: String) {
+        binding.toolbar.setTitle(title)
+    }
+
+    override fun androidInjector(): AndroidInjector&lt;Any&gt; = fragmentInjector
+
+    // step 3: location Request
+    fun locationRequest() {
+        durationTracker.startStep(&quot;location_permission&quot;)
+        logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_LOCATION_REQUESTED)
+        if (HelperUtils.isGpsEnabled(this)) {
+            val permissionApproved =
+                this.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+            if (!permissionApproved) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(
+                        this,
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    )
+                ) {
+                    Timber.d(&quot;showLocationPermissionRationale&quot;)
+                    // Show rationale to the user
+//                    showLocationPermissionRationale()
+                    cameraRequest()
+                } else {
+                    Timber.d(&quot;requestPermissio&quot;)
+
+                    requestPermissions(
+                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                        REQUEST_FINE_LOCATION_PERMISSIONS_REQUEST_CODE
+                    )
+                }
+            } else {
+                cameraRequest()
+            }
+        } else {
+            logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_GPS_DISABLED_SHOWN)
+            DialogUtils(
+                this,
+                object : DialogListener {
+                    override fun onNeutralClicked() {
+                        cameraRequest()
+                    }
+
+                    override fun onPositiveClicked() {
+                        if (HelperUtils.isGpsEnabled(this@GuestVerifyActivity)) {
+                            locationRequest()
+                        } else {
+                            startActivity(
+                                Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                            )
+                        }
+//
+                    }
+
+                    override fun onNegativeClicked() {
+                        cameraRequest()
+                    }
+                }
+            ).dialog(
+                getString(R.string.gps_off),
+                getString(R.string.ok_string),
+                getString(R.string.cancel),
+                &quot;&quot;
+            )
+        }
+    }
+
+    // step 4: Camera Request
+    fun cameraRequest() {
+        durationTracker.startStep(&quot;camera_permission&quot;)
+        logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_CAMERA_REQUESTED)
+        val permissionApproved =
+            this.hasPermission(Manifest.permission.CAMERA)
+        if (!permissionApproved) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(
+                    this,
+                    Manifest.permission.CAMERA
+                )
+            ) {
+                // Show rationale to the user
+                showCameraPermissionRationale()
+            } else {
+                requestPermissions(
+                    arrayOf(Manifest.permission.CAMERA),
+                    REQUEST_CAMERA_PERMISSION_REQUEST_CODE
+                )
+            }
+        } else {
+            captureDocument()
+        }
+    }
+
+    fun captureDocument() {
+        if (fromHomePage) {
+            return
+        }
+        val popup = VerifyIdentityDialog.newInstance()
+        popup.requestApi = false
+        popup.setCallback(object : VerifyIdentityListener {
+            override fun onProceed(token: String?) {
+                popup.dismiss()
+            }
+
+            override fun onError(err: String) {
+                popup.dismiss()
+            }
+
+            override fun onSkip() {
+            }
+        })
+
+        popup.show(this.supportFragmentManager, &quot;popup&quot;)
+    }
+
+    private fun showCameraPermissionRationale() {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.camera_permission_needed))
+            .setMessage(getString(R.string.camera_permission_rationale))
+            .setPositiveButton(getString(R.string.grant_permission)) { _, _ -&gt;
+                // Request the permission again
+                requestPermissions(
+                    arrayOf(Manifest.permission.CAMERA),
+                    REQUEST_CAMERA_PERMISSION_REQUEST_CODE
+                )
+            }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .show()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array&lt;out String?&gt;,
+        grantResults: IntArray,
+        deviceId: Int
+    ) {
+        if (requestCode == REQUEST_FINE_LOCATION_PERMISSIONS_REQUEST_CODE) {
+            when {
+                grantResults.isNotEmpty() -&gt; {
+                    if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_LOCATION_GRANTED)
+                        // gotpo next step camera
+                        cameraRequest()
+                    } else {
+                        if (!ActivityCompat.shouldShowRequestPermissionRationale(
+                                this,
+                                Manifest.permission.ACCESS_FINE_LOCATION
+                            )
+                        ) {
+                            // User selected &quot;Don't ask again&quot;
+                            logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_LOCATION_DENIED) {
+                                putBoolean(&quot;is_permanent&quot;, true)
+                            }
+                            showPermissionDeniedDialog()
+                        } else {
+                            // User denied without &quot;Don't ask again&quot;
+                            logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_LOCATION_DENIED) {
+                                putBoolean(&quot;is_permanent&quot;, false)
+                            }
+                            cameraRequest()
+//                            showLocationPermissionRationale()
+                        }
+                    }
+                }
+            }
+        } else if (requestCode == REQUEST_CAMERA_PERMISSION_REQUEST_CODE) {
+            when {
+                grantResults.isNotEmpty() -&gt; {
+                    if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_CAMERA_GRANTED)
+                        // gotpo next capture document
+                        captureDocument()
+                    } else {
+                        if (!ActivityCompat.shouldShowRequestPermissionRationale(
+                                this,
+                                Manifest.permission.CAMERA
+                            )
+                        ) {
+                            // User selected &quot;Don't ask again&quot;
+                            logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_CAMERA_DENIED) {
+                                putBoolean(&quot;is_permanent&quot;, true)
+                            }
+                            showPermissionDeniedDialogCamera()
+                        } else {
+                            // User denied without &quot;Don't ask again&quot;
+                            logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_CAMERA_DENIED) {
+                                putBoolean(&quot;is_permanent&quot;, false)
+                            }
+                            showCameraPermissionRationale()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    var requestingSettingsPermission: Boolean = false
+
+    private fun showPermissionDeniedDialogCamera() {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.permission_denied))
+            .setMessage(
+                getString(
+                    R.string.camera_access_has_been_permanently_denied_to_enable_camera_based_features_please_grant_camera_permission_in_your_device_s_app_settings
+                )
+            )
+            .setPositiveButton(getString(R.string.open_settings)) { _, _ -&gt;
+
+                requestingSettingsPermission = true
+                // Open app settings
+                val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                val uri = Uri.fromParts(&quot;package&quot;, this.packageName, null)
+                intent.data = uri
+                startActivity(intent)
+            }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .show()
+    }
+
+    private fun showPermissionDeniedDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.permission_denied))
+            .setMessage(
+                getString(
+                    R.string.location_access_has_been_permanently_denied_to_enable_location_based_features_please_grant_location_permission_in_your_device_s_app_settings
+                )
+            )
+            .setPositiveButton(getString(R.string.open_settings)) { _, _ -&gt;
+                requestingSettingsPermission = true
+
+                // Open app settings
+                val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                val uri = Uri.fromParts(&quot;package&quot;, this.packageName, null)
+                intent.data = uri
+                startActivity(intent)
+            }
+            .setNegativeButton(getString(R.string.cancel)) { _, _ -&gt;
+                // for display the camera even if the location denied
+                cameraRequest()
+            }
+            .show()
+    }
+
+    private fun showCancellationDialog() {
+        // Inflate the dialog layout
+        val dialogView = layoutInflater.inflate(R.layout.dialog_cancle_seemless, null)
+
+        // Create the dialog
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        dialog.setCancelable(false)
+        // Find views in the dialog
+        val proceedToLogin: MaterialButton = dialogView.findViewById(R.id.proceedToLoginButton)
+        val subtextView: TextView = dialogView.findViewById(R.id.txtSubText)
+        val messageText = getString(
+            R.string.we_ve_created_your_account_and_send_you_and_email_at_s,
+            email
+        )
+        val spannableString = android.text.SpannableString(messageText)
+        val emailStart = messageText.indexOf(email)
+        if (emailStart != -1) {
+            spannableString.setSpan(
+                android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                emailStart,
+                emailStart + email.length,
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        subtextView.text = spannableString
+
+        proceedToLogin.setOnClickListener {
+            logGuestVerifyEvent(FirebaseTags.GUEST_VERIFY_CANCELLED)
+            durationTracker.logTotalDuration(completed = false)
+            if (fromHomePage) {
+                this.finish()
+            } else {
+                val intent = Intent(this, LoginActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+
+                // Close all activities
+                this.finishAffinity()
+            }
+        }
+
+        val continueRegistration: TextView = dialogView.findViewById(R.id.continueRegistration)
+        continueRegistration.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        // Show the dialog
+        dialog.show()
+    }
+
+    fun getTitleForActivity(destinationId: Int, arguments: Bundle? = null): String {
+        return when (destinationId) {
+            R.id.documentScanFragment -&gt; {
+                val documentType = arguments?.getSerializable(&quot;documentType&quot;)?.toString()
+                if (documentType == &quot;SSN&quot;) {
+                    getString(R.string.additional_verification)
+                } else {
+                    getString(R.string.verify_identity)
+                }
+            }
+
+            R.id.zipUpdateFragment -&gt; getString(R.string.additional_verification)
+            else -&gt; getString(R.string.verify_identity)
+        }
+    }
+
+    private fun logGuestVerifyEvent(eventName: String, additionalParams: Bundle.() -&gt; Unit = {}) {
+        val bundle = Bundle().apply {
+            putString(FirebaseTags.PARAM_TOKEN, sharedViewModel.token.value ?: &quot;&quot;)
+            additionalParams()
+        }
+        firebaseAnalytics.logEvent(eventName, bundle)
+    }
+}
+
+<span class="nc" id="L689">class DurationTracker(</span>
+<span class="nc" id="L690">    private val analytics: FirebaseAnalytics,</span>
+<span class="nc" id="L691">    private val sharedViewModel: SharedViewModel</span>
+) {
+    private var stepStartTime: Long = 0
+    private var flowStartTime: Long = 0
+<span class="nc" id="L695">    private var currentStep: String = &quot;&quot;</span>
+
+<span class="nc" id="L697">    private fun getCommonParams(): Bundle = Bundle().apply {</span>
+<span class="nc bnc" id="L698" title="All 2 branches missed.">        putString(FirebaseTags.PARAM_TOKEN, sharedViewModel.token.value ?: &quot;&quot;)</span>
+<span class="nc" id="L699">    }</span>
+
+    fun startFlow() {
+<span class="nc" id="L702">        flowStartTime = System.currentTimeMillis()</span>
+<span class="nc" id="L703">    }</span>
+
+    fun startStep(stepName: String) {
+<span class="nc bnc" id="L706" title="All 4 branches missed.">        if (currentStep.isNotEmpty()) {</span>
+<span class="nc" id="L707">            logStepDuration()</span>
+        }
+<span class="nc" id="L709">        currentStep = stepName</span>
+<span class="nc" id="L710">        stepStartTime = System.currentTimeMillis()</span>
+<span class="nc" id="L711">    }</span>
+
+    fun logStepDuration(): Long {
+<span class="nc bnc" id="L714" title="All 4 branches missed.">        if (currentStep.isEmpty()) return 0</span>
+<span class="nc" id="L715">        val duration = System.currentTimeMillis() - stepStartTime</span>
+<span class="nc" id="L716">        val bundle = getCommonParams().apply {</span>
+<span class="nc" id="L717">            putString(&quot;step_name&quot;, currentStep)</span>
+<span class="nc" id="L718">            putLong(&quot;duration_ms&quot;, duration)</span>
+<span class="nc" id="L719">        }</span>
+<span class="nc" id="L720">        analytics.logEvent(FirebaseTags.GUEST_VERIFY_STEP_DURATION, bundle)</span>
+<span class="nc" id="L721">        return duration</span>
+    }
+
+    fun logTotalDuration(completed: Boolean): Long {
+<span class="nc bnc" id="L725" title="All 4 branches missed.">        if (currentStep.isNotEmpty()) {</span>
+<span class="nc" id="L726">            logStepDuration()</span>
+        }
+<span class="nc" id="L728">        val duration = System.currentTimeMillis() - flowStartTime</span>
+<span class="nc" id="L729">        val bundle = getCommonParams().apply {</span>
+<span class="nc" id="L730">            putLong(&quot;duration_ms&quot;, duration)</span>
+<span class="nc" id="L731">            putBoolean(&quot;completed&quot;, completed)</span>
+<span class="nc" id="L732">        }</span>
+<span class="nc" id="L733">        analytics.logEvent(FirebaseTags.GUEST_VERIFY_TOTAL_DURATION, bundle)</span>
+<span class="nc" id="L734">        return duration</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

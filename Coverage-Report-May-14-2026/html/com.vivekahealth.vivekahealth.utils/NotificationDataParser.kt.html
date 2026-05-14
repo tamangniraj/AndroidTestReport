@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificationDataParser.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils</a> &gt; <span class="el_source">NotificationDataParser.kt</span></div><h1>NotificationDataParser.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils
+
+import android.content.Intent
+import android.os.Bundle
+
+/**
+ * Helper class to parse and manage notification data across activities.
+ * Handles notification routing from MainActivity → LoginActivity → HomePageActivity
+ */
+<span class="fc" id="L10">data class NotificationDataParser(</span>
+<span class="pc" id="L11">    var clickAction: String? = null,</span>
+<span class="pc" id="L12">    var isValid: Boolean = false,</span>
+<span class="pc" id="L13">    var memberId: String? = null,</span>
+<span class="pc" id="L14">    var url: String? = null,</span>
+<span class="pc" id="L15">    var extras: Bundle? = null,</span>
+<span class="pc" id="L16">    var fromBroadCast: Boolean = false</span>
+<span class="fc" id="L17">) {</span>
+
+    companion object {
+        const val KEY_CLICK_ACTION = &quot;click_action&quot;
+        private const val KEY_MEMBER_ID = &quot;memberId&quot;
+        private const val KEY_URL = &quot;url&quot;
+        const val FROM_BROADCAST = &quot;from_broadcast&quot;
+
+        // Supported notification actions
+        const val ACTION_OPEN_CHAT = &quot;OPEN_CHAT_ACTIVITY&quot;
+        const val ACTION_OPEN_DOCUMENTS = &quot;OPEN_DOCUMENTS_LIST_ACTIVITY&quot;
+        const val ACTION_OPEN_DOCUMENT_REQUESTS = &quot;OPEN_DOCUMENT_REQUESTS_ACTIVITY&quot;
+        const val ACTION_OPEN_NOTIFICATION_CENTER = &quot;OPEN_NOTIFICATION_CENTER&quot;
+        const val ACTION_OPEN_SURVEY = &quot;OPEN_SURVEY&quot;
+        const val ACTION_OPEN_BENEFIT_SCREEN = &quot;OPEN_BENEFIT_SCREEN_ACTIVITY&quot;
+
+        /**
+         * Parse notification data from an Intent
+         * @param intent Intent containing notification data
+         * @return NotificationDataParser instance with parsed data
+         */
+        fun fromIntent(intent: Intent?): NotificationDataParser {
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">            if (intent == null) {</span>
+<span class="nc" id="L40">                return NotificationDataParser()</span>
+            }
+
+            // Check for clickAction in intent extras first, fallback to intent.action
+<span class="fc bfc" id="L44" title="All 2 branches covered.">            val clickAction = intent.getStringExtra(KEY_CLICK_ACTION)</span>
+<span class="fc" id="L45">                ?: intent.action</span>
+<span class="fc" id="L46">            val url = intent.getStringExtra(KEY_URL)</span>
+<span class="fc" id="L47">            val memberId = intent.getStringExtra(KEY_MEMBER_ID)</span>
+<span class="fc" id="L48">            val fromBroadCast = intent.getBooleanExtra(FROM_BROADCAST, false)</span>
+
+<span class="fc" id="L50">            return NotificationDataParser(</span>
+<span class="fc" id="L51">                clickAction = clickAction,</span>
+<span class="fc" id="L52">                isValid = intent.hasExtra(KEY_CLICK_ACTION),</span>
+<span class="fc" id="L53">                memberId = memberId,</span>
+<span class="fc" id="L54">                url = url,</span>
+<span class="fc" id="L55">                extras = intent.extras,</span>
+<span class="fc" id="L56">                fromBroadCast = fromBroadCast</span>
+            )
+        }
+    }
+
+    /**
+     * Add this notification data to an intent, including all extras from the original intent
+     */
+    fun addToIntent(intent: Intent): Intent {
+        // Copy all extras from the original bundle if available
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        extras?.let { originalExtras -&gt;</span>
+<span class="fc" id="L67">            intent.putExtras(originalExtras)</span>
+        }
+
+<span class="fc" id="L70">        return intent</span>
+    }
+
+    override fun toString(): String {
+<span class="nc bnc" id="L74" title="All 4 branches missed.">        return &quot;NotificationDataParser(clickAction=$clickAction, isValid=$isValid,  extras=${extras?.keySet()?.joinToString { &quot;,&quot; }})&quot;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

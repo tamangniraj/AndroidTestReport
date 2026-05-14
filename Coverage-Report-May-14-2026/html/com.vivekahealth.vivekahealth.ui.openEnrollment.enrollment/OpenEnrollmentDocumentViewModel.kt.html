@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenEnrollmentDocumentViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment</a> &gt; <span class="el_source">OpenEnrollmentDocumentViewModel.kt</span></div><h1>OpenEnrollmentDocumentViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.openEnrollment.enrollment
+
+import android.graphics.Bitmap
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.messaging.FirebaseMessaging
+import com.vivekahealth.vivekahealth.data.local.enroll.RootDocumentResponse
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.UploadedDocument
+import com.vivekahealth.vivekahealth.ui.guestHome.repository.GuestHomeRepository
+import com.vivekahealth.vivekahealth.ui.guestVerify.documents.DocumentType
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import okhttp3.MultipartBody
+import java.util.UUID
+import javax.inject.Inject
+
+<span class="nc" id="L23">class OpenEnrollmentDocumentViewModel @Inject constructor(</span>
+<span class="nc" id="L24">    private val guestHomeRepository: GuestHomeRepository</span>
+<span class="nc" id="L25">) : ViewModel() {</span>
+
+<span class="nc" id="L27">    private val compositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L29">    private val _requiredDocs = MutableLiveData&lt;RootDocumentResponse&gt;()</span>
+<span class="nc" id="L30">    val requiredDocs: LiveData&lt;RootDocumentResponse&gt; get() = _requiredDocs</span>
+
+<span class="nc" id="L32">    private val _error = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="nc" id="L33">    val error: LiveData&lt;Event&lt;Unit&gt;&gt; get() = _error</span>
+
+    private var isFetchingDocs = false
+
+    fun fetchRequiredDocuments() {
+<span class="nc bnc" id="L38" title="All 4 branches missed.">        if (isFetchingDocs || _requiredDocs.value != null) return</span>
+<span class="nc" id="L39">        isFetchingDocs = true</span>
+<span class="nc" id="L40">        compositeDisposable.add(</span>
+<span class="nc" id="L41">            guestHomeRepository.getRequiredDocuments()</span>
+<span class="nc" id="L42">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L43">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L44">                .subscribe({ docs -&gt;</span>
+<span class="nc" id="L45">                    isFetchingDocs = false</span>
+<span class="nc" id="L46">                    _requiredDocs.value = docs</span>
+<span class="nc" id="L47">                }, {</span>
+<span class="nc" id="L48">                    isFetchingDocs = false</span>
+<span class="nc" id="L49">                    _error.value = Event(Unit)</span>
+<span class="nc" id="L50">                })</span>
+        )
+<span class="nc" id="L52">    }</span>
+
+<span class="nc" id="L54">    val primaryUploadList: MutableList&lt;UploadedDocument&gt;? = mutableListOf()</span>
+
+    fun uploadDocument(bitmap: Bitmap, documentType: DocumentType) {
+<span class="nc bnc" id="L57" title="All 4 branches missed.">        val (docTypeId, docTypeName) = when (documentType) {</span>
+<span class="nc" id="L58">            DocumentType.DL_FRONT -&gt; 103 to &quot;Front of Driver License&quot;</span>
+<span class="nc" id="L59">            DocumentType.DL_BACK -&gt; 104 to &quot;Back of Driver License&quot;</span>
+<span class="nc" id="L60">            DocumentType.SSN -&gt; 71 to &quot;SSN Card&quot;</span>
+<span class="nc" id="L61">            else -&gt; return</span>
+        }
+
+<span class="nc" id="L64">        val filePart: MultipartBody.Part = HelperUtils.createMultipartBodyPartFromBitmap(</span>
+<span class="nc" id="L65">            bitmap = bitmap,</span>
+<span class="nc" id="L66">            &quot;file&quot;,</span>
+<span class="nc" id="L67">            &quot;${UUID.randomUUID()}-$docTypeName-${DateUtils.getCurrentLocalTime()}&quot;</span>
+        )
+
+<span class="nc" id="L70">        compositeDisposable.add(</span>
+<span class="nc" id="L71">            guestHomeRepository.uploadOpenFile(filePart, docTypeId.toString())</span>
+<span class="nc" id="L72">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L73">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L74">                .subscribe({ response -&gt;</span>
+<span class="nc bnc" id="L75" title="All 4 branches missed.">                    val uploadedFileId = response.id?.toIntOrNull() ?: return@subscribe</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                    primaryUploadList?.add(</span>
+<span class="nc" id="L77">                        UploadedDocument(</span>
+<span class="nc" id="L78">                            fileTypeId = docTypeId,</span>
+<span class="nc" id="L79">                            uploadedFileReferenceId = uploadedFileId</span>
+                        )
+                    )
+<span class="nc" id="L82">                }, {</span>
+                    // fire-and-forget: failure is silent; caller proceeds regardless
+<span class="nc" id="L84">                })</span>
+        )
+<span class="nc" id="L86">    }</span>
+
+    fun updateGuestToken() {
+<span class="nc" id="L89">        FirebaseMessaging.getInstance().token.addOnCompleteListener(</span>
+            OnCompleteListener { task -&gt;
+<span class="nc bnc" id="L91" title="All 2 branches missed.">                if (!task.isSuccessful) {</span>
+<span class="nc" id="L92">                    return@OnCompleteListener</span>
+                }
+<span class="nc" id="L94">                val token = task.result</span>
+<span class="nc" id="L95">                compositeDisposable.add(</span>
+<span class="nc" id="L96">                    guestHomeRepository.updateGuestFcmToken(&quot;&quot;, token, true)</span>
+<span class="nc" id="L97">                        .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L98">                        .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L99">                        .subscribe({}, {})</span>
+                )
+<span class="nc" id="L101">            }</span>
+        )
+<span class="nc" id="L103">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L106">        super.onCleared()</span>
+<span class="nc" id="L107">        compositeDisposable.dispose()</span>
+<span class="nc" id="L108">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RemovePickerSheet.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.pickerBottomSheet.remove</a> &gt; <span class="el_source">RemovePickerSheet.kt</span></div><h1>RemovePickerSheet.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.pickerBottomSheet.remove
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.lifecycle.ViewModelProvider
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.databinding.FragmentRemovePickerSheetBinding
+import com.vivekahealth.vivekahealth.di.Injectable
+import com.vivekahealth.vivekahealth.ui.BaseBottomSheetDialogFragment
+import com.vivekahealth.vivekahealth.utils.EventObserver
+import javax.inject.Inject
+
+<span class="nc" id="L15">class RemovePickerSheet : BaseBottomSheetDialogFragment(), Injectable {</span>
+
+    companion object {
+<span class="nc" id="L18">        fun newInstance() = RemovePickerSheet()</span>
+    }
+<span class="nc" id="L20">    var pickerButtonListener: PickerRemoveButtonListener? = null</span>
+
+    fun setCallback(pickerButtonListener: PickerRemoveButtonListener) {
+<span class="nc" id="L23">        this.pickerButtonListener = pickerButtonListener</span>
+<span class="nc" id="L24">    }</span>
+    private lateinit var viewModel: RemovePickerSheetViewModel
+    private lateinit var binding: FragmentRemovePickerSheetBinding
+
+<span class="nc" id="L28">    @Inject</span>
+<span class="nc" id="L29">    lateinit var viewModelFactory: ViewModelProvider.Factory</span>
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+<span class="nc" id="L35">        binding = FragmentRemovePickerSheetBinding.inflate(inflater, container, false)</span>
+<span class="nc" id="L36">        return binding.root</span>
+    }
+    override fun onCreate(savedInstanceState: Bundle?) {
+<span class="nc" id="L39">        super.onCreate(savedInstanceState)</span>
+<span class="nc" id="L40">        setStyle(STYLE_NORMAL, R.style.CustomBottomSheetDialogTheme)</span>
+<span class="nc" id="L41">    }</span>
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+<span class="nc" id="L43">        super.onActivityCreated(savedInstanceState)</span>
+<span class="nc" id="L44">        viewModel = ViewModelProvider(this, viewModelFactory).get(</span>
+<span class="nc" id="L45">            RemovePickerSheetViewModel::class.java</span>
+        )
+<span class="nc" id="L47">        binding.viewModel = viewModel</span>
+
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        val hasImage = arguments?.getBoolean(&quot;hasImage&quot;)</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        if (hasImage != null) {</span>
+<span class="nc" id="L51">            binding.hasImage = hasImage</span>
+        }
+
+<span class="nc" id="L54">        viewModel.navigateToCancel.observe(</span>
+<span class="nc" id="L55">            viewLifecycleOwner,</span>
+<span class="nc" id="L56">            EventObserver {</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">                pickerButtonListener?.onClose()</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">                dialog?.dismiss()</span>
+<span class="nc" id="L59">            }</span>
+        )
+<span class="nc" id="L61">        viewModel.navigateToRemove.observe(</span>
+<span class="nc" id="L62">            viewLifecycleOwner,</span>
+<span class="nc" id="L63">            EventObserver {</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">                pickerButtonListener?.onRemove()</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">                dialog?.dismiss()</span>
+<span class="nc" id="L66">            }</span>
+        )
+
+<span class="nc" id="L69">        viewModel.navigateToRemoveDependent.observe(</span>
+<span class="nc" id="L70">            viewLifecycleOwner,</span>
+<span class="nc" id="L71">            EventObserver {</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">                pickerButtonListener?.onRemoveDependent()</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">                dialog?.dismiss()</span>
+<span class="nc" id="L74">            }</span>
+        )
+<span class="nc" id="L76">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

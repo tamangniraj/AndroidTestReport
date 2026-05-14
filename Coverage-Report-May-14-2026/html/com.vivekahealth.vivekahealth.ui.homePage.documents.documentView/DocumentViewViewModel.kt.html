@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocumentViewViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.documents.documentView</a> &gt; <span class="el_source">DocumentViewViewModel.kt</span></div><h1>DocumentViewViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.documents.documentView
+
+import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
+import com.bumptech.glide.request.transition.DrawableCrossFadeTransition
+import com.vivekahealth.vivekahealth.data.remote.home.Value
+import com.vivekahealth.vivekahealth.ui.homePage.documents.repository.DocumentRepository
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import javax.inject.Inject
+import okhttp3.ResponseBody
+
+<span class="nc" id="L31">class DocumentViewViewModel @Inject constructor(</span>
+<span class="nc" id="L32">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L33">    private val documentRepository: DocumentRepository</span>
+<span class="nc" id="L34">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L36">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L38">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L40">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L42">        get() = _navigateToBack</span>
+<span class="nc" id="L43">    private val _navigateToShare = MutableLiveData&lt;Event&lt;File&gt;&gt;()</span>
+    val navigateToShare: LiveData&lt;Event&lt;File&gt;&gt;
+<span class="nc" id="L45">        get() = _navigateToShare</span>
+<span class="nc" id="L46">    var isEob: Boolean = false</span>
+<span class="nc" id="L47">    var eobID: String = &quot;&quot;</span>
+<span class="nc" id="L48">    private val _navigateToPDFDownloaded = MutableLiveData&lt;Event&lt;ResponseBody&gt;&gt;()</span>
+    val navigateToPDFDownloaded: LiveData&lt;Event&lt;ResponseBody&gt;&gt;
+<span class="nc" id="L50">        get() = _navigateToPDFDownloaded</span>
+
+<span class="nc" id="L52">    var myFile: File? = null</span>
+<span class="nc" id="L53">    var imageBitmap: Bitmap? = null</span>
+
+<span class="nc" id="L55">    var fileName: String = &quot;&quot;</span>
+<span class="nc" id="L56">    var myImageFile: File? = null</span>
+
+<span class="nc" id="L58">    var loadedFile: Boolean = false</span>
+<span class="nc" id="L59">    var value: Value? = null</span>
+
+<span class="nc" id="L61">    var memberID: String = &quot;&quot;</span>
+<span class="nc" id="L62">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L64">            field = value</span>
+<span class="nc" id="L65">            callbacks.notifyCallbacks(this, BR.memberID, null)</span>
+<span class="nc" id="L66">        }</span>
+
+<span class="nc" id="L68">    var type: String = &quot;&quot;</span>
+<span class="nc" id="L69">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L71">            field = value</span>
+<span class="nc" id="L72">            callbacks.notifyCallbacks(this, BR.type, null)</span>
+<span class="nc" id="L73">        }</span>
+
+<span class="nc" id="L75">    var showImage: Boolean = true</span>
+<span class="nc" id="L76">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L78">            field = value</span>
+<span class="nc" id="L79">            callbacks.notifyCallbacks(this, BR.showImage, null)</span>
+<span class="nc" id="L80">        }</span>
+
+    var loading: Boolean = false
+<span class="nc" id="L83">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L85">            field = value</span>
+<span class="nc" id="L86">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L87">        }</span>
+
+<span class="nc" id="L89">    var contentTypePDF = &quot;application/pdf&quot;</span>
+
+<span class="nc" id="L91">    private val _navigateToImageDownloaded = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToImageDownloaded: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L93">        get() = _navigateToImageDownloaded</span>
+<span class="nc" id="L94">    var typeID: Int = 1</span>
+<span class="nc" id="L95">    init {</span>
+
+//    getAttachment()
+<span class="nc" id="L98">    }</span>
+
+    fun saveBitmapToFile(
+        dir: File?,
+        fileName: String?,
+        quality: Int
+    ): Boolean {
+<span class="nc" id="L105">        var type: Bitmap.CompressFormat? = null</span>
+<span class="nc bnc" id="L106" title="All 4 branches missed.">        if (value?.contentType.equals(&quot;image/jpeg&quot;)) {</span>
+<span class="nc" id="L107">            type = Bitmap.CompressFormat.JPEG</span>
+<span class="nc bnc" id="L108" title="All 4 branches missed.">        } else if (value?.contentType.equals(&quot;image/png&quot;)) {</span>
+<span class="nc" id="L109">            type = Bitmap.CompressFormat.PNG</span>
+        }
+<span class="nc" id="L111">        var correctedFileName = fileName</span>
+<span class="nc" id="L112">        val docExtRegEx = Regex(&quot;(\\.(pdf|jpg|png))(?!.+)&quot;)</span>
+<span class="nc" id="L113">        val hasExtension = docExtRegEx.containsMatchIn(fileName!!)</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (!hasExtension) {</span>
+<span class="nc" id="L115">            val ext = type!!.name.lowercase()</span>
+<span class="nc" id="L116">            correctedFileName = &quot;$fileName.$ext&quot;</span>
+        }
+<span class="nc" id="L118">        val format: Bitmap.CompressFormat? = type</span>
+<span class="nc" id="L119">        myImageFile = File(dir, correctedFileName!!)</span>
+<span class="nc" id="L120">        var fos: FileOutputStream? = null</span>
+<span class="nc" id="L121">        try {</span>
+<span class="nc" id="L122">            fos = FileOutputStream(myImageFile)</span>
+<span class="nc" id="L123">            imageBitmap!!.compress(format!!, quality, fos)</span>
+<span class="nc" id="L124">            fos.close()</span>
+<span class="nc" id="L125">            return true</span>
+<span class="nc" id="L126">        } catch (e: IOException) {</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">            if (fos != null) {</span>
+<span class="nc" id="L128">                try {</span>
+<span class="nc" id="L129">                    fos.close()</span>
+<span class="nc" id="L130">                } catch (e1: IOException) {</span>
+<span class="nc" id="L131">                    e1.printStackTrace()</span>
+                }
+            }
+        }
+<span class="nc" id="L135">        return false</span>
+    }
+
+    fun getAttachment() {
+<span class="nc bnc" id="L139" title="All 8 branches missed.">        if (value?.contentType.equals(&quot;image/jpeg&quot;, true) || value?.contentType.equals(</span>
+<span class="nc" id="L140">                &quot;image/png&quot;,</span>
+<span class="nc" id="L141">                true</span>
+            )
+        ) {
+<span class="nc" id="L144">            showImage = true</span>
+
+<span class="nc bnc" id="L146" title="All 4 branches missed.">            value?.selfId?.let {</span>
+<span class="nc" id="L147">                memberID = it</span>
+<span class="nc" id="L148">            }</span>
+
+<span class="nc" id="L150">            loading = true</span>
+
+<span class="nc bnc" id="L152" title="All 2 branches missed.">            value?.let {</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">                if (it.type.equals(&quot;COMMUNICATION&quot;, true)) {</span>
+<span class="nc" id="L154">                    type = &quot;downloadCommunication&quot;</span>
+<span class="nc" id="L155">                    typeID = 2</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                } else if (it.type.equals(&quot;ATTACHMENT&quot;, true)) {</span>
+<span class="nc" id="L157">                    type = &quot;downloadAttachment&quot;</span>
+<span class="nc" id="L158">                    typeID = 1</span>
+                }
+<span class="nc" id="L160">            }</span>
+        } else {
+<span class="nc" id="L162">            showImage = false</span>
+
+<span class="nc" id="L164">            loading = true</span>
+
+<span class="nc bnc" id="L166" title="All 4 branches missed.">            value?.selfId?.let {</span>
+<span class="nc" id="L167">                memberID = it</span>
+<span class="nc" id="L168">            }</span>
+
+<span class="nc bnc" id="L170" title="All 2 branches missed.">            value?.let {</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">                if (it.type.equals(&quot;COMMUNICATION&quot;, true)) {</span>
+<span class="nc" id="L172">                    type = &quot;downloadCommunication&quot;</span>
+<span class="nc" id="L173">                    typeID = 2</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">                } else if (it.type.equals(&quot;ATTACHMENT&quot;, true)) {</span>
+<span class="nc" id="L175">                    type = &quot;downloadAttachment&quot;</span>
+<span class="nc" id="L176">                    typeID = 1</span>
+                }
+<span class="nc" id="L178">            }</span>
+
+<span class="nc" id="L180">            var url: String = &quot;communication/$memberID/$type&quot;</span>
+
+<span class="nc" id="L182">            getPDF(url)</span>
+        }
+<span class="nc" id="L184">    }</span>
+
+<span class="nc" id="L186">    @get:Bindable</span>
+<span class="nc" id="L187">    val listener = object : RequestListener&lt;Drawable&gt; {</span>
+        override fun onLoadFailed(
+            e: GlideException?,
+            model: Any?,
+            target: Target&lt;Drawable&gt;?,
+            isFirstResource: Boolean
+        ): Boolean {
+<span class="nc" id="L194">            loading = false</span>
+
+<span class="nc" id="L196">            return false</span>
+        }
+
+        override fun onResourceReady(
+            resource: Drawable?,
+            model: Any?,
+            target: Target&lt;Drawable&gt;?,
+            dataSource: DataSource?,
+            isFirstResource: Boolean
+        ): Boolean {
+<span class="nc" id="L206">            loading = false</span>
+
+<span class="nc" id="L208">            imageBitmap = (resource as BitmapDrawable).bitmap</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">            target?.onResourceReady(</span>
+<span class="nc" id="L210">                resource,</span>
+<span class="nc" id="L211">                DrawableCrossFadeTransition(100, isFirstResource)</span>
+            )
+<span class="nc" id="L213">            logView()</span>
+<span class="nc" id="L214">            _navigateToImageDownloaded.value = Event(Unit)</span>
+
+<span class="nc" id="L216">            return true</span>
+        }
+    }
+
+    fun logView() {
+<span class="nc" id="L221">        compositeDisposable.add(</span>
+<span class="nc" id="L222">            documentRepository.logDocumentView(</span>
+<span class="nc" id="L223">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc" id="L224">                value!!.selfId.toString(),</span>
+<span class="nc" id="L225">                typeID,</span>
+<span class="nc" id="L226">                value!!.referencedMemberId.toString()</span>
+            )
+<span class="nc" id="L228">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L229">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L230">                .doOnSubscribe {</span>
+<span class="nc" id="L231">                }.subscribe({</span>
+<span class="nc" id="L232">                }, {</span>
+<span class="nc" id="L233">                })</span>
+        )
+<span class="nc" id="L235">    }</span>
+
+    fun getPDF(url: String) {
+<span class="nc" id="L238">        compositeDisposable.add(</span>
+<span class="nc" id="L239">            documentRepository.getPDF(url)</span>
+<span class="nc" id="L240">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L241">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L242">                .doOnSubscribe {</span>
+<span class="nc" id="L243">                    loading = true</span>
+<span class="nc" id="L244">                }</span>
+<span class="nc" id="L245">                .subscribe({</span>
+<span class="nc" id="L246">                    loading = false</span>
+
+<span class="nc" id="L248">                    _navigateToPDFDownloaded.value = Event(it)</span>
+<span class="nc" id="L249">                }, {</span>
+<span class="nc" id="L250">                    loading = false</span>
+<span class="nc" id="L251">                })</span>
+        )
+<span class="nc" id="L253">    }</span>
+
+    fun onCloseClicked() {
+<span class="nc" id="L256">        _navigateToBack.value = Event(Unit)</span>
+<span class="nc" id="L257">    }</span>
+
+    fun onShareClicked() {
+<span class="nc" id="L260">        var file: File? = null</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">        if (!isEob) {</span>
+<span class="nc bnc" id="L262" title="All 8 branches missed.">            if (value?.contentType?.contains(&quot;image&quot;) == true) {</span>
+<span class="nc" id="L263">                file = myImageFile</span>
+            } else {
+<span class="nc" id="L265">                file = myFile</span>
+            }
+        } else {
+<span class="nc" id="L268">            file = myFile</span>
+        }
+
+<span class="nc bnc" id="L271" title="All 2 branches missed.">        file?.let {</span>
+<span class="nc" id="L272">            _navigateToShare.value = Event(file)</span>
+<span class="nc" id="L273">        }</span>
+<span class="nc" id="L274">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L277">        callbacks.add(callback)</span>
+<span class="nc" id="L278">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L281">        callbacks.remove(callback)</span>
+<span class="nc" id="L282">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L285">        super.onCleared()</span>
+<span class="nc" id="L286">        compositeDisposable.dispose()</span>
+<span class="nc" id="L287">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

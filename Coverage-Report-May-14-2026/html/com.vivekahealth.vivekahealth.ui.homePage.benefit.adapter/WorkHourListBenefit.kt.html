@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WorkHourListBenefit.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.benefit.adapter</a> &gt; <span class="el_source">WorkHourListBenefit.kt</span></div><h1>WorkHourListBenefit.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.benefit.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.data.remote.home.*
+import com.vivekahealth.vivekahealth.databinding.SingleCellEmployerListBenefitBinding
+import com.vivekahealth.vivekahealth.utils.Constants
+import java.text.DecimalFormat
+
+<span class="nc" id="L13">class WorkHourListBenefit() : ListAdapter&lt;EmployerHourDTO, RecyclerView.ViewHolder&gt;(</span>
+<span class="nc" id="L14">    EmployerBenefitDiffCallback()</span>
+) {
+
+<span class="nc" id="L17">    var maxWidth: Int = 0</span>
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+<span class="nc" id="L20">        return EmployerViewHolder(</span>
+<span class="nc" id="L21">            SingleCellEmployerListBenefitBinding.inflate(</span>
+<span class="nc" id="L22">                LayoutInflater.from(parent.context),</span>
+<span class="nc" id="L23">                parent,</span>
+<span class="nc" id="L24">                false</span>
+            )
+        )
+    }
+    override fun getItemId(position: Int): Long {
+<span class="nc" id="L29">        return position.toLong()</span>
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+<span class="nc" id="L33">        val item = getItem(position)</span>
+
+<span class="nc" id="L35">        (holder as EmployerViewHolder).binding.name = item.employerName</span>
+<span class="nc" id="L36">        val df = DecimalFormat(&quot;#.##&quot;)</span>
+
+<span class="nc bnc" id="L38" title="All 4 branches missed.">        if (item.bankedHoursRemaining != null &amp;&amp; Constants.SHOW_BANKED_HOURS) {</span>
+<span class="nc" id="L39">            holder.binding.hour = df.format(item.hoursContributed).toString()</span>
+<span class="nc" id="L40">            holder.binding.bankedHours = df.format(item.bankedHoursRemaining).toString()</span>
+<span class="nc" id="L41">            holder.binding.hoursBanked = true</span>
+        } else {
+<span class="nc" id="L43">            holder.binding.hour = df.format(item.hoursContributed).toString()</span>
+<span class="nc" id="L44">            holder.binding.hoursBanked = false</span>
+        }
+<span class="nc" id="L46">        holder.binding.year = item.yearMonthString</span>
+
+//            DateUtils.getMonthYearFromServerDateSlashedToMMMMonth( item.month.toString() + &quot;/&quot; + item.year.toString())
+
+//        holder.itemView.post {
+//            val layoutParamsCell: ViewGroup.LayoutParams = holder.binding.cell.layoutParams
+//
+//            val cellWidth = layoutParamsCell.width
+//
+//
+//                if (maxWidth &lt; cellWidth){
+//                    maxWidth = cellWidth
+//                    val layoutParams: ViewGroup.LayoutParams = holder.binding.cell.layoutParams
+//                    layoutParams.width = maxWidth
+//
+//
+//                    notifyDataSetChanged()
+//                }
+//
+//
+//        }
+
+//        holder.binding.clicked = position == itemCount-1
+<span class="nc" id="L69">    }</span>
+
+    class EmployerViewHolder(
+        val binding: SingleCellEmployerListBenefitBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        //        var toggle = binding.clicked
+        init {
+
+//            binding.clicked = adapterPosition == count
+        }
+    }
+}
+
+<span class="nc" id="L83">private class EmployerBenefitDiffCallback : DiffUtil.ItemCallback&lt;EmployerHourDTO&gt;() {</span>
+
+    override fun areItemsTheSame(oldItem: EmployerHourDTO, newItem: EmployerHourDTO): Boolean {
+<span class="nc" id="L86">        return oldItem == newItem</span>
+    }
+
+    override fun areContentsTheSame(oldItem: EmployerHourDTO, newItem: EmployerHourDTO): Boolean {
+<span class="nc" id="L90">        return oldItem == newItem</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

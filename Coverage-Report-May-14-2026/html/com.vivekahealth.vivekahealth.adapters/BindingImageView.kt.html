@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BindingImageView.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.adapters</a> &gt; <span class="el_source">BindingImageView.kt</span></div><h1>BindingImageView.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.adapters
+
+import android.content.SharedPreferences
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.widget.ImageView
+import androidx.annotation.NonNull
+import androidx.annotation.Nullable
+import androidx.databinding.BindingAdapter
+import androidx.preference.PreferenceManager
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.model.GlideUrl
+import com.bumptech.glide.load.model.LazyHeaders
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
+import com.bumptech.glide.signature.ObjectKey
+import com.vivekahealth.vivekahealth.BuildConfig
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.GlideDrawableLoadListener
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import com.vivekahealth.vivekahealth.utils.remote.HeaderUtils
+import de.hdodenhof.circleimageview.CircleImageView
+
+@BindingAdapter(&quot;clientId&quot;, &quot;imageFromUrl&quot;, &quot;loadListener&quot;, requireAll = false)
+fun bindImageFromUrl(
+    view: ImageView,
+    clientId: String?,
+    imageUrl: String?,
+    loadListener: GlideDrawableLoadListener?
+) {
+<span class="fc" id="L35">    val pref: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(view.context)</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">    if (!Constants.IS_OFFLINE) {</span>
+<span class="pc bpc" id="L37" title="4 of 12 branches missed.">        if (!imageUrl.isNullOrEmpty() &amp;&amp; !clientId.isNullOrBlank()) {</span>
+<span class="pc bpc" id="L38" title="1 of 6 branches missed.">            if (!pref.getString(&quot;uri$clientId&quot;, &quot;&quot;).isNullOrBlank()) {</span>
+<span class="fc" id="L39">                Glide.with(view.context)</span>
+<span class="fc" id="L40">                    .load(pref.getString(&quot;uri$clientId&quot;, &quot;&quot;))</span>
+<span class="fc" id="L41">                    .diskCacheStrategy(DiskCacheStrategy.NONE)</span>
+<span class="fc" id="L42">                    .listener(loadListener)</span>
+<span class="fc" id="L43">                    .into(view)</span>
+            }
+<span class="fc" id="L45">            Glide.with(view.context)</span>
+<span class="fc" id="L46">                .load(imageUrl)</span>
+<span class="fc" id="L47">                .transition(DrawableTransitionOptions.withCrossFade())</span>
+<span class="fc" id="L48">                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)</span>
+<span class="fc" id="L49">                .listener(loadListener)</span>
+<span class="fc" id="L50">                .into(object : CustomTarget&lt;Drawable?&gt;() {</span>
+                    override fun onResourceReady(
+                        @NonNull resource: Drawable,
+                        @Nullable transition: Transition&lt;in Drawable?&gt;?
+                    ) {
+<span class="fc" id="L55">                        val bitmap = (resource as BitmapDrawable).bitmap</span>
+<span class="fc" id="L56">                        view.setImageBitmap(bitmap)</span>
+<span class="fc" id="L57">                        HelperUtils.saveImage(view.context, bitmap, clientId, pref)</span>
+<span class="fc" id="L58">                    }</span>
+
+<span class="nc" id="L60">                    override fun onLoadCleared(@Nullable placeholder: Drawable?) {}</span>
+                    override fun onLoadFailed(@Nullable errorDrawable: Drawable?) {
+<span class="nc" id="L62">                    }</span>
+                })
+        }
+    } else {
+<span class="nc bnc" id="L66" title="All 6 branches missed.">        if (!pref.getString(&quot;uri$clientId&quot;, &quot;&quot;).isNullOrBlank()) {</span>
+<span class="nc" id="L67">            Glide.with(view.context)</span>
+<span class="nc" id="L68">                .load(pref.getString(&quot;uri$clientId&quot;, &quot;&quot;))</span>
+<span class="nc" id="L69">                .diskCacheStrategy(DiskCacheStrategy.NONE)</span>
+<span class="nc" id="L70">                .listener(loadListener)</span>
+<span class="nc" id="L71">                .into(view)</span>
+        }
+    }
+<span class="fc" id="L74">}</span>
+
+@BindingAdapter(&quot;memberIdDoc&quot;, &quot;typeDoc&quot;, &quot;loadListenerGlide&quot;, requireAll = true)
+fun bindImageDoc(
+    view: ImageView,
+    memberIdDoc: String?,
+    typeDoc: String,
+    loadListenerGlide: RequestListener&lt;Drawable&gt;
+) {
+<span class="nc" id="L83">    val pref: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(view.context)</span>
+<span class="nc bnc" id="L84" title="All 6 branches missed.">    if (!memberIdDoc.isNullOrEmpty()) {</span>
+<span class="nc" id="L85">        var glideUrl: GlideUrl = GlideUrl(</span>
+
+<span class="nc" id="L87">            BuildConfig.SERVER_URL + &quot;communication/$memberIdDoc/$typeDoc&quot;,</span>
+<span class="nc" id="L88">            LazyHeaders.Builder()</span>
+<span class="nc" id="L89">                .addHeader(&quot;Authorization&quot;, HeaderUtils.createApisHeader(pref))</span>
+<span class="nc" id="L90">                .addHeader(&quot;Device-Id&quot;, Constants.deviceUUID)</span>
+<span class="nc" id="L91">                .addHeader(&quot;App-Version&quot;, Constants.versionNumber)</span>
+<span class="nc" id="L92">                .addHeader(&quot;Device-Info&quot;, Constants.deviceID)</span>
+<span class="nc" id="L93">                .addHeader(&quot;Client-ID&quot;, Constants.clientID)</span>
+<span class="nc" id="L94">                .build()</span>
+        )
+<span class="nc" id="L96">        Glide.get(view.context).clearMemory()</span>
+<span class="nc" id="L97">        Glide.with(view.context)</span>
+<span class="nc" id="L98">            .load(glideUrl)</span>
+<span class="nc" id="L99">            .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)</span>
+<span class="nc" id="L100">            .signature(ObjectKey(System.currentTimeMillis()))</span>
+<span class="nc" id="L101">            .listener(loadListenerGlide)</span>
+<span class="nc" id="L102">            .into(view)</span>
+    }
+<span class="nc" id="L104">}</span>
+
+@BindingAdapter(&quot;memberId&quot;, &quot;loadListener&quot;, requireAll = false)
+fun bindImageFromAuthUrl(
+    view: CircleImageView,
+    memberId: String?,
+    loadListener: GlideDrawableLoadListener?
+) {
+<span class="nc bnc" id="L112" title="All 6 branches missed.">    if (memberId.isNullOrEmpty()) {</span>
+<span class="nc" id="L113">        view.setImageResource(R.drawable.ic_head_placeholder)</span>
+<span class="nc" id="L114">        return</span>
+    }
+
+<span class="nc" id="L117">    val context = view.context</span>
+<span class="nc" id="L118">    val pref = PreferenceManager.getDefaultSharedPreferences(context)</span>
+<span class="nc" id="L119">    val glideUrl = GlideUrl(</span>
+<span class="nc" id="L120">        &quot;${BuildConfig.SERVER_URL}member/$memberId/getAvatar?v=${System.currentTimeMillis()}&quot;,</span>
+<span class="nc" id="L121">        LazyHeaders.Builder()</span>
+<span class="nc" id="L122">            .addHeader(&quot;Authorization&quot;, HeaderUtils.createApisHeader(pref))</span>
+<span class="nc" id="L123">            .addHeader(&quot;App-Version&quot;, Constants.versionNumber)</span>
+<span class="nc" id="L124">            .addHeader(&quot;Device-Id&quot;, Constants.deviceUUID)</span>
+<span class="nc" id="L125">            .addHeader(&quot;Device-Info&quot;, Constants.deviceID)</span>
+<span class="nc" id="L126">            .addHeader(&quot;Client-ID&quot;, Constants.clientID)</span>
+<span class="nc" id="L127">            .build()</span>
+    )
+
+<span class="nc" id="L130">    Glide.with(context)</span>
+<span class="nc" id="L131">        .load(glideUrl)</span>
+<span class="nc" id="L132">        .placeholder(R.drawable.ic_head_progress)</span>
+<span class="nc" id="L133">        .error(R.drawable.ic_head_placeholder)</span>
+<span class="nc" id="L134">        .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)</span>
+<span class="nc" id="L135">        .into(view)</span>
+<span class="nc" id="L136">}</span>
+
+@BindingAdapter(&quot;memberId&quot;, &quot;currentTime&quot;, &quot;loadListener&quot;, requireAll = false)
+fun bindImageFromAuthUrl(
+    view: CircleImageView,
+    memberId: String?,
+    currentTime: String?,
+    loadListener: GlideDrawableLoadListener?
+) {
+<span class="pc bpc" id="L145" title="3 of 6 branches missed.">    if (memberId.isNullOrEmpty()) {</span>
+<span class="nc" id="L146">        view.setImageResource(R.drawable.ic_head_placeholder)</span>
+<span class="nc" id="L147">        return</span>
+    }
+
+<span class="fc" id="L150">    val context = view.context</span>
+<span class="fc" id="L151">    val pref = PreferenceManager.getDefaultSharedPreferences(context)</span>
+
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">    if (Constants.IS_OFFLINE) {</span>
+<span class="nc" id="L154">        Glide.with(view.context)</span>
+<span class="nc" id="L155">            .load(R.drawable.ic_head_progress)</span>
+<span class="nc" id="L156">            .into(view)</span>
+
+<span class="nc" id="L158">        val uri = pref.getString(&quot;uri$memberId&quot;, &quot;&quot;)</span>
+
+<span class="nc" id="L160">        Glide.with(view.context)</span>
+<span class="nc" id="L161">            .load(uri)</span>
+<span class="nc" id="L162">            .placeholder(R.drawable.ic_head_progress)</span>
+<span class="nc" id="L163">            .error(R.drawable.ic_head_placeholder)</span>
+<span class="nc" id="L164">            .diskCacheStrategy(DiskCacheStrategy.NONE)</span>
+<span class="nc" id="L165">            .listener(loadListener)</span>
+<span class="nc" id="L166">            .into(view)</span>
+<span class="nc" id="L167">        return</span>
+    }
+
+    // this is for place holder
+<span class="fc" id="L171">    Glide.with(view.context)</span>
+<span class="fc" id="L172">        .load(R.drawable.ic_head_progress)</span>
+<span class="fc" id="L173">        .into(view)</span>
+
+<span class="fc" id="L175">    val glideUrl = GlideUrl(</span>
+<span class="fc" id="L176">        &quot;${BuildConfig.SERVER_URL}member/$memberId/getAvatar?v=$currentTime&quot;,</span>
+<span class="fc" id="L177">        LazyHeaders.Builder()</span>
+<span class="fc" id="L178">            .addHeader(&quot;Authorization&quot;, HeaderUtils.createApisHeader(pref))</span>
+<span class="fc" id="L179">            .addHeader(&quot;App-Version&quot;, Constants.versionNumber)</span>
+<span class="fc" id="L180">            .addHeader(&quot;Device-Id&quot;, Constants.deviceUUID)</span>
+<span class="fc" id="L181">            .addHeader(&quot;Device-Info&quot;, Constants.deviceID)</span>
+<span class="fc" id="L182">            .addHeader(&quot;Client-ID&quot;, Constants.clientID)</span>
+<span class="fc" id="L183">            .build()</span>
+    )
+
+<span class="fc" id="L186">    Glide.with(context)</span>
+<span class="fc" id="L187">        .load(glideUrl)</span>
+<span class="fc" id="L188">        .placeholder(R.drawable.ic_head_progress)</span>
+<span class="fc" id="L189">        .error(R.drawable.ic_head_placeholder)</span>
+<span class="fc" id="L190">        .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)</span>
+<span class="fc" id="L191">        .listener(loadListener)</span>
+<span class="fc" id="L192">        .into(object : CustomTarget&lt;Drawable?&gt;() {</span>
+            override fun onResourceReady(
+                @NonNull resource: Drawable,
+                @Nullable transition: Transition&lt;in Drawable?&gt;?
+            ) {
+<span class="fc" id="L197">                val bitmap = (resource as BitmapDrawable).bitmap</span>
+<span class="fc" id="L198">                view.setImageBitmap(bitmap)</span>
+<span class="fc" id="L199">                HelperUtils.saveImage(view.context, bitmap, memberId, pref)</span>
+<span class="fc" id="L200">            }</span>
+
+<span class="fc" id="L202">            override fun onLoadCleared(@Nullable placeholder: Drawable?) {}</span>
+            override fun onLoadFailed(@Nullable errorDrawable: Drawable?) {
+<span class="nc" id="L204">                view.setImageDrawable(errorDrawable)</span>
+<span class="nc" id="L205">            }</span>
+        })
+<span class="fc" id="L207">}</span>
+
+@BindingAdapter(&quot;selfId&quot;, &quot;loadListenerProfile&quot;, requireAll = true)
+fun bindImageMap(
+    view: CircleImageView,
+    selfId: String?,
+    loadListenerProfile: RequestListener&lt;Drawable&gt;?
+) {
+<span class="nc" id="L215">    val pref: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(view.context)</span>
+<span class="nc" id="L216">    var self = pref.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+
+<span class="nc bnc" id="L218" title="All 6 branches missed.">    if (!selfId.isNullOrEmpty()) {</span>
+<span class="nc" id="L219">        var glideUrl: GlideUrl = GlideUrl(</span>
+<span class="nc" id="L220">            BuildConfig.SERVER_URL + &quot;member/$selfId/getAvatar&quot;,</span>
+<span class="nc" id="L221">            LazyHeaders.Builder()</span>
+<span class="nc" id="L222">                .addHeader(&quot;Authorization&quot;, HeaderUtils.createApisHeader(pref))</span>
+<span class="nc" id="L223">                .addHeader(&quot;App-Version&quot;, Constants.versionNumber)</span>
+<span class="nc" id="L224">                .addHeader(&quot;Device-Id&quot;, Constants.deviceUUID)</span>
+<span class="nc" id="L225">                .addHeader(&quot;Device-Info&quot;, Constants.deviceID)</span>
+<span class="nc" id="L226">                .addHeader(&quot;Client-ID&quot;, Constants.clientID)</span>
+<span class="nc" id="L227">                .build()</span>
+        )
+<span class="nc" id="L229">        Glide.get(view.context).clearMemory()</span>
+<span class="nc" id="L230">        Glide.with(view.context)</span>
+<span class="nc" id="L231">            .load(glideUrl)</span>
+<span class="nc" id="L232">            .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)</span>
+<span class="nc" id="L233">            .signature(ObjectKey(System.currentTimeMillis()))</span>
+<span class="nc" id="L234">            .listener(loadListenerProfile)</span>
+<span class="nc" id="L235">            .into(view)</span>
+    }
+<span class="nc" id="L237">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

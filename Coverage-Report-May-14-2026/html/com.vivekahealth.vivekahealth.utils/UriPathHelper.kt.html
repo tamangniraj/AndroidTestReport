@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UriPathHelper.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils</a> &gt; <span class="el_source">UriPathHelper.kt</span></div><h1>UriPathHelper.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils
+
+import android.annotation.SuppressLint
+import android.content.ContentUris
+import android.content.Context
+import android.database.Cursor
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.DocumentsContract
+import android.provider.MediaStore
+import android.provider.OpenableColumns
+import android.text.TextUtils
+import android.util.Log
+import java.io.File
+import java.io.FileOutputStream
+
+object UriPathHelper {
+    private var contentUri: Uri? = null
+
+    /**
+     * Get a file path from a Uri. This will get the the path for Storage Access
+     * Framework Documents, as well as the _data field for the MediaStore and
+     * other file-based ContentProviders.&lt;br&gt;&lt;/br&gt;
+     * &lt;br&gt;&lt;/br&gt;
+     * Callers should check whether the path is local before assuming it
+     * represents a local file.
+     *
+     * @param context The context.
+     * @param uri     The Uri to query.
+     */
+    @SuppressLint(&quot;NewApi&quot;)
+    fun getPath(context: Context, uri: Uri): String? {
+        // check here to KITKAT or new version
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        val isKitKat = Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.KITKAT</span>
+<span class="nc" id="L36">        var selection: String? = null</span>
+<span class="nc" id="L37">        var selectionArgs: Array&lt;String&gt;? = null</span>
+        // DocumentProvider
+<span class="nc bnc" id="L39" title="All 4 branches missed.">        if (isKitKat &amp;&amp; DocumentsContract.isDocumentUri(context, uri)) {</span>
+            // ExternalStorageProvider
+<span class="nc bnc" id="L41" title="All 2 branches missed.">            if (isExternalStorageDocument(uri)) {</span>
+<span class="nc" id="L42">                val docId = DocumentsContract.getDocumentId(uri)</span>
+<span class="nc" id="L43">                val split = docId.split(&quot;:&quot;.toRegex()).toTypedArray()</span>
+<span class="nc" id="L44">                val type = split[0]</span>
+<span class="nc" id="L45">                val fullPath = getPathFromExtSD(split)</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">                return if (fullPath !== &quot;&quot;) {</span>
+<span class="nc" id="L47">                    fullPath</span>
+                } else {
+<span class="nc" id="L49">                    null</span>
+                }
+<span class="nc bnc" id="L51" title="All 2 branches missed.">            } else if (isDownloadsDocument(uri)) {</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">                if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.M) {</span>
+<span class="nc" id="L53">                    val id: String</span>
+<span class="nc" id="L54">                    var cursor: Cursor? = null</span>
+<span class="nc" id="L55">                    try {</span>
+<span class="nc" id="L56">                        cursor = context.contentResolver.query(</span>
+<span class="nc" id="L57">                            uri,</span>
+<span class="nc" id="L58">                            arrayOf(MediaStore.MediaColumns.DISPLAY_NAME),</span>
+<span class="nc" id="L59">                            null,</span>
+<span class="nc" id="L60">                            null,</span>
+<span class="nc" id="L61">                            null</span>
+                        )
+<span class="nc bnc" id="L63" title="All 4 branches missed.">                        if (cursor != null &amp;&amp; cursor.moveToFirst()) {</span>
+<span class="nc" id="L64">                            val fileName = cursor.getString(0)</span>
+<span class="nc" id="L65">                            val path = Environment.getExternalStorageDirectory()</span>
+<span class="nc" id="L66">                                .toString() + &quot;/Download/&quot; + fileName</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">                            if (!TextUtils.isEmpty(path)) {</span>
+<span class="nc" id="L68">                                return path</span>
+                            }
+                        }
+                    } finally {
+<span class="nc bnc" id="L72" title="All 2 branches missed.">                        cursor?.close()</span>
+                    }
+<span class="nc" id="L74">                    id = DocumentsContract.getDocumentId(uri)</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">                    if (!TextUtils.isEmpty(id)) {</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                        if (id.startsWith(&quot;raw:&quot;)) {</span>
+<span class="nc" id="L77">                            return id.replaceFirst(&quot;raw:&quot;.toRegex(), &quot;&quot;)</span>
+                        }
+<span class="nc" id="L79">                        val contentUriPrefixesToTry = arrayOf(</span>
+<span class="nc" id="L80">                            &quot;content://downloads/public_downloads&quot;,</span>
+<span class="nc" id="L81">                            &quot;content://downloads/my_downloads&quot;</span>
+                        )
+<span class="nc bnc" id="L83" title="All 2 branches missed.">                        for (contentUriPrefix in contentUriPrefixesToTry) {</span>
+<span class="nc" id="L84">                            return try {</span>
+<span class="nc" id="L85">                                val contentUri = ContentUris.withAppendedId(</span>
+<span class="nc" id="L86">                                    Uri.parse(contentUriPrefix),</span>
+<span class="nc" id="L87">                                    java.lang.Long.valueOf(id)</span>
+                                )
+
+                                /*   final Uri contentUri = ContentUris.withAppendedId(
+                                                            Uri.parse(&quot;content://downloads/public_downloads&quot;), Long.valueOf(id));*/
+<span class="nc" id="L92">                                getDataColumn(context, contentUri, null, null)</span>
+<span class="nc" id="L93">                            } catch (e: NumberFormatException) {</span>
+                                // In Android 8 and Android P the id is not a number
+<span class="nc" id="L95">                                uri.path!!.replaceFirst(&quot;^/document/raw:&quot;.toRegex(), &quot;&quot;)</span>
+<span class="nc" id="L96">                                    .replaceFirst(&quot;^raw:&quot;.toRegex(), &quot;&quot;)</span>
+                            }
+                        }
+                    }
+                } else {
+<span class="nc" id="L101">                    val id = DocumentsContract.getDocumentId(uri)</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                    val isOreo = Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.O</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                    if (id.startsWith(&quot;raw:&quot;)) {</span>
+<span class="nc" id="L104">                        return id.replaceFirst(&quot;raw:&quot;.toRegex(), &quot;&quot;)</span>
+                    }
+<span class="nc" id="L106">                    try {</span>
+<span class="nc" id="L107">                        contentUri = ContentUris.withAppendedId(</span>
+<span class="nc" id="L108">                            Uri.parse(&quot;content://downloads/public_downloads&quot;),</span>
+<span class="nc" id="L109">                            java.lang.Long.valueOf(id)</span>
+                        )
+<span class="nc" id="L111">                    } catch (e: NumberFormatException) {</span>
+<span class="nc" id="L112">                        e.printStackTrace()</span>
+                    }
+<span class="nc bnc" id="L114" title="All 2 branches missed.">                    if (contentUri != null) {</span>
+<span class="nc" id="L115">                        return getDataColumn(context, contentUri, null, null)</span>
+                    }
+                }
+<span class="nc bnc" id="L118" title="All 2 branches missed.">            } else if (isMediaDocument(uri)) {</span>
+<span class="nc" id="L119">                val docId = DocumentsContract.getDocumentId(uri)</span>
+<span class="nc" id="L120">                val split = docId.split(&quot;:&quot;.toRegex()).toTypedArray()</span>
+<span class="nc" id="L121">                val type = split[0]</span>
+<span class="nc" id="L122">                var contentUri: Uri? = null</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">                if (&quot;image&quot; == type) {</span>
+<span class="nc" id="L124">                    contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                } else if (&quot;video&quot; == type) {</span>
+<span class="nc" id="L126">                    contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">                } else if (&quot;audio&quot; == type) {</span>
+<span class="nc" id="L128">                    contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI</span>
+                }
+<span class="nc" id="L130">                selection = &quot;_id=?&quot;</span>
+<span class="nc" id="L131">                selectionArgs = arrayOf(split[1])</span>
+<span class="nc" id="L132">                return getDataColumn(</span>
+<span class="nc" id="L133">                    context,</span>
+<span class="nc" id="L134">                    contentUri,</span>
+<span class="nc" id="L135">                    selection,</span>
+<span class="nc" id="L136">                    selectionArgs</span>
+                )
+<span class="nc bnc" id="L138" title="All 2 branches missed.">            } else if (isGoogleDriveUri(uri)) {</span>
+<span class="nc" id="L139">                return getDriveFilePath(uri, context)</span>
+            }
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        } else if (&quot;content&quot;.equals(uri.scheme, ignoreCase = true)) {</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            if (isGooglePhotosUri(uri)) {</span>
+<span class="nc" id="L143">                return uri.lastPathSegment</span>
+            }
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            if (isGoogleDriveUri(uri)) {</span>
+<span class="nc" id="L146">                return getDriveFilePath(uri, context)</span>
+            }
+<span class="nc bnc" id="L148" title="All 2 branches missed.">            return if (Build.VERSION.SDK_INT == Build.VERSION_CODES.N) {</span>
+                // return getFilePathFromURI(context,uri);
+<span class="nc" id="L150">                getMediaFilePathForN(uri, context)</span>
+                // return getRealPathFromURI(context,uri);
+            } else {
+<span class="nc" id="L153">                getDataColumn(context, uri, null, null)</span>
+            }
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        } else if (&quot;file&quot;.equals(uri.scheme, ignoreCase = true)) {</span>
+<span class="nc" id="L156">            return uri.path</span>
+        }
+<span class="nc" id="L158">        return null</span>
+    }
+
+    /**
+     * Check if a file exists on device
+     *
+     * @param filePath The absolute file path
+     */
+    private fun fileExists(filePath: String): Boolean {
+<span class="nc" id="L167">        val file = File(filePath)</span>
+<span class="nc" id="L168">        return file.exists()</span>
+    }
+
+    /**
+     * Get full file path from external storage
+     *
+     * @param pathData The storage type and the relative path
+     */
+    private fun getPathFromExtSD(pathData: Array&lt;String&gt;): String {
+<span class="nc" id="L177">        val type = pathData[0]</span>
+<span class="nc" id="L178">        val relativePath = &quot;/&quot; + pathData[1]</span>
+<span class="nc" id="L179">        var fullPath = &quot;&quot;</span>
+
+        // on my Sony devices (4.4.4 &amp; 5.1.1), `type` is a dynamic string
+        // something like &quot;71F8-2C0A&quot;, some kind of unique id per storage
+        // don't know any API that can get the root path of that storage based on its id.
+        //
+        // so no &quot;primary&quot; type, but let the check here for other devices
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        if (&quot;primary&quot;.equals(type, ignoreCase = true)) {</span>
+<span class="nc" id="L187">            fullPath = Environment.getExternalStorageDirectory().toString() + relativePath</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">            if (fileExists(fullPath)) {</span>
+<span class="nc" id="L189">                return fullPath</span>
+            }
+        }
+
+        // Environment.isExternalStorageRemovable() is `true` for external and internal storage
+        // so we cannot relay on it.
+        //
+        // instead, for each possible path, check if file exists
+        // we'll start with secondary storage as this could be our (physically) removable sd card
+<span class="nc" id="L198">        fullPath = System.getenv(&quot;SECONDARY_STORAGE&quot;) + relativePath</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">        if (fileExists(fullPath)) {</span>
+<span class="nc" id="L200">            return fullPath</span>
+        }
+<span class="nc" id="L202">        fullPath = System.getenv(&quot;EXTERNAL_STORAGE&quot;) + relativePath</span>
+<span class="nc bnc" id="L203" title="All 2 branches missed.">        return if (fileExists(fullPath)) {</span>
+<span class="nc" id="L204">            fullPath</span>
+        } else {
+<span class="nc" id="L206">            fullPath</span>
+        }
+    }
+
+    private fun getDriveFilePath(uri: Uri, context: Context): String {
+<span class="nc" id="L211">        val returnCursor = context.contentResolver.query(uri, null, null, null, null)</span>
+        /*
+         * Get the column indexes of the data in the Cursor,
+         *     * move to the first row in the Cursor, get the data,
+         *     * and display it.
+         * */
+<span class="nc" id="L217">        val nameIndex = returnCursor!!.getColumnIndex(OpenableColumns.DISPLAY_NAME)</span>
+<span class="nc" id="L218">        val sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE)</span>
+<span class="nc" id="L219">        returnCursor.moveToFirst()</span>
+<span class="nc" id="L220">        val name = returnCursor.getString(nameIndex)</span>
+<span class="nc" id="L221">        val size = java.lang.Long.toString(returnCursor.getLong(sizeIndex))</span>
+<span class="nc" id="L222">        val file = File(context.cacheDir, name)</span>
+<span class="nc" id="L223">        try {</span>
+<span class="nc" id="L224">            val inputStream = context.contentResolver.openInputStream(uri)</span>
+<span class="nc" id="L225">            val outputStream = FileOutputStream(file)</span>
+<span class="nc" id="L226">            var read = 0</span>
+<span class="nc" id="L227">            val maxBufferSize = 1 * 1024 * 1024</span>
+<span class="nc" id="L228">            val bytesAvailable = inputStream!!.available()</span>
+
+            // int bufferSize = 1024;
+<span class="nc" id="L231">            val bufferSize = Math.min(bytesAvailable, maxBufferSize)</span>
+<span class="nc" id="L232">            val buffers = ByteArray(bufferSize)</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">            while (inputStream.read(buffers).also { read = it } != -1) {</span>
+<span class="nc" id="L234">                outputStream.write(buffers, 0, read)</span>
+            }
+<span class="nc" id="L236">            Log.e(&quot;File Size&quot;, &quot;Size &quot; + file.length())</span>
+<span class="nc" id="L237">            inputStream.close()</span>
+<span class="nc" id="L238">            outputStream.close()</span>
+<span class="nc" id="L239">            Log.e(&quot;File Path&quot;, &quot;Path &quot; + file.path)</span>
+<span class="nc" id="L240">            Log.e(&quot;File Size&quot;, &quot;Size &quot; + file.length())</span>
+<span class="nc" id="L241">        } catch (e: Exception) {</span>
+<span class="nc" id="L242">            Log.e(&quot;Exception&quot;, e.message!!)</span>
+        }
+<span class="nc" id="L244">        return file.path</span>
+    }
+
+    private fun getMediaFilePathForN(uri: Uri, context: Context): String {
+<span class="nc" id="L248">        val returnCursor = context.contentResolver.query(uri, null, null, null, null)</span>
+        /*
+         * Get the column indexes of the data in the Cursor,
+         *     * move to the first row in the Cursor, get the data,
+         *     * and display it.
+         * */
+<span class="nc" id="L254">        val nameIndex = returnCursor!!.getColumnIndex(OpenableColumns.DISPLAY_NAME)</span>
+<span class="nc" id="L255">        val sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE)</span>
+<span class="nc" id="L256">        returnCursor.moveToFirst()</span>
+<span class="nc" id="L257">        val name = returnCursor.getString(nameIndex)</span>
+<span class="nc" id="L258">        val size = java.lang.Long.toString(returnCursor.getLong(sizeIndex))</span>
+<span class="nc" id="L259">        val file = File(context.filesDir, name)</span>
+<span class="nc" id="L260">        try {</span>
+<span class="nc" id="L261">            val inputStream = context.contentResolver.openInputStream(uri)</span>
+<span class="nc" id="L262">            val outputStream = FileOutputStream(file)</span>
+<span class="nc" id="L263">            var read = 0</span>
+<span class="nc" id="L264">            val maxBufferSize = 1 * 1024 * 1024</span>
+<span class="nc" id="L265">            val bytesAvailable = inputStream!!.available()</span>
+
+            // int bufferSize = 1024;
+<span class="nc" id="L268">            val bufferSize = Math.min(bytesAvailable, maxBufferSize)</span>
+<span class="nc" id="L269">            val buffers = ByteArray(bufferSize)</span>
+<span class="nc bnc" id="L270" title="All 2 branches missed.">            while (inputStream.read(buffers).also { read = it } != -1) {</span>
+<span class="nc" id="L271">                outputStream.write(buffers, 0, read)</span>
+            }
+<span class="nc" id="L273">            Log.e(&quot;File Size&quot;, &quot;Size &quot; + file.length())</span>
+<span class="nc" id="L274">            inputStream.close()</span>
+<span class="nc" id="L275">            outputStream.close()</span>
+<span class="nc" id="L276">            Log.e(&quot;File Path&quot;, &quot;Path &quot; + file.path)</span>
+<span class="nc" id="L277">            Log.e(&quot;File Size&quot;, &quot;Size &quot; + file.length())</span>
+<span class="nc" id="L278">        } catch (e: Exception) {</span>
+<span class="nc" id="L279">            Log.e(&quot;Exception&quot;, e.message!!)</span>
+        }
+<span class="nc" id="L281">        return file.path</span>
+    }
+
+    private fun getDataColumn(
+        context: Context,
+        uri: Uri?,
+        selection: String?,
+        selectionArgs: Array&lt;String&gt;?
+    ): String? {
+<span class="nc" id="L290">        var cursor: Cursor? = null</span>
+<span class="nc" id="L291">        val column = &quot;_data&quot;</span>
+<span class="nc" id="L292">        val projection = arrayOf(column)</span>
+<span class="nc" id="L293">        try {</span>
+<span class="nc" id="L294">            cursor = context.contentResolver.query(</span>
+<span class="nc" id="L295">                uri!!,</span>
+<span class="nc" id="L296">                projection,</span>
+<span class="nc" id="L297">                selection,</span>
+<span class="nc" id="L298">                selectionArgs,</span>
+<span class="nc" id="L299">                null</span>
+            )
+<span class="nc bnc" id="L301" title="All 4 branches missed.">            if (cursor != null &amp;&amp; cursor.moveToFirst()) {</span>
+<span class="nc" id="L302">                val index = cursor.getColumnIndexOrThrow(column)</span>
+<span class="nc" id="L303">                return cursor.getString(index)</span>
+            }
+        } finally {
+<span class="nc bnc" id="L306" title="All 2 branches missed.">            cursor?.close()</span>
+        }
+<span class="nc" id="L308">        return null</span>
+    }
+
+    /**
+     * @param uri - The Uri to check.
+     * @return - Whether the Uri authority is ExternalStorageProvider.
+     */
+    private fun isExternalStorageDocument(uri: Uri): Boolean {
+<span class="nc" id="L316">        return &quot;com.android.externalstorage.documents&quot; == uri.authority</span>
+    }
+
+    /**
+     * @param uri - The Uri to check.
+     * @return - Whether the Uri authority is DownloadsProvider.
+     */
+    private fun isDownloadsDocument(uri: Uri): Boolean {
+<span class="nc" id="L324">        return &quot;com.android.providers.downloads.documents&quot; == uri.authority</span>
+    }
+
+    /**
+     * @param uri - The Uri to check.
+     * @return - Whether the Uri authority is MediaProvider.
+     */
+    private fun isMediaDocument(uri: Uri): Boolean {
+<span class="nc" id="L332">        return &quot;com.android.providers.media.documents&quot; == uri.authority</span>
+    }
+
+    /**
+     * @param uri - The Uri to check.
+     * @return - Whether the Uri authority is Google Photos.
+     */
+    private fun isGooglePhotosUri(uri: Uri): Boolean {
+<span class="nc" id="L340">        return &quot;com.google.android.apps.photos.content&quot; == uri.authority</span>
+    }
+
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is Google Drive.
+     */
+    private fun isGoogleDriveUri(uri: Uri): Boolean {
+<span class="nc bnc" id="L348" title="All 4 branches missed.">        return &quot;com.google.android.apps.docs.storage&quot; == uri.authority || &quot;com.google.android.apps.docs.storage.legacy&quot; == uri.authority</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

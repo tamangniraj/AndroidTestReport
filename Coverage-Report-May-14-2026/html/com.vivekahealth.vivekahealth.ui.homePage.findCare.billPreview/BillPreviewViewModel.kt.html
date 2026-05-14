@@ -1,0 +1,563 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BillPreviewViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findCare.billPreview</a> &gt; <span class="el_source">BillPreviewViewModel.kt</span></div><h1>BillPreviewViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findCare.billPreview
+
+import android.content.SharedPreferences
+import android.content.res.Resources
+import android.graphics.Color
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.github.mikephil.charting.data.PieData
+import com.github.mikephil.charting.data.PieDataSet
+import com.github.mikephil.charting.data.PieEntry
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.billPreview.AdvancedEobQuickViewRequest
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.billPreview.AdvancedEobQuickViewResponse
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.FeeSchedule
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
+
+<span class="nc" id="L27">class BillPreviewViewModel @Inject constructor(</span>
+<span class="nc" id="L28">    private val billPreviewRepository: BillPreviewRepository,</span>
+<span class="nc" id="L29">    private val resources: Resources,</span>
+<span class="nc" id="L30">    private val preferences: SharedPreferences</span>
+<span class="nc" id="L31">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L33">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L35">    private val compositeDisposable = CompositeDisposable()</span>
+
+    private var advancedEobQuickViewResponse: AdvancedEobQuickViewResponse =
+<span class="nc" id="L38">        AdvancedEobQuickViewResponse()</span>
+
+<span class="nc" id="L40">    private val _additionalisclaimer = MutableLiveData&lt;List&lt;String&gt;&gt;()</span>
+    val additionalDisclaimer: LiveData&lt;List&lt;String&gt;&gt;
+<span class="nc" id="L42">        get() = _additionalisclaimer</span>
+
+<span class="nc" id="L44">    var doctorName: String = &quot;&quot;</span>
+<span class="nc" id="L45">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L47">            field = value</span>
+<span class="nc" id="L48">            callbacks.notifyCallbacks(this, BR.doctorName, null)</span>
+<span class="nc" id="L49">        }</span>
+
+    var memberResponsibleAmount: Double = 0.0
+<span class="nc" id="L52">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L54">            field = value</span>
+<span class="nc" id="L55">            callbacks.notifyCallbacks(this, BR.memberResponsibleAmount, null)</span>
+<span class="nc" id="L56">        }</span>
+
+    var planResponsibleAmount: Double = 0.0
+<span class="nc" id="L59">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L61">            field = value</span>
+<span class="nc" id="L62">            callbacks.notifyCallbacks(this, BR.planResponsibleAmount, null)</span>
+<span class="nc" id="L63">        }</span>
+
+    var allowedAmount: Double = 0.0
+<span class="nc" id="L66">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L68">            field = value</span>
+<span class="nc" id="L69">            callbacks.notifyCallbacks(this, BR.allowedAmount, null)</span>
+<span class="nc" id="L70">        }</span>
+
+<span class="nc" id="L72">    var data: PieData = PieData(PieDataSet(listOf(PieEntry(0f)), &quot;Data&quot;))</span>
+<span class="nc" id="L73">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L75">            field = value</span>
+<span class="nc" id="L76">            callbacks.notifyCallbacks(this, BR.data, null)</span>
+<span class="nc" id="L77">        }</span>
+
+    var coPay: Double = 0.0
+<span class="nc" id="L80">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L82">            field = value</span>
+<span class="nc" id="L83">            callbacks.notifyCallbacks(this, BR.coPay, null)</span>
+<span class="nc" id="L84">        }</span>
+
+<span class="nc" id="L86">    var hasCopay: Boolean = true</span>
+<span class="nc" id="L87">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L89">            field = value</span>
+<span class="nc" id="L90">            callbacks.notifyCallbacks(this, BR.hasCopay, null)</span>
+<span class="nc" id="L91">        }</span>
+
+    var coInsurance: Double = 0.0
+<span class="nc" id="L94">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L96">            field = value</span>
+<span class="nc" id="L97">            callbacks.notifyCallbacks(this, BR.coInsurance, null)</span>
+<span class="nc" id="L98">        }</span>
+
+    var deductible: Double = 0.0
+<span class="nc" id="L101">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L103">            field = value</span>
+<span class="nc" id="L104">            callbacks.notifyCallbacks(this, BR.deductible, null)</span>
+<span class="nc" id="L105">        }</span>
+
+    var currentDeductible: Double = 0.0
+<span class="nc" id="L108">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L110">            field = value</span>
+<span class="nc" id="L111">            callbacks.notifyCallbacks(this, BR.currentDeductible, null)</span>
+<span class="nc" id="L112">        }</span>
+
+    var deductibleMet: Boolean = false
+<span class="nc" id="L115">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L117">            field = value</span>
+<span class="nc" id="L118">            callbacks.notifyCallbacks(this, BR.deductibleMet, null)</span>
+<span class="nc" id="L119">        }</span>
+
+    var deductibleWillBeMet: Boolean = false
+<span class="nc" id="L122">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L124">            field = value</span>
+<span class="nc" id="L125">            callbacks.notifyCallbacks(this, BR.deductibleWillBeMet, null)</span>
+<span class="nc" id="L126">        }</span>
+
+    var oopMaxMet: Boolean = false
+<span class="nc" id="L129">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L131">            field = value</span>
+<span class="nc" id="L132">            callbacks.notifyCallbacks(this, BR.oopMaxMet, null)</span>
+<span class="nc" id="L133">        }</span>
+
+    var oopMaxWillBeMet: Boolean = false
+<span class="nc" id="L136">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L138">            field = value</span>
+<span class="nc" id="L139">            callbacks.notifyCallbacks(this, BR.oopMaxWillBeMet, null)</span>
+<span class="nc" id="L140">        }</span>
+
+    var deductibleRatio: Float = 0f
+<span class="nc" id="L143">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L145">            field = value</span>
+<span class="nc" id="L146">            callbacks.notifyCallbacks(this, BR.deductibleRatio, null)</span>
+<span class="nc" id="L147">        }</span>
+
+    var deductibleAfterRatio: Float = 0f
+<span class="nc" id="L150">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L152">            field = value</span>
+<span class="nc" id="L153">            callbacks.notifyCallbacks(this, BR.deductibleAfterRatio, null)</span>
+<span class="nc" id="L154">        }</span>
+
+    var inverseDeductibleRatio: Float = 0f
+<span class="nc" id="L157">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L159">            field = value</span>
+<span class="nc" id="L160">            callbacks.notifyCallbacks(this, BR.inverseDeductibleRatio, null)</span>
+<span class="nc" id="L161">        }</span>
+
+    var oopRatio: Float = 0f
+<span class="nc" id="L164">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L166">            field = value</span>
+<span class="nc" id="L167">            callbacks.notifyCallbacks(this, BR.oopRatio, null)</span>
+<span class="nc" id="L168">        }</span>
+
+    var oopAfterRatio: Float = 0f
+<span class="nc" id="L171">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L173">            field = value</span>
+<span class="nc" id="L174">            callbacks.notifyCallbacks(this, BR.oopAfterRatio, null)</span>
+<span class="nc" id="L175">        }</span>
+
+    var inverseOopRatio: Float = 0f
+<span class="nc" id="L178">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L180">            field = value</span>
+<span class="nc" id="L181">            callbacks.notifyCallbacks(this, BR.inverseOopRatio, null)</span>
+<span class="nc" id="L182">        }</span>
+
+    var projectedDeductible: Double = 0.0
+<span class="nc" id="L185">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L187">            field = value</span>
+<span class="nc" id="L188">            callbacks.notifyCallbacks(this, BR.projectedDeductible, null)</span>
+<span class="nc" id="L189">        }</span>
+
+    var currentOop: Double = 0.0
+<span class="nc" id="L192">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L194">            field = value</span>
+<span class="nc" id="L195">            callbacks.notifyCallbacks(this, BR.currentOop, null)</span>
+<span class="nc" id="L196">        }</span>
+
+    var projectedOop: Double = 0.0
+<span class="nc" id="L199">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L201">            field = value</span>
+<span class="nc" id="L202">            callbacks.notifyCallbacks(this, BR.projectedOop, null)</span>
+<span class="nc" id="L203">        }</span>
+
+    var deductibleMax: Double = 0.0
+<span class="nc" id="L206">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L208">            field = value</span>
+<span class="nc" id="L209">            callbacks.notifyCallbacks(this, BR.deductibleMax, null)</span>
+<span class="nc" id="L210">        }</span>
+
+    var oopMax: Double = 0.0
+<span class="nc" id="L213">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L215">            field = value</span>
+<span class="nc" id="L216">            callbacks.notifyCallbacks(this, BR.oopMax, null)</span>
+<span class="nc" id="L217">        }</span>
+
+    var deductibleRemaining: Double = 0.0
+<span class="nc" id="L220">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L222">            field = value</span>
+<span class="nc" id="L223">            callbacks.notifyCallbacks(this, BR.deductibleRemaining, null)</span>
+<span class="nc" id="L224">        }</span>
+
+    var oopRemaining: Double = 0.0
+<span class="nc" id="L227">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L229">            field = value</span>
+<span class="nc" id="L230">            callbacks.notifyCallbacks(this, BR.oopRemaining, null)</span>
+<span class="nc" id="L231">        }</span>
+
+<span class="nc" id="L233">    var deductibleInfo: String = &quot;&quot;</span>
+<span class="nc" id="L234">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L236">            field = value</span>
+<span class="nc" id="L237">            callbacks.notifyCallbacks(this, BR.deductibleInfo, null)</span>
+<span class="nc" id="L238">        }</span>
+
+<span class="nc" id="L240">    var oopInfo: String = &quot;&quot;</span>
+<span class="nc" id="L241">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L243">            field = value</span>
+<span class="nc" id="L244">            callbacks.notifyCallbacks(this, BR.oopInfo, null)</span>
+<span class="nc" id="L245">        }</span>
+
+<span class="nc" id="L247">    var hasDeductible: Boolean = true</span>
+<span class="nc" id="L248">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L250">            field = value</span>
+<span class="nc" id="L251">            callbacks.notifyCallbacks(this, BR.hasDeductible, null)</span>
+<span class="nc" id="L252">        }</span>
+
+<span class="nc" id="L254">    var hasOopMax: Boolean = true</span>
+<span class="nc" id="L255">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L257">            field = value</span>
+<span class="nc" id="L258">            callbacks.notifyCallbacks(this, BR.hasOopMax, null)</span>
+<span class="nc" id="L259">        }</span>
+
+    var loading: Boolean = false
+<span class="nc" id="L262">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L264">            field = value</span>
+<span class="nc" id="L265">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L266">        }</span>
+
+    var hasNoDependents: Boolean = false
+<span class="nc" id="L269">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L271">            field = value</span>
+<span class="nc" id="L272">            callbacks.notifyCallbacks(this, BR.hasNoDependents, null)</span>
+<span class="nc" id="L273">        }</span>
+
+<span class="nc" id="L275">    var tabPosition: Int = 0</span>
+
+<span class="nc" id="L277">    val memberInfo: LiveData&lt;MemberInfo&gt; =</span>
+<span class="nc" id="L278">        billPreviewRepository.getMemberInfo(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+
+<span class="nc" id="L280">    private val _billPreview = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val billPreview: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L282">        get() = _billPreview</span>
+
+<span class="nc" id="L284">    private val _navigateToClose = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+
+    val navigateToClose: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L287">        get() = _navigateToClose</span>
+
+<span class="nc" id="L289">    private val _viewPriceBreakdown = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val viewPriceBreakdown: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L291">        get() = _viewPriceBreakdown</span>
+
+    fun getBillPreview(
+        memberId: String,
+        npi: String,
+        ein: String,
+        deliveryType: Int,
+        networkType: Int,
+        feeSchedule: List&lt;FeeSchedule&gt;
+    ) {
+<span class="nc" id="L301">        val body = AdvancedEobQuickViewRequest(npi, ein, deliveryType, networkType, feeSchedule)</span>
+<span class="nc" id="L302">        compositeDisposable.add(</span>
+<span class="nc" id="L303">            billPreviewRepository.getBillPreview(memberId, body)</span>
+<span class="nc" id="L304">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L305">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L306">                .doOnSubscribe { loading = true }</span>
+<span class="nc" id="L307">                .subscribe({</span>
+<span class="nc" id="L308">                    loading = false</span>
+<span class="nc" id="L309">                    advancedEobQuickViewResponse = it</span>
+<span class="nc" id="L310">                    memberResponsibleAmount = advancedEobQuickViewResponse.memberResponsibleAmount</span>
+<span class="nc" id="L311">                    planResponsibleAmount = advancedEobQuickViewResponse.planResponsibleAmount</span>
+
+<span class="nc" id="L313">                    data = getData(advancedEobQuickViewResponse)</span>
+
+<span class="nc" id="L315">                    allowedAmount = advancedEobQuickViewResponse.allowedAmount</span>
+
+<span class="nc" id="L317">                    coPay = advancedEobQuickViewResponse.copayAmount</span>
+<span class="nc bnc" id="L318" title="All 2 branches missed.">                    hasCopay = coPay &gt; 0.0</span>
+<span class="nc" id="L319">                    coInsurance = advancedEobQuickViewResponse.coinsuranceAmount</span>
+<span class="nc" id="L320">                    deductible = advancedEobQuickViewResponse.deductible</span>
+<span class="nc" id="L321">                    calculateValues()</span>
+<span class="nc bnc" id="L322" title="All 2 branches missed.">                    it.additionalDisclaimers?.let {</span>
+<span class="nc" id="L323">                        _additionalisclaimer.postValue(it)</span>
+<span class="nc" id="L324">                    }</span>
+<span class="nc" id="L325">                }, {</span>
+<span class="nc" id="L326">                    loading = false</span>
+<span class="nc" id="L327">                })</span>
+        )
+<span class="nc" id="L329">    }</span>
+
+    /**
+     * Create the data for the donut chart.
+     */
+    private fun getData(response: AdvancedEobQuickViewResponse): PieData {
+<span class="nc" id="L335">        val colors = listOf(</span>
+<span class="nc" id="L336">            Color.parseColor(&quot;#293F7C&quot;),</span>
+<span class="nc" id="L337">            Color.parseColor(&quot;#6D7CA7&quot;)</span>
+        )
+
+<span class="nc" id="L340">        val data = mapOf(</span>
+<span class="nc" id="L341">            &quot;A&quot; to response.planResponsibleAmount,</span>
+<span class="nc" id="L342">            &quot;B&quot; to response.memberResponsibleAmount</span>
+        )
+
+<span class="nc" id="L345">        val entries = mutableListOf&lt;PieEntry&gt;()</span>
+
+<span class="nc" id="L347">        data.forEach { (_, value) -&gt;</span>
+<span class="nc" id="L348">            entries += PieEntry(value.toFloat())</span>
+<span class="nc" id="L349">        }</span>
+
+<span class="nc" id="L351">        val pieDataset = PieDataSet(entries, &quot;Data&quot;)</span>
+<span class="nc" id="L352">        pieDataset.colors = colors</span>
+<span class="nc" id="L353">        pieDataset.setDrawValues(false)</span>
+<span class="nc" id="L354">        return PieData(pieDataset)</span>
+    }
+
+    /**
+     * Calculate values and text shown in the Individual and Family sections.
+     */
+    fun calculateValues() {
+<span class="nc" id="L361">        val deductibleRatios = getDeductibleRatios(tabPosition)</span>
+<span class="nc" id="L362">        val oopRatios = getOopRatios(tabPosition)</span>
+
+<span class="nc" id="L364">        deductibleRatio = deductibleRatios.first</span>
+<span class="nc" id="L365">        deductibleAfterRatio = deductibleRatios.second</span>
+<span class="nc" id="L366">        inverseDeductibleRatio =</span>
+<span class="nc" id="L367">            1 - deductibleRatios.first - deductibleRatios.second</span>
+
+<span class="nc" id="L369">        oopRatio = oopRatios.first</span>
+<span class="nc" id="L370">        oopAfterRatio = oopRatios.second</span>
+<span class="nc" id="L371">        inverseOopRatio = 1 - oopRatios.first - oopRatios.second</span>
+
+<span class="nc" id="L373">        val maxAmounts = getMaxAmounts(tabPosition)</span>
+
+<span class="nc" id="L375">        deductibleMax = maxAmounts.first</span>
+<span class="nc" id="L376">        oopMax = maxAmounts.second</span>
+
+<span class="nc" id="L378">        val currentAmounts = getCurrentAmounts(tabPosition)</span>
+<span class="nc" id="L379">        currentDeductible = currentAmounts.first</span>
+<span class="nc" id="L380">        currentOop = currentAmounts.second</span>
+
+<span class="nc" id="L382">        val projectedAmounts = getProjectedAmounts(tabPosition)</span>
+<span class="nc" id="L383">        projectedDeductible = projectedAmounts.first</span>
+<span class="nc" id="L384">        projectedOop = projectedAmounts.second</span>
+
+<span class="nc" id="L386">        val remainingAmounts = getRemainingAmounts(tabPosition)</span>
+<span class="nc" id="L387">        deductibleRemaining = remainingAmounts.first</span>
+<span class="nc" id="L388">        oopRemaining = remainingAmounts.second</span>
+
+<span class="nc" id="L390">        val metValues = getMetValues(tabPosition)</span>
+<span class="nc" id="L391">        deductibleMet = metValues.first</span>
+<span class="nc" id="L392">        oopMaxMet = metValues.second</span>
+
+<span class="nc" id="L394">        val willBeMetValues = getWillBeMetValues(tabPosition)</span>
+<span class="nc" id="L395">        deductibleWillBeMet = willBeMetValues.first</span>
+<span class="nc" id="L396">        oopMaxWillBeMet = willBeMetValues.second</span>
+
+<span class="nc" id="L398">        val texts = getInfoTexts(tabPosition)</span>
+<span class="nc" id="L399">        deductibleInfo = texts.first</span>
+<span class="nc" id="L400">        oopInfo = texts.second</span>
+
+<span class="nc" id="L402">        val hasDeductibleAndOopValues = getHasDeductibleAndOopValues(tabPosition)</span>
+<span class="nc" id="L403">        hasDeductible = hasDeductibleAndOopValues.first</span>
+<span class="nc" id="L404">        hasOopMax = hasDeductibleAndOopValues.second</span>
+<span class="nc" id="L405">    }</span>
+
+    private fun getDeductibleRatios(selectedTab: Int): Pair&lt;Float, Float&gt; {
+<span class="nc bnc" id="L408" title="All 2 branches missed.">        val accumulatorDetails = if (selectedTab == 0) {</span>
+<span class="nc" id="L409">            advancedEobQuickViewResponse.individualAccumulatorDetails</span>
+        } else {
+<span class="nc" id="L411">            advancedEobQuickViewResponse.familyAccumulatorDetails</span>
+        }
+<span class="nc" id="L413">        val deductibleRatio =</span>
+<span class="nc" id="L414">            accumulatorDetails.currentDeductible / accumulatorDetails.planDeductibleForYear</span>
+<span class="nc" id="L415">        val deductibleAfterRatio =</span>
+<span class="nc" id="L416">            (accumulatorDetails.projectedDeductible - accumulatorDetails.currentDeductible) / accumulatorDetails.planDeductibleForYear</span>
+
+<span class="nc" id="L418">        return deductibleRatio.toFloat() to deductibleAfterRatio.toFloat()</span>
+    }
+
+    private fun getOopRatios(selectedTab: Int): Pair&lt;Float, Float&gt; {
+<span class="nc bnc" id="L422" title="All 2 branches missed.">        val accumulatorDetails = if (selectedTab == 0) {</span>
+<span class="nc" id="L423">            advancedEobQuickViewResponse.individualAccumulatorDetails</span>
+        } else {
+<span class="nc" id="L425">            advancedEobQuickViewResponse.familyAccumulatorDetails</span>
+        }
+<span class="nc" id="L427">        val oopRatio = accumulatorDetails.currentOop / accumulatorDetails.planOutOfPocketForYear</span>
+<span class="nc" id="L428">        val oopAfterRatio =</span>
+<span class="nc" id="L429">            (accumulatorDetails.projectedOop - accumulatorDetails.currentOop) / accumulatorDetails.planOutOfPocketForYear</span>
+
+<span class="nc" id="L431">        return oopRatio.toFloat() to oopAfterRatio.toFloat()</span>
+    }
+
+    private fun getMaxAmounts(selectedTab: Int): Pair&lt;Double, Double&gt; {
+<span class="nc bnc" id="L435" title="All 2 branches missed.">        val accumulatorDetails = if (selectedTab == 0) {</span>
+<span class="nc" id="L436">            advancedEobQuickViewResponse.individualAccumulatorDetails</span>
+        } else {
+<span class="nc" id="L438">            advancedEobQuickViewResponse.familyAccumulatorDetails</span>
+        }
+<span class="nc" id="L440">        return accumulatorDetails.planDeductibleForYear to accumulatorDetails.planOutOfPocketForYear</span>
+    }
+
+    private fun getCurrentAmounts(selectedTab: Int): Pair&lt;Double, Double&gt; {
+<span class="nc bnc" id="L444" title="All 2 branches missed.">        val accumulatorDetails = if (selectedTab == 0) {</span>
+<span class="nc" id="L445">            advancedEobQuickViewResponse.individualAccumulatorDetails</span>
+        } else {
+<span class="nc" id="L447">            advancedEobQuickViewResponse.familyAccumulatorDetails</span>
+        }
+<span class="nc" id="L449">        return accumulatorDetails.currentDeductible to accumulatorDetails.currentOop</span>
+    }
+
+    private fun getProjectedAmounts(selectedTab: Int): Pair&lt;Double, Double&gt; {
+<span class="nc bnc" id="L453" title="All 2 branches missed.">        val accumulatorDetails = if (selectedTab == 0) {</span>
+<span class="nc" id="L454">            advancedEobQuickViewResponse.individualAccumulatorDetails</span>
+        } else {
+<span class="nc" id="L456">            advancedEobQuickViewResponse.familyAccumulatorDetails</span>
+        }
+<span class="nc" id="L458">        return accumulatorDetails.projectedDeductible to accumulatorDetails.projectedOop</span>
+    }
+
+    private fun getMetValues(selectedTab: Int): Pair&lt;Boolean, Boolean&gt; {
+<span class="nc bnc" id="L462" title="All 2 branches missed.">        val accumulatorDetails = if (selectedTab == 0) {</span>
+<span class="nc" id="L463">            advancedEobQuickViewResponse.individualAccumulatorDetails</span>
+        } else {
+<span class="nc" id="L465">            advancedEobQuickViewResponse.familyAccumulatorDetails</span>
+        }
+<span class="nc" id="L467">        return accumulatorDetails.deductibleMet to accumulatorDetails.oopMaxMet</span>
+    }
+
+    private fun getWillBeMetValues(selectedTab: Int): Pair&lt;Boolean, Boolean&gt; {
+<span class="nc bnc" id="L471" title="All 2 branches missed.">        val accumulatorDetails = if (selectedTab == 0) {</span>
+<span class="nc" id="L472">            advancedEobQuickViewResponse.individualAccumulatorDetails</span>
+        } else {
+<span class="nc" id="L474">            advancedEobQuickViewResponse.familyAccumulatorDetails</span>
+        }
+<span class="nc" id="L476">        return accumulatorDetails.deductibleWillBeMet to accumulatorDetails.oopMaxWillBeMet</span>
+    }
+
+    private fun getInfoTexts(selectedTab: Int): Pair&lt;String, String&gt; {
+<span class="nc bnc" id="L480" title="All 2 branches missed.">        val accumulatorDetails = if (selectedTab == 0) {</span>
+<span class="nc" id="L481">            advancedEobQuickViewResponse.individualAccumulatorDetails</span>
+        } else {
+<span class="nc" id="L483">            advancedEobQuickViewResponse.familyAccumulatorDetails</span>
+        }
+
+<span class="nc bnc" id="L486" title="All 4 branches missed.">        var deductibleInfo = if (accumulatorDetails.planDeductibleForYear == 0.0) {</span>
+<span class="nc" id="L487">            resources.getString(R.string.no_deductible)</span>
+        } else {
+<span class="nc" id="L489">            &quot;&quot;</span>
+        }
+
+<span class="nc bnc" id="L492" title="All 4 branches missed.">        var oopInfo = if (accumulatorDetails.planOutOfPocketForYear == 0.0) {</span>
+<span class="nc" id="L493">            resources.getString(R.string.no_oop_max)</span>
+        } else {
+<span class="nc" id="L495">            &quot;&quot;</span>
+        }
+
+<span class="nc bnc" id="L498" title="All 4 branches missed.">        if (accumulatorDetails.deductibleMet &amp;&amp; accumulatorDetails.planDeductibleForYear &gt; 0L) {</span>
+<span class="nc" id="L499">            deductibleInfo = resources.getString(R.string.deductible_met)</span>
+        }
+<span class="nc bnc" id="L501" title="All 4 branches missed.">        if (accumulatorDetails.oopMaxMet &amp;&amp; accumulatorDetails.planOutOfPocketForYear &gt; 0L) {</span>
+<span class="nc" id="L502">            oopInfo = resources.getString(R.string.oop_met)</span>
+        }
+
+<span class="nc bnc" id="L505" title="All 4 branches missed.">        if (accumulatorDetails.deductibleWillBeMet &amp;&amp; !accumulatorDetails.deductibleMet) {</span>
+<span class="nc" id="L506">            deductibleInfo = resources.getString(R.string.deductible_will_be_met)</span>
+        }
+<span class="nc bnc" id="L508" title="All 4 branches missed.">        if (accumulatorDetails.oopMaxWillBeMet &amp;&amp; !accumulatorDetails.oopMaxMet) {</span>
+<span class="nc" id="L509">            oopInfo = resources.getString(R.string.oop_will_be_met)</span>
+        }
+<span class="nc" id="L511">        return deductibleInfo to oopInfo</span>
+    }
+
+    private fun getHasDeductibleAndOopValues(selectedTab: Int): Pair&lt;Boolean, Boolean&gt; {
+<span class="nc bnc" id="L515" title="All 2 branches missed.">        val accumulatorDetails = if (selectedTab == 0) {</span>
+<span class="nc" id="L516">            advancedEobQuickViewResponse.individualAccumulatorDetails</span>
+        } else {
+<span class="nc" id="L518">            advancedEobQuickViewResponse.familyAccumulatorDetails</span>
+        }
+<span class="nc" id="L520">        val hasDeductible =</span>
+<span class="nc bnc" id="L521" title="All 4 branches missed.">            accumulatorDetails.planDeductibleForYear &gt; 0L &amp;&amp; !accumulatorDetails.deductibleMet</span>
+<span class="nc bnc" id="L522" title="All 4 branches missed.">        val hasOop = accumulatorDetails.planOutOfPocketForYear &gt; 0L &amp;&amp; !accumulatorDetails.oopMaxMet</span>
+<span class="nc" id="L523">        return hasDeductible to hasOop</span>
+    }
+
+    /**
+     * Calculate remaining deductible and OOP amounts.
+     */
+    private fun getRemainingAmounts(selectedTab: Int): Pair&lt;Double, Double&gt; {
+<span class="nc bnc" id="L530" title="All 2 branches missed.">        val accumulatorDetails = if (selectedTab == 0) {</span>
+<span class="nc" id="L531">            advancedEobQuickViewResponse.individualAccumulatorDetails</span>
+        } else {
+<span class="nc" id="L533">            advancedEobQuickViewResponse.familyAccumulatorDetails</span>
+        }
+<span class="nc" id="L535">        val deductibleRemaining =</span>
+<span class="nc" id="L536">            accumulatorDetails.planDeductibleForYear - accumulatorDetails.projectedDeductible</span>
+<span class="nc" id="L537">        val oopRemaining =</span>
+<span class="nc" id="L538">            accumulatorDetails.planOutOfPocketForYear - accumulatorDetails.projectedOop</span>
+<span class="nc" id="L539">        return deductibleRemaining to oopRemaining</span>
+    }
+
+    fun viewPriceBreakdown() {
+<span class="nc" id="L543">        _viewPriceBreakdown.value = Event(Unit)</span>
+<span class="nc" id="L544">    }</span>
+
+    fun close() {
+<span class="nc" id="L547">        _navigateToClose.value = Event(Unit)</span>
+<span class="nc" id="L548">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L551">        callbacks.add(callback)</span>
+<span class="nc" id="L552">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L555">        callbacks.remove(callback)</span>
+<span class="nc" id="L556">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L559">        super.onCleared()</span>
+<span class="nc" id="L560">        compositeDisposable.dispose()</span>
+<span class="nc" id="L561">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocumentFilter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.documents.documentFilter</a> &gt; <span class="el_source">DocumentFilter.kt</span></div><h1>DocumentFilter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.documents.documentFilter
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.databinding.DocumentFilterFragmentBinding
+import com.vivekahealth.vivekahealth.di.Injectable
+import com.vivekahealth.vivekahealth.ui.BaseDialogFragment
+import com.vivekahealth.vivekahealth.ui.homePage.documents.documentFilter.adapter.DocumentFilterAdapter
+import com.vivekahealth.vivekahealth.utils.EventObserver
+import java.util.ArrayList
+import javax.inject.Inject
+
+<span class="nc" id="L22">class DocumentFilter : BaseDialogFragment(), Injectable {</span>
+
+    companion object {
+<span class="nc" id="L25">        fun newInstance() = DocumentFilter()</span>
+        const val TAG = &quot;DocumentFilter&quot;
+    }
+//    var successCallbackFrag: SuccessCallback? = null
+//    fun setSuccessCallback(successCallback: SuccessCallback) {
+//        this.successCallbackFrag = successCallback
+//
+//    }
+
+<span class="nc" id="L34">    var filterListener: FilterListener? = null</span>
+
+    fun setCallback(filterListener: FilterListener) {
+<span class="nc" id="L37">        this.filterListener = filterListener</span>
+<span class="nc" id="L38">    }</span>
+    private lateinit var binding: DocumentFilterFragmentBinding
+
+    private lateinit var viewModel: DocumentFilterViewModel
+<span class="nc" id="L42">    var sentfilter = false</span>
+
+<span class="nc" id="L44">    @Inject</span>
+<span class="nc" id="L45">    lateinit var viewModelFactory: ViewModelProvider.Factory</span>
+
+<span class="nc" id="L47">    private val adapter = DocumentFilterAdapter(</span>
+<span class="nc" id="L48">        onClick = { memberInfo -&gt;</span>
+<span class="nc" id="L49">            viewModel.setSelectedMember(memberInfo)</span>
+<span class="nc" id="L50">        }</span>
+    )
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+<span class="nc" id="L58">        binding = DocumentFilterFragmentBinding.inflate(inflater, container, false)</span>
+
+<span class="nc" id="L60">        return binding.root</span>
+    }
+    override fun onCreate(savedInstanceState: Bundle?) {
+<span class="nc" id="L63">        super.onCreate(savedInstanceState)</span>
+<span class="nc" id="L64">        setStyle(STYLE_NORMAL, R.style.FullscreenDialogTheme)</span>
+<span class="nc" id="L65">    }</span>
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+<span class="nc" id="L68">        super.onActivityCreated(savedInstanceState)</span>
+<span class="nc" id="L69">        viewModel = ViewModelProvider(this, viewModelFactory).get(</span>
+<span class="nc" id="L70">            DocumentFilterViewModel::class.java</span>
+        )
+
+<span class="nc" id="L73">        binding.viewModel = viewModel</span>
+
+<span class="nc" id="L75">        binding.dependentView.adapter = adapter</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        val sent = arguments?.getBoolean(&quot;sentSelected&quot;)</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        val receive = arguments?.getBoolean(&quot;receiveSelected&quot;)</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        val open = arguments?.getBoolean(&quot;openSelected&quot;)</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        val unOpen = arguments?.getBoolean(&quot;unOpenSelected&quot;)</span>
+<span class="nc" id="L80">        val memberList: ArrayList&lt;MemberInfo&gt; = Gson().fromJson(</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">            arguments?.getString(&quot;memberList&quot;),</span>
+<span class="nc" id="L82">            object : TypeToken&lt;ArrayList&lt;MemberInfo&gt;&gt;() {}.type</span>
+        )
+        // load list
+<span class="nc" id="L85">        viewModel.loadList(memberList)</span>
+
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        if (sent != null) {</span>
+<span class="nc" id="L88">            viewModel.sentSelected = sent</span>
+        }
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (receive != null) {</span>
+<span class="nc" id="L91">            viewModel.receiveSelected = receive</span>
+<span class="nc" id="L92">            viewModel.showHideOpenCloseMail()</span>
+        }
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (open != null) {</span>
+<span class="nc" id="L95">            viewModel.openSelected = open</span>
+        }
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (unOpen != null) {</span>
+<span class="nc" id="L98">            viewModel.unOpenSelected = unOpen</span>
+        }
+
+<span class="nc" id="L101">        val animator: RecyclerView.ItemAnimator? = binding.dependentView.itemAnimator</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (animator is SimpleItemAnimator) {</span>
+<span class="nc" id="L103">            (animator as SimpleItemAnimator).supportsChangeAnimations = false</span>
+        }
+//        viewModel.memberInfoDb.observe(viewLifecycleOwner, Observer{
+// //            viewModel.memberInfo = it
+//            viewModel.loadData(it)
+//
+//        })
+<span class="nc" id="L110">        viewModel.dependentListGenerated.observe(</span>
+<span class="nc" id="L111">            viewLifecycleOwner,</span>
+<span class="nc" id="L112">            EventObserver {</span>
+<span class="nc" id="L113">                adapter.submitList(it)</span>
+<span class="nc" id="L114">            }</span>
+        )
+
+        // document filter dismiss
+<span class="nc" id="L118">        viewModel.navigateToDoc.observe(</span>
+<span class="nc" id="L119">            viewLifecycleOwner,</span>
+<span class="nc" id="L120">            EventObserver {</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">                filterListener?.onClose()</span>
+<span class="nc" id="L122">            }</span>
+        )
+<span class="nc" id="L124">        viewModel.navigateToDocFilter.observe(</span>
+<span class="nc" id="L125">            viewLifecycleOwner,</span>
+<span class="nc" id="L126">            EventObserver {</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">                filterListener?.onFilter(</span>
+<span class="nc" id="L128">                    viewModel.sentSelected,</span>
+<span class="nc" id="L129">                    viewModel.receiveSelected,</span>
+<span class="nc" id="L130">                    viewModel.openSelected,</span>
+<span class="nc" id="L131">                    viewModel.unOpenSelected,</span>
+<span class="nc" id="L132">                    viewModel.dependentMemberList</span>
+                )
+<span class="nc" id="L134">            }</span>
+        )
+<span class="nc" id="L136">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

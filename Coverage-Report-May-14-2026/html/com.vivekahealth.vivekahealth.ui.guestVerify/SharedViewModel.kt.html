@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SharedViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.guestVerify</a> &gt; <span class="el_source">SharedViewModel.kt</span></div><h1>SharedViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.guestVerify
+
+import android.content.SharedPreferences
+import android.graphics.Bitmap
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.google.gson.Gson
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.barcode.common.Barcode.DriverLicense
+import com.vivekahealth.vivekahealth.data.local.guest.DLImage
+import com.vivekahealth.vivekahealth.data.remote.guest.ProcessLicenseResponse
+import com.vivekahealth.vivekahealth.ui.guestHome.repository.GuestHomeRepository
+import com.vivekahealth.vivekahealth.ui.guestVerify.documents.DocumentType
+import com.vivekahealth.vivekahealth.ui.guestVerify.repository.GuestUploadRepository
+import com.vivekahealth.vivekahealth.ui.enrollVTwo.UploadedDocument
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import okhttp3.MultipartBody
+import org.json.JSONObject
+import java.util.UUID
+import javax.inject.Inject
+
+<span class="nc" id="L31">class SharedViewModel @Inject constructor(</span>
+<span class="nc" id="L32">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L33">    var uploadRepository: GuestUploadRepository,</span>
+<span class="nc" id="L34">    private val guestHomeRepository: GuestHomeRepository</span>
+<span class="nc" id="L35">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L37">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="nc" id="L38">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L40">    private val _isLoading = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+<span class="nc" id="L41">    val isLoading: LiveData&lt;Event&lt;Boolean&gt;&gt; get() = _isLoading</span>
+
+<span class="nc" id="L43">    private val _frontImage = MutableLiveData&lt;DLImage?&gt;()</span>
+<span class="nc" id="L44">    val frontImage: LiveData&lt;DLImage?&gt; get() = _frontImage</span>
+
+<span class="nc" id="L46">    private val _backImage = MutableLiveData&lt;DLImage?&gt;()</span>
+<span class="nc" id="L47">    val backImage: LiveData&lt;DLImage?&gt; get() = _backImage</span>
+
+<span class="nc" id="L49">    private val _ssnImage = MutableLiveData&lt;DLImage?&gt;()</span>
+<span class="nc" id="L50">    val ssnImage: LiveData&lt;DLImage?&gt; get() = _ssnImage</span>
+
+<span class="nc" id="L52">    private val _selfieImage = MutableLiveData&lt;DLImage?&gt;()</span>
+<span class="nc" id="L53">    val selfieImage: LiveData&lt;DLImage?&gt; get() = _selfieImage</span>
+
+<span class="nc" id="L55">    private val _token = MutableLiveData&lt;String?&gt;()</span>
+<span class="nc" id="L56">    val token: LiveData&lt;String?&gt; get() = _token</span>
+
+<span class="nc" id="L58">    var email: String = &quot;&quot;</span>
+<span class="nc" id="L59">    var allowedDocumentTypes: List&lt;String&gt; = listOf(&quot;SSN&quot;)</span>
+    fun clearFront() {
+<span class="nc" id="L61">        _frontImage.value = null</span>
+<span class="nc" id="L62">    }</span>
+
+    fun clearSsn() {
+<span class="nc" id="L65">        _ssnImage.value = null</span>
+<span class="nc" id="L66">    }</span>
+
+    fun clearBack() {
+<span class="nc" id="L69">        _backImage.value = null</span>
+<span class="nc" id="L70">    }</span>
+
+    fun clearSelfie() {
+<span class="nc" id="L73">        _selfieImage.value = null</span>
+<span class="nc" id="L74">    }</span>
+
+    fun updateFrontImage(bitmap: Bitmap?) {
+<span class="nc" id="L77">        _frontImage.value = DLImage(bitmap = bitmap)</span>
+<span class="nc" id="L78">    }</span>
+
+    fun updateSSNImage(bitmap: Bitmap?, ssnTxt: String?, isSsn: Boolean?) {
+<span class="nc" id="L81">        _ssnImage.value = DLImage(bitmap = bitmap, ssn = ssnTxt, isSsn = isSsn)</span>
+<span class="nc" id="L82">    }</span>
+
+    fun updateSuccessTokenSSN(token: String) {
+<span class="nc" id="L85">        val currentBitmap = _ssnImage.value // Get the current bitmap</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        _ssnImage.value = currentBitmap?.copy(bitmapUploadedId = token) // Update with the new token</span>
+<span class="nc" id="L87">    }</span>
+
+    fun updateVerifiedBarCodeInServer(token: String) {
+<span class="nc" id="L90">        val currentBitmap = _backImage.value // Get the current bitmap</span>
+<span class="nc" id="L91">        _backImage.value =</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">            currentBitmap?.copy(verifiedBarCodeInServer = token) // Update with the new token</span>
+<span class="nc" id="L93">    }</span>
+
+    fun updateSuccessTokenFront(token: String) {
+<span class="nc" id="L96">        val currentBitmap = _frontImage.value // Get the current bitmap</span>
+<span class="nc" id="L97">        _frontImage.value =</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">            currentBitmap?.copy(bitmapUploadedId = token) // Update with the new token</span>
+<span class="nc" id="L99">    }</span>
+
+    fun updateSuccessTokenSelfie(token: String) {
+<span class="nc" id="L102">        val currentBitmap = _selfieImage.value // Get the current bitmap</span>
+<span class="nc" id="L103">        _selfieImage.value =</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">            currentBitmap?.copy(bitmapUploadedId = token) // Update with the new token</span>
+<span class="nc" id="L105">    }</span>
+
+    fun updateSuccessTokenBack(token: String, dlToken: String, requiredSsn: Boolean) {
+<span class="nc" id="L108">        val currentBackImage = _backImage.value // Get the current BackImage object</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        _backImage.value = currentBackImage?.copy(</span>
+<span class="nc" id="L110">            bitmapUploadedId = token,</span>
+<span class="nc" id="L111">            driverLicenseUploadedId = dlToken,</span>
+<span class="nc" id="L112">            requiredSnn = requiredSsn</span>
+        ) // Update with the new token
+
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        if (!requiredSsn) {</span>
+<span class="nc" id="L116">            clearSsn()</span>
+        }
+<span class="nc" id="L118">    }</span>
+
+    fun updateBackImage(bitmap: Bitmap?, driverLicense: DriverLicense?, barcode: Barcode?) {
+<span class="nc" id="L121">        var json = &quot;&quot;</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        barcode?.let {</span>
+<span class="nc" id="L123">            val gson = Gson()</span>
+<span class="nc" id="L124">            val barCodeJson = gson.toJson(barcode)</span>
+<span class="nc" id="L125">            val jsonObject = JSONObject(barCodeJson)</span>
+
+<span class="nc bnc" id="L127" title="All 2 branches missed.">            if (jsonObject.has(&quot;zza&quot;)) {</span>
+<span class="nc" id="L128">                val zza = jsonObject.getJSONObject(&quot;zza&quot;)</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">                if (zza.has(&quot;zza&quot;)) {</span>
+<span class="nc" id="L130">                    val zzaa = zza.getJSONObject(&quot;zza&quot;)</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">                    if (zzaa.has(&quot;zzo&quot;)) {</span>
+<span class="nc" id="L132">                        json = zzaa.getJSONObject(&quot;zzo&quot;).toString()</span>
+                    }
+                }
+            }
+<span class="nc" id="L136">        }</span>
+
+<span class="nc" id="L138">        _backImage.value = DLImage(</span>
+<span class="nc" id="L139">            bitmap = bitmap,</span>
+<span class="nc" id="L140">            driverLicense = driverLicense,</span>
+<span class="nc" id="L141">            bitmapUploadedId = null,</span>
+<span class="nc" id="L142">            driverLicenseUploadedId = null,</span>
+<span class="nc" id="L143">            rawQRString = json</span>
+        )
+<span class="nc" id="L145">    }</span>
+
+<span class="nc" id="L147">    fun updateSelfieImage(bitmap: Bitmap?, manualSelfie: Boolean? = false) {</span>
+<span class="nc" id="L148">        _selfieImage.value = DLImage(bitmap = bitmap, isManual = manualSelfie)</span>
+<span class="nc" id="L149">    }</span>
+
+    fun updateToken(newToken: String?) {
+<span class="nc" id="L152">        _token.value = newToken</span>
+<span class="nc" id="L153">    }</span>
+
+<span class="nc" id="L155">    var loading = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+<span class="nc" id="L156">    var isComingFromFailedBackCheck = false</span>
+
+    // Stores the parsed DL data returned by guest/v2/processLicense after DL_FRONT is captured
+<span class="nc" id="L159">    var dlFrontData: ProcessLicenseResponse? = null</span>
+<span class="nc" id="L160">    val dlFrontDataLive = MutableLiveData&lt;ProcessLicenseResponse?&gt;()</span>
+<span class="nc" id="L161">    var gson = Gson()</span>
+<span class="nc" id="L162">    var hasSuccessfullyProcessedFront: Boolean = false</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L165">        callbacks.add(callback)</span>
+<span class="nc" id="L166">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L169">        callbacks.remove(callback)</span>
+<span class="nc" id="L170">    }</span>
+
+<span class="nc" id="L172">    val primaryUploadList: MutableList&lt;UploadedDocument&gt; = mutableListOf()</span>
+
+    fun processFrontLicenseAndUpload(bitmap: Bitmap) {
+<span class="nc" id="L175">        val docTypeId = 103</span>
+
+<span class="nc" id="L177">        compositeDisposable.add(</span>
+<span class="nc" id="L178">            Single.fromCallable {</span>
+<span class="nc" id="L179">                HelperUtils.createMultipartBodyPartFromBitmap(</span>
+<span class="nc" id="L180">                    bitmap,</span>
+<span class="nc" id="L181">                    &quot;file&quot;,</span>
+<span class="nc" id="L182">                    &quot;${UUID.randomUUID()}-${DocumentType.DL_FRONT.name}.jpg&quot;</span>
+<span class="nc" id="L183">                )</span>
+            }
+<span class="nc" id="L185">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L186">                .flatMap { part -&gt;</span>
+<span class="nc" id="L187">                    guestHomeRepository.processLicense(part)</span>
+<span class="nc" id="L188">                        .doOnSuccess { response -&gt;</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                            if (response.isSuccessful) {</span>
+<span class="nc bnc" id="L190" title="All 8 branches missed.">                                response.body()?.takeIf { !it.isEmpty }?.let { body -&gt;</span>
+<span class="nc" id="L191">                                    dlFrontData = body</span>
+<span class="nc" id="L192">                                    dlFrontDataLive.postValue(body)</span>
+<span class="nc" id="L193">                                }</span>
+                            }
+<span class="nc" id="L195">                        }</span>
+<span class="nc" id="L196">                        .flatMap { guestHomeRepository.uploadOpenFile(part, docTypeId.toString()) }</span>
+                }
+<span class="nc" id="L198">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L199">                .subscribe({ response -&gt;</span>
+<span class="nc bnc" id="L200" title="All 4 branches missed.">                    val uploadedFileId = response.id?.toIntOrNull() ?: return@subscribe</span>
+<span class="nc" id="L201">                    primaryUploadList.add(</span>
+<span class="nc" id="L202">                        UploadedDocument(</span>
+<span class="nc" id="L203">                            fileTypeId = docTypeId,</span>
+<span class="nc" id="L204">                            uploadedFileReferenceId = uploadedFileId</span>
+                        )
+                    )
+<span class="nc" id="L207">                }, { })</span>
+        )
+<span class="nc" id="L209">    }</span>
+
+    fun uploadFrontAndProcess(
+        documentType: DocumentType,
+        file: Bitmap?,
+        token: String
+    ) {
+<span class="nc bnc" id="L216" title="All 2 branches missed.">        if (file == null) {</span>
+<span class="nc" id="L217">            return</span>
+        }
+
+<span class="nc" id="L220">        val filePart: MultipartBody.Part = HelperUtils.createMultipartBodyPartFromBitmap(</span>
+<span class="nc" id="L221">            bitmap = file,</span>
+<span class="nc" id="L222">            &quot;file&quot;,</span>
+<span class="nc" id="L223">            &quot;${UUID.randomUUID()}-$documentType-${DateUtils.getCurrentLocalTime()}&quot;</span>
+        )
+
+<span class="nc" id="L226">        compositeDisposable.add(</span>
+<span class="nc" id="L227">            uploadRepository.uploadDoc(</span>
+<span class="nc" id="L228">                token,</span>
+<span class="nc" id="L229">                filePart,</span>
+<span class="nc" id="L230">                documentType</span>
+            )
+<span class="nc" id="L232">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L233">                .flatMap { uploadFrontResult -&gt;</span>
+<span class="nc" id="L234">                    uploadRepository.processDocument(token)</span>
+                }
+<span class="nc" id="L236">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L237">                .subscribe({ processDocumentResult -&gt;</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">                    if (processDocumentResult.isSuccessful) {</span>
+<span class="nc" id="L239">                        hasSuccessfullyProcessedFront = true</span>
+<span class="nc" id="L240">                        updateSuccessTokenFront(</span>
+<span class="nc" id="L241">                            &quot;${DateUtils.getCurrentLocalTime()}&quot;</span>
+                        )
+                    } else {
+<span class="nc" id="L244">                        hasSuccessfullyProcessedFront = false</span>
+                    }
+<span class="nc" id="L246">                }, {</span>
+<span class="nc" id="L247">                    hasSuccessfullyProcessedFront = false</span>
+<span class="nc" id="L248">                })</span>
+        )
+<span class="nc" id="L250">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

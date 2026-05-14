@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FindCareWebViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findcareWeb</a> &gt; <span class="el_source">FindCareWebViewModel.kt</span></div><h1>FindCareWebViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findcareWeb
+
+import android.content.SharedPreferences
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.HtmlFindCareResponse
+import com.vivekahealth.vivekahealth.data.remote.talon.TalonResponse
+import com.vivekahealth.vivekahealth.ui.guestHome.repository.GuestHomeRepository
+import com.vivekahealth.vivekahealth.ui.homePage.documents.repository.DocumentRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.AnalyticsRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.PageType
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
+import timber.log.Timber
+
+<span class="fc" id="L26">class FindCareWebViewModel @Inject constructor(</span>
+<span class="fc" id="L27">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L28">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L29">    private val documentRepository: DocumentRepository,</span>
+<span class="fc" id="L30">    private val analyticsRepository: AnalyticsRepository,</span>
+<span class="fc" id="L31">    private val guestRepository: GuestHomeRepository</span>
+<span class="fc" id="L32">) : ViewModel(), Observable {</span>
+
+<span class="pc" id="L34">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L36">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+    var loading: Boolean = false
+<span class="fc" id="L38">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L40">            field = value</span>
+<span class="nc" id="L41">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L42">        }</span>
+    var data: Boolean = false
+<span class="fc" id="L44">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L46">            field = value</span>
+<span class="nc" id="L47">            callbacks.notifyCallbacks(this, BR.data, null)</span>
+<span class="nc" id="L48">        }</span>
+<span class="fc" id="L49">    var reason: String = &quot;&quot;</span>
+<span class="fc" id="L50">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L52">            field = value</span>
+<span class="nc" id="L53">            callbacks.notifyCallbacks(this, BR.reason, null)</span>
+<span class="nc" id="L54">        }</span>
+<span class="fc" id="L55">    private val _rewardContent = MutableLiveData&lt;Event&lt;TalonResponse&gt;&gt;()</span>
+    val rewardContent: LiveData&lt;Event&lt;TalonResponse&gt;&gt;
+<span class="fc" id="L57">        get() = _rewardContent</span>
+<span class="fc" id="L58">    private val _htmlContent = MutableLiveData&lt;Event&lt;HtmlFindCareResponse&gt;&gt;()</span>
+    val htmlContent: LiveData&lt;Event&lt;HtmlFindCareResponse&gt;&gt;
+<span class="fc" id="L60">        get() = _htmlContent</span>
+
+<span class="fc" id="L62">    init {</span>
+<span class="fc" id="L63">        getLogView()</span>
+<span class="fc" id="L64">    }</span>
+    fun getTalon() {
+<span class="nc" id="L66">        compositeDisposable.add(</span>
+<span class="nc" id="L67">            homeRepository.getTalonUrl(</span>
+<span class="nc" id="L68">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc" id="L69">                &quot;userDashboardSearch&quot;</span>
+            )
+<span class="nc" id="L71">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L72">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L73">                .doOnSubscribe {</span>
+<span class="nc" id="L74">                    loading = true</span>
+<span class="nc" id="L75">                }</span>
+<span class="nc" id="L76">                .subscribe({</span>
+<span class="nc" id="L77">                    Timber.d(it.toString())</span>
+<span class="nc" id="L78">                    data = false</span>
+
+<span class="nc" id="L80">                    _rewardContent.value = Event(it)</span>
+<span class="nc" id="L81">                }, {</span>
+<span class="nc" id="L82">                    Timber.d(it.toString())</span>
+
+<span class="nc" id="L84">                    data = true</span>
+
+<span class="nc" id="L86">                    loading = false</span>
+<span class="nc" id="L87">                })</span>
+        )
+<span class="nc" id="L89">    }</span>
+
+    fun getLogView() {
+<span class="fc" id="L92">        compositeDisposable.add(</span>
+<span class="fc" id="L93">            analyticsRepository.getLogPageView(</span>
+<span class="fc" id="L94">                preferences.getString(</span>
+<span class="fc" id="L95">                    &quot;memberID&quot;,</span>
+<span class="fc" id="L96">                    &quot;&quot;</span>
+<span class="fc" id="L97">                ).toString(),</span>
+<span class="fc" id="L98">                PageType.FIND_DOCTOR_SCREEN.pageName</span>
+            )
+<span class="pc" id="L100">                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).doOnSubscribe {</span>
+<span class="pc" id="L101">                }.subscribe({</span>
+<span class="pc" id="L102">                }, {</span>
+<span class="nc" id="L103">                })</span>
+        )
+<span class="fc" id="L105">    }</span>
+    fun getHtml() {
+<span class="nc" id="L107">        val isGuestUser =</span>
+<span class="nc" id="L108">            preferences.getBoolean(Constants.IS_GUEST, false)</span>
+
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (isGuestUser) {</span>
+<span class="nc" id="L111">            compositeDisposable.add(</span>
+<span class="nc" id="L112">                guestRepository.htmlFIndCare()</span>
+<span class="nc" id="L113">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L114">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L115">                    .doOnSubscribe {</span>
+<span class="nc" id="L116">                        loading = true</span>
+<span class="nc" id="L117">                    }</span>
+<span class="nc" id="L118">                    .subscribe({</span>
+<span class="nc" id="L119">                        Timber.d(it.toString())</span>
+
+<span class="nc" id="L121">                        loading = false</span>
+<span class="nc" id="L122">                        data = false</span>
+
+<span class="nc" id="L124">                        _htmlContent.value = Event(it)</span>
+<span class="nc" id="L125">                    }, {</span>
+<span class="nc" id="L126">                        Timber.d(it.toString())</span>
+
+<span class="nc" id="L128">                        data = true</span>
+
+<span class="nc" id="L130">                        loading = false</span>
+<span class="nc" id="L131">                    })</span>
+            )
+        } else {
+<span class="nc" id="L134">            compositeDisposable.add(</span>
+<span class="nc" id="L135">                homeRepository.htmlFIndCare(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="nc" id="L136">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L137">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L138">                    .doOnSubscribe {</span>
+<span class="nc" id="L139">                        loading = true</span>
+<span class="nc" id="L140">                    }</span>
+<span class="nc" id="L141">                    .subscribe({</span>
+<span class="nc" id="L142">                        Timber.d(it.toString())</span>
+
+<span class="nc" id="L144">                        loading = false</span>
+<span class="nc" id="L145">                        data = false</span>
+
+<span class="nc" id="L147">                        _htmlContent.value = Event(it)</span>
+<span class="nc" id="L148">                    }, {</span>
+<span class="nc" id="L149">                        Timber.d(it.toString())</span>
+
+<span class="nc" id="L151">                        data = true</span>
+
+<span class="nc" id="L153">                        loading = false</span>
+<span class="nc" id="L154">                    })</span>
+            )
+        }
+<span class="nc" id="L157">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L160">        callbacks.remove(callback)</span>
+<span class="nc" id="L161">    }</span>
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L163">        callbacks.add(callback)</span>
+<span class="nc" id="L164">    }</span>
+    override fun onCleared() {
+<span class="nc" id="L166">        super.onCleared()</span>
+<span class="nc" id="L167">        compositeDisposable.dispose()</span>
+<span class="nc" id="L168">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

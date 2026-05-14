@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StepRegSuccessFragmentLogin.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.login.successReg</a> &gt; <span class="el_source">StepRegSuccessFragmentLogin.kt</span></div><h1>StepRegSuccessFragmentLogin.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.login.successReg
+
+import android.content.Intent
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.databinding.FragmentRegistrationSuccessLoginBinding
+import com.vivekahealth.vivekahealth.di.Injectable
+import com.vivekahealth.vivekahealth.ui.BaseFragment
+import com.vivekahealth.vivekahealth.ui.login.LoginActivity
+import com.vivekahealth.vivekahealth.ui.register.step3.StepEmailFragmentDirections
+import com.vivekahealth.vivekahealth.utils.*
+import com.vivekahealth.vivekahealth.utils.remote.Status
+import javax.inject.Inject
+import org.apache.commons.lang3.StringUtils
+import timber.log.Timber
+
+<span class="nc" id="L23">class StepRegSuccessFragmentLogin : BaseFragment(), Injectable {</span>
+
+    companion object {
+<span class="nc" id="L26">        fun newInstance() = StepRegSuccessFragmentLogin()</span>
+    }
+
+    private lateinit var viewModel: StepRegSuccessLoginViewModel
+
+    private lateinit var binding: FragmentRegistrationSuccessLoginBinding
+
+<span class="nc" id="L33">    @Inject</span>
+<span class="nc" id="L34">    lateinit var viewModelFactory: ViewModelProvider.Factory</span>
+<span class="nc" id="L35">    private val args: StepRegSuccessFragmentLoginArgs by navArgs()</span>
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+<span class="nc" id="L42">        binding = FragmentRegistrationSuccessLoginBinding.inflate(inflater, container, false)</span>
+<span class="nc" id="L43">        return binding.root</span>
+    }
+
+<span class="nc" id="L46">    var isFromLogin = false</span>
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+<span class="nc" id="L49">        super.onActivityCreated(savedInstanceState)</span>
+<span class="nc" id="L50">        viewModel = ViewModelProvider(this, viewModelFactory).get(</span>
+<span class="nc" id="L51">            StepRegSuccessLoginViewModel::class.java</span>
+        )
+<span class="nc" id="L53">        binding.viewModel = viewModel</span>
+
+//        viewModel.loadData()
+<span class="nc" id="L56">        viewModel.email = args.email.toString()</span>
+<span class="nc" id="L57">        binding.email.setText(args.email)</span>
+
+<span class="nc" id="L59">        isFromLogin = args.fromLogin</span>
+
+<span class="nc" id="L61">        Timber.d(args.email)</span>
+<span class="nc" id="L62">        binding.email.isEnabled = args.editEmail</span>
+
+<span class="nc bnc" id="L64" title="All 4 branches missed.">        if (!args.editEmail || isFromLogin) {</span>
+<span class="nc" id="L65">            binding.update.visibility = View.GONE</span>
+        } else {
+<span class="nc" id="L67">            binding.update.visibility = View.VISIBLE</span>
+        }
+<span class="nc" id="L69">        binding.email.isEnabled = false</span>
+
+//        val spannable = SpannableString(binding.textResend.text)
+//
+//        spannable.setSpan(
+//            ForegroundColorSpan(resources.getColor(R.color.blue_btn,resources.newTheme())),
+//
+//            53, spannable.length,
+//            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+//        spannable.setSpan(
+//            StyleSpan(BOLD),
+//            53, spannable.length,
+//            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+<span class="nc" id="L83">        viewModel.navigateToLogin.observe(</span>
+<span class="nc" id="L84">            viewLifecycleOwner,</span>
+<span class="nc" id="L85">            EventObserver {</span>
+<span class="nc" id="L86">                viewModel.removeReg()</span>
+
+<span class="nc bnc" id="L88" title="All 2 branches missed.">                if (isFromLogin) {</span>
+<span class="nc" id="L89">                    findNavController().popBackStack()</span>
+                } else {
+<span class="nc" id="L91">                    val intent = Intent(requireContext(), LoginActivity::class.java)</span>
+<span class="nc" id="L92">                    startActivity(intent)</span>
+<span class="nc" id="L93">                    requireActivity().finish()</span>
+                }
+<span class="nc" id="L95">            }</span>
+        )
+
+<span class="nc" id="L98">        viewModel.changeEnable.observe(</span>
+<span class="nc" id="L99">            viewLifecycleOwner,</span>
+<span class="nc" id="L100">            EventObserver {</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">                if (viewModel.cancel) {</span>
+<span class="nc" id="L102">                    viewModel.email = viewModel.originalEmail</span>
+<span class="nc" id="L103">                    binding.email.isEnabled = false</span>
+<span class="nc" id="L104">                    binding.update.text = getString(R.string.update)</span>
+<span class="nc" id="L105">                    viewModel.cancel = false</span>
+<span class="nc" id="L106">                    viewModel.Done = false</span>
+<span class="nc" id="L107">                    viewModel.updateEnabled = true</span>
+                } else {
+<span class="nc" id="L109">                    binding.email.isEnabled = viewModel.updateEnabled</span>
+                }
+<span class="nc" id="L111">            }</span>
+        )
+<span class="nc" id="L113">        viewModel.emailChanged.observe(</span>
+<span class="nc" id="L114">            viewLifecycleOwner,</span>
+<span class="nc" id="L115">            EventObserver { email -&gt;</span>
+
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                if (ActivityUtils.isEmailValid(email)) {</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                    if (!email.equals(viewModel.originalEmail, ignoreCase = true)) {</span>
+<span class="nc" id="L119">                        binding.update.text = getString(R.string.done)</span>
+<span class="nc" id="L120">                        viewModel.email = email</span>
+<span class="nc" id="L121">                        binding.showError = false</span>
+<span class="nc" id="L122">                        viewModel.Done = true</span>
+<span class="nc" id="L123">                        viewModel.cancel = false</span>
+<span class="nc bnc" id="L124" title="All 4 branches missed.">                    } else if (viewModel.count == 0 &amp;&amp; email.equals(</span>
+<span class="nc" id="L125">                            viewModel.originalEmail,</span>
+<span class="nc" id="L126">                            ignoreCase = true</span>
+                        )
+                    ) {
+<span class="nc" id="L129">                        Timber.d(viewModel.count.toString())</span>
+<span class="nc" id="L130">                        binding.email.isEnabled = false</span>
+<span class="nc" id="L131">                        binding.update.text = getString(R.string.update)</span>
+<span class="nc" id="L132">                        viewModel.cancel = false</span>
+<span class="nc" id="L133">                        viewModel.Done = false</span>
+                    } else {
+<span class="nc" id="L135">                        binding.update.text = getString(R.string.cancel)</span>
+<span class="nc" id="L136">                        viewModel.Done = false</span>
+<span class="nc" id="L137">                        viewModel.cancel = true</span>
+<span class="nc" id="L138">                        binding.showError = false</span>
+                    }
+
+//                if(viewModel.firstTextChange) {
+//                }
+                } else {
+<span class="nc" id="L144">                    binding.showError = true</span>
+
+<span class="nc" id="L146">                    viewModel.Done = false</span>
+<span class="nc" id="L147">                    viewModel.cancel = true</span>
+
+<span class="nc" id="L149">                    binding.update.text = getString(R.string.cancel)</span>
+
+<span class="nc" id="L151">                    binding.error.text = getString(R.string.invalid_email_format)</span>
+//               HelperUtils.showOkMessageDialog(requireContext(), &quot;Invalid email format. Please enter a valid format e.g. user@example.com&quot;)
+                }
+<span class="nc" id="L154">            }</span>
+        )
+
+<span class="nc" id="L157">        viewModel.navigateToSuccess.observe(viewLifecycleOwner) {</span>
+<span class="nc bnc" id="L158" title="All 3 branches missed.">            when (it.status) {</span>
+                Status.LOADING -&gt; {
+<span class="nc" id="L160">                    Timber.d(getString(R.string.loading))</span>
+<span class="nc" id="L161">                    (this.requireActivity() as LoginActivity).showLoading()</span>
+                }
+                Status.SUCCESS -&gt; {
+<span class="nc" id="L164">                    (this.requireActivity() as LoginActivity).dismissLoading()</span>
+
+<span class="nc bnc" id="L166" title="All 8 branches missed.">                    if (it.data?.code == &quot;200&quot; &amp;&amp; StringUtils.isEmpty(it.data?.action)) {</span>
+<span class="nc" id="L167">                        binding.email.isEnabled = false</span>
+<span class="nc" id="L168">                        binding.update.text = getString(R.string.update)</span>
+<span class="nc" id="L169">                        viewModel.cancel = false</span>
+<span class="nc" id="L170">                        viewModel.Done = false</span>
+<span class="nc" id="L171">                        viewModel.updateEnabled = true</span>
+
+//                        dialog(it.data!!.message, &quot;OK&quot;, &quot;&quot;, &quot;&quot;)
+
+//                        HelperUtils.showOkMessageDialog(requireContext(), it.data!!.message)
+                    } else {
+<span class="nc" id="L177">                        HelperUtils.showOkMessageDialog(requireContext(), it.data!!.reason)</span>
+                    }
+                }
+                Status.ERROR -&gt; {
+<span class="nc" id="L181">                    (this.requireActivity() as LoginActivity).dismissLoading()</span>
+
+//
+//                    val intent = Intent(requireContext(), EnrollActivity::class.java)
+//                    startActivity(intent)
+                    // Timber.d(it.error)
+                }
+            }
+<span class="nc" id="L189">        }</span>
+
+<span class="nc" id="L191">        viewModel.navigateToResend.observe(viewLifecycleOwner) {</span>
+<span class="nc bnc" id="L192" title="All 3 branches missed.">            when (it.status) {</span>
+                Status.LOADING -&gt; {
+<span class="nc" id="L194">                    Timber.d(getString(R.string.loading))</span>
+<span class="nc" id="L195">                    (this.requireActivity() as LoginActivity).showLoading()</span>
+                }
+                Status.SUCCESS -&gt; {
+<span class="nc" id="L198">                    (this.requireActivity() as LoginActivity).dismissLoading()</span>
+
+<span class="nc bnc" id="L200" title="All 4 branches missed.">                    if (it.data?.code == &quot;200&quot;) {</span>
+<span class="nc" id="L201">                        HelperUtils.showOkMessageDialog(requireContext(), it.data!!.message)</span>
+                    } else {
+<span class="nc" id="L203">                        HelperUtils.showOkMessageDialog(requireContext(), it.data!!.message)</span>
+                    }
+                }
+                Status.ERROR -&gt; {
+<span class="nc" id="L207">                    (this.requireActivity() as LoginActivity).dismissLoading()</span>
+
+//
+//                    val intent = Intent(requireContext(), EnrollActivity::class.java)
+//                    startActivity(intent)
+                    // Timber.d(it.error)
+                }
+            }
+<span class="nc" id="L215">        }</span>
+
+<span class="nc" id="L217">        viewModel.navigateToReRegister.observe(viewLifecycleOwner) {</span>
+<span class="nc bnc" id="L218" title="All 3 branches missed.">            when (it.status) {</span>
+                Status.LOADING -&gt; {
+<span class="nc" id="L220">                    Timber.d(getString(R.string.loading))</span>
+<span class="nc" id="L221">                    (activity as LoginActivity).showLoading()</span>
+                }
+                Status.SUCCESS -&gt; {
+<span class="nc" id="L224">                    (activity as LoginActivity).dismissLoading()</span>
+
+<span class="nc" id="L226">                    when {</span>
+<span class="nc bnc" id="L227" title="All 4 branches missed.">                        it.data?.reason.equals(&quot;REGISTERED_AND_VERIFIED&quot;, true) -&gt; {</span>
+<span class="nc" id="L228">                            DialogUtils(</span>
+<span class="nc" id="L229">                                requireActivity(),</span>
+<span class="nc" id="L230">                                object : DialogListener {</span>
+                                    override fun onNeutralClicked() {
+<span class="nc" id="L232">                                        val directions =</span>
+<span class="nc" id="L233">                                            StepEmailFragmentDirections.actionEmailFragmentToForgetPasswordFragment(</span>
+<span class="nc" id="L234">                                                viewModel.email,</span>
+<span class="nc" id="L235">                                                &quot;0&quot;</span>
+                                            )
+<span class="nc" id="L237">                                        findNavController().navigate(directions)</span>
+<span class="nc" id="L238">                                    }</span>
+
+                                    override fun onPositiveClicked() {
+<span class="nc" id="L241">                                        val intent = Intent(</span>
+<span class="nc" id="L242">                                            requireContext(),</span>
+<span class="nc" id="L243">                                            LoginActivity::class.java</span>
+                                        )
+<span class="nc" id="L245">                                        startActivity(intent)</span>
+<span class="nc" id="L246">                                        requireActivity().finish()</span>
+<span class="nc" id="L247">                                    }</span>
+
+                                    override fun onNegativeClicked() {
+<span class="nc" id="L250">                                    }</span>
+                                }
+<span class="nc" id="L252">                            ).dialogWithView(</span>
+<span class="nc" id="L253">                                getString(R.string.log_in),</span>
+<span class="nc" id="L254">                                getString(R.string.reset_password),</span>
+<span class="nc" id="L255">                                &quot;&quot;,</span>
+<span class="nc" id="L256">                                R.layout.layout_reg_green_txt</span>
+                            )
+                        }
+<span class="nc bnc" id="L259" title="All 4 branches missed.">                        it.data?.reason.equals(&quot;REGISTERED_BUT_NOT_VERIFIED&quot;, true) -&gt; {</span>
+<span class="nc" id="L260">                            val direction =</span>
+<span class="nc" id="L261">                                StepEmailFragmentDirections.actionEmailFragmentToSuccessFragment(</span>
+<span class="nc" id="L262">                                    false</span>
+                                )
+
+<span class="nc" id="L265">                            HelperUtils.showOkMessageDialog(</span>
+<span class="nc" id="L266">                                requireContext(),</span>
+<span class="nc" id="L267">                                getString(R.string.you_have_already_successfully_registered)</span>
+                            )
+                        }
+<span class="nc bnc" id="L270" title="All 4 branches missed.">                        it.data?.reason.equals(&quot;REGISTERED_BUT_BENEFIT_NOT_YET_ACTIVE&quot;, true) -&gt; {</span>
+<span class="nc" id="L271">                            HelperUtils.showOkMessageDialog(</span>
+<span class="nc" id="L272">                                requireContext(),</span>
+<span class="nc" id="L273">                                getString(R.string.benefit_not_active)</span>
+                            )
+                        }
+<span class="nc bnc" id="L276" title="All 4 branches missed.">                        it.data?.reason.equals(&quot;NOT_REGISTERED&quot;, true) -&gt; {</span>
+<span class="nc" id="L277">                            viewModel.reRegister()</span>
+                        }
+                    }
+
+//                   (this.requireActivity() as LoginActivity).navigationFragmentManager.addFragmentToBackStack(StepPasswordFragment.newInstance(viewModel.mobile,viewModel.countryCode,viewModel.tempUUID,viewModel.email))
+                }
+                Status.ERROR -&gt; {
+                    // Timber.d(it.error)
+                }
+            }
+<span class="nc" id="L287">        }</span>
+<span class="nc" id="L288">    }</span>
+
+    fun dialog(content: String, positive: String, neutral: String, negative: String) {
+<span class="nc" id="L291">        DialogUtils(</span>
+<span class="nc" id="L292">            requireActivity(),</span>
+<span class="nc" id="L293">            object : DialogListener {</span>
+                override fun onNeutralClicked() {
+<span class="nc" id="L295">                }</span>
+
+                override fun onPositiveClicked() {
+<span class="nc" id="L298">                }</span>
+
+                override fun onNegativeClicked() {
+<span class="nc" id="L301">                }</span>
+            }
+<span class="nc" id="L303">        ).dialog(</span>
+<span class="nc" id="L304">            content,</span>
+<span class="nc" id="L305">            positive,</span>
+<span class="nc" id="L306">            neutral,</span>
+<span class="nc" id="L307">            negative</span>
+        )
+<span class="nc" id="L309">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

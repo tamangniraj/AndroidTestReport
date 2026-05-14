@@ -1,0 +1,659 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BenefitDetailsViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.benefit.benefitDetails</a> &gt; <span class="el_source">BenefitDetailsViewModel.kt</span></div><h1>BenefitDetailsViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.benefit.benefitDetails
+
+import android.content.SharedPreferences
+import android.os.Handler
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import com.vivekahealth.vivekahealth.data.local.benefit.InNetworkBarDetails
+import com.vivekahealth.vivekahealth.data.local.benefit.OutNetworkBarDetails
+import com.vivekahealth.vivekahealth.data.local.home.Value
+import com.vivekahealth.vivekahealth.data.remote.home.MemberBenefitDto
+import com.vivekahealth.vivekahealth.data.remote.home.ValueInsurance
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.repository.BenefitWorkRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import java.text.DecimalFormat
+import javax.inject.Inject
+import timber.log.Timber
+
+<span class="nc" id="L29">class BenefitDetailsViewModel @Inject constructor(</span>
+<span class="nc" id="L30">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L31">    private val benefitWorkRepository: BenefitWorkRepository,</span>
+<span class="nc" id="L32">    private val homeRepository: HomeRepository</span>
+<span class="nc" id="L33">) : ViewModel(), Observable {</span>
+<span class="nc" id="L34">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L36">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L38">    private val _bubbleListGeneratedNew = MutableLiveData&lt;Event&lt;List&lt;MemberBenefitDto&gt;&gt;&gt;()</span>
+    val bubbleListGeneratedNew: LiveData&lt;Event&lt;List&lt;MemberBenefitDto&gt;&gt;&gt;
+<span class="nc" id="L40">        get() = _bubbleListGeneratedNew</span>
+<span class="nc" id="L41">    private val _barInfoLoaded = MutableLiveData&lt;Event&lt;Value?&gt;&gt;()</span>
+    val barInfoLoaded: LiveData&lt;Event&lt;Value?&gt;&gt;
+<span class="nc" id="L43">        get() = _barInfoLoaded</span>
+
+<span class="nc" id="L45">    private val _bubbleListGenerated = MutableLiveData&lt;Event&lt;List&lt;MemberBenefitDto&gt;&gt;&gt;()</span>
+    val bubbleListGenerated: LiveData&lt;Event&lt;List&lt;MemberBenefitDto&gt;&gt;&gt;
+<span class="nc" id="L47">        get() = _bubbleListGenerated</span>
+
+<span class="nc" id="L49">    private val _cardListGenerated = MutableLiveData&lt;Event&lt;ValueInsurance&gt;&gt;()</span>
+    val cardListGenerated: LiveData&lt;Event&lt;ValueInsurance&gt;&gt;
+<span class="nc" id="L51">        get() = _cardListGenerated</span>
+
+<span class="nc" id="L53">    private val _flipCard = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val flipCard: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L55">        get() = _flipCard</span>
+<span class="nc" id="L56">    var memberInfo = MemberBenefitDto()</span>
+<span class="nc" id="L57">    var memberInfoFromApi = MemberBenefitDto()</span>
+
+<span class="nc" id="L59">    var maxWidth: Int = 0</span>
+<span class="nc" id="L60">    var currentMember = MemberBenefitDto()</span>
+<span class="nc" id="L61">    var bubbleMemberList: ArrayList&lt;MemberBenefitDto&gt; = ArrayList()</span>
+<span class="nc" id="L62">    var listForHomeBubbleAdapter: List&lt;MemberBenefitDto&gt; = listOf()</span>
+
+<span class="nc" id="L64">    var barInfo: Value? = null</span>
+
+<span class="nc" id="L66">    var year: String = &quot;&quot;</span>
+<span class="nc" id="L67">    var benefit: String = &quot;&quot;</span>
+
+<span class="nc" id="L69">    var benefitName: String = &quot;&quot;</span>
+<span class="nc" id="L70">    var month: String = &quot;&quot;</span>
+<span class="nc" id="L71">    var benefitId: String = &quot;&quot;</span>
+<span class="nc" id="L72">    var contractId: String = &quot;&quot;</span>
+<span class="nc" id="L73">    var titleName: String = &quot;&quot;</span>
+<span class="nc" id="L74">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L76">            field = value</span>
+<span class="nc" id="L77">            callbacks.notifyCallbacks(this, BR.titleName, null)</span>
+<span class="nc" id="L78">        }</span>
+
+    var inGone: Boolean = false
+<span class="nc" id="L81">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L83">            field = value</span>
+<span class="nc" id="L84">            callbacks.notifyCallbacks(this, BR.inGone, null)</span>
+<span class="nc" id="L85">        }</span>
+
+<span class="nc" id="L87">    var inBar: InNetworkBarDetails = InNetworkBarDetails()</span>
+<span class="nc" id="L88">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L90">            field = value</span>
+<span class="nc" id="L91">            callbacks.notifyCallbacks(this, BR.inBar, null)</span>
+<span class="nc" id="L92">        }</span>
+<span class="nc" id="L93">    var outBar: OutNetworkBarDetails = OutNetworkBarDetails()</span>
+<span class="nc" id="L94">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L96">            field = value</span>
+<span class="nc" id="L97">            callbacks.notifyCallbacks(this, BR.outBar, null)</span>
+<span class="nc" id="L98">        }</span>
+    var outGone: Boolean = false
+<span class="nc" id="L100">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L102">            field = value</span>
+<span class="nc" id="L103">            callbacks.notifyCallbacks(this, BR.outGone, null)</span>
+<span class="nc" id="L104">        }</span>
+
+    var showDataView: Boolean = false
+<span class="nc" id="L107">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L109">            field = value</span>
+<span class="nc" id="L110">            callbacks.notifyCallbacks(this, BR.showDataView, null)</span>
+<span class="nc" id="L111">        }</span>
+    var noData: Boolean = false
+<span class="nc" id="L113">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L115">            field = value</span>
+<span class="nc" id="L116">            callbacks.notifyCallbacks(this, BR.noData, null)</span>
+<span class="nc" id="L117">        }</span>
+<span class="nc" id="L118">    var reason: String = &quot;&quot;</span>
+<span class="nc" id="L119">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L121">            field = value</span>
+<span class="nc" id="L122">            callbacks.notifyCallbacks(this, BR.reason, null)</span>
+<span class="nc" id="L123">        }</span>
+<span class="nc" id="L124">    var copayAmountShow: Boolean = true</span>
+<span class="nc" id="L125">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L127">            field = value</span>
+<span class="nc" id="L128">            callbacks.notifyCallbacks(this, BR.copayAmountShow, null)</span>
+<span class="nc" id="L129">        }</span>
+
+<span class="nc" id="L131">    var coInsuranceAmountShow: Boolean = true</span>
+<span class="nc" id="L132">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L134">            field = value</span>
+<span class="nc" id="L135">            callbacks.notifyCallbacks(this, BR.coInsuranceAmountShow, null)</span>
+<span class="nc" id="L136">        }</span>
+<span class="nc" id="L137">    var barDeductibleShow: Boolean = true</span>
+<span class="nc" id="L138">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L140">            field = value</span>
+<span class="nc" id="L141">            callbacks.notifyCallbacks(this, BR.barDeductibleShow, null)</span>
+<span class="nc" id="L142">        }</span>
+
+<span class="nc" id="L144">    var barOppShow: Boolean = true</span>
+<span class="nc" id="L145">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L147">            field = value</span>
+<span class="nc" id="L148">            callbacks.notifyCallbacks(this, BR.barOppShow, null)</span>
+<span class="nc" id="L149">        }</span>
+<span class="nc" id="L150">    var outOfNetworkAmountShow: Boolean = true</span>
+<span class="nc" id="L151">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L153">            field = value</span>
+<span class="nc" id="L154">            callbacks.notifyCallbacks(this, BR.outOfNetworkAmountShow, null)</span>
+<span class="nc" id="L155">        }</span>
+<span class="nc" id="L156">    var totalMemberAmountShow: Boolean = true</span>
+<span class="nc" id="L157">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L159">            field = value</span>
+<span class="nc" id="L160">            callbacks.notifyCallbacks(this, BR.totalMemberAmountShow, null)</span>
+<span class="nc" id="L161">        }</span>
+<span class="nc" id="L162">    var totalPlanAmountShow: Boolean = true</span>
+<span class="nc" id="L163">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L165">            field = value</span>
+<span class="nc" id="L166">            callbacks.notifyCallbacks(this, BR.totalPlanAmountShow, null)</span>
+<span class="nc" id="L167">        }</span>
+
+    var copayAmount: Double = 0.0
+<span class="nc" id="L170">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L172">            field = value</span>
+<span class="nc" id="L173">            callbacks.notifyCallbacks(this, BR.copayAmount, null)</span>
+<span class="nc" id="L174">        }</span>
+
+    var coInsuranceAmount: Double = 0.0
+<span class="nc" id="L177">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L179">            field = value</span>
+<span class="nc" id="L180">            callbacks.notifyCallbacks(this, BR.coInsuranceAmount, null)</span>
+<span class="nc" id="L181">        }</span>
+    var deductiblePayedAmount: Double = 0.0
+<span class="nc" id="L183">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L185">            field = value</span>
+<span class="nc" id="L186">            callbacks.notifyCallbacks(this, BR.deductiblePayedAmount, null)</span>
+<span class="nc" id="L187">        }</span>
+    var outOfPocketAmount: Double = 0.0
+<span class="nc" id="L189">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L191">            field = value</span>
+<span class="nc" id="L192">            callbacks.notifyCallbacks(this, BR.outOfPocketAmount, null)</span>
+<span class="nc" id="L193">        }</span>
+
+    var maxOutOfPocketAmount: Double = 0.0
+<span class="nc" id="L196">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L198">            field = value</span>
+<span class="nc" id="L199">            callbacks.notifyCallbacks(this, BR.maxOutOfPocketAmount, null)</span>
+<span class="nc" id="L200">        }</span>
+
+    var maxDeductibleAmount: Double = 0.0
+<span class="nc" id="L203">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L205">            field = value</span>
+<span class="nc" id="L206">            callbacks.notifyCallbacks(this, BR.maxDeductibleAmount, null)</span>
+<span class="nc" id="L207">        }</span>
+    var outOfNetworkAmount: Double = 0.0
+<span class="nc" id="L209">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L211">            field = value</span>
+<span class="nc" id="L212">            callbacks.notifyCallbacks(this, BR.outOfNetworkAmount, null)</span>
+<span class="nc" id="L213">        }</span>
+    var totalMemberAmount: Double = 0.0
+<span class="nc" id="L215">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L217">            field = value</span>
+<span class="nc" id="L218">            callbacks.notifyCallbacks(this, BR.totalMemberAmount, null)</span>
+<span class="nc" id="L219">        }</span>
+    var totalPlanAmount: Double = 0.0
+<span class="nc" id="L221">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L223">            field = value</span>
+<span class="nc" id="L224">            callbacks.notifyCallbacks(this, BR.totalPlanAmount, null)</span>
+<span class="nc" id="L225">        }</span>
+
+    var loading: Boolean = false
+<span class="nc" id="L228">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L230">            field = value</span>
+<span class="nc" id="L231">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L232">        }</span>
+
+<span class="nc" id="L234">    var memberInfoDb =</span>
+<span class="nc" id="L235">        homeRepository.getMemberSid(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()).asLiveData()</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L238">        callbacks.remove(callback)</span>
+<span class="nc" id="L239">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L242">        callbacks.add(callback)</span>
+<span class="nc" id="L243">    }</span>
+
+<span class="nc" id="L245">    private val _notificationCount = MutableLiveData&lt;Event&lt;Int&gt;&gt;()</span>
+    val notificationCount: LiveData&lt;Event&lt;Int&gt;&gt;
+<span class="nc" id="L247">        get() = _notificationCount</span>
+
+<span class="nc" id="L249">    var chat: Int = 0</span>
+<span class="nc" id="L250">    var docCount: Int = 0</span>
+<span class="nc" id="L251">    private val _chatCount = MutableLiveData&lt;Event&lt;Int&gt;&gt;()</span>
+    val chatCount: LiveData&lt;Event&lt;Int&gt;&gt;
+<span class="nc" id="L253">        get() = _chatCount</span>
+<span class="nc" id="L254">    val mHandler = Handler()</span>
+
+<span class="nc" id="L256">    var runnable: Runnable = object : Runnable {</span>
+        override fun run() {
+<span class="nc" id="L258">            chatCounter()</span>
+<span class="nc" id="L259">            notificationCounter()</span>
+<span class="nc" id="L260">            mHandler.postDelayed(this, 3000)</span>
+<span class="nc" id="L261">        }</span>
+<span class="nc" id="L262">    }</span>
+
+<span class="nc" id="L264">    init {</span>
+//        loadBubble()
+<span class="nc" id="L266">        chatCounter()</span>
+<span class="nc" id="L267">        notificationCounter()</span>
+<span class="nc" id="L268">        startLoop()</span>
+<span class="nc" id="L269">    }</span>
+    fun chatCounter() {
+<span class="nc" id="L271">        compositeDisposable.add(</span>
+<span class="nc" id="L272">            homeRepository.getChat(&quot;new&quot;, null, null, null, null, false)</span>
+<span class="nc" id="L273">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L274">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L275">                .doOnSubscribe {</span>
+<span class="nc" id="L276">                }</span>
+<span class="nc" id="L277">                .subscribe({</span>
+<span class="nc" id="L278">                    Timber.d(it.toString())</span>
+<span class="nc bnc" id="L279" title="All 6 branches missed.">                    if (!it.values.isNullOrEmpty()) {</span>
+<span class="nc" id="L280">                        chat = it.values!!.count()</span>
+<span class="nc" id="L281">                        _chatCount.value = Event(it.values!!.count())</span>
+                    } else {
+<span class="nc" id="L283">                        chat = 0</span>
+
+<span class="nc" id="L285">                        _chatCount.value = Event(0)</span>
+                    }
+<span class="nc" id="L287">                }, {</span>
+<span class="nc" id="L288">                    Timber.d(it.toString())</span>
+<span class="nc" id="L289">                })</span>
+        )
+<span class="nc" id="L291">    }</span>
+
+    fun notificationCounter() {
+<span class="nc" id="L294">        compositeDisposable.add(</span>
+<span class="nc" id="L295">            homeRepository.getUnreadNotification(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="nc" id="L296">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L297">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L298">                .doOnSubscribe {</span>
+<span class="nc" id="L299">                }</span>
+<span class="nc" id="L300">                .subscribe({</span>
+<span class="nc" id="L301">                    Timber.d(it.toString())</span>
+<span class="nc" id="L302">                    _notificationCount.value = Event(it.count)</span>
+<span class="nc" id="L303">                }, {</span>
+<span class="nc" id="L304">                    Timber.d(it.toString())</span>
+<span class="nc" id="L305">                })</span>
+        )
+<span class="nc" id="L307">    }</span>
+    fun startLoop() {
+<span class="nc" id="L309">        mHandler.postDelayed(runnable, 3000)</span>
+<span class="nc" id="L310">    }</span>
+
+    fun removeLoop() {
+<span class="nc" id="L313">        mHandler.removeCallbacks(runnable)</span>
+//        loadBubble()
+<span class="nc" id="L315">    }</span>
+
+    fun setSelectedMember(memberInfo: MemberBenefitDto) {
+<span class="nc" id="L318">        val index = bubbleMemberList.indexOf(memberInfo)</span>
+
+<span class="nc" id="L320">        Timber.tag(&quot;Benefit&quot;).d(&quot;Selected Member ---&gt; $index&quot;)</span>
+
+<span class="nc bnc" id="L322" title="All 2 branches missed.">        for (item in bubbleMemberList) {</span>
+<span class="nc bnc" id="L323" title="All 2 branches missed.">            if (bubbleMemberList.indexOf(item) == index) {</span>
+<span class="nc" id="L324">                bubbleMemberList[index].apply {</span>
+<span class="nc" id="L325">                    isSelected = true</span>
+<span class="nc bnc" id="L326" title="All 6 branches missed.">                    if (item.inEligibilityReasons.isNullOrBlank()) {</span>
+<span class="nc" id="L327">                        noData = false</span>
+<span class="nc" id="L328">                        reason = &quot;&quot;</span>
+                    } else {
+<span class="nc" id="L330">                        noData = true</span>
+<span class="nc" id="L331">                        reason = item.inEligibilityReasons</span>
+                    }
+<span class="nc" id="L333">                }</span>
+            } else {
+<span class="nc" id="L335">                bubbleMemberList[bubbleMemberList.indexOf(item)].apply {</span>
+<span class="nc" id="L336">                    isSelected = false</span>
+<span class="nc" id="L337">                }</span>
+            }
+        }
+<span class="nc" id="L340">        val updated = bubbleMemberList[index]</span>
+<span class="nc" id="L341">        bubbleMemberList[index] = updated</span>
+<span class="nc" id="L342">        listForHomeBubbleAdapter = bubbleMemberList.toList()</span>
+<span class="nc" id="L343">        _bubbleListGeneratedNew.value = Event(listForHomeBubbleAdapter)</span>
+<span class="nc" id="L344">    }</span>
+
+    fun barInfoLoad(selfId: String) {
+<span class="nc" id="L347">        compositeDisposable.add(</span>
+<span class="nc" id="L348">            benefitWorkRepository.getBarInfo(</span>
+<span class="nc" id="L349">                selfId,</span>
+<span class="nc" id="L350">                false,</span>
+<span class="nc" id="L351">                year.toInt(),</span>
+<span class="nc" id="L352">                month.toInt()</span>
+            )
+<span class="nc" id="L354">                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).doOnSubscribe {</span>
+<span class="nc" id="L355">                    loading = true</span>
+<span class="nc" id="L356">                }.subscribe({ value -&gt;</span>
+<span class="nc bnc" id="L357" title="All 6 branches missed.">                    barInfo = value.values?.find {</span>
+<span class="nc bnc" id="L358" title="All 4 branches missed.">                        it.name?.contains(benefit) == true</span>
+                    }
+<span class="nc" id="L360">                    Timber.d(barInfo.toString())</span>
+<span class="nc bnc" id="L361" title="All 2 branches missed.">                    if (barInfo != null) {</span>
+<span class="nc" id="L362">                        _barInfoLoaded.value = Event(barInfo)</span>
+                    } else {
+<span class="nc" id="L364">                        outGone = true</span>
+<span class="nc" id="L365">                        inGone = true</span>
+                    }
+<span class="nc" id="L367">                    loading = false</span>
+<span class="nc" id="L368">                }, {</span>
+<span class="nc" id="L369">                    Timber.d(it.toString())</span>
+<span class="nc" id="L370">                    loading = false</span>
+<span class="nc" id="L371">                })</span>
+        )
+<span class="nc" id="L373">    }</span>
+
+    fun loadContractDetails(selfId: String) {
+<span class="nc" id="L376">        compositeDisposable.add(</span>
+<span class="nc" id="L377">            benefitWorkRepository.getContractDetails(</span>
+<span class="nc" id="L378">                selfId,</span>
+<span class="nc" id="L379">                year.toInt(),</span>
+<span class="nc" id="L380">                month.toInt(),</span>
+<span class="nc" id="L381">                benefitId,</span>
+<span class="nc" id="L382">                contractId</span>
+<span class="nc" id="L383">            ).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).doOnSubscribe {</span>
+<span class="nc" id="L384">                loading = true</span>
+<span class="nc" id="L385">            }.subscribe({</span>
+<span class="nc bnc" id="L386" title="All 6 branches missed.">                if (!it.contracts.isNullOrEmpty()) {</span>
+<span class="nc" id="L387">                    val item = it.contracts[0]</span>
+
+<span class="nc bnc" id="L389" title="All 2 branches missed.">                    if (item.benefits[0].planExpenses != null) {</span>
+<span class="nc" id="L390">                        showDataView = true</span>
+
+<span class="nc bnc" id="L392" title="All 6 branches missed.">                        if (!item.benefits[0].planExpenses!!.expenses.isNullOrEmpty()) {</span>
+<span class="nc" id="L393">                            val expenses = item.benefits[0].planExpenses!!.expenses[0]</span>
+
+<span class="nc bnc" id="L395" title="All 2 branches missed.">                            expenses.copayAmount?.let { value -&gt;</span>
+<span class="nc" id="L396">                                copayAmount = value</span>
+<span class="nc" id="L397">                            }</span>
+<span class="nc bnc" id="L398" title="All 2 branches missed.">                            expenses.coinsuranceAmount?.let { value -&gt;</span>
+<span class="nc" id="L399">                                coInsuranceAmount = value</span>
+<span class="nc" id="L400">                            }</span>
+<span class="nc bnc" id="L401" title="All 2 branches missed.">                            expenses.deductibleAmount?.let { value -&gt;</span>
+<span class="nc" id="L402">                                deductiblePayedAmount = value</span>
+<span class="nc" id="L403">                            }</span>
+<span class="nc bnc" id="L404" title="All 2 branches missed.">                            expenses.deductibleMaxAmount?.let { value -&gt;</span>
+<span class="nc" id="L405">                                maxDeductibleAmount = value</span>
+<span class="nc" id="L406">                            }</span>
+<span class="nc bnc" id="L407" title="All 2 branches missed.">                            expenses.outOfPocketAmount?.let { value -&gt;</span>
+<span class="nc" id="L408">                                outOfPocketAmount = value</span>
+<span class="nc" id="L409">                            }</span>
+<span class="nc bnc" id="L410" title="All 2 branches missed.">                            expenses.outOfPocketMaxAmount?.let { value -&gt;</span>
+<span class="nc" id="L411">                                maxOutOfPocketAmount = value</span>
+<span class="nc" id="L412">                            }</span>
+<span class="nc bnc" id="L413" title="All 2 branches missed.">                            expenses.oonBalanceAmount?.let { value -&gt;</span>
+<span class="nc" id="L414">                                outOfNetworkAmount = value</span>
+<span class="nc" id="L415">                            }</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">                            expenses.memberResponsibleAmount?.let { value -&gt;</span>
+<span class="nc" id="L417">                                totalMemberAmount = value</span>
+<span class="nc" id="L418">                            }</span>
+<span class="nc bnc" id="L419" title="All 2 branches missed.">                            expenses.planResponsibleAmount?.let { value -&gt;</span>
+<span class="nc" id="L420">                                totalPlanAmount = value</span>
+<span class="nc" id="L421">                            }</span>
+
+<span class="nc" id="L423">                            val toggle = item.benefits[0]</span>
+
+<span class="nc" id="L425">                            copayAmountShow = toggle.showCopay</span>
+<span class="nc" id="L426">                            coInsuranceAmountShow = toggle.showCoinsurance</span>
+<span class="nc" id="L427">                            outOfNetworkAmountShow = toggle.showOONBalance</span>
+<span class="nc" id="L428">                            totalMemberAmountShow = toggle.showMemberResponsible</span>
+<span class="nc" id="L429">                            totalPlanAmountShow = toggle.showPlanResponsible</span>
+<span class="nc" id="L430">                            barDeductibleShow = toggle.showDeductibleBar</span>
+<span class="nc" id="L431">                            barOppShow = true</span>
+                        }
+                    } else {
+<span class="nc" id="L434">                        showDataView = false</span>
+                    }
+                }
+<span class="nc" id="L437">                loading = false</span>
+
+<span class="nc bnc" id="L439" title="All 6 branches missed.">                if (!it.contracts.isNullOrEmpty()) {</span>
+<span class="nc bnc" id="L440" title="All 6 branches missed.">                    if (!it.contracts[0].benefits[0].insuranceCardType.isNullOrEmpty()) {</span>
+<span class="nc" id="L441">                        loadInsuranceCard(selfId, it.contracts[0].benefits[0].insuranceCardType)</span>
+                    }
+                }
+<span class="nc" id="L444">                barInfoLoad(selfId)</span>
+<span class="nc" id="L445">            }, {</span>
+<span class="nc" id="L446">                loading = false</span>
+<span class="nc" id="L447">            })</span>
+        )
+<span class="nc" id="L449">    }</span>
+
+    fun loadInsuranceCard(selfId: String, cardType: String) {
+<span class="nc" id="L452">        compositeDisposable.add(</span>
+<span class="nc" id="L453">            benefitWorkRepository.getInsuranceCard(selfId, cardType)</span>
+<span class="nc" id="L454">                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).doOnSubscribe {</span>
+<span class="nc" id="L455">                    loading = true</span>
+<span class="nc" id="L456">                }.subscribe({ InsuranceDataModel -&gt;</span>
+<span class="nc bnc" id="L457" title="All 4 branches missed.">                    if (InsuranceDataModel.values.isNotEmpty()) {</span>
+<span class="nc" id="L458">                        var card = InsuranceDataModel.values[0]</span>
+<span class="nc" id="L459">                        _cardListGenerated.value = Event(card)</span>
+                    }
+
+<span class="nc" id="L462">                    loading = false</span>
+<span class="nc" id="L463">                }, {</span>
+<span class="nc" id="L464">                    loading = false</span>
+<span class="nc" id="L465">                })</span>
+        )
+<span class="nc" id="L467">    }</span>
+
+    fun flipCard() {
+<span class="nc" id="L470">        _flipCard.value = Event(Unit)</span>
+<span class="nc" id="L471">    }</span>
+
+    fun loadMembers(memberBenefitDto: List&lt;MemberBenefitDto&gt;) {
+<span class="nc" id="L474">        memberBenefitDto.let { listItem -&gt;</span>
+
+<span class="nc" id="L476">            var grouped = listItem.groupBy { value -&gt; value.relation }</span>
+<span class="nc" id="L477">            grouped.forEach {</span>
+<span class="nc" id="L478">                it.value.sortedByDescending { item -&gt;</span>
+                    DateUtils.stringServerDateToDate(
+                        item.dateOfBirth.toString()
+                    )
+                }
+<span class="nc" id="L483">                it.value.reversed()</span>
+<span class="nc" id="L484">            }</span>
+
+<span class="nc" id="L486">            bubbleMemberList.clear()</span>
+
+<span class="nc" id="L488">            grouped.forEach {</span>
+<span class="nc bnc" id="L489" title="All 2 branches missed.">                if (it.key.equals(&quot;Insured&quot;, true)) {</span>
+<span class="nc" id="L490">                    memberInfo = it.value.first()</span>
+<span class="nc" id="L491">                    it.value.first().isSelected = true</span>
+<span class="nc" id="L492">                    bubbleMemberList.add(0, it.value[0])</span>
+<span class="nc bnc" id="L493" title="All 2 branches missed.">                } else if (it.key.equals(&quot;Spouse&quot;, true)) {</span>
+<span class="nc bnc" id="L494" title="All 2 branches missed.">                    if (grouped.containsKey(&quot;Insured&quot;)) {</span>
+<span class="nc" id="L495">                        bubbleMemberList.add(1, it.value[0])</span>
+                    } else {
+<span class="nc" id="L497">                        bubbleMemberList.add(0, it.value[0])</span>
+                    }
+<span class="nc bnc" id="L499" title="All 2 branches missed.">                } else if (it.key.equals(&quot;Child&quot;, true)) {</span>
+<span class="nc" id="L500">                    val dateGroup = it.value.groupBy { date -&gt;</span>
+<span class="nc" id="L501">                        DateUtils.stringServerDateToDate(</span>
+<span class="nc" id="L502">                            date.dateOfBirth.toString()</span>
+<span class="nc" id="L503">                        )</span>
+                    }
+
+<span class="nc" id="L506">                    dateGroup.forEach { item -&gt;</span>
+<span class="nc" id="L507">                        val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }</span>
+<span class="nc" id="L508">                        bubbleMemberList.addAll(sorted)</span>
+<span class="nc" id="L509">                    }</span>
+                }
+<span class="nc" id="L511">            }</span>
+<span class="nc" id="L512">            val tempOthers: ArrayList&lt;MemberBenefitDto&gt; = arrayListOf()</span>
+<span class="nc" id="L513">            grouped.forEach {</span>
+<span class="nc bnc" id="L514" title="All 4 branches missed.">                if (!it.key.equals(&quot;Insured&quot;, true) &amp;&amp; !it.key.equals(</span>
+<span class="nc" id="L515">                        &quot;Spouse&quot;,</span>
+<span class="nc" id="L516">                        true</span>
+<span class="nc bnc" id="L517" title="All 2 branches missed.">                    ) &amp;&amp; !it.key.equals(&quot;Child&quot;, true)</span>
+                ) {
+<span class="nc" id="L519">                    tempOthers.addAll(it.value)</span>
+                }
+<span class="nc" id="L521">            }</span>
+
+<span class="nc" id="L523">            val dateGroup = tempOthers.groupBy { date -&gt;</span>
+<span class="nc" id="L524">                DateUtils.stringServerDateToDate(</span>
+<span class="nc" id="L525">                    date.dateOfBirth.toString()</span>
+<span class="nc" id="L526">                )</span>
+            }
+<span class="nc" id="L528">            dateGroup.forEach { item -&gt;</span>
+<span class="nc" id="L529">                val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }</span>
+<span class="nc" id="L530">                bubbleMemberList.addAll(sorted)</span>
+<span class="nc" id="L531">            }</span>
+<span class="nc" id="L532">        }</span>
+
+<span class="nc" id="L534">        listForHomeBubbleAdapter = bubbleMemberList.toList()</span>
+<span class="nc" id="L535">        _bubbleListGenerated.value = Event(listForHomeBubbleAdapter)</span>
+<span class="nc" id="L536">    }</span>
+
+//    fun loadBubble() {
+//        compositeDisposable.add(
+//            homeRepository.getMember().subscribeOn(Schedulers.io())
+//                .observeOn(AndroidSchedulers.mainThread()).doOnSubscribe {
+//                    loading = true
+//                }.subscribe({ member -&gt;
+//                    memberInfo = member
+//
+// //                    preferences.edit().putString(&quot;memberID&quot;,memberInfo.selfId.toString()).apply()
+//
+//                    memberInfo.insured?.let { it1 -&gt;
+//                        bubbleMemberList.add(it1)
+//                        bubbleMemberList[0].apply {
+//                            isSelected = true
+//                        }
+//                    } ?: run {
+//                        bubbleMemberList.add(0, memberInfo)
+//                        bubbleMemberList[0].apply {
+//                            isSelected = true
+//                        }
+//                    }
+//                    memberInfo.dependentsArrayList?.sortByDescending {
+//                        DateUtils.stringServerDateToDate(
+//                            it.birthDate.toString()
+//                        )
+//                    }
+//                    memberInfo.dependentsArrayList?.reverse()
+//                    memberInfo.dependentsArrayList?.let { it1 -&gt;
+//                        for (memberItem in it1) {
+// //                if (!member.memberAdditionInReview) {
+//                            if (StringUtils.equalsIgnoreCase(
+//                                    memberItem.memberRelationship,
+//                                    &quot;Spouse&quot;
+//                                )
+//                            ) {
+//                                bubbleMemberList.add(1, memberItem)
+//                            } else {
+//                                if (!member.hideProfileFromHome) {
+//                                    bubbleMemberList.add(memberItem)
+//                                }
+//                            }
+// //                }
+//                        }
+//
+//                        var grouped = bubbleMemberList.groupBy { it.memberRelationship }
+//                        grouped.forEach {
+//                            it.value.sortedByDescending { item -&gt;
+//                                DateUtils.stringServerDateToDate(
+//                                    item.birthDate.toString()
+//                                )
+//                            }
+//                            it.value.reversed()
+//                        }
+//
+//                        bubbleMemberList.clear()
+//
+//                        grouped.forEach {
+//                            if (it.key.equals(&quot;Insured&quot;, true)) {
+//                                bubbleMemberList.add(0, it.value[0])
+//                            } else if (it.key.equals(&quot;Spouse&quot;, true)) {
+//                                if (grouped.containsKey(&quot;Insured&quot;)) {
+//                                    bubbleMemberList.add(1, it.value[0])
+//                                } else {
+//                                    bubbleMemberList.add(0, it.value[0])
+//                                }
+//                            } else if (it.key.equals(&quot;Child&quot;, true)) {
+//                                val dateGroup = it.value.groupBy { date -&gt;
+//                                    DateUtils.stringServerDateToDate(
+//                                        date.birthDate.toString()
+//                                    )
+//                                }
+//
+//                                dateGroup.forEach { item -&gt;
+//                                    val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }
+//                                    bubbleMemberList.addAll(sorted)
+//                                }
+//                            }
+//                        }
+//                        val tempOthers: java.util.ArrayList&lt;MemberInfo&gt; = arrayListOf()
+//                        grouped.forEach {
+//                            if (!it.key.equals(&quot;Insured&quot;, true) &amp;&amp; !it.key.equals(
+//                                    &quot;Spouse&quot;,
+//                                    true
+//                                ) &amp;&amp; !it.key.equals(&quot;Child&quot;, true)
+//                            ) {
+//                                tempOthers.addAll(it.value)
+//                            }
+//                        }
+//
+//                        val dateGroup = tempOthers.groupBy { date -&gt;
+//                            DateUtils.stringServerDateToDate(
+//                                date.birthDate.toString()
+//                            )
+//                        }
+//                        dateGroup.forEach { item -&gt;
+//                            val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }
+//                            bubbleMemberList.addAll(sorted)
+//                        }
+//                    }
+//
+// //                    bubbleMemberList.add(MemberInfo())
+//                    listForHomeBubbleAdapter = bubbleMemberList.toList()
+//                    loading = false
+//
+//                    _bubbleListGenerated.value = Event(listForHomeBubbleAdapter)
+//                }, {
+//                    loading = false
+//                })
+//        )
+//    }
+
+    fun floor(value: Double?): String {
+<span class="nc" id="L650">        val df = DecimalFormat(&quot;#.##&quot;)</span>
+<span class="nc" id="L651">        return df.format(value).toString()</span>
+    }
+
+    override fun onCleared() {
+<span class="nc" id="L655">        super.onCleared()</span>
+<span class="nc" id="L656">        compositeDisposable.dispose()</span>
+<span class="nc" id="L657">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StepCounterViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.step</a> &gt; <span class="el_source">StepCounterViewModel.kt</span></div><h1>StepCounterViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.step
+
+import android.os.Bundle
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.R
+import timber.log.Timber
+
+<span class="fc" id="L8">class StepCounterViewModel : ViewModel() {</span>
+
+<span class="fc" id="L10">    private val _stepIds = mutableListOf&lt;Pair&lt;Int, Boolean&gt;&gt;(</span>
+<span class="fc" id="L11">        Pair(R.id.guestPhoneFragment, true),</span>
+<span class="fc" id="L12">        Pair(R.id.guestEmailFragment, true),</span>
+<span class="fc" id="L13">        Pair(R.id.guestPasswordFragment, true),</span>
+<span class="fc" id="L14">        Pair(R.id.documentScanFragment, true), // DL_FRONT</span>
+<span class="fc" id="L15">        Pair(R.id.documentScanFragment, true), // DL_BACK</span>
+<span class="fc" id="L16">        Pair(R.id.documentScanFragment, false), // SSN - disabled by default</span>
+<span class="fc" id="L17">        Pair(R.id.selfieCaptureFragment, true),</span>
+<span class="fc" id="L18">        Pair(R.id.zipUpdateFragment, false), // ZIP - disabled by default</span>
+<span class="fc" id="L19">        Pair(R.id.zipUpdateFragment, false) // Full address - disabled by default</span>
+    )
+
+    fun enableSSN(enable: Boolean) {
+<span class="fc" id="L23">        _stepIds[5] = Pair(R.id.documentScanFragment, enable) // SSN step</span>
+<span class="fc" id="L24">    }</span>
+
+    fun enableZip(enable: Boolean) {
+<span class="fc" id="L27">        _stepIds[7] = Pair(R.id.zipUpdateFragment, enable) // ZIP step</span>
+<span class="fc" id="L28">    }</span>
+
+    fun enableFullAddress(enable: Boolean) {
+<span class="fc" id="L31">        _stepIds[8] = Pair(R.id.zipUpdateFragment, enable) // Full address step</span>
+<span class="fc" id="L32">    }</span>
+
+    private fun getEnabledSteps(): List&lt;Int&gt; {
+<span class="fc" id="L35">        return _stepIds.filter { it.second }.map { it.first }</span>
+    }
+
+<span class="fc" id="L38">    fun getStepsTextAndPercent(destinationId: Int, arguments: Bundle? = null): Triple&lt;Int, Int, Double&gt;? {</span>
+<span class="fc" id="L39">        val enabledSteps = getEnabledSteps()</span>
+<span class="fc" id="L40">        val enabledStepIndices = _stepIds.mapIndexedNotNull { index, pair -&gt;</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            if (pair.second) index else null</span>
+        }
+
+<span class="pc bpc" id="L44" title="3 of 8 branches missed.">        if (destinationId == R.id.documentScanFragment &amp;&amp; arguments?.getSerializable(&quot;documentType&quot;)?.toString() == &quot;SSN_ONLY&quot;) {</span>
+<span class="nc" id="L45">            return Triple(1, 1, 100.0)</span>
+        }
+
+<span class="fc" id="L48">        val position = when (destinationId) {</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            R.id.documentScanFragment -&gt; {</span>
+<span class="pc bpc" id="L50" title="2 of 4 branches missed.">                val documentType = arguments?.getSerializable(&quot;documentType&quot;)?.toString()</span>
+<span class="fc" id="L51">                Timber.d(&quot;DocumentType: $documentType&quot;)</span>
+<span class="fc" id="L52">                when (documentType) {</span>
+<span class="pc bpc" id="L53" title="1 of 4 branches missed.">                    &quot;DL_FRONT&quot; -&gt; if (enabledStepIndices.contains(3)) enabledStepIndices.indexOf(3) else -1</span>
+<span class="pc bpc" id="L54" title="1 of 4 branches missed.">                    &quot;DL_BACK&quot; -&gt; if (enabledStepIndices.contains(4)) enabledStepIndices.indexOf(4) else -1</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">                    else -&gt; if (enabledStepIndices.contains(5)) enabledStepIndices.indexOf(5) else -1</span>
+                }
+            }
+
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            R.id.zipUpdateFragment -&gt; {</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">                val isFull = arguments?.getBoolean(&quot;isFull&quot;)</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">                if (isFull == true) {</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                    if (enabledStepIndices.contains(8)) enabledStepIndices.indexOf(8) else -1</span>
+                } else {
+<span class="fc bfc" id="L64" title="All 2 branches covered.">                    if (enabledStepIndices.contains(7)) enabledStepIndices.indexOf(7) else -1</span>
+                }
+            }
+
+            else -&gt; {
+<span class="fc bfc" id="L69" title="All 2 branches covered.">                val stepIndex = _stepIds.indexOfFirst { it.first == destinationId }</span>
+<span class="pc bpc" id="L70" title="2 of 4 branches missed.">                if (stepIndex != -1 &amp;&amp; enabledStepIndices.contains(stepIndex)) {</span>
+<span class="fc" id="L71">                    enabledStepIndices.indexOf(stepIndex)</span>
+                } else {
+<span class="nc" id="L73">                    -1</span>
+                }
+            }
+        }
+
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        return if (position != -1) {</span>
+<span class="fc" id="L79">            val currentStep = position + 1</span>
+<span class="fc" id="L80">            val totalStep = enabledSteps.size</span>
+<span class="fc" id="L81">            val percent = (currentStep.toDouble() / totalStep.toDouble()) * 100</span>
+<span class="fc" id="L82">            val roundedPercent = kotlin.math.round(percent * 100) / 100.0</span>
+<span class="fc" id="L83">            Triple(currentStep, totalStep, roundedPercent)</span>
+        } else {
+<span class="fc" id="L85">            null</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

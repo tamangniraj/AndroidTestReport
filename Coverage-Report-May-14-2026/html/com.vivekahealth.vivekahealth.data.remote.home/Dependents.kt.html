@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Dependents.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.remote.home</a> &gt; <span class="el_source">Dependents.kt</span></div><h1>Dependents.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.remote.home
+
+import com.google.gson.annotations.SerializedName
+import java.util.ArrayList
+
+<span class="pc bpc" id="L6" title="24 of 48 branches missed.">data class Dependents(</span>
+
+<span class="fc" id="L8">    @SerializedName(&quot;selfId&quot;)</span>
+<span class="fc" id="L9">    var selfId: String? = null,</span>
+
+<span class="pc" id="L11">    @SerializedName(&quot;clientId&quot;)</span>
+<span class="fc" id="L12">    val clientId: String? = null,</span>
+
+<span class="fc" id="L14">    @SerializedName(&quot;firstName&quot;)</span>
+<span class="fc" id="L15">    val firstName: String? = null,</span>
+
+<span class="fc" id="L17">    @SerializedName(&quot;lastName&quot;)</span>
+<span class="fc" id="L18">    val lastName: String? = null,</span>
+
+<span class="pc" id="L20">    @SerializedName(&quot;middleName&quot;)</span>
+<span class="fc" id="L21">    val middleName: String? = null,</span>
+<span class="fc" id="L22">    @SerializedName(&quot;birthDate&quot;)</span>
+<span class="fc" id="L23">    val birthDate: String? = null,</span>
+
+<span class="fc" id="L25">    @SerializedName(&quot;memberRelationship&quot;)</span>
+<span class="fc" id="L26">    val memberRelationship: String? = null,</span>
+
+<span class="fc" id="L28">    @SerializedName(&quot;gender&quot;)</span>
+<span class="fc" id="L29">    val gender: String? = null,</span>
+
+<span class="pc" id="L31">    @SerializedName(&quot;suffix&quot;)</span>
+<span class="fc" id="L32">    val suffix: String? = null,</span>
+
+<span class="pc" id="L34">    @SerializedName(&quot;relationDesc&quot;)</span>
+<span class="fc" id="L35">    val relationDesc: String? = null,</span>
+
+<span class="pc" id="L37">    @SerializedName(&quot;displayName&quot;)</span>
+<span class="fc" id="L38">    val displayName: String? = null,</span>
+
+<span class="pc" id="L40">    @SerializedName(&quot;username&quot;)</span>
+<span class="fc" id="L41">    val userName: String? = null,</span>
+
+<span class="pc" id="L43">    @SerializedName(&quot;email&quot;)</span>
+<span class="fc" id="L44">    val email: String? = null,</span>
+
+<span class="pc" id="L46">    @SerializedName(&quot;fullName&quot;)</span>
+<span class="fc" id="L47">    val fullName: String? = null,</span>
+
+<span class="pc" id="L49">    @SerializedName(&quot;facebookName&quot;)</span>
+<span class="fc" id="L50">    val facebookName: String? = null,</span>
+
+<span class="pc" id="L52">    @SerializedName(&quot;linkedWithFacebook&quot;)</span>
+<span class="fc" id="L53">    val linkedWithFacebook: String? = null,</span>
+
+<span class="pc" id="L55">    @SerializedName(&quot;hasAvatar&quot;)</span>
+<span class="fc" id="L56">    val hasAvatar: String? = null,</span>
+
+<span class="pc" id="L58">    @SerializedName(&quot;hipaaNumber&quot;)</span>
+<span class="fc" id="L59">    val hipaaNumber: String? = null,</span>
+
+<span class="pc" id="L61">    @SerializedName(&quot;ssn&quot;)</span>
+<span class="fc" id="L62">    val ssn: String? = null,</span>
+
+<span class="pc" id="L64">    @SerializedName(&quot;isEligible&quot;)</span>
+<span class="fc" id="L65">    val isEligible: String? = null,</span>
+
+<span class="pc" id="L67">    @SerializedName(&quot;eligibilityStatus&quot;)</span>
+<span class="fc" id="L68">    val eligibilityStatus: String? = null,</span>
+
+<span class="pc" id="L70">    @SerializedName(&quot;dependents&quot;)</span>
+<span class="fc" id="L71">    val dependentsArrayList: ArrayList&lt;MemberInfo&gt;? = null,</span>
+
+<span class="pc" id="L73">    @SerializedName(&quot;insured&quot;)</span>
+<span class="fc" id="L74">    val insured: MemberInfo? = null,</span>
+
+<span class="pc" id="L76">    @SerializedName(&quot;skipTour&quot;)</span>
+<span class="fc" id="L77">    val skipTour: String? = null,</span>
+
+<span class="pc" id="L79">    @SerializedName(&quot;skipFacebook&quot;)</span>
+<span class="fc" id="L80">    val skipFacebook: String? = null,</span>
+
+<span class="pc" id="L82">    @SerializedName(&quot;sharingDetails&quot;)</span>
+<span class="fc" id="L83">    val sharingDetails: ArrayList&lt;SharingDetails&gt;? = null,</span>
+
+<span class="pc" id="L85">    @SerializedName(&quot;shouldEnroll&quot;)</span>
+<span class="fc" id="L86">    val shouldEnroll: String? = null,</span>
+
+<span class="pc" id="L88">    @SerializedName(&quot;links&quot;) // TODO array</span>
+<span class="fc" id="L89">    val links: ArrayList&lt;String&gt;? = null,</span>
+
+<span class="pc" id="L91">    @SerializedName(&quot;allowChangeAvatar&quot;)</span>
+<span class="pc" id="L92">    var allowChangeAvatar: AllowChangeAvatar? = null,</span>
+
+<span class="pc" id="L94">    @SerializedName(&quot;optInEdd&quot;)</span>
+<span class="fc" id="L95">    val optInEdd: Boolean = false,</span>
+
+<span class="pc" id="L97">    @SerializedName(&quot;homeAddress&quot;)</span>
+<span class="pc" id="L98">    var homeAddress: MemberAddress? = null,</span>
+
+<span class="pc" id="L100">    @SerializedName(&quot;usernameType&quot;)</span>
+<span class="fc" id="L101">    val usernameType: String? = null,</span>
+
+<span class="pc" id="L103">    @SerializedName(&quot;languagePreference&quot;)</span>
+<span class="fc" id="L104">    val languagePreference: String? = null,</span>
+
+<span class="pc" id="L106">    @SerializedName(&quot;workAddress&quot;)</span>
+<span class="pc" id="L107">    var workAddress: MemberAddress? = null,</span>
+
+<span class="pc" id="L109">    @SerializedName(&quot;hasUnionCard&quot;)</span>
+<span class="pc" id="L110">    var hasUnionCard: Boolean = false,</span>
+
+<span class="pc" id="L112">    val isSelected: Boolean = false,</span>
+
+<span class="pc" id="L114">    val syncDate: String? = null,</span>
+
+<span class="pc" id="L116">    @SerializedName(&quot;findDoctorSwitch&quot;)</span>
+<span class="fc" id="L117">    val findDoctorSwitch: Boolean = true,</span>
+
+<span class="pc" id="L119">    @SerializedName(&quot;medicalClaimsSwitch&quot;)</span>
+<span class="fc" id="L120">    val medicalClaimsSwitch: Boolean = true,</span>
+
+<span class="pc" id="L122">    @SerializedName(&quot;medicalHistorySwitch&quot;)</span>
+<span class="fc" id="L123">    val medicalHistorySwitch: Boolean = true,</span>
+
+<span class="pc" id="L125">    @SerializedName(&quot;workHoursSwitch&quot;)</span>
+<span class="fc" id="L126">    val workHoursSwitch: Boolean = true,</span>
+
+<span class="pc" id="L128">    @SerializedName(&quot;eligibleIndicatorSwitch&quot;)</span>
+<span class="fc" id="L129">    val showEligibleIndicator: Boolean = true,</span>
+
+<span class="pc" id="L131">    @SerializedName(&quot;cardsOnlyIfEligibleSwitch&quot;)</span>
+<span class="fc" id="L132">    val showCardsOnlyIfEligible: Boolean = true,</span>
+
+<span class="pc" id="L134">    @SerializedName(&quot;searchProviderV2&quot;)</span>
+<span class="fc" id="L135">    val searchProviderV2: Boolean = false,</span>
+
+<span class="pc" id="L137">    @SerializedName(&quot;showPaydForm&quot;)</span>
+<span class="fc" id="L138">    val showPaydForm: Boolean = false,</span>
+
+<span class="pc" id="L140">    @SerializedName(&quot;showSaveMoney&quot;)</span>
+<span class="fc" id="L141">    val showSaveMoney: Boolean = false,</span>
+
+<span class="pc" id="L143">    @SerializedName(&quot;showPreferredRadiologists&quot;)</span>
+<span class="fc" id="L144">    val showPreferredRadiologists: Boolean = false,</span>
+
+<span class="pc" id="L146">    @SerializedName(&quot;showDeductibleBar&quot;)</span>
+<span class="fc" id="L147">    val showDeductibleBar: Boolean = true,</span>
+
+<span class="pc" id="L149">    @SerializedName(&quot;showOOPBar&quot;)</span>
+<span class="fc" id="L150">    val showOOPBar: Boolean = true,</span>
+
+<span class="pc" id="L152">    @SerializedName(&quot;showCopay&quot;)</span>
+<span class="fc" id="L153">    val showCopay: Boolean = true,</span>
+
+<span class="pc" id="L155">    @SerializedName(&quot;showCoinsurance&quot;)</span>
+<span class="fc" id="L156">    val showCoinsurance: Boolean = true,</span>
+
+<span class="pc" id="L158">    @SerializedName(&quot;showOONBalance&quot;)</span>
+<span class="fc" id="L159">    val showOONBalance: Boolean = true,</span>
+
+<span class="pc" id="L161">    @SerializedName(&quot;showMemberResponsible&quot;)</span>
+<span class="fc" id="L162">    val showMemberResponsible: Boolean = true,</span>
+<span class="pc" id="L163">    @SerializedName(&quot;showPlanResponsible&quot;)</span>
+<span class="fc" id="L164">    val showPlanResponsible: Boolean = true,</span>
+
+<span class="pc" id="L166">    @SerializedName(&quot;hipaaLabel&quot;)</span>
+<span class="fc" id="L167">    val hipaaLabel: String = &quot;HIPAA #&quot;,</span>
+    // client specific; use this to system wide label hipaa#/memberId/subscriberId
+
+<span class="pc" id="L170">    @SerializedName(&quot;initialLoginComplete&quot;)</span>
+<span class="fc" id="L171">    val initialLoginComplete: Boolean = false</span>
+<span class="fc" id="L172">)</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MemberDetail.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.enroll.fragments.personalDetail</a> &gt; <span class="el_source">MemberDetail.kt</span></div><h1>MemberDetail.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.enroll.fragments.personalDetail
+
+import android.content.Intent
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.databinding.FragmentEnrollmentPersonalDetailBinding
+import com.vivekahealth.vivekahealth.di.Injectable
+import com.vivekahealth.vivekahealth.ui.BaseFragment
+import com.vivekahealth.vivekahealth.ui.enroll.EnrollActivity
+import com.vivekahealth.vivekahealth.ui.enroll.NextClickListener
+import com.vivekahealth.vivekahealth.ui.login.LoginActivity
+import com.vivekahealth.vivekahealth.utils.EventObserver
+import javax.inject.Inject
+
+<span class="nc" id="L22">class MemberDetail : BaseFragment(), Injectable, NextClickListener {</span>
+
+    companion object {
+<span class="nc" id="L25">        fun newInstance() = MemberDetail()</span>
+    }
+
+    private lateinit var viewModel: MemberDetailViewModel
+    private lateinit var binding: FragmentEnrollmentPersonalDetailBinding
+
+<span class="nc" id="L31">    @Inject</span>
+<span class="nc" id="L32">    lateinit var viewModelFactory: ViewModelProvider.Factory</span>
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+<span class="nc" id="L39">        binding = FragmentEnrollmentPersonalDetailBinding.inflate(inflater, container, false)</span>
+<span class="nc" id="L40">        return binding.root</span>
+    }
+
+    override fun onResume() {
+<span class="nc bnc" id="L44" title="All 4 branches missed.">        if (viewModel.city.isNotBlank()) {</span>
+<span class="nc" id="L45">            binding.show1 = false</span>
+<span class="nc" id="L46">            binding.show2 = true</span>
+        } else {
+<span class="nc" id="L48">            binding.show1 = true</span>
+<span class="nc" id="L49">            binding.show2 = false</span>
+        }
+
+//        reInitSpinner()
+<span class="nc" id="L53">        super.onResume()</span>
+<span class="nc" id="L54">    }</span>
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+<span class="nc" id="L56">        super.onActivityCreated(savedInstanceState)</span>
+
+<span class="nc" id="L58">        viewModel = ViewModelProvider(this, viewModelFactory).get(MemberDetailViewModel::class.java).apply {</span>
+<span class="nc" id="L59">            nextClickListener = this@MemberDetail</span>
+<span class="nc" id="L60">        }</span>
+<span class="nc" id="L61">        binding.viewModel = viewModel</span>
+<span class="nc" id="L62">        (activity as EnrollActivity).changeState(1)</span>
+<span class="nc" id="L63">        viewModel.loadData()</span>
+<span class="nc bnc" id="L64" title="All 4 branches missed.">        if ((activity as EnrollActivity).enrollId().isNotBlank()) {</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">            viewModel.user.subscriber?.firstName = (activity as EnrollActivity).enrollFName()</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">            viewModel.user.subscriber?.lastName = (activity as EnrollActivity).enrollLName()</span>
+        }
+
+<span class="nc" id="L69">        binding.show1 = true</span>
+<span class="nc" id="L70">        binding.show2 = false</span>
+
+<span class="nc" id="L72">        var State = resources.getStringArray(R.array.us_states)</span>
+
+<span class="nc" id="L74">        viewModel.listState.addAll(State)</span>
+
+        // Create an ArrayAdapter using the string array and a default spinner
+<span class="nc" id="L77">        val staticAdapter = ArrayAdapter</span>
+<span class="nc" id="L78">            .createFromResource(</span>
+<span class="nc" id="L79">                requireContext(),</span>
+<span class="nc" id="L80">                R.array.us_states,</span>
+<span class="nc" id="L81">                android.R.layout.simple_spinner_dropdown_item</span>
+            )
+
+        // Specify the layout to use when the list of choices appears
+<span class="nc" id="L85">        staticAdapter</span>
+<span class="nc" id="L86">            .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)</span>
+
+        // Apply the adapter to the spinner
+<span class="nc" id="L89">        binding.stateSpinner.adapter = staticAdapter</span>
+
+//        binding.stateSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+//            override fun onItemSelected(parent: AdapterView&lt;*&gt;?, view: View, position: Int, id: Long) {
+//                val st  = parent!!.getItemAtPosition(position).toString()
+//             viewModel.state =  st.substring(0, st.indexOf(&quot;-&quot;));
+//
+//            }
+//
+//            override fun onNothingSelected(parent: AdapterView&lt;*&gt;?) {
+//
+//
+//            }
+//        }
+
+<span class="nc" id="L104">        viewModel.setState.observe(</span>
+<span class="nc" id="L105">            viewLifecycleOwner,</span>
+<span class="nc" id="L106">            EventObserver {</span>
+<span class="nc" id="L107">                binding.stateSpinner.setSelection(it)</span>
+<span class="nc" id="L108">            }</span>
+        )
+
+<span class="nc" id="L111">        viewModel.navigateToBack.observe(</span>
+<span class="nc" id="L112">            viewLifecycleOwner,</span>
+<span class="nc" id="L113">            EventObserver {</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">                if (binding.show2) {</span>
+<span class="nc" id="L115">                    binding.show1 = true</span>
+<span class="nc" id="L116">                    binding.show2 = false</span>
+<span class="nc" id="L117">                    binding.nextEnable = true</span>
+                } else {
+<span class="nc" id="L119">                    val intent = Intent(requireContext(), LoginActivity::class.java)</span>
+<span class="nc" id="L120">                    startActivity(intent)</span>
+<span class="nc" id="L121">                    requireActivity().finish()</span>
+                }
+<span class="nc" id="L123">            }</span>
+        )
+<span class="nc" id="L125">        viewModel.navigateToNext.observe(</span>
+<span class="nc" id="L126">            viewLifecycleOwner,</span>
+<span class="nc" id="L127">            EventObserver {</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                if (binding.show1) {</span>
+<span class="nc" id="L129">                    val st = viewModel.listState[binding.stateSpinner.selectedItemPosition]</span>
+<span class="nc" id="L130">                    viewModel.state = st.substring(0, st.indexOf(&quot;-&quot;))</span>
+<span class="nc" id="L131">                    binding.show1 = false</span>
+<span class="nc" id="L132">                    binding.show2 = true</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">                    binding.nextEnable = viewModel.continueCoverage.isNotBlank()</span>
+<span class="nc" id="L134">                    viewModel.addFirstStep(</span>
+<span class="nc" id="L135">                        (activity as EnrollActivity).enrollId(),</span>
+<span class="nc" id="L136">                        (activity as EnrollActivity).enrollFName(),</span>
+<span class="nc" id="L137">                        (activity as EnrollActivity).enrollLName()</span>
+                    )
+                } else {
+<span class="nc" id="L140">                    viewModel.addSecondStep()</span>
+<span class="nc" id="L141">                    findNavController().navigate(</span>
+<span class="nc" id="L142">                        R.id.action_memberDetailFragment_to_martialStatusFragment</span>
+                    )
+                }
+
+//            (this.requireActivity() as RegisterActivity).navigationFragmentManager.addFragmentToBackStack(StepGenderFragment.newInstance(viewModel.mobile,viewModel.countryCode,viewModel.tempUUID,viewModel.email,viewModel.password,viewModel.passwordConfirm,viewModel.firstName,viewModel.lastName))
+<span class="nc" id="L147">            }</span>
+        )
+<span class="nc" id="L149">        viewModel.nameChanged.observe(</span>
+<span class="nc" id="L150">            viewLifecycleOwner,</span>
+<span class="nc" id="L151">            EventObserver { name -&gt;</span>
+
+<span class="nc bnc" id="L153" title="All 14 branches missed.">                binding.nextEnable = viewModel.addressStreet.isNotBlank() &amp;&amp; viewModel.city.isNotBlank() &amp;&amp; viewModel.zip.isNotBlank() &amp;&amp; viewModel.zip.length &gt;= 5</span>
+<span class="nc" id="L154">            }</span>
+        )
+<span class="nc" id="L156">        viewModel.cityChanged.observe(</span>
+<span class="nc" id="L157">            viewLifecycleOwner,</span>
+<span class="nc" id="L158">            EventObserver { name -&gt;</span>
+
+<span class="nc bnc" id="L160" title="All 14 branches missed.">                binding.nextEnable = viewModel.addressStreet.isNotBlank() &amp;&amp; viewModel.city.isNotBlank() &amp;&amp; viewModel.zip.isNotBlank() &amp;&amp; viewModel.zip.length &gt;= 5</span>
+<span class="nc" id="L161">            }</span>
+        )
+
+<span class="nc" id="L164">        viewModel.zipChanged.observe(</span>
+<span class="nc" id="L165">            viewLifecycleOwner,</span>
+<span class="nc" id="L166">            EventObserver { zip -&gt;</span>
+
+<span class="nc" id="L168">                val zips: List&lt;String&gt; = zip.split(&quot;-&quot;)</span>
+
+<span class="nc bnc" id="L170" title="All 2 branches missed.">                if (zips[0].length == 5) {</span>
+<span class="nc" id="L171">                    viewModel.zipFirst = zips[0]</span>
+                }
+<span class="nc bnc" id="L173" title="All 2 branches missed.">                if (zips.size &gt; 1) {</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">                    if (zips[1].length == 4) {</span>
+<span class="nc" id="L175">                        viewModel.zipExtension = zips[1]</span>
+                    }
+                }
+
+<span class="nc bnc" id="L179" title="All 2 branches missed.">                if (viewModel.zip.length &gt;= 5) {</span>
+<span class="nc" id="L180">                    binding.nextEnable =</span>
+<span class="nc bnc" id="L181" title="All 12 branches missed.">                        viewModel.addressStreet.isNotBlank() &amp;&amp; viewModel.city.isNotBlank() &amp;&amp; viewModel.zip.isNotBlank()</span>
+                } else {
+<span class="nc" id="L183">                    binding.nextEnable = false</span>
+                }
+<span class="nc" id="L185">            }</span>
+        )
+
+<span class="nc" id="L188">        viewModel.yesClicked.observe(</span>
+<span class="nc" id="L189">            viewLifecycleOwner,</span>
+<span class="nc" id="L190">            EventObserver {</span>
+<span class="nc" id="L191">                viewModel.continueCoverage = &quot;true&quot;</span>
+
+<span class="nc" id="L193">                binding.yesBtn.background = requireActivity().getDrawable(</span>
+<span class="nc" id="L194">                    R.drawable.gender_button_negative_clear</span>
+                )
+
+<span class="nc" id="L197">                binding.noBtn.background = requireActivity().getDrawable(</span>
+<span class="nc" id="L198">                    R.drawable.gender_button_positive_clear</span>
+                )
+<span class="nc bnc" id="L200" title="All 4 branches missed.">                binding.nextEnable = binding.show2 &amp;&amp; viewModel.clicked</span>
+<span class="nc" id="L201">            }</span>
+        )
+<span class="nc" id="L203">        viewModel.noClicked.observe(</span>
+<span class="nc" id="L204">            viewLifecycleOwner,</span>
+<span class="nc" id="L205">            EventObserver {</span>
+<span class="nc" id="L206">                viewModel.continueCoverage = &quot;false&quot;</span>
+
+<span class="nc" id="L208">                binding.noBtn.background = requireActivity().getDrawable(</span>
+<span class="nc" id="L209">                    R.drawable.gender_button_negative_clear</span>
+                )
+
+<span class="nc" id="L212">                binding.yesBtn.background = requireActivity().getDrawable(</span>
+<span class="nc" id="L213">                    R.drawable.gender_button_positive_clear</span>
+                )
+
+<span class="nc bnc" id="L216" title="All 4 branches missed.">                binding.nextEnable = binding.show2 &amp;&amp; viewModel.clicked</span>
+<span class="nc" id="L217">            }</span>
+        )
+<span class="nc" id="L219">    }</span>
+
+    fun reInitSpinner() {
+<span class="nc" id="L222">        binding.stateSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {</span>
+            override fun onItemSelected(
+                parent: AdapterView&lt;*&gt;,
+                view: View,
+                position: Int,
+                id: Long
+            ) {
+<span class="nc" id="L229">                val st = parent.getItemAtPosition(position).toString()</span>
+<span class="nc" id="L230">                viewModel.state = st.substring(0, st.indexOf(&quot;-&quot;))</span>
+<span class="nc" id="L231">            }</span>
+
+            override fun onNothingSelected(parent: AdapterView&lt;*&gt;?) {
+<span class="nc" id="L234">            }</span>
+        }
+<span class="nc" id="L236">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

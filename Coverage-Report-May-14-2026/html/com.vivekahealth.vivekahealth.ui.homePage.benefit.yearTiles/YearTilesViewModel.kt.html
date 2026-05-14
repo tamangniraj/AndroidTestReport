@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>YearTilesViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.benefit.yearTiles</a> &gt; <span class="el_source">YearTilesViewModel.kt</span></div><h1>YearTilesViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.benefit.yearTiles
+
+import android.content.SharedPreferences
+import android.content.res.Resources
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.remote.home.workBenefit.ResponseData
+import com.vivekahealth.vivekahealth.data.remote.home.workBenefit.workLog.BenefitsLogo
+import com.vivekahealth.vivekahealth.data.remote.home.workBenefit.workLog.WorkLog
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.repository.BenefitWorkRepository
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import io.reactivex.disposables.CompositeDisposable
+import timber.log.Timber
+import java.util.Locale
+import javax.inject.Inject
+import kotlin.collections.ArrayList
+
+<span class="nc" id="L25">class YearTilesViewModel @Inject constructor(</span>
+<span class="nc" id="L26">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L27">    private val resources: Resources,</span>
+<span class="nc" id="L28">    private val benefitWorkRepository: BenefitWorkRepository</span>
+
+) :
+<span class="nc" id="L31">    ViewModel(),</span>
+    Observable {
+
+<span class="nc" id="L34">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L36">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L38">    private val _navigateToClose = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToClose: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L40">        get() = _navigateToClose</span>
+<span class="nc" id="L41">    private val _openCalender = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val openCalender: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L43">        get() = _openCalender</span>
+<span class="nc" id="L44">    var workHourListPerYear: ArrayList&lt;WorkLog&gt; = arrayListOf()</span>
+<span class="nc" id="L45">    var yearList: ArrayList&lt;Int&gt; = arrayListOf()</span>
+<span class="nc" id="L46">    var monthList = listOf&lt;String&gt;(&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;, &quot;5&quot;, &quot;6&quot;, &quot;7&quot;, &quot;8&quot;, &quot;9&quot;, &quot;10&quot;, &quot;11&quot;, &quot;12&quot;)</span>
+<span class="nc" id="L47">    var workHourListV2: java.util.ArrayList&lt;WorkLog&gt; = arrayListOf()</span>
+<span class="nc" id="L48">    var contractDetail: ResponseData? = ResponseData()</span>
+<span class="nc" id="L49">    var title2MyBenefit: String = &quot;&quot;</span>
+<span class="nc" id="L50">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L52">            field = value</span>
+<span class="nc" id="L53">            callbacks.notifyCallbacks(this, BR.title2MyBenefit, null)</span>
+<span class="nc" id="L54">        }</span>
+<span class="nc" id="L55">    var benefitsLogos: List&lt;BenefitsLogo&gt; = listOf()</span>
+    var currentYear: Int = 0
+<span class="nc" id="L57">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L59">            field = value</span>
+<span class="nc" id="L60">            callbacks.notifyCallbacks(this, BR.currentYear, null)</span>
+<span class="nc" id="L61">        }</span>
+<span class="nc" id="L62">    var currentMonth: Int = 0</span>
+<span class="nc" id="L63">    var addedItem: Boolean = false</span>
+    var loading: Boolean = false
+<span class="nc" id="L65">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L67">            field = value</span>
+<span class="nc" id="L68">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L69">        }</span>
+
+    var noLookBack: Boolean = false
+<span class="nc" id="L72">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L74">            field = value</span>
+<span class="nc" id="L75">            callbacks.notifyCallbacks(this, BR.noLookBack, null)</span>
+<span class="nc" id="L76">        }</span>
+<span class="nc" id="L77">    private val _listWorkGenerated = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val listWorkGenerated: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L79">        get() = _listWorkGenerated</span>
+
+    fun close() {
+<span class="nc" id="L82">        _navigateToClose.value = Event(Unit)</span>
+<span class="nc" id="L83">    }</span>
+
+    fun findMissingStringPositions(): List&lt;Int&gt; {
+<span class="nc" id="L86">        val firstSet = monthList</span>
+<span class="nc" id="L87">        val secondSet = workHourListPerYear.map { it.month }.toSet()</span>
+
+<span class="nc" id="L89">        val missingPositions = mutableListOf&lt;Int&gt;()</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        for ((index, number) in firstSet.withIndex()) {</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">            if (!secondSet.contains(number)) {</span>
+<span class="nc" id="L92">                missingPositions.add(index)</span>
+            }
+        }
+<span class="nc" id="L95">        return missingPositions</span>
+    }
+
+    fun addMissingMonths() {
+<span class="nc" id="L99">        var missingList = findMissingStringPositions()</span>
+<span class="nc" id="L100">        missingList.forEach { item -&gt;</span>
+<span class="nc" id="L101">            workHourListPerYear.add(</span>
+<span class="nc" id="L102">                item,</span>
+<span class="nc" id="L103">                WorkLog(</span>
+<span class="nc" id="L104">                    year = currentYear.toString(),</span>
+<span class="nc" id="L105">                    month = (item + 1).toString(),</span>
+<span class="nc" id="L106">                    addedItem = true</span>
+                )
+            )
+<span class="nc" id="L109">        }</span>
+<span class="nc" id="L110">    }</span>
+
+    fun loadSheetYear(year: Int) {
+<span class="nc" id="L113">        val result = workHourListV2</span>
+//        Timber.d(result.toString())
+//
+//        Timber.d(result[year].toString())
+
+//        var currentYear = workHourListPerYear.filter { year -&gt; year.year == DateUtils.getCurrentYear().toString() }
+//        if (workHourListPerYear.isEmpty() || currentYear.isEmpty()) {
+//            workHourListPerYear.add(
+//                WorkLog(month = &quot;1&quot;, year = DateUtils.getCurrentYear().toString(), addedItem = true)
+//            )
+//        }
+//        contractDetail?.let { item -&gt;
+//            noLookBack = !item.hasLookBackPeriod
+//            val months = HelperUtils.getMonthIntegers(
+//                item.lookBackPeriod,
+//                item.offsetMonth,
+//                currentMonth,
+//                currentYear
+//            )
+//
+//            if (item.requiredAmount == null &amp;&amp; item.requiredHours != null) {
+//                val hoursWorkedList = months.map { monthInt -&gt;
+//                    val adjustedYear = if (monthInt &gt; currentMonth) currentYear - 1 else currentYear
+//
+//                    result[adjustedYear]?.find { it.month == monthInt.toString() }?.hoursWorked ?: 0.0
+//                }
+//                title2MyBenefit = resources.getString(
+//                    R.string.the_medical_benefit_requires_s_hours_of_work_in_s_you_have_s_hours_for_these_months,
+//                    item.benefitName,
+//                    HelperUtils.floor(item.requiredHours ?: 0.0),
+//                    HelperUtils.getFormattedMonthNames(
+//                        item.lookBackPeriod,
+//                        item.offsetMonth,
+//                        currentMonth,
+//                        currentYear,
+//                        resources
+//                    ),
+//                    HelperUtils.floor(hoursWorkedList.sum() ?: 0.0)
+//
+//                )
+//            } else {
+// //                val premiumWorkedList = months.map { monthInt -&gt;
+// //                    result[year]?.find { it.month == monthInt.toString() }?.memberContribution ?: 0.0
+// //                }
+//                val premiumWorkedList = months.map { monthInt -&gt;
+//                    val adjustedYear = if (monthInt &gt; currentMonth) currentYear - 1 else currentYear
+//
+//                    result[adjustedYear]?.find { it.month == monthInt.toString() }?.memberContribution ?: 0.0
+//                }
+//                title2MyBenefit = resources.getString(
+//                    R.string.premium_text,
+//                    item.benefitName,
+//                    String.format(
+//                        Locale.getDefault(),
+//                        &quot;%#.2f&quot;,
+//                        item.requiredAmount ?: 0.0
+//                    ),
+//                    HelperUtils.getFormattedMonthNames(
+//                        item.lookBackPeriod,
+//                        item.offsetMonth,
+//                        currentMonth,
+//                        currentYear,
+//                        resources
+//                    ),
+//                    String.format(
+//                        Locale.getDefault(),
+//                        &quot;%#.2f&quot;,
+//                        (
+//                            premiumWorkedList.sum() ?: 0.0
+//                            )
+//                    )
+//                )
+//            }
+//        }
+<span class="nc" id="L187">        result.let { list -&gt;</span>
+<span class="nc" id="L188">            workHourListPerYear.clear()</span>
+<span class="nc" id="L189">            workHourListPerYear.addAll(list)</span>
+<span class="nc" id="L190">            addMissingMonths()</span>
+<span class="nc" id="L191">            _listWorkGenerated.value = Event(Unit)</span>
+<span class="nc" id="L192">        }</span>
+<span class="nc" id="L193">    }</span>
+
+    fun loadReason(year: Int) {
+<span class="nc" id="L196">        var result = workHourListV2.groupBy { it -&gt; it.year.toInt() }</span>
+<span class="nc" id="L197">        Timber.d(result.toString())</span>
+
+<span class="nc" id="L199">        Timber.d(result[year].toString())</span>
+
+<span class="nc bnc" id="L201" title="All 2 branches missed.">        contractDetail?.let { item -&gt;</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">            noLookBack = !item.hasLookBackPeriod</span>
+<span class="nc" id="L203">            var months = HelperUtils.getMonthIntegers(</span>
+<span class="nc" id="L204">                item.lookBackPeriod,</span>
+<span class="nc" id="L205">                item.offsetMonth,</span>
+<span class="nc" id="L206">                currentMonth,</span>
+<span class="nc" id="L207">                currentYear</span>
+            )
+
+<span class="nc bnc" id="L210" title="All 4 branches missed.">            if (item.requiredAmount == null &amp;&amp; item.requiredHours != null) {</span>
+<span class="nc" id="L211">                val hoursWorkedList = months.map { monthInt -&gt;</span>
+<span class="nc bnc" id="L212" title="All 2 branches missed.">                    val adjustedYear = if (monthInt &gt; currentMonth) currentYear - 1 else currentYear</span>
+
+<span class="nc bnc" id="L214" title="All 10 branches missed.">                    result[adjustedYear]?.find { it.month == monthInt.toString() }?.hoursWorked ?: 0.0</span>
+                }
+<span class="nc" id="L216">                title2MyBenefit = resources.getString(</span>
+<span class="nc" id="L217">                    R.string.the_medical_benefit_requires_s_hours_of_work_in_s_you_have_s_hours_for_these_months,</span>
+<span class="nc" id="L218">                    item.benefitName,</span>
+<span class="nc bnc" id="L219" title="All 2 branches missed.">                    HelperUtils.floor(item.requiredHours ?: 0.0),</span>
+<span class="nc" id="L220">                    HelperUtils.getFormattedMonthNames(</span>
+<span class="nc" id="L221">                        item.lookBackPeriod,</span>
+<span class="nc" id="L222">                        item.offsetMonth,</span>
+<span class="nc" id="L223">                        currentMonth,</span>
+<span class="nc" id="L224">                        currentYear,</span>
+<span class="nc" id="L225">                        resources</span>
+                    ),
+<span class="nc" id="L227">                    HelperUtils.floor(hoursWorkedList.sum() ?: 0.0)</span>
+
+                )
+            } else {
+<span class="nc" id="L231">                val premiumWorkedList = months.map { monthInt -&gt;</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">                    val adjustedYear = if (monthInt &gt; currentMonth) currentYear - 1 else currentYear</span>
+
+<span class="nc bnc" id="L234" title="All 10 branches missed.">                    result[adjustedYear]?.find { it.month == monthInt.toString() }?.memberContribution ?: 0.0</span>
+                }
+<span class="nc" id="L236">                title2MyBenefit = resources.getString(</span>
+<span class="nc" id="L237">                    R.string.premium_text,</span>
+<span class="nc" id="L238">                    item.benefitName,</span>
+<span class="nc" id="L239">                    String.format(</span>
+<span class="nc" id="L240">                        Locale.getDefault(),</span>
+<span class="nc" id="L241">                        &quot;%#.2f&quot;,</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">                        item.requiredAmount ?: 0.0</span>
+                    ),
+<span class="nc" id="L244">                    HelperUtils.getFormattedMonthNames(</span>
+<span class="nc" id="L245">                        item.lookBackPeriod,</span>
+<span class="nc" id="L246">                        item.offsetMonth,</span>
+<span class="nc" id="L247">                        currentMonth,</span>
+<span class="nc" id="L248">                        currentYear,</span>
+<span class="nc" id="L249">                        resources</span>
+                    ),
+<span class="nc" id="L251">                    HelperUtils.floor(premiumWorkedList.sum() ?: 0.0)</span>
+                )
+            }
+<span class="nc" id="L254">        }</span>
+<span class="nc" id="L255">    }</span>
+
+    fun openCalender() {
+<span class="nc" id="L258">        _openCalender.value = Event(Unit)</span>
+<span class="nc" id="L259">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L262">        callbacks.add(callback)</span>
+<span class="nc" id="L263">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L266">        callbacks.remove(callback)</span>
+<span class="nc" id="L267">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L270">        super.onCleared()</span>
+<span class="nc" id="L271">        compositeDisposable.dispose()</span>
+<span class="nc" id="L272">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocumentType.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils</a> &gt; <span class="el_source">DocumentType.kt</span></div><h1>DocumentType.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils
+
+import androidx.annotation.StringRes
+import com.vivekahealth.vivekahealth.R
+
+<span class="pc" id="L6">enum class DocumentType(@StringRes var TranslatedName: Int, var FileName: String) {</span>
+<span class="fc" id="L7">    Ssn(R.string.social_security_card, &quot;Social Security Card&quot;),</span>
+<span class="fc" id="L8">    MarriageCertificate(R.string.marriage_certificate, &quot;Marriage Certificate&quot;),</span>
+<span class="fc" id="L9">    BirtCertificate(R.string.birth_certificate, &quot;Birth Certificate&quot;),</span>
+<span class="fc" id="L10">    FrontDriverLicence(R.string.front_of_drivers_licence, &quot;Front of Driver's License&quot;),</span>
+<span class="fc" id="L11">    BackDriverLicence(R.string.back_of_drivers_licence, &quot;Back of Driver's License&quot;),</span>
+<span class="fc" id="L12">    FrontInsuranceCard(R.string.front_of_insurance, &quot;Front of Insurance Card&quot;),</span>
+<span class="fc" id="L13">    BackInsuranceCard(R.string.back_of_insurance, &quot;Back of Insurance Card&quot;),</span>
+<span class="fc" id="L14">    ContinueCoverage(R.string.proof_of_previous_insurance, &quot;Proof of Previous Insurance&quot;)</span>
+<span class="nc" id="L15">}</span>
+
+fun String.sanitize(): String {
+<span class="fc" id="L18">    return this.replace(Regex(&quot;[^a-zA-Z0-9._-]&quot;), &quot;_&quot;)</span>
+}
+
+fun getDocumentType(id: Int): DocumentType {
+<span class="fc bfc" id="L22" title="All 9 branches covered.">    return when (id) {</span>
+<span class="fc" id="L23">        71 -&gt; DocumentType.Ssn</span>
+<span class="fc" id="L24">        50 -&gt; DocumentType.MarriageCertificate</span>
+<span class="fc" id="L25">        51 -&gt; DocumentType.BirtCertificate</span>
+<span class="fc" id="L26">        103 -&gt; DocumentType.FrontDriverLicence</span>
+<span class="fc" id="L27">        104 -&gt; DocumentType.BackDriverLicence</span>
+<span class="fc" id="L28">        53 -&gt; DocumentType.ContinueCoverage</span>
+<span class="fc" id="L29">        501 -&gt; DocumentType.FrontInsuranceCard</span>
+<span class="fc" id="L30">        502 -&gt; DocumentType.BackInsuranceCard</span>
+        // Add more mappings if needed
+<span class="fc" id="L32">        else -&gt; throw IllegalArgumentException(&quot;Unknown document type ID: $id&quot;)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,1461 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HelperUtils.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils</a> &gt; <span class="el_source">HelperUtils.kt</span></div><h1>HelperUtils.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils
+
+import android.Manifest
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.app.AppOpsManager
+import android.app.usage.UsageStatsManager
+import android.content.Context
+import android.content.Context.LOCATION_SERVICE
+import android.content.Intent
+import android.content.SharedPreferences
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
+import android.content.res.Resources
+import android.graphics.*
+import android.graphics.pdf.PdfRenderer
+import android.location.Geocoder
+import android.location.Location
+import android.location.LocationManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.os.ParcelFileDescriptor
+import android.os.Parcelable
+import android.provider.MediaStore
+import android.provider.OpenableColumns
+import android.provider.Settings
+import android.text.InputFilter
+import android.util.Base64
+import android.util.Log
+import android.view.View
+import android.view.WindowManager
+import android.widget.AutoCompleteTextView
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.annotation.IdRes
+import androidx.appcompat.widget.AppCompatEditText
+import androidx.core.app.ActivityCompat
+import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import androidx.navigation.NavController
+import androidx.navigation.NavDirections
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.afollestad.materialdialogs.MaterialDialog
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.tasks.CancellationTokenSource
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.android.gms.tasks.Task
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.BuildConfig
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.remote.enroll.Person
+import com.vivekahealth.vivekahealth.data.remote.home.AppInstallUpdate
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.FindCareFilterModel
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.Value
+import de.hdodenhof.circleimageview.CircleImageView
+import kotlinx.coroutines.CoroutineScope
+import java.io.*
+import java.security.Key
+import java.text.DecimalFormat
+import java.text.SimpleDateFormat
+import java.util.*
+import java.util.regex.Pattern
+import javax.crypto.Cipher
+import javax.crypto.spec.SecretKeySpec
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import org.threeten.bp.YearMonth
+import org.threeten.bp.format.TextStyle
+import org.threeten.bp.temporal.ChronoUnit
+import timber.log.Timber
+import java.net.MalformedURLException
+import java.net.URL
+import java.security.SecureRandom
+import javax.crypto.spec.IvParameterSpec
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+object HelperUtils {
+<span class="pc" id="L94">    var gson = Gson()</span>
+<span class="nc" id="L95">    var uriImage: Uri? = null</span>
+<span class="pc" id="L96">    var memberInfoPic = MemberInfo()</span>
+<span class="nc" id="L97">    var fusedLocationClient: FusedLocationProviderClient? = null</span>
+<span class="fc" id="L98">    private var cancellationTokenSource = CancellationTokenSource()</span>
+
+    fun EditText.filterEmoji() {
+<span class="nc" id="L101">        filters = arrayOf(</span>
+<span class="nc" id="L102">            InputFilter { source, _, _, _, _, _ -&gt;</span>
+<span class="nc" id="L103">                source.filter {</span>
+<span class="nc bnc" id="L104" title="All 4 branches missed.">                    Character.getType(it) != Character.SURROGATE.toInt() &amp;&amp; Character.getType(</span>
+<span class="nc" id="L105">                        it</span>
+<span class="nc" id="L106">                    ) != Character.OTHER_SYMBOL.toInt()</span>
+<span class="nc" id="L107">                }</span>
+            }
+        )
+<span class="nc" id="L110">    }</span>
+
+    fun isAnyViewEnablesKeyboard(view: View): Boolean {
+<span class="nc bnc" id="L113" title="All 6 branches missed.">        if (view is EditText || view is AutoCompleteTextView || view is AppCompatEditText) {</span>
+            // The current view is an EditText or similar, which enables keyboard input
+<span class="nc" id="L115">            return true</span>
+        } else {
+<span class="nc" id="L117">            return false</span>
+        }
+
+        // If no child view enables the keyboard, return false
+    }
+    fun checkIfInfant(ssn: String?, birthDate: String?): Boolean {
+<span class="pc bpc" id="L123" title="1 of 6 branches missed.">        if (ssn?.isBlank() == true) {</span>
+<span class="pc bpc" id="L124" title="4 of 6 branches missed.">            if (birthDate.isNullOrBlank()) {</span>
+<span class="fc" id="L125">                return true</span>
+            }
+<span class="nc bnc" id="L127" title="All 2 branches missed.">            return DateUtils.getDateDiff(</span>
+<span class="nc" id="L128">                SimpleDateFormat(&quot;yyyy-MM-dd&quot;, Locale.getDefault()),</span>
+<span class="nc" id="L129">                birthDate,</span>
+<span class="nc" id="L130">                DateUtils.getCurrentDateServer()</span>
+<span class="nc" id="L131">            ) &gt;= 1</span>
+        } else {
+<span class="fc" id="L133">            return false</span>
+        }
+    }
+    fun isAppInForeground(context: Context, packageName: String): Boolean {
+<span class="nc" id="L137">        val currentMillis = System.currentTimeMillis()</span>
+<span class="nc" id="L138">        val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager</span>
+
+        // Check if the necessary permission is granted
+<span class="nc" id="L141">        val hasUsageStatsPermission = checkUsageStatsPermission(context)</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        if (!hasUsageStatsPermission) {</span>
+            // Permission is not granted, handle accordingly
+<span class="nc" id="L144">            return false</span>
+        }
+
+<span class="nc" id="L147">        val usageStatsList = usageStatsManager.queryUsageStats(</span>
+<span class="nc" id="L148">            UsageStatsManager.INTERVAL_DAILY,</span>
+<span class="nc" id="L149">            currentMillis - 1000 * 10,</span>
+<span class="nc" id="L150">            currentMillis</span>
+        )
+
+<span class="nc bnc" id="L153" title="All 4 branches missed.">        if (usageStatsList.isNotEmpty()) {</span>
+<span class="nc" id="L154">            val recentUsageStats = usageStatsList.first()</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">            if (recentUsageStats.packageName == packageName) {</span>
+<span class="nc" id="L156">                return true</span>
+            }
+        }
+
+<span class="nc" id="L160">        return false</span>
+    }
+    fun isDuplicateChild(child: Person, children: ArrayList&lt;Person&gt;, currentIndex: Int): Boolean {
+<span class="fc bfc" id="L163" title="All 2 branches covered.">        return children.filterIndexed { index, _ -&gt; index != currentIndex }</span>
+<span class="fc" id="L164">            .any {</span>
+<span class="fc bfc" id="L165" title="All 2 branches covered.">                it.ssn == child.ssn &amp;&amp;</span>
+<span class="pc bpc" id="L166" title="1 of 2 branches missed.">                    it.gender == child.gender &amp;&amp;</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">                    it.firstName == child.firstName &amp;&amp;</span>
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">                    it.lastName == child.lastName</span>
+            }
+    }
+    fun getMonthIntegers(lookBack: Int, offset: Int, currentMonth: Int, currentYear: Int): List&lt;Int&gt; {
+        // Validate input parameters (optional)
+        // if (lookBack &lt; 0) {
+        //     throw IllegalArgumentException(&quot;lookBack must be non-negative.&quot;)
+        // }
+
+        // Get the current YearMonth
+<span class="nc" id="L178">        var yearMonth = YearMonth.now()</span>
+<span class="nc bnc" id="L179" title="All 4 branches missed.">        if (currentMonth != 0 &amp;&amp; currentYear != 0) {</span>
+<span class="nc" id="L180">            yearMonth = YearMonth.of(currentYear, currentMonth)</span>
+        }
+<span class="nc" id="L182">        val currentYearMonth = yearMonth</span>
+
+        // Calculate the target YearMonth after applying offset
+<span class="nc" id="L185">        val targetYearMonth = currentYearMonth.minusMonths(offset.toLong())</span>
+
+        // If offset is zero, use the current month as the target
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        val actualTargetYearMonth = if (offset == 0) currentYearMonth else targetYearMonth</span>
+
+        // Calculate the start of the lookBack period
+<span class="nc" id="L191">        val startYearMonth = actualTargetYearMonth.minusMonths(lookBack.toLong())</span>
+
+        // Calculate the number of months in the lookBack period
+<span class="nc" id="L194">        val monthsInRange = ChronoUnit.MONTHS.between(startYearMonth, actualTargetYearMonth).toInt()</span>
+
+        // Create a list of integers representing the months within the specified range
+<span class="nc" id="L197">        return (0 until monthsInRange).map {</span>
+<span class="nc" id="L198">            startYearMonth.plusMonths(it.toLong()).monthValue</span>
+        }
+    }
+    fun getFormattedMonthNames(
+        lookBack: Int,
+        offset: Int,
+        currentMonth: Int,
+        currentYear: Int,
+        resources: Resources
+    ): String {
+        // Validate input parameters
+//        if (lookBack &lt; 0 ) {
+//            throw IllegalArgumentException(&quot;Both lookBack and offset must be non-negative.&quot;)
+//        }
+
+        // Get the current YearMonth
+<span class="nc" id="L214">        var yearMonth = YearMonth.now()</span>
+<span class="nc bnc" id="L215" title="All 4 branches missed.">        if (currentMonth != 0 &amp;&amp; currentYear != 0) {</span>
+<span class="nc" id="L216">            yearMonth = YearMonth.of(currentYear, currentMonth)</span>
+        }
+<span class="nc" id="L218">        val currentYearMonth = yearMonth</span>
+
+        // Calculate the target YearMonth after applying offset
+<span class="nc" id="L221">        val targetYearMonth = currentYearMonth.minusMonths(offset.toLong())</span>
+
+        // If offset is zero, use the current month as the target
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        val actualTargetYearMonth = if (offset == 0) currentYearMonth else targetYearMonth</span>
+
+        // Calculate the start of the lookBack period
+<span class="nc" id="L227">        val startYearMonth = actualTargetYearMonth.minusMonths(lookBack.toLong())</span>
+
+        // Calculate the number of months in the lookBack period
+<span class="nc" id="L230">        val monthsInRange = ChronoUnit.MONTHS.between(startYearMonth, actualTargetYearMonth).toInt()</span>
+
+        // Create a list of formatted month names within the specified range
+<span class="nc" id="L233">        val formattedMonthNames = (0 until monthsInRange).map {</span>
+<span class="nc" id="L234">            val month = startYearMonth.plusMonths(it.toLong()).month</span>
+<span class="nc" id="L235">            month.getDisplayName(TextStyle.FULL, DateUtils.getCurrentLocale(resources))</span>
+        }
+
+<span class="nc" id="L238">        return when {</span>
+<span class="nc bnc" id="L239" title="All 2 branches missed.">            monthsInRange &lt;= 1 -&gt; formattedMonthNames.joinToString(&quot; and &quot;)</span>
+<span class="nc" id="L240">            else -&gt; formattedMonthNames.dropLast(1).joinToString(&quot;, &quot;) + &quot; and ${formattedMonthNames.last()}&quot;</span>
+        }
+    }
+    private fun checkUsageStatsPermission(context: Context): Boolean {
+<span class="nc" id="L244">        val packageManager = context.packageManager</span>
+<span class="nc" id="L245">        val appOpsManager = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager</span>
+
+<span class="nc" id="L247">        return try {</span>
+<span class="nc" id="L248">            val packageInfo = packageManager.getApplicationInfo(context.packageName, 0)</span>
+<span class="nc" id="L249">            val mode = appOpsManager.checkOpNoThrow(</span>
+<span class="nc" id="L250">                AppOpsManager.OPSTR_GET_USAGE_STATS,</span>
+<span class="nc" id="L251">                packageInfo.uid,</span>
+<span class="nc" id="L252">                packageInfo.packageName</span>
+            )
+<span class="nc bnc" id="L254" title="All 2 branches missed.">            mode == AppOpsManager.MODE_ALLOWED</span>
+<span class="nc" id="L255">        } catch (e: PackageManager.NameNotFoundException) {</span>
+<span class="nc" id="L256">            false</span>
+        }
+    }
+    fun extractPhoneNumber(input: String): String? {
+<span class="fc" id="L260">        val phoneRegex = Regex(&quot;&quot;&quot;\+?\d{1,3}[ \.\(\)-]?\d{9,12}&quot;&quot;&quot;)</span>
+<span class="fc" id="L261">        val match = phoneRegex.find(input)</span>
+<span class="pc bpc" id="L262" title="1 of 4 branches missed.">        return match?.value?.replace(Regex(&quot;&quot;&quot;[ \.\(\)-]&quot;&quot;&quot;), &quot;&quot;)</span>
+    }
+    fun getDeviceID(context: Context): String {
+<span class="nc" id="L265">        return &quot;android&quot; + &quot; &quot; + (versionNumber(context)).toString() + &quot; &quot; + getUniqueDeviceId(</span>
+<span class="nc" id="L266">            context</span>
+<span class="nc" id="L267">        ) + &quot; &quot; + modelMani() + &quot; &quot; + java.lang.String.valueOf(</span>
+<span class="nc" id="L268">            androidVersion()</span>
+<span class="nc" id="L269">        ) + &quot; &quot; + modelNumber()</span>
+    }
+
+    fun versionNumber(context: Context): String? {
+<span class="nc" id="L273">        return try {</span>
+<span class="nc" id="L274">            context.packageManager.getPackageInfo(context.packageName, 0).versionName</span>
+<span class="nc" id="L275">        } catch (e: java.lang.Exception) {</span>
+<span class="nc" id="L276">            &quot;0.0.0&quot;</span>
+        }
+    }
+
+    fun modelNumber(): String? {
+<span class="nc" id="L281">        return try {</span>
+<span class="nc" id="L282">            Build.MODEL</span>
+<span class="nc" id="L283">        } catch (e: java.lang.Exception) {</span>
+<span class="nc" id="L284">            &quot;-1&quot;</span>
+        }
+    }
+
+    fun androidVersion(): Int {
+<span class="nc" id="L289">        return try {</span>
+<span class="nc" id="L290">            Build.VERSION.SDK_INT</span>
+<span class="nc" id="L291">        } catch (e: java.lang.Exception) {</span>
+<span class="nc" id="L292">            -1</span>
+        }
+    }
+
+    fun modelMani(): String? {
+<span class="nc" id="L297">        return try {</span>
+<span class="nc" id="L298">            Build.MANUFACTURER</span>
+<span class="nc" id="L299">        } catch (e: java.lang.Exception) {</span>
+<span class="nc" id="L300">            &quot;-1&quot;</span>
+        }
+    }
+
+    fun brand(): String? {
+<span class="nc" id="L305">        return try {</span>
+<span class="nc" id="L306">            Build.BRAND</span>
+<span class="nc" id="L307">        } catch (e: java.lang.Exception) {</span>
+<span class="nc" id="L308">            &quot;-1&quot;</span>
+        }
+    }
+
+    fun getFcmToken(): String {
+<span class="nc" id="L313">        var fcm = &quot;&quot;</span>
+<span class="nc" id="L314">        FirebaseMessaging.getInstance().token.addOnCompleteListener(</span>
+            OnCompleteListener { task -&gt;
+<span class="nc bnc" id="L316" title="All 2 branches missed.">                if (!task.isSuccessful) {</span>
+<span class="nc" id="L317">                    return@OnCompleteListener</span>
+                }
+
+                // Get new FCM registration token
+<span class="nc" id="L321">                fcm = task.result</span>
+
+                // Log and toast
+<span class="nc" id="L324">            }</span>
+        )
+<span class="nc" id="L326">        return fcm</span>
+    }
+
+    fun getUniqueDeviceId(context: Context): String? {
+<span class="nc" id="L330">        return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)</span>
+    }
+
+    fun getAppVersion(): String {
+<span class="nc" id="L334">        return BuildConfig.VERSION_NAME</span>
+    }
+
+    fun getWidth(context: Context): Int {
+<span class="nc" id="L338">        val manager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager</span>
+<span class="nc" id="L339">        val display = manager.defaultDisplay</span>
+<span class="nc" id="L340">        val point = Point()</span>
+<span class="nc" id="L341">        display.getSize(point)</span>
+<span class="nc" id="L342">        val width = point.x</span>
+<span class="nc" id="L343">        val height = point.y</span>
+
+<span class="nc" id="L345">        return width</span>
+    }
+
+    fun setApplangauge(context: Activity, code: String, fragment: Fragment) {
+<span class="nc" id="L349">        val res = context.resources</span>
+<span class="nc" id="L350">        val dm = res.displayMetrics</span>
+<span class="nc" id="L351">        val conf = res.configuration</span>
+<span class="nc" id="L352">        conf.setLocale(Locale(code.lowercase(Locale.getDefault())))</span>
+<span class="nc" id="L353">        res.updateConfiguration(conf, dm)</span>
+<span class="nc" id="L354">        context.createConfigurationContext(conf)</span>
+<span class="nc" id="L355">        context.recreate()</span>
+<span class="nc" id="L356">        Timber.d(fragment.tag)</span>
+<span class="nc" id="L357">        setGlobelApplangauge(context, code)</span>
+<span class="nc" id="L358">    }</span>
+
+    fun setGlobelApplangauge(context: Activity, code: String) {
+<span class="nc" id="L361">        val res = context.application.resources</span>
+<span class="nc" id="L362">        val dm = res.displayMetrics</span>
+<span class="nc" id="L363">        val conf = res.configuration</span>
+<span class="nc" id="L364">        conf.setLocale(Locale(code.lowercase(Locale.getDefault())))</span>
+<span class="nc" id="L365">        res.updateConfiguration(conf, dm)</span>
+<span class="nc" id="L366">        context.application.createConfigurationContext(conf)</span>
+<span class="nc" id="L367">    }</span>
+
+    fun getCurrentAppLanguage(context: Context): String {
+<span class="nc bnc" id="L370" title="All 2 branches missed.">        return if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.N) {</span>
+<span class="nc" id="L371">            context.resources.configuration.locales[0].language</span>
+<span class="nc" id="L372">        } else {</span>
+<span class="nc" id="L373">            context.resources.configuration.locale.language</span>
+        }
+    }
+
+    fun isGpsEnabled(context: Context): Boolean {
+<span class="nc" id="L378">        val locationManager = context.getSystemService(LOCATION_SERVICE) as LocationManager</span>
+<span class="nc" id="L379">        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)</span>
+    }
+
+    fun capitalizeString(str: String): String {
+<span class="fc" id="L383">        var retStr = str</span>
+<span class="fc" id="L384">        try { // We can face index out of bound exception if the string is null</span>
+<span class="fc" id="L385">            retStr = str.substring(0, 1).uppercase() + str.substring(1)</span>
+<span class="fc" id="L386">        } catch (e: Exception) {</span>
+        }
+<span class="fc" id="L388">        return retStr</span>
+    }
+
+    @Throws(java.lang.Exception::class)
+    private fun generateKey(): Key {
+<span class="nc" id="L393">        return SecretKeySpec(</span>
+<span class="nc" id="L394">            Constants.KEY.toByteArray(),</span>
+<span class="nc" id="L395">            Constants.KEY_ALGORITHM</span>
+        )
+    }
+
+    fun getLocationGeocode(latitude: Double?, longitude: Double?, context: Context): String {
+<span class="nc" id="L400">        var stringAddress = &quot;&quot;</span>
+<span class="nc bnc" id="L401" title="All 4 branches missed.">        if (isNetworkConnected(context) &amp;&amp; !Constants.IS_OFFLINE) {</span>
+<span class="nc bnc" id="L402" title="All 4 branches missed.">            if (latitude != null &amp;&amp; longitude != null) {</span>
+<span class="nc" id="L403">                val geocoder = Geocoder(context, Locale.getDefault())</span>
+
+<span class="nc" id="L405">                try {</span>
+<span class="nc" id="L406">                    val address = geocoder.getFromLocation(latitude, longitude, 1)</span>
+<span class="nc bnc" id="L407" title="All 6 branches missed.">                    if (address != null &amp;&amp; address.isNotEmpty()) {</span>
+<span class="nc bnc" id="L408" title="All 6 branches missed.">                        val subThoroughfare = if (!address[0].subThoroughfare.isNullOrEmpty()) {</span>
+<span class="nc" id="L409">                            val value = address[0].subThoroughfare</span>
+<span class="nc" id="L410">                            &quot;$value &quot;</span>
+                        } else {
+<span class="nc" id="L412">                            &quot;&quot;</span>
+                        }
+<span class="nc bnc" id="L414" title="All 6 branches missed.">                        val throughFare = if (!address[0].thoroughfare.isNullOrEmpty()) {</span>
+<span class="nc" id="L415">                            val value = address[0].thoroughfare</span>
+<span class="nc" id="L416">                            &quot;$value, &quot;</span>
+                        } else {
+<span class="nc" id="L418">                            &quot;&quot;</span>
+                        }
+<span class="nc bnc" id="L420" title="All 6 branches missed.">                        val sublocality = if (!address[0].subLocality.isNullOrEmpty()) {</span>
+<span class="nc" id="L421">                            val value = address[0].subLocality</span>
+<span class="nc" id="L422">                            &quot;$value, &quot;</span>
+                        } else {
+<span class="nc" id="L424">                            &quot;&quot;</span>
+                        }
+<span class="nc bnc" id="L426" title="All 6 branches missed.">                        val locality = if (!address[0].locality.isNullOrEmpty()) {</span>
+<span class="nc" id="L427">                            val value = address[0].locality</span>
+<span class="nc" id="L428">                            &quot;$value, &quot;</span>
+                        } else {
+<span class="nc" id="L430">                            &quot;&quot;</span>
+                        }
+<span class="nc bnc" id="L432" title="All 6 branches missed.">                        val state = if (!address[0].adminArea.isNullOrEmpty()) {</span>
+<span class="nc" id="L433">                            val value = address[0].adminArea</span>
+<span class="nc" id="L434">                            &quot;$value &quot;</span>
+                        } else {
+<span class="nc" id="L436">                            &quot;&quot;</span>
+                        }
+<span class="nc bnc" id="L438" title="All 6 branches missed.">                        val zip = if (!address[0].postalCode.isNullOrEmpty()) {</span>
+<span class="nc" id="L439">                            val value = address[0].postalCode</span>
+<span class="nc" id="L440">                            &quot;$value, &quot;</span>
+                        } else {
+<span class="nc" id="L442">                            &quot;&quot;</span>
+                        }
+<span class="nc bnc" id="L444" title="All 6 branches missed.">                        val country = if (!address[0].countryName.isNullOrEmpty()) {</span>
+<span class="nc" id="L445">                            val value = address[0].countryName</span>
+<span class="nc" id="L446">                            &quot;$value&quot;</span>
+                        } else {
+<span class="nc" id="L448">                            &quot;&quot;</span>
+                        }
+<span class="nc" id="L450">                        stringAddress = subThoroughfare + throughFare + sublocality + locality + state + zip + country</span>
+                    }
+<span class="nc" id="L452">                } catch (e: IOException) {</span>
+<span class="nc" id="L453">                    Timber.e(context.packageName, &quot;Error getting location name: ${e.message}&quot;)</span>
+                }
+            }
+        }
+<span class="nc" id="L457">        return stringAddress</span>
+    }
+
+    fun getBaseUrl(): String {
+<span class="nc" id="L461">        return if (BuildConfig.PLAYSTORE_MODE) {</span>
+            Constants.PROD_BASE_URL
+        } else {
+<span class="nc" id="L464">            Constants.BASE_URL</span>
+        }
+    }
+    fun name(memberInfo: MemberInfo): String {
+<span class="nc" id="L468">        return memberInfo.firstName + &quot; &quot; + memberInfo.lastName</span>
+    }
+
+    fun isPlayStore(): Boolean {
+<span class="nc" id="L472">        return BuildConfig.PLAYSTORE_MODE</span>
+    }
+    fun &lt;T&gt; Comparator&lt;T&gt;.thenWith(comparator: Comparator&lt;T&gt;): Comparator&lt;T&gt; {
+<span class="nc" id="L475">        return Comparator { a, b -&gt;</span>
+<span class="nc" id="L476">            val result = this.compare(a, b)</span>
+<span class="nc bnc" id="L477" title="All 2 branches missed.">            if (result != 0) result else comparator.compare(a, b)</span>
+        }
+    }
+
+    @Throws(java.lang.Exception::class)
+    fun decrypt(value: String?): String {
+<span class="nc bnc" id="L483" title="All 2 branches missed.">        if (value == null) {</span>
+<span class="nc" id="L484">            return &quot;&quot;</span>
+        }
+
+<span class="nc" id="L487">        val key = generateKey()</span>
+
+<span class="nc" id="L489">        val cipher = Cipher.getInstance(Constants.ALGORITHM)</span>
+
+<span class="nc" id="L491">        val decryptedValue64 = Base64.decode(value, Base64.DEFAULT)</span>
+
+<span class="nc bnc" id="L493" title="All 2 branches missed.">        if (decryptedValue64.size &lt; 16) {</span>
+<span class="nc" id="L494">            return &quot;&quot;</span>
+        }
+<span class="nc" id="L496">        val iv = ByteArray(16)</span>
+<span class="nc" id="L497">        System.arraycopy(decryptedValue64, 0, iv, 0, 16)</span>
+<span class="nc" id="L498">        val ivParams = IvParameterSpec(iv)</span>
+<span class="nc" id="L499">        cipher.init(Cipher.DECRYPT_MODE, key, ivParams)</span>
+<span class="nc" id="L500">        val decryptedByteValue = cipher.doFinal(decryptedValue64, 16, decryptedValue64.size - 16)</span>
+<span class="nc" id="L501">        return String(decryptedByteValue)</span>
+    }
+
+    @Throws(java.lang.Exception::class)
+    fun saveImage(
+        context: Context,
+        bitmap: Bitmap,
+        memberId: String,
+        preferences: SharedPreferences
+    ) {
+<span class="nc" id="L511">        val fname = &quot;Image_$memberId.png&quot;</span>
+<span class="nc" id="L512">        val file = File(</span>
+<span class="nc" id="L513">            context.getExternalFilesDir(null)</span>
+<span class="nc" id="L514">                .toString() + File.pathSeparator + &quot;saved_images&quot; + File.pathSeparator + fname</span>
+        )
+<span class="nc" id="L516">        try {</span>
+<span class="nc" id="L517">            val out = FileOutputStream(file)</span>
+<span class="nc" id="L518">            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)</span>
+<span class="nc" id="L519">            out.flush()</span>
+<span class="nc" id="L520">            out.close()</span>
+<span class="nc" id="L521">        } catch (e: java.lang.Exception) {</span>
+<span class="nc" id="L522">            e.printStackTrace()</span>
+        }
+<span class="nc" id="L524">        val savedImageURI = Uri.parse(file.absolutePath)</span>
+        // Parse the gallery image url to uri
+<span class="nc" id="L526">        preferences.edit().putString(</span>
+<span class="nc" id="L527">            &quot;uri$memberId&quot;,</span>
+<span class="nc" id="L528">            savedImageURI.toString()</span>
+<span class="nc" id="L529">        ).apply()</span>
+        // Return the saved image Uri
+<span class="nc" id="L531">    }</span>
+
+    //    @OnClick(R.id.register)
+    //    public void onRegisterClick() {
+    //        String username = &quot;&quot;;
+    //
+    //        if (AppUtils.isNetworkConnected(getActivity())) {
+    //
+    //            if (!email_edit_text.getText().toString().isEmpty() || !phone_edit_text.getText().toString().isEmpty()) {
+    //                if (!email_edit_text.getText().toString().isEmpty()) {
+    //                    username = email_edit_text.getText().toString();
+    //
+    //                } else if (!phone_edit_text.getText().toString().isEmpty()) {
+    //                    username = phone_edit_text.getText().toString();
+    //
+    //                }
+    //
+    //                if (ValidationUtils.isEmailValidPhone(getActivity(), username, flag)) {
+    //                    requestAPIsCall(2, username);
+    //                }
+    //            } else {
+    //                AppUtils.showOkMessageDialog(getActivity(), getResources().getString(R.string.enter_email_phone_address));
+    //            }
+    //
+    //        }
+    //
+    //
+    //    }
+    fun encrypt(value: String?): String? {
+<span class="nc bnc" id="L560" title="All 2 branches missed.">        requireNotNull(value) { &quot;Input value cannot be null&quot; }</span>
+<span class="nc" id="L561">        val key = generateKey()</span>
+<span class="nc" id="L562">        val iv = ByteArray(16)</span>
+<span class="nc" id="L563">        SecureRandom().nextBytes(iv)</span>
+<span class="nc" id="L564">        val ivParams = IvParameterSpec(iv)</span>
+
+<span class="nc" id="L566">        val cipher = Cipher.getInstance(Constants.ALGORITHM) // Use appropriate padding and mode</span>
+<span class="nc" id="L567">        cipher.init(Cipher.ENCRYPT_MODE, key, ivParams)</span>
+<span class="nc" id="L568">        val encryptedByteValue = cipher.doFinal(value.toByteArray(Charsets.UTF_8))</span>
+
+        // Combine IV and encrypted value
+<span class="nc" id="L571">        val combined = ByteArray(iv.size + encryptedByteValue.size)</span>
+<span class="nc" id="L572">        System.arraycopy(iv, 0, combined, 0, iv.size)</span>
+<span class="nc" id="L573">        System.arraycopy(encryptedByteValue, 0, combined, iv.size, encryptedByteValue.size)</span>
+
+<span class="nc" id="L575">        return Base64.encodeToString(combined, Base64.DEFAULT)</span>
+    }
+
+    private fun savePassword(
+        email: String,
+        password: String,
+        context: Context,
+        mSharedPreferences: SharedPreferences
+    ) {
+<span class="nc bnc" id="L584" title="All 2 branches missed.">        if (HelperFingerAuth.checkSensorState(context)) {</span>
+<span class="nc" id="L585">            val encoded = HelperFingerAuth.encryptString(password)</span>
+<span class="nc" id="L586">            mSharedPreferences.edit().putString(</span>
+<span class="nc" id="L587">                Constants.KEY_PASSWORD,</span>
+<span class="nc" id="L588">                encoded</span>
+<span class="nc" id="L589">            ).apply()</span>
+        }
+<span class="nc" id="L591">    }</span>
+
+    //    fun isNetworkAvailable(context: Context): Boolean {
+//        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+//        var activeNetworkInfo: NetworkInfo? = cm.activeNetworkInfo
+//        return activeNetworkInfo != null &amp;&amp; activeNetworkInfo.isConnectedOrConnecting
+//    }
+    fun buildImageBodyPart(fileName: String, bitmap: Bitmap, context: Context): MultipartBody.Part {
+<span class="nc" id="L599">        val leftImageFile = convertBitmapToFile(fileName, bitmap, context)</span>
+<span class="nc" id="L600">        val file = leftImageFile.asRequestBody(&quot;image/*&quot;.toMediaTypeOrNull())</span>
+<span class="nc" id="L601">        return MultipartBody.Part.createFormData(&quot;file&quot;, leftImageFile.name, file)</span>
+    }
+
+    fun buildPdfBodyPart(fileName: String, bitmap: Bitmap, context: Context): MultipartBody.Part {
+<span class="nc" id="L605">        val leftImageFile = convertBitmapToFile(fileName, bitmap, context)</span>
+<span class="nc" id="L606">        val file = leftImageFile.asRequestBody(&quot;application/pdf&quot;.toMediaTypeOrNull())</span>
+<span class="nc" id="L607">        return MultipartBody.Part.createFormData(&quot;file&quot;, leftImageFile.name, file)</span>
+    }
+
+    fun floor(value: Double): String {
+<span class="fc" id="L611">        val df = DecimalFormat(&quot;#.##&quot;)</span>
+<span class="fc" id="L612">        return df.format(value).toString()</span>
+    }
+
+    fun isNetworkAvailable(context: Context): Boolean {
+<span class="nc" id="L616">        val connectivityManager =</span>
+<span class="nc" id="L617">            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager</span>
+<span class="nc" id="L618">        val capabilities =</span>
+<span class="nc" id="L619">            connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)</span>
+<span class="nc bnc" id="L620" title="All 2 branches missed.">        if (capabilities != null) {</span>
+<span class="nc bnc" id="L621" title="All 2 branches missed.">            if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {</span>
+<span class="nc" id="L622">                Timber.tag(&quot;Internet&quot;).i(&quot;NetworkCapabilities.TRANSPORT_CELLULAR&quot;)</span>
+<span class="nc" id="L623">                return true</span>
+<span class="nc bnc" id="L624" title="All 2 branches missed.">            } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {</span>
+<span class="nc" id="L625">                Timber.tag(&quot;Internet&quot;).i(&quot;NetworkCapabilities.TRANSPORT_WIFI&quot;)</span>
+<span class="nc" id="L626">                return true</span>
+<span class="nc bnc" id="L627" title="All 2 branches missed.">            } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {</span>
+<span class="nc" id="L628">                Timber.tag(&quot;Internet&quot;).i(&quot;NetworkCapabilities.TRANSPORT_ETHERNET&quot;)</span>
+<span class="nc" id="L629">                return true</span>
+            }
+        }
+<span class="nc" id="L632">        return false</span>
+    }
+
+    fun stringGson(value: Value): String {
+<span class="nc" id="L636">        return gson.toJson(value)</span>
+    }
+
+    fun stringGsonFilter(value: FindCareFilterModel): String {
+<span class="nc" id="L640">        return gson.toJson(value)</span>
+    }
+
+    fun dailNumber(number: String, context: Context) {
+<span class="nc" id="L644">        val intent = Intent(Intent.ACTION_DIAL)</span>
+<span class="nc" id="L645">        intent.data = Uri.parse(&quot;tel:&quot; + number)</span>
+<span class="nc" id="L646">        context.startActivity(intent)</span>
+<span class="nc" id="L647">    }</span>
+
+    fun valueListGson(value: ArrayList&lt;Value&gt;): String {
+<span class="nc" id="L650">        return gson.toJson(value)</span>
+    }
+
+    fun isNetworkConnected(context: Context): Boolean {
+<span class="nc" id="L654">        val connectivityManager =</span>
+<span class="nc" id="L655">            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager</span>
+<span class="nc bnc" id="L656" title="All 2 branches missed.">        val nw = connectivityManager.activeNetwork ?: return false</span>
+<span class="nc bnc" id="L657" title="All 2 branches missed.">        val actNw = connectivityManager.getNetworkCapabilities(nw) ?: return false</span>
+<span class="nc" id="L658">        return when {</span>
+<span class="nc bnc" id="L659" title="All 2 branches missed.">            actNw.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -&gt; true</span>
+<span class="nc bnc" id="L660" title="All 2 branches missed.">            actNw.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -&gt; true</span>
+            // for other device how are able to connect with Ethernet
+<span class="nc bnc" id="L662" title="All 2 branches missed.">            actNw.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -&gt; true</span>
+            // for check internet over Bluetooth
+<span class="nc bnc" id="L664" title="All 2 branches missed.">            actNw.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH) -&gt; true</span>
+<span class="nc" id="L665">            else -&gt; false</span>
+        }
+    }
+
+    fun createMarkerWhite(count: String, name: String, context: Fragment): Bitmap? {
+<span class="nc" id="L670">        val markerLayout: View = context.layoutInflater.inflate(R.layout.marker_layout, null)</span>
+<span class="nc" id="L671">        var markerImage = markerLayout.findViewById&lt;View&gt;(R.id.marker_image) as ImageView</span>
+<span class="nc" id="L672">        val markerRating = markerLayout.findViewById&lt;View&gt;(R.id.marker_text) as TextView</span>
+<span class="nc" id="L673">        markerImage.setImageResource(R.drawable.map_marker_white)</span>
+
+<span class="nc bnc" id="L675" title="All 2 branches missed.">        if (count.equals(&quot;N/A&quot;, false)) {</span>
+<span class="nc" id="L676">            markerRating.text = name</span>
+        } else {
+<span class="nc" id="L678">            markerRating.text =</span>
+<span class="nc" id="L679">                &quot;${String.format(Locale.getDefault(), &quot;%#.2f&quot;, (count.toDouble()))} miles&quot;</span>
+        }
+
+<span class="nc" id="L682">        markerLayout.measure(</span>
+<span class="nc" id="L683">            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),</span>
+<span class="nc" id="L684">            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)</span>
+        )
+<span class="nc" id="L686">        markerLayout.layout(0, 0, markerLayout.measuredWidth, markerLayout.measuredHeight)</span>
+<span class="nc" id="L687">        val bitmap = Bitmap.createBitmap(</span>
+<span class="nc" id="L688">            markerLayout.measuredWidth,</span>
+<span class="nc" id="L689">            markerLayout.measuredHeight,</span>
+<span class="nc" id="L690">            Bitmap.Config.ARGB_8888</span>
+        )
+<span class="nc" id="L692">        val canvas = Canvas(bitmap)</span>
+<span class="nc" id="L693">        markerLayout.draw(canvas)</span>
+<span class="nc" id="L694">        return bitmap</span>
+    }
+    fun missingData(memberInfo: MemberInfo, context: Context): List&lt;String&gt; {
+<span class="nc" id="L697">        var list = arrayListOf&lt;String&gt;()</span>
+//        if (memberInfo.selfieMandatorySwitch) {
+//            memberInfo.hasAvatar.let {
+//                if (it.isNotBlank()) {
+//                    if (it.toBooleanStrict()) {
+//                    } else {
+//                        list.add(context.getString(R.string.profile_picture))
+//                    }
+//                } else {
+//                    list.add(context.getString(R.string.profile_picture))
+//                }
+//            }
+//        }
+<span class="nc" id="L710">        memberInfo.lastName.let {</span>
+<span class="nc bnc" id="L711" title="All 6 branches missed.">            if (it.isNullOrBlank()) {</span>
+<span class="nc" id="L712">                list.add(context.getString(R.string.last_name_first_name))</span>
+            }
+<span class="nc" id="L714">        } ?: run {</span>
+            list.add(&quot;Last Name, First Name&quot;)
+        }
+
+<span class="nc" id="L718">        memberInfo.gender.let {</span>
+<span class="nc bnc" id="L719" title="All 8 branches missed.">            if (it.isNullOrBlank() || it.equals(&quot;U&quot;, true)) {</span>
+<span class="nc" id="L720">                list.add(context.getString(R.string.gender))</span>
+            }
+<span class="nc" id="L722">        } ?: run {</span>
+            list.add(&quot;Gender&quot;)
+        }
+<span class="nc" id="L725">        memberInfo.birthDate.let {</span>
+<span class="nc bnc" id="L726" title="All 8 branches missed.">            if (it.isNullOrBlank() || it.equals(&quot;U&quot;, true)) {</span>
+<span class="nc" id="L727">                list.add(context.getString(R.string.date_of_birth))</span>
+            }
+<span class="nc" id="L729">        } ?: run {</span>
+            list.add(&quot;Date of Birth&quot;)
+        }
+
+<span class="nc bnc" id="L733" title="All 2 branches missed.">        if (memberInfo.memberRelationship.equals(&quot;Spouse&quot;, true)) {</span>
+<span class="nc" id="L734">            memberInfo.dateOfMarriage.let {</span>
+<span class="nc bnc" id="L735" title="All 6 branches missed.">                if (it.isNullOrBlank()) {</span>
+<span class="nc" id="L736">                    list.add(context.getString(R.string.marriage_date))</span>
+                }
+<span class="nc" id="L738">            } ?: run {</span>
+                list.add(&quot;Marriage Date&quot;)
+            }
+        }
+<span class="nc" id="L742">        memberInfo.ssn.let {</span>
+<span class="nc bnc" id="L743" title="All 6 branches missed.">            if (it.isNullOrBlank()) {</span>
+<span class="nc" id="L744">                list.add(context.getString(R.string.social_security_number))</span>
+            }
+<span class="nc" id="L746">        } ?: run {</span>
+            list.add(context.getString(R.string.social_security_number))
+        }
+
+<span class="nc" id="L750">        return list</span>
+    }
+    fun missingDataIncludingProfile(memberInfo: MemberInfo, context: Context): List&lt;String&gt; {
+<span class="nc" id="L753">        var list = arrayListOf&lt;String&gt;()</span>
+<span class="nc bnc" id="L754" title="All 2 branches missed.">        if (memberInfo.selfieMandatorySwitch) {</span>
+<span class="nc" id="L755">            memberInfo.hasAvatar.let {</span>
+<span class="nc bnc" id="L756" title="All 4 branches missed.">                if (it.isNotBlank()) {</span>
+<span class="nc bnc" id="L757" title="All 2 branches missed.">                    if (it.toBooleanStrict()) {</span>
+                    } else {
+<span class="nc" id="L759">                        list.add(context.getString(R.string.profile_picture))</span>
+                    }
+                } else {
+<span class="nc" id="L762">                    list.add(context.getString(R.string.profile_picture))</span>
+<span class="nc" id="L763">                }</span>
+            }
+        }
+<span class="nc" id="L766">        memberInfo.lastName.let {</span>
+<span class="nc bnc" id="L767" title="All 6 branches missed.">            if (it.isNullOrBlank()) {</span>
+<span class="nc" id="L768">                list.add(context.getString(R.string.last_name_first_name))</span>
+            }
+<span class="nc" id="L770">        } ?: run {</span>
+            list.add(&quot;Last Name, First Name&quot;)
+        }
+
+<span class="nc" id="L774">        memberInfo.gender.let {</span>
+<span class="nc bnc" id="L775" title="All 8 branches missed.">            if (it.isNullOrBlank() || it.equals(&quot;U&quot;, true)) {</span>
+<span class="nc" id="L776">                list.add(context.getString(R.string.gender))</span>
+            }
+<span class="nc" id="L778">        } ?: run {</span>
+            list.add(&quot;Gender&quot;)
+        }
+<span class="nc" id="L781">        memberInfo.birthDate.let {</span>
+<span class="nc bnc" id="L782" title="All 8 branches missed.">            if (it.isNullOrBlank() || it.equals(&quot;U&quot;, true)) {</span>
+<span class="nc" id="L783">                list.add(context.getString(R.string.date_of_birth))</span>
+            }
+<span class="nc" id="L785">        } ?: run {</span>
+            list.add(&quot;Date of Birth&quot;)
+        }
+
+<span class="nc bnc" id="L789" title="All 2 branches missed.">        if (memberInfo.memberRelationship.equals(&quot;Spouse&quot;, true)) {</span>
+<span class="nc" id="L790">            memberInfo.dateOfMarriage.let {</span>
+<span class="nc bnc" id="L791" title="All 6 branches missed.">                if (it.isNullOrBlank()) {</span>
+<span class="nc" id="L792">                    list.add(context.getString(R.string.marriage_date))</span>
+                }
+<span class="nc" id="L794">            } ?: run {</span>
+                list.add(&quot;Marriage Date&quot;)
+            }
+        }
+<span class="nc" id="L798">        memberInfo.ssn.let {</span>
+<span class="nc bnc" id="L799" title="All 6 branches missed.">            if (it.isNullOrBlank()) {</span>
+<span class="nc" id="L800">                list.add(context.getString(R.string.social_security_number))</span>
+            }
+<span class="nc" id="L802">        } ?: run {</span>
+            list.add(context.getString(R.string.social_security_number))
+        }
+
+<span class="nc" id="L806">        return list</span>
+    }
+
+    fun stringGson(value: MemberInfo): String {
+<span class="nc" id="L810">        return gson.toJson(value)</span>
+    }
+
+    fun createMarkerCurrentLocation(image: Bitmap?, context: Fragment): Bitmap? {
+<span class="nc" id="L814">        var markerLayout: View = context.layoutInflater.inflate(R.layout.current_loc_layout, null)</span>
+<span class="nc" id="L815">        var circleImageView = markerLayout.findViewById&lt;View&gt;(R.id.circle_image) as CircleImageView</span>
+
+<span class="nc bnc" id="L817" title="All 2 branches missed.">        if (image != null) {</span>
+<span class="nc" id="L818">            circleImageView.setImageBitmap(image)</span>
+        }
+
+<span class="nc" id="L821">        markerLayout.measure(</span>
+<span class="nc" id="L822">            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),</span>
+<span class="nc" id="L823">            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)</span>
+        )
+<span class="nc" id="L825">        markerLayout.layout(0, 0, markerLayout.measuredWidth, markerLayout.measuredHeight)</span>
+<span class="nc" id="L826">        val bitmap = Bitmap.createBitmap(</span>
+<span class="nc" id="L827">            markerLayout.measuredWidth,</span>
+<span class="nc" id="L828">            markerLayout.measuredHeight,</span>
+<span class="nc" id="L829">            Bitmap.Config.ARGB_8888</span>
+        )
+<span class="nc" id="L831">        val canvas = Canvas(bitmap)</span>
+<span class="nc" id="L832">        markerLayout.draw(canvas)</span>
+<span class="nc" id="L833">        return bitmap</span>
+    }
+
+    fun createMarkerBlue(count: String, name: String, context: Fragment): Bitmap? {
+<span class="nc" id="L837">        val markerLayout: View = context.layoutInflater.inflate(R.layout.marker_layout, null)</span>
+<span class="nc" id="L838">        var markerImage = markerLayout.findViewById&lt;View&gt;(R.id.marker_image) as ImageView</span>
+<span class="nc" id="L839">        val markerRating = markerLayout.findViewById&lt;View&gt;(R.id.marker_text) as TextView</span>
+<span class="nc" id="L840">        markerImage.setImageResource(R.drawable.map_icon_blue)</span>
+<span class="nc" id="L841">        markerRating.setTextColor(Color.WHITE)</span>
+
+<span class="nc bnc" id="L843" title="All 2 branches missed.">        if (count.equals(&quot;N/A&quot;, false)) {</span>
+<span class="nc" id="L844">            markerRating.text = name</span>
+        } else {
+<span class="nc" id="L846">            markerRating.text =</span>
+<span class="nc" id="L847">                &quot;${String.format(Locale.getDefault(), &quot;%#.2f&quot;, (count.toDouble()))} miles&quot;</span>
+        }
+
+<span class="nc" id="L850">        markerLayout.measure(</span>
+<span class="nc" id="L851">            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),</span>
+<span class="nc" id="L852">            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)</span>
+        )
+<span class="nc" id="L854">        markerLayout.layout(0, 0, markerLayout.measuredWidth, markerLayout.measuredHeight)</span>
+<span class="nc" id="L855">        val bitmap = Bitmap.createBitmap(</span>
+<span class="nc" id="L856">            markerLayout.measuredWidth,</span>
+<span class="nc" id="L857">            markerLayout.measuredHeight,</span>
+<span class="nc" id="L858">            Bitmap.Config.ARGB_8888</span>
+        )
+<span class="nc" id="L860">        val canvas = Canvas(bitmap)</span>
+<span class="nc" id="L861">        markerLayout.draw(canvas)</span>
+<span class="nc" id="L862">        return bitmap</span>
+    }
+
+    fun createFileFromContentUri(fileUri: Uri, context: Context): File {
+<span class="nc" id="L866">        var fileName: String = &quot;&quot;</span>
+
+<span class="nc" id="L868">        fileUri.let { returnUri -&gt;</span>
+<span class="nc bnc" id="L869" title="All 2 branches missed.">            if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.O) {</span>
+<span class="nc" id="L870">                context.contentResolver.query(returnUri, null, null, null)</span>
+            } else {
+<span class="nc" id="L872">                TODO(&quot;VERSION.SDK_INT &lt; O&quot;)</span>
+<span class="nc" id="L873">            }</span>
+<span class="nc bnc" id="L874" title="All 2 branches missed.">        }?.use { cursor -&gt;</span>
+<span class="nc" id="L875">            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)</span>
+<span class="nc" id="L876">            cursor.moveToFirst()</span>
+<span class="nc" id="L877">            fileName = cursor.getString(nameIndex)</span>
+<span class="nc" id="L878">        }</span>
+
+        //  For extract file mimeType
+<span class="nc" id="L881">        val fileType: String? = fileUri.let { returnUri -&gt;</span>
+<span class="nc" id="L882">            context.contentResolver.getType(returnUri)</span>
+        }
+
+<span class="nc" id="L885">        val iStream: InputStream = context.contentResolver.openInputStream(fileUri)!!</span>
+<span class="nc" id="L886">        val outputDir: File = context?.cacheDir!!</span>
+<span class="nc" id="L887">        val outputFile: File = File(outputDir, fileName)</span>
+<span class="nc" id="L888">        copyStreamToFile(iStream, outputFile)</span>
+<span class="nc" id="L889">        iStream.close()</span>
+<span class="nc" id="L890">        return outputFile</span>
+    }
+
+    fun copyStreamToFile(inputStream: InputStream, outputFile: File) {
+<span class="nc" id="L894">        inputStream.use { input -&gt;</span>
+<span class="nc" id="L895">            val outputStream = FileOutputStream(outputFile)</span>
+<span class="nc" id="L896">            outputStream.use { output -&gt;</span>
+<span class="nc" id="L897">                val buffer = ByteArray(4 * 1024) // buffer size</span>
+<span class="nc" id="L898">                while (true) {</span>
+<span class="nc" id="L899">                    val byteCount = input.read(buffer)</span>
+<span class="nc bnc" id="L900" title="All 2 branches missed.">                    if (byteCount &lt; 0) break</span>
+<span class="nc" id="L901">                    output.write(buffer, 0, byteCount)</span>
+                }
+<span class="nc" id="L903">                output.flush()</span>
+<span class="nc" id="L904">            }</span>
+<span class="nc" id="L905">        }</span>
+<span class="nc" id="L906">    }</span>
+
+    fun dpFromPx(context: Context, px: Float): Float {
+<span class="nc" id="L909">        return px / context.resources.displayMetrics.density</span>
+    }
+
+    @Throws(IOException::class)
+    fun createImageFile(context: Context): File {
+        // Create an image file name
+<span class="nc" id="L915">        val timeStamp = SimpleDateFormat(&quot;yyyyMMdd_HHmmss&quot;, Locale.getDefault()).format(Date())</span>
+<span class="nc" id="L916">        val imageFileName = &quot;JPEG_&quot; + timeStamp + &quot;_&quot;</span>
+<span class="nc" id="L917">        val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)</span>
+<span class="nc" id="L918">        return File.createTempFile(</span>
+<span class="nc" id="L919">            imageFileName, /* prefix */</span>
+<span class="nc" id="L920">            &quot;.jpg&quot;, /* suffix */</span>
+<span class="nc" id="L921">            storageDir /* directory */</span>
+        )
+    }
+
+    fun persistImage(bitmap: Bitmap, name: String, context: Context): File {
+<span class="nc" id="L926">        val filesDir: File = context.filesDir</span>
+<span class="nc" id="L927">        val imageFile = File(filesDir, &quot;$name.png&quot;)</span>
+<span class="nc" id="L928">        val os: OutputStream</span>
+<span class="nc" id="L929">        try {</span>
+<span class="nc" id="L930">            os = FileOutputStream(imageFile)</span>
+<span class="nc" id="L931">            bitmap.compress(Bitmap.CompressFormat.PNG, 100, os)</span>
+<span class="nc" id="L932">            os.flush()</span>
+<span class="nc" id="L933">            os.close()</span>
+<span class="nc" id="L934">        } catch (e: Exception) {</span>
+<span class="nc" id="L935">            e.stackTrace</span>
+        }
+<span class="nc" id="L937">        return imageFile</span>
+    }
+
+    fun getImageUri(uri: String, context: Context): Bitmap? {
+<span class="nc bnc" id="L941" title="All 2 branches missed.">        return if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.P) {</span>
+<span class="nc" id="L942">            ImageDecoder.decodeBitmap(</span>
+<span class="nc" id="L943">                ImageDecoder.createSource(</span>
+<span class="nc" id="L944">                    context.contentResolver,</span>
+<span class="nc" id="L945">                    Uri.parse(uri)</span>
+                )
+            )
+        } else {
+<span class="nc" id="L949">            MediaStore.Images.Media.getBitmap(context.contentResolver, Uri.parse(uri))</span>
+        }
+    }
+
+    fun isEmailValidOrAValidPhone(username: String): Int {
+<span class="fc" id="L954">        return when {</span>
+<span class="fc bfc" id="L955" title="All 2 branches covered.">            isEmail(username) -&gt; {</span>
+<span class="fc" id="L956">                1</span>
+            }
+<span class="fc bfc" id="L958" title="All 2 branches covered.">            isPhone(username) -&gt; {</span>
+<span class="fc" id="L959">                2</span>
+            }
+            else -&gt; {
+<span class="fc" id="L962">                0</span>
+            }
+        }
+    }
+
+    public fun isEmail(username: String): Boolean {
+<span class="fc" id="L968">        val expression1 = &quot;^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$&quot;</span>
+<span class="fc" id="L969">        val pattern1 = Pattern.compile(expression1, Pattern.CASE_INSENSITIVE)</span>
+<span class="fc" id="L970">        val matcher1 = pattern1.matcher(username)</span>
+<span class="fc" id="L971">        return matcher1.matches()</span>
+    }
+
+    public fun isPhone(username: String): Boolean {
+<span class="fc" id="L975">        val expression1 = &quot;^((\\([0-9]{3}\\))|[0-9]{3})[\\s\\-]?[\u0000-9]{3}[\\s\\-]?[0-9]{4}$&quot;</span>
+<span class="fc" id="L976">        val pattern1 = Pattern.compile(expression1, Pattern.CASE_INSENSITIVE)</span>
+<span class="fc" id="L977">        val matcher1 = pattern1.matcher(username)</span>
+<span class="fc" id="L978">        return matcher1.matches()</span>
+    }
+
+    fun name(first: String, last: String): String {
+<span class="fc" id="L982">        first.lowercase()</span>
+<span class="fc" id="L983">        last.lowercase()</span>
+<span class="fc" id="L984">        first.substring(0, 1).uppercase()</span>
+<span class="fc" id="L985">        last.substring(0, 1).uppercase()</span>
+<span class="fc" id="L986">        return &quot;$first $last&quot;</span>
+    }
+
+    fun nameList(name: String): String {
+<span class="fc bfc" id="L990" title="All 2 branches covered.">        var list = name.trim().splitToSequence(' ').filter { it.isNotEmpty() }.toList()</span>
+<span class="fc" id="L991">        var fullName = &quot;&quot;</span>
+<span class="fc" id="L992">        list.forEach {</span>
+<span class="fc" id="L993">            it.lowercase()</span>
+<span class="fc" id="L994">            it.substring(0, 1).uppercase()</span>
+<span class="fc bfc" id="L995" title="All 4 branches covered.">            if (fullName.isNotBlank()) {</span>
+<span class="fc" id="L996">                fullName = &quot;$fullName $it&quot;</span>
+            } else {
+<span class="fc" id="L998">                fullName = it</span>
+            }
+<span class="fc" id="L1000">        }</span>
+
+<span class="fc" id="L1002">        return fullName</span>
+    }
+
+    fun convertBitmapToFile(fileName: String, bitmap: Bitmap, context: Context): File {
+        // create a file to write bitmap data
+<span class="nc" id="L1007">        val file = File(context.cacheDir, fileName)</span>
+<span class="nc" id="L1008">        file.createNewFile()</span>
+
+        // Convert bitmap to byte array
+<span class="nc" id="L1011">        val bos = ByteArrayOutputStream()</span>
+<span class="nc" id="L1012">        bitmap.compress(Bitmap.CompressFormat.JPEG, 80 /*ignored for PNG*/, bos)</span>
+<span class="nc" id="L1013">        val bitMapData = bos.toByteArray()</span>
+
+        // write the bytes in file
+<span class="nc" id="L1016">        var fos: FileOutputStream? = null</span>
+<span class="nc" id="L1017">        try {</span>
+<span class="nc" id="L1018">            fos = FileOutputStream(file)</span>
+<span class="nc" id="L1019">        } catch (e: FileNotFoundException) {</span>
+<span class="nc" id="L1020">            e.printStackTrace()</span>
+        }
+<span class="nc" id="L1022">        try {</span>
+<span class="nc bnc" id="L1023" title="All 2 branches missed.">            fos?.write(bitMapData)</span>
+<span class="nc bnc" id="L1024" title="All 2 branches missed.">            fos?.flush()</span>
+<span class="nc bnc" id="L1025" title="All 2 branches missed.">            fos?.close()</span>
+<span class="nc" id="L1026">        } catch (e: IOException) {</span>
+<span class="nc" id="L1027">            e.printStackTrace()</span>
+        }
+<span class="nc" id="L1029">        return file</span>
+    }
+
+    fun checkName(name: String): Boolean {
+<span class="fc bfc" id="L1033" title="All 6 branches covered.">        if (name.trim { it &lt;= ' ' }.isEmpty()) {</span>
+<span class="fc" id="L1034">            return true</span>
+        }
+<span class="fc" id="L1036">        val regex = Pattern.compile(&quot;[$&amp;+,:;=\\\\?@#|/&lt;&gt;.^*()%!-]&quot;)</span>
+<span class="fc" id="L1037">        return regex.matcher(name).find()</span>
+    }
+
+    fun fileName(Type: String, First: String, Last: String): String {
+<span class="nc" id="L1041">        return Type + &quot; &quot; + First + &quot; &quot; + Last + &quot; &quot; + DateUtils.getCurrentLocalTime()</span>
+    }
+
+    fun fileNamePending(Type: String, First: String): String {
+<span class="nc" id="L1045">        return Type + &quot; &quot; + First + &quot; &quot; + DateUtils.getCurrentLocalTime()</span>
+    }
+
+    @Throws(java.lang.Exception::class)
+    fun saveImageToInternalStorage(
+        context: Context?,
+        bitmap: Bitmap,
+        memberId: String,
+        sharedPreferences: SharedPreferences
+    ) {
+<span class="nc" id="L1055">        val root = Environment.getExternalStorageDirectory().toString()</span>
+<span class="nc" id="L1056">        val myDir = File(&quot;$root/saved_images&quot;)</span>
+<span class="nc" id="L1057">        myDir.mkdirs()</span>
+<span class="nc" id="L1058">        val fname = &quot;Image_$memberId.jpg&quot;</span>
+<span class="nc" id="L1059">        val file = File(myDir, fname)</span>
+<span class="nc bnc" id="L1060" title="All 2 branches missed.">        if (file.exists()) file.delete()</span>
+<span class="nc" id="L1061">        try {</span>
+<span class="nc" id="L1062">            val out = FileOutputStream(file)</span>
+<span class="nc" id="L1063">            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)</span>
+<span class="nc" id="L1064">            out.flush()</span>
+<span class="nc" id="L1065">            out.close()</span>
+<span class="nc" id="L1066">        } catch (e: java.lang.Exception) {</span>
+<span class="nc" id="L1067">            e.printStackTrace()</span>
+        }
+<span class="nc" id="L1069">        val savedImageURI = Uri.parse(file.absolutePath)</span>
+        // Parse the gallery image url to uri
+<span class="nc" id="L1071">        saveCache(sharedPreferences, &quot;uri$memberId&quot;, savedImageURI.toString())</span>
+
+        // Return the saved image Uri
+<span class="nc" id="L1074">    }</span>
+
+    fun getResizeBitmap(bitmap: Bitmap): Bitmap {
+<span class="nc" id="L1077">        val stream = ByteArrayOutputStream()</span>
+<span class="nc" id="L1078">        bitmap.compress(Bitmap.CompressFormat.JPEG, 30, stream)</span>
+<span class="nc" id="L1079">        val imageInByte = stream.toByteArray()</span>
+
+<span class="nc" id="L1081">        return bitmap</span>
+    }
+
+    fun getFileFromBitmap(bitmap: Bitmap, context: Context): File? {
+<span class="nc" id="L1085">        val filesDir = context.filesDir</span>
+<span class="nc" id="L1086">        val imageFile = File(filesDir, &quot;user_avatar&quot; + &quot;.jpg&quot;)</span>
+<span class="nc" id="L1087">        val os: OutputStream</span>
+<span class="nc" id="L1088">        try {</span>
+<span class="nc" id="L1089">            os = FileOutputStream(imageFile)</span>
+<span class="nc" id="L1090">            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, os)</span>
+<span class="nc" id="L1091">            os.flush()</span>
+<span class="nc" id="L1092">            os.close()</span>
+<span class="nc" id="L1093">        } catch (e: java.lang.Exception) {</span>
+<span class="nc" id="L1094">            Log.e(&quot;TAG&quot;, &quot;Error writing bitmap&quot;, e)</span>
+        }
+<span class="nc" id="L1096">        return imageFile</span>
+    }
+
+    fun pdf(selectedfile: File, imageView: ImageView) {
+<span class="nc" id="L1100">        val fileDescriptor =</span>
+<span class="nc" id="L1101">            ParcelFileDescriptor.open(selectedfile, ParcelFileDescriptor.MODE_READ_ONLY)</span>
+<span class="nc" id="L1102">        val pdfRenderer = PdfRenderer(fileDescriptor)</span>
+
+// Open the page to be rendered.
+<span class="nc" id="L1105">        val page = pdfRenderer.openPage(0)</span>
+
+// Render the page to the bitmap.
+<span class="nc" id="L1108">        val bitmap = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)</span>
+<span class="nc" id="L1109">        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)</span>
+
+<span class="nc" id="L1111">        imageView.setImageBitmap(bitmap)</span>
+
+<span class="nc" id="L1113">        page.close()</span>
+
+<span class="nc" id="L1115">        pdfRenderer.close()</span>
+<span class="nc" id="L1116">    }</span>
+
+    fun installInfo(context: Context): AppInstallUpdate {
+<span class="nc" id="L1119">        val packageName: String = context.packageName</span>
+<span class="nc" id="L1120">        val packageManager: PackageManager = context.packageManager</span>
+<span class="nc bnc" id="L1121" title="All 2 branches missed.">        val packageInfo: PackageInfo = if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.TIRAMISU) {</span>
+<span class="nc" id="L1122">            packageManager.getPackageInfo(</span>
+<span class="nc" id="L1123">                packageName,</span>
+<span class="nc" id="L1124">                PackageManager.PackageInfoFlags.of(0)</span>
+            )
+<span class="nc" id="L1126">        } else {</span>
+<span class="nc" id="L1127">            packageManager.getPackageInfo(packageName, 0)</span>
+        }
+<span class="nc" id="L1129">        val installed = packageInfo.firstInstallTime</span>
+<span class="nc" id="L1130">        val updated = packageInfo.lastUpdateTime</span>
+<span class="nc" id="L1131">        val installedDate = DateUtils.getUTCStringFrom(installed)</span>
+<span class="nc" id="L1132">        val updateDate = DateUtils.getUTCStringFrom(updated)</span>
+<span class="nc bnc" id="L1133" title="All 2 branches missed.">        val deviceId: String = HelperUtils.getUniqueDeviceId(context) ?: &quot;&quot;</span>
+<span class="nc" id="L1134">        val osVersion: String = HelperUtils.androidVersion().toString()</span>
+<span class="nc bnc" id="L1135" title="All 2 branches missed.">        val model: String = HelperUtils.modelNumber() ?: &quot;&quot;</span>
+<span class="nc bnc" id="L1136" title="All 2 branches missed.">        val brand: String = HelperUtils.brand() ?: &quot;&quot;</span>
+<span class="nc" id="L1137">        val appInstallUpdate = AppInstallUpdate(</span>
+<span class="nc" id="L1138">            deviceId,</span>
+<span class="nc" id="L1139">            brand,</span>
+<span class="nc" id="L1140">            model,</span>
+<span class="nc" id="L1141">            osVersion,</span>
+<span class="nc" id="L1142">            installedDate,</span>
+<span class="nc" id="L1143">            updateDate</span>
+        )
+
+<span class="nc" id="L1146">        return appInstallUpdate</span>
+    }
+    fun saveCache(sharedPreferences: SharedPreferences, key: String, value: String) {
+<span class="nc bnc" id="L1149" title="All 6 branches missed.">        if (sharedPreferences.getString(key, &quot;&quot;).isNullOrBlank()) {</span>
+<span class="nc" id="L1150">            sharedPreferences.edit().putString(key, value).apply()</span>
+        } else {
+<span class="nc" id="L1152">            sharedPreferences.edit().remove(key).apply()</span>
+<span class="nc" id="L1153">            sharedPreferences.edit().putString(key, value).apply()</span>
+        }
+<span class="nc" id="L1155">    }</span>
+
+    fun showOkMessageDialog(context: Context, message: String?) {
+<span class="nc bnc" id="L1158" title="All 2 branches missed.">        message?.let {</span>
+<span class="nc" id="L1159">            MaterialDialog.Builder(context).content(it)</span>
+<span class="nc" id="L1160">                .positiveText(context.getString(R.string.ok_string))</span>
+<span class="nc" id="L1161">                .onPositive { dialog, which -&gt; dialog.dismiss() }.show()</span>
+        }
+<span class="nc" id="L1163">    }</span>
+
+    fun Context.hasPermission(permission: String): Boolean {
+        // Background permissions didn't exit prior to Q, so it's approved by default.
+<span class="nc bnc" id="L1167" title="All 4 branches missed.">        if (permission == Manifest.permission.ACCESS_BACKGROUND_LOCATION &amp;&amp; android.os.Build.VERSION.SDK_INT &lt; android.os.Build.VERSION_CODES.Q) {</span>
+<span class="nc" id="L1168">            return true</span>
+        }
+
+<span class="nc bnc" id="L1171" title="All 2 branches missed.">        return ActivityCompat.checkSelfPermission(</span>
+<span class="nc" id="L1172">            this,</span>
+<span class="nc" id="L1173">            permission</span>
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    /**
+     * Requests permission and if the user denied a previous request, but didn't check
+     * &quot;Don't ask again&quot;, we provide additional rationale.
+     *
+     * Note: The [Snackbar] should have an action to request the permission.
+     */
+    fun Fragment.requestPermissionWithRationale(
+        permission: String,
+        requestCode: Int,
+        snackbar: Snackbar
+
+    ) {
+<span class="nc" id="L1189">        val provideRationale = shouldShowRequestPermissionRationale(permission)</span>
+
+<span class="nc bnc" id="L1191" title="All 2 branches missed.">        if (provideRationale) {</span>
+<span class="nc" id="L1192">            snackbar.show()</span>
+        } else {
+<span class="nc" id="L1194">            requestPermissions(arrayOf(permission), requestCode)</span>
+        }
+<span class="nc" id="L1196">    }</span>
+
+    fun DialogFragment.requestPermissionWithRationale(
+        permission: String,
+        requestCode: Int,
+        snackbar: Snackbar
+
+    ) {
+<span class="nc" id="L1204">        val provideRationale = shouldShowRequestPermissionRationale(permission)</span>
+
+<span class="nc bnc" id="L1206" title="All 2 branches missed.">        if (provideRationale) {</span>
+<span class="nc" id="L1207">            snackbar.show()</span>
+        } else {
+<span class="nc" id="L1209">            requestPermissions(arrayOf(permission), requestCode)</span>
+        }
+<span class="nc" id="L1211">    }</span>
+
+    fun BottomSheetDialogFragment.requestPermissionWithRationale(
+        permission: String,
+        requestCode: Int,
+        snackbar: Snackbar
+
+    ) {
+<span class="nc" id="L1219">        val provideRationale = shouldShowRequestPermissionRationale(permission)</span>
+
+<span class="nc bnc" id="L1221" title="All 2 branches missed.">        if (provideRationale) {</span>
+<span class="nc" id="L1222">            snackbar.show()</span>
+        } else {
+<span class="nc" id="L1224">            requestPermissions(arrayOf(permission), requestCode)</span>
+        }
+<span class="nc" id="L1226">    }</span>
+
+    fun locationRequest(fragment: Fragment, fineLocationRationalSnackbar: Snackbar): Location? {
+<span class="nc" id="L1229">        val permissionApproved =</span>
+<span class="nc" id="L1230">            fragment.requireContext().hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)</span>
+
+<span class="nc bnc" id="L1232" title="All 2 branches missed.">        if (permissionApproved) {</span>
+<span class="nc" id="L1233">            return requestCurrentLocation(fragment)</span>
+        } else {
+<span class="nc" id="L1235">            fragment.requestPermissionWithRationale(</span>
+<span class="nc" id="L1236">                Manifest.permission.ACCESS_FINE_LOCATION,</span>
+<span class="nc" id="L1237">                34,</span>
+<span class="nc" id="L1238">                fineLocationRationalSnackbar</span>
+            )
+<span class="nc" id="L1240">            return null</span>
+        }
+    }
+
+    fun locationRequestV2(
+        fragment: Fragment,
+        fineLocationRationalSnackbar: Snackbar,
+        onComplete: (location: Location?) -&gt; Unit
+    ) {
+<span class="nc" id="L1249">        val permissionApproved =</span>
+<span class="nc" id="L1250">            fragment.requireContext().hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)</span>
+
+<span class="nc" id="L1252">        Timber.d(&quot;PermissionApproved: $permissionApproved&quot;)</span>
+<span class="nc bnc" id="L1253" title="All 2 branches missed.">        if (permissionApproved) {</span>
+<span class="nc" id="L1254">            requestCurrentLocationV2(fragment, onComplete)</span>
+        } else {
+<span class="nc" id="L1256">            fragment.requestPermissionWithRationale(</span>
+<span class="nc" id="L1257">                Manifest.permission.ACCESS_FINE_LOCATION,</span>
+<span class="nc" id="L1258">                34,</span>
+<span class="nc" id="L1259">                fineLocationRationalSnackbar</span>
+            )
+        }
+<span class="nc" id="L1262">    }</span>
+
+    @SuppressLint(&quot;MissingPermission&quot;)
+    private fun requestCurrentLocation(fragment: Fragment): Location? {
+<span class="nc" id="L1266">        var location: Location? = null</span>
+
+<span class="nc bnc" id="L1268" title="All 2 branches missed.">        if (fragment.requireContext().hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {</span>
+<span class="nc" id="L1269">            fusedLocationClient =</span>
+<span class="nc" id="L1270">                LocationServices.getFusedLocationProviderClient(fragment.requireContext())</span>
+
+            // Returns a single current location fix on the device. Unlike getLastLocation() that
+            // returns a cached location, this method could cause active location computation on the
+            // device. A single fresh location will be returned if the device location can be
+            // determined within reasonable time (tens of seconds), otherwise null will be returned.
+            //
+            // Both arguments are required.
+            // PRIORITY type is self-explanatory. (Other options are PRIORITY_BALANCED_POWER_ACCURACY,
+            // PRIORITY_LOW_POWER, and PRIORITY_NO_POWER.)
+            // The second parameter, [CancellationToken] allows the activity to cancel the request
+            // before completion.
+<span class="nc" id="L1282">            val currentLocationTask: Task&lt;Location&gt; = fusedLocationClient!!.getCurrentLocation(</span>
+<span class="nc" id="L1283">                LocationRequest.PRIORITY_HIGH_ACCURACY,</span>
+<span class="nc" id="L1284">                cancellationTokenSource.token</span>
+            )
+
+<span class="nc" id="L1287">            currentLocationTask.addOnCompleteListener { task: Task&lt;Location&gt; -&gt;</span>
+<span class="nc bnc" id="L1288" title="All 4 branches missed.">                if (task.isSuccessful &amp;&amp; task.result != null) {</span>
+<span class="nc" id="L1289">                    val result: Location = task.result</span>
+
+<span class="nc" id="L1291">                    location = result</span>
+//                    &quot;Location (success): ${result.latitude}, ${result.longitude}&quot;
+                } else {
+<span class="nc" id="L1294">                    val exception = task.exception</span>
+<span class="nc" id="L1295">                    location = null</span>
+<span class="nc" id="L1296">                    &quot;Location (failure): $exception&quot;</span>
+                }
+
+                // this
+<span class="nc" id="L1300">            }</span>
+        }
+<span class="nc" id="L1302">        return location</span>
+    }
+
+    @SuppressLint(&quot;MissingPermission&quot;)
+    fun requestCurrentLocationV2(
+        fragment: Fragment,
+        onComplete: (location: Location?) -&gt; Unit
+    ) {
+<span class="nc bnc" id="L1310" title="All 2 branches missed.">        if (fragment.requireContext().hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {</span>
+<span class="nc" id="L1311">            fusedLocationClient =</span>
+<span class="nc" id="L1312">                LocationServices.getFusedLocationProviderClient(fragment.requireContext())</span>
+
+<span class="nc" id="L1314">            val currentLocationTask: Task&lt;Location&gt; = fusedLocationClient!!.getCurrentLocation(</span>
+<span class="nc" id="L1315">                LocationRequest.PRIORITY_HIGH_ACCURACY,</span>
+<span class="nc" id="L1316">                cancellationTokenSource.token</span>
+            )
+
+<span class="nc" id="L1319">            currentLocationTask.addOnCompleteListener { task: Task&lt;Location&gt; -&gt;</span>
+<span class="nc bnc" id="L1320" title="All 4 branches missed.">                if (task.isSuccessful &amp;&amp; task.result != null) {</span>
+<span class="nc" id="L1321">                    val result: Location = task.result</span>
+<span class="nc" id="L1322">                    onComplete(result)</span>
+                }
+<span class="nc" id="L1324">            }</span>
+        }
+<span class="nc" id="L1326">    }</span>
+
+    fun dismissAllDialogs(manager: FragmentManager?) {
+<span class="nc bnc" id="L1329" title="All 4 branches missed.">        val fragments: List&lt;Fragment&gt; = manager?.fragments ?: return</span>
+<span class="nc bnc" id="L1330" title="All 2 branches missed.">        for (fragment in fragments) {</span>
+<span class="nc bnc" id="L1331" title="All 2 branches missed.">            if (fragment is DialogFragment) {</span>
+<span class="nc" id="L1332">                val dialogFragment: DialogFragment = fragment</span>
+<span class="nc" id="L1333">                dialogFragment.dismissAllowingStateLoss()</span>
+            }
+<span class="nc bnc" id="L1335" title="All 2 branches missed.">            if (!fragment.isAdded) return</span>
+<span class="nc" id="L1336">            val childFragmentManager: FragmentManager = fragment.childFragmentManager</span>
+<span class="nc" id="L1337">            dismissAllDialogs(childFragmentManager)</span>
+        }
+<span class="nc" id="L1339">    }</span>
+    fun RecyclerView?.getCurrentPosition(): Int {
+<span class="nc bnc" id="L1341" title="All 2 branches missed.">        return (this?.layoutManager as LinearLayoutManager).findLastVisibleItemPosition()</span>
+    }
+    fun checkIfDataSame(
+        oldData: MemberInfo,
+        firstName: String,
+        lastName: String,
+        dob: String,
+        gender: String
+    ): Boolean {
+<span class="pc bpc" id="L1350" title="2 of 8 branches missed.">        return oldData.firstName?.trim().equals(firstName.trim(), true) &amp;&amp; oldData.lastName?.trim().equals(</span>
+<span class="fc" id="L1351">            lastName.trim(),</span>
+<span class="fc" id="L1352">            true</span>
+<span class="fc bfc" id="L1353" title="All 4 branches covered.">        ) &amp;&amp; oldData.birthDate.equals(dob) &amp;&amp; oldData.gender.equals(gender, true)</span>
+    }
+
+<span class="nc" id="L1356">    fun createMultipartBodyPartFromBitmap(</span>
+        bitmap: Bitmap,
+        partName: String,
+<span class="nc" id="L1359">        fileName: String = &quot;image.jpg&quot;,</span>
+<span class="nc" id="L1360">        maxWidth: Int = 1024</span>
+    ): MultipartBody.Part {
+<span class="nc bnc" id="L1362" title="All 2 branches missed.">        val scaled = if (bitmap.width &gt; maxWidth) {</span>
+<span class="nc" id="L1363">            val scale = maxWidth.toFloat() / bitmap.width</span>
+<span class="nc" id="L1364">            Bitmap.createScaledBitmap(bitmap, maxWidth, (bitmap.height * scale).toInt(), true)</span>
+        } else {
+<span class="nc" id="L1366">            bitmap</span>
+        }
+
+<span class="nc" id="L1369">        val byteArrayOutputStream = ByteArrayOutputStream()</span>
+<span class="nc" id="L1370">        scaled.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream)</span>
+<span class="nc bnc" id="L1371" title="All 2 branches missed.">        if (scaled !== bitmap) scaled.recycle()</span>
+<span class="nc" id="L1372">        val byteArray = byteArrayOutputStream.toByteArray()</span>
+
+<span class="nc" id="L1374">        val requestBody = RequestBody.create(</span>
+<span class="nc" id="L1375">            &quot;image/jpeg&quot;.toMediaTypeOrNull(),</span>
+<span class="nc" id="L1376">            byteArray</span>
+        )
+<span class="nc" id="L1378">        return MultipartBody.Part.createFormData(partName, fileName, requestBody)</span>
+    }
+
+    fun isSameDomain(url1: String?, url2: String?): Boolean {
+        fun extractMainDomain(url: String?): String? {
+<span class="fc" id="L1383">            return try {</span>
+<span class="fc bfc" id="L1384" title="All 2 branches covered.">                url?.let {</span>
+<span class="fc" id="L1385">                    val host = URL(it).host</span>
+                    // Normalize the host by removing &quot;www.&quot;
+<span class="fc" id="L1387">                    val normalizedHost = host.removePrefix(&quot;www.&quot;)</span>
+                    // Extract the main domain part, assuming the last two segments are the main domain
+<span class="fc" id="L1389">                    val parts = normalizedHost.split(&quot;.&quot;)</span>
+<span class="pc bpc" id="L1390" title="1 of 2 branches missed.">                    if (parts.size &gt;= 2) {</span>
+<span class="fc" id="L1391">                        &quot;${parts[parts.size - 2]}.${parts[parts.size - 1]}&quot;</span>
+                    } else {
+<span class="nc" id="L1393">                        normalizedHost</span>
+<span class="fc" id="L1394">                    }</span>
+                }
+<span class="fc" id="L1396">            } catch (e: MalformedURLException) {</span>
+                // Handle malformed URLs by returning null
+<span class="fc" id="L1398">                return null</span>
+            }
+        }
+
+<span class="fc" id="L1402">        val domain1 = extractMainDomain(url1)</span>
+<span class="fc" id="L1403">        val domain2 = extractMainDomain(url2)</span>
+
+<span class="fc bfc" id="L1405" title="All 6 branches covered.">        return domain1 != null &amp;&amp; domain2 != null &amp;&amp; domain1 == domain2</span>
+    }
+
+    // Debounce wrapper
+    private var debounceJob: Job? = null
+
+<span class="nc" id="L1411">    fun debounceAction(</span>
+<span class="nc" id="L1412">        debounceInterval: Long = 500L,</span>
+        scope: CoroutineScope,
+        action: suspend () -&gt; Unit
+    ) {
+<span class="nc bnc" id="L1416" title="All 2 branches missed.">        debounceJob?.cancel() // Cancel the previous debounce job if it exists</span>
+<span class="nc" id="L1417">        debounceJob = scope.launch {</span>
+<span class="fc" id="L1418">            delay(debounceInterval) // Wait for the debounce interval</span>
+<span class="fc" id="L1419">            action() // Execute the action after the debounce interval</span>
+<span class="fc" id="L1420">        }</span>
+<span class="nc" id="L1421">    }</span>
+
+    fun getCorrectedPdfFileName(fileName: String): String {
+<span class="fc" id="L1424">        var correctedFileName = fileName.replace(&quot; &quot;, &quot;_&quot;)</span>
+<span class="fc" id="L1425">        val docExtRegEx = Regex(&quot;(\\.(pdf|jpg|png))(?!.+)&quot;)</span>
+<span class="fc" id="L1426">        val hasExtension = docExtRegEx.containsMatchIn(fileName)</span>
+<span class="fc bfc" id="L1427" title="All 2 branches covered.">        if (!hasExtension) {</span>
+<span class="fc" id="L1428">            correctedFileName = &quot;$fileName.pdf&quot;</span>
+        }
+<span class="fc" id="L1430">        return correctedFileName</span>
+    }
+}
+
+@Suppress(&quot;DEPRECATION&quot;)
+fun &lt;T : Parcelable?&gt; Intent.getParcelableExtraCompat(key: String, clazz: Class&lt;T&gt;): T? {
+<span class="nc bnc" id="L1436" title="All 2 branches missed.">    return if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.TIRAMISU) {</span>
+<span class="nc" id="L1437">        getParcelableExtra(key, clazz)</span>
+    } else {
+        @Suppress(&quot;UNCHECKED_CAST&quot;)
+<span class="nc bnc" id="L1440" title="All 2 branches missed.">        getParcelableExtra(key) as? T</span>
+    }
+}
+
+fun NavController.safeNavigate(@IdRes resId: Int) {
+<span class="nc bnc" id="L1445" title="All 4 branches missed.">    val action = currentDestination?.getAction(resId) ?: graph.getAction(resId)</span>
+<span class="nc bnc" id="L1446" title="All 2 branches missed.">    if (action != null) navigate(resId)</span>
+<span class="nc" id="L1447">}</span>
+
+fun NavController.safeNavigate(directions: NavDirections) {
+<span class="nc" id="L1450">    val actionId = directions.actionId</span>
+<span class="nc bnc" id="L1451" title="All 4 branches missed.">    val action = currentDestination?.getAction(actionId) ?: graph.getAction(actionId)</span>
+<span class="nc bnc" id="L1452" title="All 2 branches missed.">    if (action != null) {</span>
+<span class="nc" id="L1453">        navigate(directions)</span>
+    } else {
+        // Optional: Log or handle the case where action doesn't exist
+<span class="nc" id="L1456">        println(&quot;Navigation action $actionId not found from current destination&quot;)</span>
+    }
+<span class="nc" id="L1458">}</span>
+
+inline fun &lt;reified T&gt; Any?.safeCastOrNull(): T? = this as? T
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

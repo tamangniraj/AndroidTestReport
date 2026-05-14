@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrimaryDevicePromptViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.primaryDevicePrompt</a> &gt; <span class="el_source">PrimaryDevicePromptViewModel.kt</span></div><h1>PrimaryDevicePromptViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.primaryDevicePrompt
+
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.utils.Event
+import javax.inject.Inject
+
+<span class="fc" id="L11">class PrimaryDevicePromptViewModel @Inject constructor() : ViewModel(), Observable {</span>
+<span class="pc" id="L12">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L15">        callbacks.add(callback)</span>
+<span class="nc" id="L16">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L19">        callbacks.remove(callback)</span>
+<span class="nc" id="L20">    }</span>
+
+<span class="fc" id="L22">    private val _setDeviceAsPrimary = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val setDeviceAsPrimary: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L24">        get() = _setDeviceAsPrimary</span>
+
+<span class="fc" id="L26">    private val _setDeviceAsSecondary = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val setDeviceAsSecondary: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L28">        get() = _setDeviceAsSecondary</span>
+
+    fun primaryDeviceClicked() {
+<span class="fc" id="L31">        _setDeviceAsPrimary.value = Event(Unit)</span>
+<span class="fc" id="L32">    }</span>
+
+    fun secondaryDeviceClicked() {
+<span class="fc" id="L35">        _setDeviceAsSecondary.value = Event(Unit)</span>
+<span class="fc" id="L36">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

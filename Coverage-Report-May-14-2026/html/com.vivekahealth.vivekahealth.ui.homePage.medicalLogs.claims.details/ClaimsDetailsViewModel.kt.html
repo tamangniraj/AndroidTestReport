@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClaimsDetailsViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.claims.details</a> &gt; <span class="el_source">ClaimsDetailsViewModel.kt</span></div><h1>ClaimsDetailsViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.claims.details
+
+import android.content.SharedPreferences
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.data.remote.home.medicalLogs.ClaimsDetailItem
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.repository.MedicalLogsRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
+import timber.log.Timber
+
+<span class="nc" id="L21">class ClaimsDetailsViewModel @Inject constructor(</span>
+<span class="nc" id="L22">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L23">    private val medicalLogsRepository: MedicalLogsRepository,</span>
+<span class="nc" id="L24">    private val homeRepository: HomeRepository</span>
+<span class="nc" id="L25">) : ViewModel(), Observable {</span>
+<span class="nc" id="L26">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L28">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L30">    private val _logsListGenerated = MutableLiveData&lt;Event&lt;ClaimsDetailItem&gt;&gt;()</span>
+    val logsListGenerated: LiveData&lt;Event&lt;ClaimsDetailItem&gt;&gt;
+<span class="nc" id="L32">        get() = _logsListGenerated</span>
+
+<span class="nc" id="L34">    private val _viewEob = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val viewEob: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L36">        get() = _viewEob</span>
+
+    var claimsDetail: ClaimsDetailItem? = null
+<span class="nc" id="L39">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L41">            field = value</span>
+<span class="nc" id="L42">            callbacks.notifyCallbacks(this, BR.claimsDetail, null)</span>
+<span class="nc" id="L43">        }</span>
+<span class="nc" id="L44">    var memberID: String = &quot;&quot;</span>
+<span class="nc" id="L45">    var claimsNumber: String = &quot;&quot;</span>
+
+<span class="nc" id="L47">    var serviceDate: String = &quot;&quot;</span>
+<span class="nc" id="L48">    var description: String = &quot;&quot;</span>
+<span class="nc" id="L49">    var actionDate: String = &quot;&quot;</span>
+<span class="nc" id="L50">    var status: String = &quot;&quot;</span>
+    var loading: Boolean = false
+<span class="nc" id="L52">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L54">            field = value</span>
+<span class="nc" id="L55">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L56">        }</span>
+
+    fun getList() {
+<span class="nc" id="L59">        compositeDisposable.add(</span>
+
+<span class="nc" id="L61">            medicalLogsRepository.getClaimsDetails(memberID, claimsNumber)</span>
+<span class="nc" id="L62">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L63">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L64">                .doOnSubscribe {</span>
+<span class="nc" id="L65">                    loading = true</span>
+<span class="nc" id="L66">                }</span>
+<span class="nc" id="L67">                .subscribe({</span>
+<span class="nc" id="L68">                    Timber.d(it.toString())</span>
+
+<span class="nc" id="L70">                    loading = false</span>
+
+<span class="nc bnc" id="L72" title="All 4 branches missed.">                    if (it.isNotEmpty()) {</span>
+<span class="nc" id="L73">                        claimsDetail = it[0]</span>
+<span class="nc" id="L74">                        _logsListGenerated.value = Event(it[0])</span>
+                    }
+<span class="nc" id="L76">                }, {</span>
+<span class="nc" id="L77">                    Timber.d(it.toString())</span>
+
+<span class="nc" id="L79">                    loading = false</span>
+<span class="nc" id="L80">                })</span>
+        )
+<span class="nc" id="L82">    }</span>
+
+    fun viewEob() {
+<span class="nc" id="L85">        _viewEob.value = Event(Unit)</span>
+<span class="nc" id="L86">    }</span>
+    override fun onCleared() {
+<span class="nc" id="L88">        super.onCleared()</span>
+<span class="nc" id="L89">        compositeDisposable.dispose()</span>
+<span class="nc" id="L90">    }</span>
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L92">        callbacks.remove(callback)</span>
+<span class="nc" id="L93">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L96">        callbacks.add(callback)</span>
+<span class="nc" id="L97">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

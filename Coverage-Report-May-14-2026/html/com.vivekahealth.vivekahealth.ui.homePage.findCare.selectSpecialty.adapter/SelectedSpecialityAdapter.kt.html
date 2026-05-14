@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SelectedSpecialityAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findCare.selectSpecialty.adapter</a> &gt; <span class="el_source">SelectedSpecialityAdapter.kt</span></div><h1>SelectedSpecialityAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findCare.selectSpecialty.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.specialityValue.ValueSelected
+import com.vivekahealth.vivekahealth.databinding.SelectedListItemBinding
+
+class SelectedSpecialityAdapter(
+    private var onClick:
+        (ValueSelected, Int) -&gt; Unit
+) :
+    ListAdapter&lt;ValueSelected, RecyclerView.ViewHolder&gt;(ValueItemDiffCallback()) {
+
+    var selectedPosition: Int = 0
+
+    private inner class ViewHeaderViewHolder(
+        val binding: SelectedListItemBinding,
+        private val onClick: (ValueSelected, Int) -&gt; Unit
+    ) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(position: Int) {
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return ViewHeaderViewHolder(
+            SelectedListItemBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            ),
+            onClick
+        )
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = getItem(position)
+        (holder as ViewHeaderViewHolder).binding.member = item
+
+        (holder as ViewHeaderViewHolder).binding.setClickListener {
+            onClick(item, position)
+        }
+    }
+
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+}
+
+<span class="nc" id="L52">private class ValueItemDiffCallback : DiffUtil.ItemCallback&lt;ValueSelected&gt;() {</span>
+    override fun areItemsTheSame(oldItem: ValueSelected, newItem: ValueSelected): Boolean {
+<span class="nc" id="L54">        return oldItem == newItem</span>
+    }
+
+    override fun areContentsTheSame(
+        oldItem: ValueSelected,
+        newItem: ValueSelected
+    ): Boolean {
+<span class="nc" id="L61">        return oldItem.speciality == newItem.speciality</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

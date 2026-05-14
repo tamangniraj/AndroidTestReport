@@ -1,0 +1,2636 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BindingAdapters.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.adapters</a> &gt; <span class="el_source">BindingAdapters.kt</span></div><h1>BindingAdapters.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.adapters
+
+import android.annotation.SuppressLint
+import android.content.res.Configuration
+import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
+import android.graphics.Typeface
+import android.graphics.drawable.BitmapDrawable
+import android.telephony.PhoneNumberUtils
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.SpannableStringBuilder
+import android.text.TextWatcher
+import android.text.method.LinkMovementMethod
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
+import android.text.util.Linkify
+import android.util.Base64
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.RadioButton
+import android.widget.TextView
+import androidx.appcompat.widget.AppCompatTextView
+import androidx.appcompat.widget.SearchView
+import androidx.cardview.widget.CardView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.text.HtmlCompat
+import androidx.core.view.updateLayoutParams
+import androidx.databinding.BindingAdapter
+import androidx.transition.Slide
+import androidx.transition.Transition
+import androidx.transition.TransitionManager
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.github.mikephil.charting.charts.PieChart
+import com.github.mikephil.charting.data.PieData
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.slider.RangeSlider
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import com.google.android.material.textview.MaterialTextView
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.local.enroll.RelationshipType
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.PracticeAddress
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.specialityValue.ValueSelected
+import com.vivekahealth.vivekahealth.ui.SecondaryButton
+import com.vivekahealth.vivekahealth.ui.guestRegister.otp.OtpState
+import com.vivekahealth.vivekahealth.ui.guestVerify.documents.DocumentType
+import com.vivekahealth.vivekahealth.ui.homePage.surveys.SurveyData
+import com.vivekahealth.vivekahealth.ui.homePage.surveys.SurveyStatus
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.HelperUtils.filterEmoji
+import com.vivekahealth.vivekahealth.utils.disableEmoji
+import de.hdodenhof.circleimageview.CircleImageView
+import org.apache.commons.lang3.StringUtils
+import java.text.DecimalFormat
+import java.util.Locale
+import androidx.core.graphics.toColorInt
+import com.google.android.material.imageview.ShapeableImageView
+import com.vivekahealth.vivekahealth.utils.TakePicturePillView
+
+@BindingAdapter(&quot;viewWidth&quot;)
+fun bindWidth(view: View, viewWidth: Int) {
+<span class="nc" id="L77">    view.updateLayoutParams {</span>
+<span class="nc" id="L78">        width = viewWidth</span>
+<span class="nc" id="L79">    }</span>
+<span class="nc" id="L80">}</span>
+
+@BindingAdapter(&quot;lastUpdated&quot;, &quot;premium&quot;, &quot;expanded&quot;, requireAll = false)
+fun bindLastUpdated(textView: TextView, lastUpdated: String?, premium: Boolean, expanded: Boolean) {
+<span class="nc bnc" id="L84" title="All 2 branches missed.">    if (expanded) {</span>
+<span class="nc bnc" id="L85" title="All 6 branches missed.">        if (!lastUpdated.isNullOrBlank()) {</span>
+<span class="nc" id="L86">            textView.visibility = View.VISIBLE</span>
+<span class="nc" id="L87">            lastUpdated.let {</span>
+<span class="nc" id="L88">                var date = DateUtils.getMonthYearFromServerDateTimePlane(lastUpdated)</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">                if (premium) {</span>
+<span class="nc" id="L90">                    textView.text = textView.context.getString(R.string.premium_last_reported, date)</span>
+                } else {
+<span class="nc" id="L92">                    textView.text = textView.context.getString(R.string.hours_last_reported, date)</span>
+                }
+<span class="nc" id="L94">            }</span>
+        } else {
+<span class="nc" id="L96">            textView.visibility = View.GONE</span>
+        }
+    } else {
+<span class="nc" id="L99">        textView.visibility = View.GONE</span>
+    }
+<span class="nc" id="L101">}</span>
+
+@BindingAdapter(&quot;textWithString&quot;, &quot;stringValue&quot;, requireAll = true)
+fun bindTextWithString(view: TextView, textWithString: String, stringValue: String) {
+<span class="nc bnc" id="L105" title="All 4 branches missed.">    if (stringValue.isBlank() || stringValue.contains(&quot;null&quot;)) {</span>
+<span class="nc" id="L106">        view.visibility = View.GONE</span>
+    } else {
+<span class="nc" id="L108">        view.visibility = View.VISIBLE</span>
+<span class="nc" id="L109">        view.text = String.format(textWithString, stringValue)</span>
+    }
+<span class="nc" id="L111">}</span>
+
+@BindingAdapter(&quot;textWithFloat&quot;, &quot;floatValue&quot;, requireAll = true)
+fun bindTextWithString(view: TextView, textWithFloat: String, floatValue: Float?) {
+<span class="nc bnc" id="L115" title="All 2 branches missed.">    if (floatValue == null) {</span>
+<span class="nc" id="L116">        view.visibility = View.GONE</span>
+    } else {
+<span class="nc" id="L118">        view.visibility = View.VISIBLE</span>
+<span class="nc" id="L119">        view.text = String.format(textWithFloat, floatValue)</span>
+    }
+<span class="nc" id="L121">}</span>
+
+@BindingAdapter(&quot;viewHeight&quot;)
+fun bindHeight(view: View, viewHeight: Int) {
+<span class="nc" id="L125">    view.updateLayoutParams {</span>
+<span class="nc" id="L126">        height = viewHeight</span>
+<span class="nc" id="L127">    }</span>
+<span class="nc" id="L128">}</span>
+
+@BindingAdapter(&quot;viewWeight&quot;)
+fun bindWeight(view: View, viewWeight: Float) {
+<span class="nc bnc" id="L132" title="All 2 branches missed.">    val layoutParams = view.layoutParams as? LinearLayout.LayoutParams</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">    layoutParams?.let {</span>
+<span class="nc" id="L134">        it.weight = viewWeight</span>
+<span class="nc" id="L135">        view.layoutParams = it</span>
+<span class="nc" id="L136">    }</span>
+<span class="nc" id="L137">}</span>
+
+@BindingAdapter(&quot;phoneFormat&quot;)
+fun bindPhoneFormat(view: TextView, phoneFormat: String) {
+<span class="nc" id="L141">    view.text = PhoneNumberUtils.formatNumber(phoneFormat, &quot;US&quot;)</span>
+<span class="nc" id="L142">}</span>
+
+@BindingAdapter(&quot;isGone&quot;)
+fun bindIsGone(view: View, isGone: Boolean) {
+<span class="nc bnc" id="L146" title="All 2 branches missed.">    view.visibility = if (isGone) {</span>
+<span class="nc" id="L147">        View.GONE</span>
+    } else {
+<span class="nc" id="L149">        View.VISIBLE</span>
+    }
+<span class="nc" id="L151">}</span>
+
+@BindingAdapter(&quot;premium&quot;, &quot;hoursTile&quot;, requireAll = true)
+fun bindHoursView(textView: TextView, premium: Double?, hoursTile: Double?) {
+<span class="nc" id="L155">    var premium: Double? = premium</span>
+<span class="nc" id="L156">    var hours: Double? = hoursTile</span>
+<span class="nc" id="L157">    var t = (</span>
+<span class="nc bnc" id="L158" title="All 4 branches missed.">        (premium == null || premium == 0.0) &amp;&amp;</span>
+<span class="nc bnc" id="L159" title="All 4 branches missed.">            (hours == 0.0 &amp;&amp; premium == 0.0)</span>
+        )
+<span class="nc bnc" id="L161" title="All 8 branches missed.">    var p = ((hours == null || hours == 0.0) &amp;&amp; (premium != null &amp;&amp; premium != 0.0))</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">    if (t) {</span>
+<span class="nc" id="L163">        textView.visibility = View.VISIBLE</span>
+    } else {
+<span class="nc bnc" id="L165" title="All 2 branches missed.">        if (p) {</span>
+<span class="nc" id="L166">            textView.visibility = View.GONE</span>
+        } else {
+<span class="nc" id="L168">            textView.visibility = View.VISIBLE</span>
+        }
+    }
+<span class="nc" id="L171">}</span>
+
+@BindingAdapter(&quot;isGoneTransition&quot;)
+fun bindIsGoneTransition(view: View, isGoneTransition: Boolean) {
+<span class="nc" id="L175">    val transition: Transition = Slide(Gravity.BOTTOM)</span>
+<span class="nc" id="L176">    transition.duration = 200</span>
+<span class="nc" id="L177">    transition.addTarget(view)</span>
+
+<span class="nc" id="L179">    TransitionManager.beginDelayedTransition(</span>
+<span class="nc" id="L180">        (view as ViewGroup),</span>
+<span class="nc" id="L181">        transition</span>
+    )
+
+<span class="nc bnc" id="L184" title="All 2 branches missed.">    view.visibility = if (isGoneTransition) {</span>
+<span class="nc" id="L185">        View.GONE</span>
+    } else {
+<span class="nc" id="L187">        View.VISIBLE</span>
+    }
+<span class="nc" id="L189">}</span>
+
+@BindingAdapter(&quot;imageButton&quot;)
+fun bindIsGone(view: MaterialButton, url: String?) {
+<span class="nc bnc" id="L193" title="All 6 branches missed.">    if (!url.isNullOrBlank()) {</span>
+<span class="nc" id="L194">        val base64String = url</span>
+//       val base64Image = base64String.split(&quot;,&quot;).toTypedArray()[1]
+<span class="nc" id="L196">        val decodedString = Base64.decode(base64String, Base64.DEFAULT)</span>
+<span class="nc" id="L197">        val decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.size)</span>
+<span class="nc" id="L198">        view.icon = BitmapDrawable(view.context.resources, decodedByte)</span>
+        //       view.setCompoundDrawablesWithIntrinsicBounds(BitmapDrawable(view.context.resources, decodedByte), null, null, null)
+    }
+<span class="nc" id="L201">}</span>
+
+@BindingAdapter(&quot;imageButton&quot;)
+fun bindButton(view: Button, url: String?) {
+<span class="nc bnc" id="L205" title="All 6 branches missed.">    if (!url.isNullOrBlank()) {</span>
+<span class="nc" id="L206">        val base64String = url</span>
+//       val base64Image = base64String.split(&quot;,&quot;).toTypedArray()[1]
+<span class="nc" id="L208">        val decodedString = Base64.decode(base64String, Base64.DEFAULT)</span>
+<span class="nc" id="L209">        val decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.size)</span>
+//        view.icon = BitmapDrawable(view.context.resources, decodedByte)
+<span class="nc" id="L211">        val drawable = BitmapDrawable(view.context.resources, decodedByte)</span>
+<span class="nc" id="L212">        view.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null)</span>
+    }
+<span class="nc" id="L214">}</span>
+
+@BindingAdapter(&quot;showReason&quot;)
+fun bindShowReason(view: View, showReason: Boolean) {
+<span class="nc bnc" id="L218" title="All 2 branches missed.">    view.visibility = if (showReason) {</span>
+<span class="nc" id="L219">        View.VISIBLE</span>
+    } else {
+<span class="nc" id="L221">        View.GONE</span>
+    }
+<span class="nc" id="L223">}</span>
+
+@BindingAdapter(&quot;isNullGone&quot;)
+fun bindIsNullGone(view: View, isNullGone: String?) {
+<span class="nc bnc" id="L227" title="All 6 branches missed.">    view.visibility = if (isNullGone.isNullOrEmpty()) {</span>
+<span class="nc" id="L228">        View.GONE</span>
+    } else {
+<span class="nc" id="L230">        View.VISIBLE</span>
+    }
+<span class="nc" id="L232">}</span>
+
+@BindingAdapter(&quot;likelyMeter&quot;)
+fun bindLikelyMeter(view: MaterialTextView, percentage: Double?) {
+<span class="nc bnc" id="L236" title="All 2 branches missed.">    if (percentage != null) {</span>
+<span class="nc bnc" id="L237" title="All 2 branches missed.">        if (percentage in 0.0..9.99) {</span>
+//            view.setCompoundDrawablesWithIntrinsicBounds(R.drawable.least_likely, 0, 0, 0)
+<span class="nc" id="L239">            view.text = view.context.getString(R.string.least_likely)</span>
+<span class="nc" id="L240">            view.setTextColor(view.context.getColor(R.color.least_likely))</span>
+<span class="nc bnc" id="L241" title="All 2 branches missed.">        } else if (percentage in 10.0..19.99) {</span>
+//            view.setCompoundDrawablesWithIntrinsicBounds(R.drawable.less_likely, 0, 0, 0)
+<span class="nc" id="L243">            view.text = view.context.getString(R.string.less_likely)</span>
+<span class="nc" id="L244">            view.setTextColor(view.context.getColor(R.color.less_likely))</span>
+<span class="nc bnc" id="L245" title="All 2 branches missed.">        } else if (percentage in 20.0..49.99) {</span>
+//            view.setCompoundDrawablesWithIntrinsicBounds(R.drawable.likely, 0, 0, 0)
+<span class="nc" id="L247">            view.text = view.context.getString(R.string.likely)</span>
+<span class="nc" id="L248">            view.setTextColor(view.context.getColor(R.color.likely))</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">        } else if (percentage in 50.1..79.99) {</span>
+//            view.setCompoundDrawablesWithIntrinsicBounds(R.drawable.more_likely, 0, 0, 0)
+<span class="nc" id="L251">            view.text = view.context.getString(R.string.more_likely)</span>
+<span class="nc" id="L252">            view.setTextColor(view.context.getColor(R.color.more_likely))</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        } else if (percentage in 80.0..100.0) {</span>
+//            view.setCompoundDrawablesWithIntrinsicBounds(R.drawable.most_likely, 0, 0, 0)
+<span class="nc" id="L255">            view.text = view.context.getString(R.string.most_likely)</span>
+<span class="nc" id="L256">            view.setTextColor(view.context.getColor(R.color.most_likely))</span>
+        }
+    } else {
+//        view.setCompoundDrawablesWithIntrinsicBounds(R.drawable.least_likely, 0, 0, 0)
+<span class="nc" id="L260">        view.text = view.context.getString(R.string.least_likely)</span>
+<span class="nc" id="L261">        view.setTextColor(view.context.getColor(R.color.least_likely))</span>
+    }
+<span class="nc" id="L263">}</span>
+
+@BindingAdapter(&quot;setSpeciality&quot;)
+fun bindIsSpeciality(view: TextView, setSpeciality: ArrayList&lt;ValueSelected&gt;) {
+<span class="nc" id="L267">    val list = setSpeciality.map { it.speciality }</span>
+<span class="nc" id="L268">    view.text = list.joinToString(separator = &quot;,&quot;) { it -&gt; it }</span>
+<span class="nc" id="L269">}</span>
+
+@BindingAdapter(&quot;isGoneString&quot;)
+fun bindIsGoneString(view: View, isGoneString: String) {
+<span class="nc bnc" id="L273" title="All 2 branches missed.">    view.visibility = if (isGoneString.equals(&quot;true&quot;, true)) {</span>
+<span class="nc" id="L274">        View.VISIBLE</span>
+    } else {
+<span class="nc" id="L276">        View.GONE</span>
+    }
+<span class="nc" id="L278">}</span>
+
+@BindingAdapter(&quot;isInvisible&quot;)
+fun bindIsInvisible(view: View, visible: Boolean) {
+<span class="nc bnc" id="L282" title="All 2 branches missed.">    view.visibility = if (visible) {</span>
+<span class="nc" id="L283">        View.VISIBLE</span>
+    } else {
+<span class="nc" id="L285">        View.INVISIBLE</span>
+    }
+<span class="nc" id="L287">}</span>
+
+@BindingAdapter(&quot;scrollText&quot;)
+fun bindScrollText(textView: TextView, state: String) {
+<span class="nc" id="L291">    when {</span>
+<span class="nc bnc" id="L292" title="All 2 branches missed.">        state.equals(&quot;current&quot;, true) -&gt; {</span>
+<span class="nc" id="L293">            textView.setTypeface(null, Typeface.BOLD)</span>
+<span class="nc" id="L294">            textView.setTextColor(ContextCompat.getColor(textView.context, R.color.btnPrimary))</span>
+        }
+
+<span class="nc bnc" id="L297" title="All 2 branches missed.">        state.equals(&quot;done&quot;, true) -&gt; {</span>
+<span class="nc" id="L298">            textView.setTypeface(null, Typeface.NORMAL)</span>
+<span class="nc" id="L299">            textView.setTextColor(ContextCompat.getColor(textView.context, R.color.btnPrimary))</span>
+        }
+
+<span class="nc bnc" id="L302" title="All 2 branches missed.">        state.equals(&quot;incomplete&quot;, true) -&gt; {</span>
+<span class="nc" id="L303">            textView.setTypeface(null, Typeface.NORMAL)</span>
+<span class="nc" id="L304">            textView.setTextColor(ContextCompat.getColor(textView.context, R.color.TextGreyReg))</span>
+        }
+    }
+<span class="nc" id="L307">}</span>
+
+@BindingAdapter(&quot;applyText&quot;)
+fun bindScrollText(materialButton: MaterialButton, count: Int) {
+<span class="nc" id="L311">    when {</span>
+<span class="nc bnc" id="L312" title="All 2 branches missed.">        count == 0 -&gt; {</span>
+<span class="nc" id="L313">            materialButton.text = materialButton.context.getString(R.string.apply)</span>
+        }
+
+<span class="nc bnc" id="L316" title="All 2 branches missed.">        count &gt; 0 -&gt; {</span>
+<span class="nc" id="L317">            materialButton.text =</span>
+<span class="nc" id="L318">                materialButton.context.getString(R.string.apply_count, count.toString())</span>
+        }
+    }
+<span class="nc" id="L321">}</span>
+
+@BindingAdapter(&quot;count&quot;)
+fun bindCount(textView: TextView, count: Int) {
+<span class="nc" id="L325">    when {</span>
+<span class="nc bnc" id="L326" title="All 2 branches missed.">        count == 0 -&gt; {</span>
+<span class="nc" id="L327">            textView.text = &quot;0&quot;</span>
+        }
+
+<span class="nc bnc" id="L330" title="All 2 branches missed.">        count &gt; 0 -&gt; {</span>
+<span class="nc" id="L331">            textView.text = count.toString()</span>
+        }
+    }
+<span class="nc" id="L334">}</span>
+
+@BindingAdapter(&quot;scrollDot&quot;)
+fun bindScrollDot(textView: ImageView, state: String) {
+<span class="nc" id="L338">    when {</span>
+<span class="nc bnc" id="L339" title="All 2 branches missed.">        state.equals(&quot;current&quot;, true) -&gt; {</span>
+<span class="nc" id="L340">            textView.setImageResource(R.drawable.ic_incomplete_form)</span>
+        }
+
+<span class="nc bnc" id="L343" title="All 2 branches missed.">        state.equals(&quot;done&quot;, true) -&gt; {</span>
+<span class="nc" id="L344">            textView.setImageResource(R.drawable.ic_complete_form)</span>
+        }
+
+<span class="nc bnc" id="L347" title="All 2 branches missed.">        state.equals(&quot;incomplete&quot;, true) -&gt; {</span>
+<span class="nc" id="L348">            textView.setImageResource(R.drawable.grey_circle)</span>
+        }
+    }
+<span class="nc" id="L351">}</span>
+
+@BindingAdapter(&quot;scrollDotBenefit&quot;)
+fun bindScrollDotBenefit(view: CircleImageView, state: Boolean) {
+<span class="nc bnc" id="L355" title="All 2 branches missed.">    if (state) {</span>
+<span class="nc" id="L356">        view.setImageResource(R.drawable.ic_incomplete_form)</span>
+    } else {
+<span class="nc" id="L358">        view.setImageResource(R.drawable.dot_grey)</span>
+    }
+<span class="nc" id="L360">}</span>
+
+@BindingAdapter(&quot;selectImage&quot;)
+fun bindSelectImage(view: CircleImageView, state: Boolean) {
+<span class="nc bnc" id="L364" title="All 2 branches missed.">    if (state) {</span>
+<span class="nc" id="L365">        view.borderWidth = 2</span>
+<span class="nc" id="L366">        view.borderColor = ContextCompat.getColor(</span>
+<span class="nc" id="L367">            view.context,</span>
+<span class="nc" id="L368">            R.color.colorAccent</span>
+        )
+    } else {
+<span class="nc" id="L371">        view.borderWidth = 0</span>
+<span class="nc" id="L372">        view.borderColor = ContextCompat.getColor(</span>
+<span class="nc" id="L373">            view.context,</span>
+<span class="nc" id="L374">            R.color.transparent</span>
+        )
+    }
+<span class="nc" id="L377">}</span>
+
+@BindingAdapter(&quot;scrollDash&quot;)
+fun bindScrollDash(textView: View, state: String) {
+<span class="nc" id="L381">    when {</span>
+<span class="nc bnc" id="L382" title="All 2 branches missed.">        state.equals(&quot;current&quot;, true) -&gt; {</span>
+<span class="nc" id="L383">            textView.setBackgroundColor(</span>
+<span class="nc" id="L384">                ContextCompat.getColor(</span>
+<span class="nc" id="L385">                    textView.context,</span>
+<span class="nc" id="L386">                    R.color.TextGreyReg</span>
+                )
+            )
+        }
+
+<span class="nc bnc" id="L391" title="All 2 branches missed.">        state.equals(&quot;done&quot;, true) -&gt; {</span>
+<span class="nc" id="L392">            textView.setBackgroundColor(</span>
+<span class="nc" id="L393">                ContextCompat.getColor(textView.context, R.color.btnPrimary)</span>
+            )
+        }
+
+<span class="nc bnc" id="L397" title="All 2 branches missed.">        state.equals(&quot;incomplete&quot;, true) -&gt; {</span>
+<span class="nc" id="L398">            textView.setBackgroundColor(</span>
+<span class="nc" id="L399">                ContextCompat.getColor(</span>
+<span class="nc" id="L400">                    textView.context,</span>
+<span class="nc" id="L401">                    R.color.TextGreyReg</span>
+                )
+            )
+        }
+    }
+<span class="nc" id="L406">}</span>
+
+@BindingAdapter(&quot;chatBackGround&quot;)
+fun bindChatBackGround(view: TextView, chatBackGround: Boolean) {
+<span class="nc bnc" id="L410" title="All 2 branches missed.">    if (chatBackGround) {</span>
+<span class="nc" id="L411">        view.setBackgroundResource(R.drawable.light_blue_rounded)</span>
+<span class="nc" id="L412">        view.setTextColor(ContextCompat.getColor(view.context, R.color.btnPrimary))</span>
+    } else {
+<span class="nc" id="L414">        view.setBackgroundResource(R.drawable.grey_blue_rounded)</span>
+<span class="nc" id="L415">        view.setTextColor(ContextCompat.getColor(view.context, R.color.white))</span>
+    }
+<span class="nc" id="L417">}</span>
+
+@BindingAdapter(&quot;chatBackGround&quot;)
+fun bindChatBackGround(view: Button, chatBackGround: Boolean) {
+<span class="nc bnc" id="L421" title="All 2 branches missed.">    if (chatBackGround) {</span>
+<span class="nc" id="L422">        view.background.setTint(ContextCompat.getColor(view.context, R.color.primaryUltraLight))</span>
+<span class="nc" id="L423">        view.setTextColor(ContextCompat.getColor(view.context, R.color.btnPrimary))</span>
+    } else {
+<span class="nc" id="L425">        view.background.setTint(ContextCompat.getColor(view.context, R.color.grey_medium1))</span>
+<span class="nc" id="L426">        view.setTextColor(ContextCompat.getColor(view.context, R.color.white))</span>
+    }
+<span class="nc" id="L428">}</span>
+
+@BindingAdapter(&quot;isEnabled&quot;)
+fun bindEnabled(view: View, isGone: Boolean) {
+<span class="nc" id="L432">    view.isEnabled = isGone</span>
+<span class="nc" id="L433">}</span>
+
+@BindingAdapter(&quot;tintEnable&quot;)
+fun bindTineEnable(view: ImageButton, tintEnable: Boolean) {
+<span class="nc bnc" id="L437" title="All 2 branches missed.">    if (tintEnable) {</span>
+<span class="nc" id="L438">        try {</span>
+<span class="nc" id="L439">            val imgDrawable = view.drawable</span>
+
+<span class="nc bnc" id="L441" title="All 2 branches missed.">            if (imgDrawable != null) {</span>
+<span class="nc" id="L442">                imgDrawable.mutate() // Ensure that the drawable is mutable</span>
+<span class="nc" id="L443">                imgDrawable.setTint(ContextCompat.getColor(view.context, R.color.colorPrimary))</span>
+<span class="nc" id="L444">                view.setImageDrawable(imgDrawable)</span>
+            } else {
+                // Handle the case where the drawable is null
+            }
+<span class="nc" id="L448">        } catch (e: IllegalArgumentException) {</span>
+            // Handle the case where Color.parseColor() fails
+<span class="nc" id="L450">            e.printStackTrace()</span>
+        }
+    } else {
+<span class="nc" id="L453">        try {</span>
+<span class="nc" id="L454">            val imgDrawable = view.drawable</span>
+
+<span class="nc bnc" id="L456" title="All 2 branches missed.">            if (imgDrawable != null) {</span>
+<span class="nc" id="L457">                imgDrawable.mutate() // Ensure that the drawable is mutable</span>
+<span class="nc" id="L458">                imgDrawable.setTint(ContextCompat.getColor(view.context, R.color.disable_grey))</span>
+<span class="nc" id="L459">                view.setImageDrawable(imgDrawable)</span>
+            } else {
+                // Handle the case where the drawable is null
+            }
+<span class="nc" id="L463">        } catch (e: IllegalArgumentException) {</span>
+            // Handle the case where Color.parseColor() fails
+<span class="nc" id="L465">            e.printStackTrace()</span>
+        }
+    }
+<span class="nc" id="L468">}</span>
+
+@BindingAdapter(&quot;isEnabledText&quot;)
+fun bindEnabledText(view: TextView, isEnabledText: Boolean) {
+<span class="nc bnc" id="L472" title="All 2 branches missed.">    if (isEnabledText) {</span>
+<span class="nc" id="L473">        view.isEnabled = true</span>
+<span class="nc" id="L474">        view.setTextColor(ContextCompat.getColor(view.context, R.color.btnPrimary))</span>
+    } else {
+<span class="nc" id="L476">        view.isEnabled = false</span>
+<span class="nc" id="L477">        view.setTextColor(ContextCompat.getColor(view.context, R.color.TextGreyReg))</span>
+    }
+<span class="nc" id="L479">}</span>
+
+@BindingAdapter(&quot;encodedImage&quot;)
+fun bindEncodedImage(imageView: ImageView, encodedImage: String?) {
+<span class="nc bnc" id="L483" title="All 6 branches missed.">    if (!encodedImage.isNullOrEmpty()) {</span>
+<span class="nc" id="L484">        imageView.setImageBitmap(</span>
+<span class="nc" id="L485">            BitmapFactory.decodeByteArray(</span>
+<span class="nc" id="L486">                Base64.decode(</span>
+<span class="nc" id="L487">                    encodedImage.toByteArray(),</span>
+<span class="nc" id="L488">                    Base64.DEFAULT</span>
+                ),
+<span class="nc" id="L490">                0,</span>
+<span class="nc" id="L491">                Base64.decode(encodedImage.toByteArray(), Base64.DEFAULT).size</span>
+            )
+        )
+    }
+<span class="nc" id="L495">}</span>
+
+@BindingAdapter(&quot;read&quot;)
+fun bindRead(view: View, read: String?) {
+<span class="nc bnc" id="L499" title="All 2 branches missed.">    if (read.equals(&quot;true&quot;, true)) {</span>
+<span class="nc" id="L500">        view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.white))</span>
+    } else {
+<span class="nc" id="L502">        view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.background_reg))</span>
+    }
+<span class="nc" id="L504">}</span>
+
+@BindingAdapter(&quot;noData&quot;)
+fun bindNoData(view: TextView, noData: String?) {
+<span class="nc bnc" id="L508" title="All 6 branches missed.">    if (noData.isNullOrBlank()) {</span>
+<span class="nc" id="L509">        view.text = view.context.getString(R.string.no_data)</span>
+    } else {
+<span class="nc" id="L511">        view.text = noData</span>
+    }
+<span class="nc" id="L513">}</span>
+
+@BindingAdapter(&quot;time&quot;, &quot;state&quot;)
+fun bindTimeAndState(textView: TextView, time: String, otpState: OtpState) {
+<span class="nc bnc" id="L517" title="All 2 branches missed.">    if (time == &quot;00:00&quot;) {</span>
+<span class="nc" id="L518">        textView.visibility = View.GONE</span>
+    } else {
+<span class="nc" id="L520">        textView.visibility = View.VISIBLE</span>
+    }
+
+<span class="nc bnc" id="L523" title="All 2 branches missed.">    if (otpState == OtpState.SHOW_OPTIONS) {</span>
+<span class="nc" id="L524">        textView.text = textView.context.getString(R.string.verification_code_show_options, time)</span>
+    } else {
+<span class="nc" id="L526">        textView.text = textView.context.getString(R.string.verification_code, time)</span>
+    }
+<span class="nc" id="L528">}</span>
+
+@BindingAdapter(&quot;time&quot;)
+fun bindTime(textView: TextView, time: String) {
+<span class="nc" id="L532">    textView.text = textView.context.getString(R.string.verification_code, time)</span>
+<span class="nc" id="L533">}</span>
+
+@BindingAdapter(&quot;spouseNameGender&quot;)
+fun bindNameText(textView: TextView, name: String) {
+<span class="nc" id="L537">    textView.text = textView.context.getString(R.string.what_gender, name.trim())</span>
+<span class="nc" id="L538">}</span>
+
+@BindingAdapter(&quot;spouseNameDob&quot;)
+fun bindDobText(textView: TextView, name: String) {
+<span class="nc" id="L542">    textView.text = textView.context.getString(R.string.what_date_of_birth, name.trim())</span>
+<span class="nc" id="L543">}</span>
+
+@BindingAdapter(&quot;spouseNameSsn&quot;)
+fun bindSsnText(textView: TextView, name: String) {
+<span class="nc" id="L547">    textView.text = textView.context.getString(R.string.what_ssn, name.trim())</span>
+<span class="nc" id="L548">}</span>
+
+@BindingAdapter(&quot;specialties&quot;)
+fun bindSpecialties(textView: TextView, specialties: String) {
+<span class="nc" id="L552">    textView.text = textView.context.getString(R.string.s_specialties, specialties)</span>
+<span class="nc" id="L553">}</span>
+
+@BindingAdapter(&quot;spouseNameGiveInsurance&quot;)
+fun bindGiveInsuranceText(textView: TextView, name: String) {
+<span class="nc" id="L557">    textView.text = textView.context.getString(R.string.provide_insurance, name.trim())</span>
+<span class="nc" id="L558">}</span>
+
+@BindingAdapter(&quot;spouseNameEmployed&quot;)
+fun bindEmployedText(textView: TextView, name: String) {
+<span class="nc" id="L562">    textView.text = textView.context.getString(R.string.current_employed, name.trim())</span>
+<span class="nc" id="L563">}</span>
+
+@BindingAdapter(&quot;spouseNameEmployer&quot;)
+fun bindNameEmployer(textView: TextView, name: String) {
+<span class="nc" id="L567">    textView.text = textView.context.getString(R.string.employer_name, name.trim())</span>
+<span class="nc" id="L568">}</span>
+
+@BindingAdapter(&quot;spouseCurrentInsurance&quot;)
+fun bindCurrentText(textView: TextView, name: String) {
+<span class="nc" id="L572">    textView.text = textView.context.getString(R.string.have_insurance, name.trim())</span>
+<span class="nc" id="L573">}</span>
+
+@BindingAdapter(&quot;notificationCount&quot;)
+fun bindNotificationCount(textView: TextView, notificationCount: String?) {
+<span class="nc bnc" id="L577" title="All 8 branches missed.">    if (!notificationCount.isNullOrBlank() &amp;&amp; !notificationCount.equals(&quot;0&quot;, true)) {</span>
+<span class="nc" id="L578">        textView.visibility = View.VISIBLE</span>
+<span class="nc" id="L579">        textView.text = notificationCount</span>
+    } else {
+<span class="nc" id="L581">        textView.visibility = View.GONE</span>
+    }
+<span class="nc" id="L583">}</span>
+
+@BindingAdapter(&quot;notificationCountHasData&quot;, &quot;hasData&quot;)
+fun bindNotificationCountHasData(textView: TextView, notificationCount: String?, hasData: Boolean) {
+<span class="nc bnc" id="L587" title="All 10 branches missed.">    if (!notificationCount.isNullOrBlank() &amp;&amp; !notificationCount.equals(&quot;0&quot;, true) &amp;&amp; hasData) {</span>
+<span class="nc" id="L588">        textView.visibility = View.VISIBLE</span>
+<span class="nc" id="L589">        textView.text = notificationCount</span>
+    } else {
+<span class="nc" id="L591">        textView.visibility = View.GONE</span>
+    }
+<span class="nc" id="L593">}</span>
+
+@BindingAdapter(&quot;textChangedListener&quot;)
+fun bindTextWatcher(editText: EditText, textWatcher: TextWatcher) {
+<span class="nc" id="L597">    editText.addTextChangedListener(textWatcher)</span>
+<span class="nc" id="L598">}</span>
+
+@BindingAdapter(&quot;queryChangedListener&quot;)
+fun bindTextWatcher(
+    searchView: androidx.appcompat.widget.SearchView,
+    queryChangedListener: androidx.appcompat.widget.SearchView.OnQueryTextListener
+) {
+<span class="nc" id="L605">    searchView.setOnQueryTextListener(queryChangedListener)</span>
+<span class="nc" id="L606">}</span>
+
+@BindingAdapter(&quot;sliderChangedListener&quot;)
+fun bindTextWatcher(rangerSlider: RangeSlider, changeWatcher: RangeSlider.OnChangeListener) {
+<span class="nc" id="L610">    rangerSlider.addOnChangeListener(changeWatcher)</span>
+<span class="nc" id="L611">}</span>
+
+@BindingAdapter(&quot;childNumber&quot;, &quot;nameChild&quot;, requireAll = false)
+fun bindChildNumber(textView: TextView, number: String, nameChild: String) {
+<span class="nc bnc" id="L615" title="All 4 branches missed.">    if (!nameChild.isNullOrBlank()) {</span>
+<span class="nc" id="L616">        textView.text = textView.context.getString(R.string.s_details, nameChild.trim())</span>
+    } else {
+<span class="nc" id="L618">        textView.text = textView.context.getString(R.string.child_name_details, number)</span>
+    }
+<span class="nc" id="L620">}</span>
+
+@BindingAdapter(&quot;noDataText&quot;)
+fun bindNoDataText(textView: MaterialTextView, noDataText: Boolean) {
+<span class="nc bnc" id="L624" title="All 2 branches missed.">    if (noDataText) {</span>
+<span class="nc" id="L625">        textView.text = textView.context.getString(</span>
+<span class="nc" id="L626">            R.string.you_will_get_recommendations_here_after_selecting_procedure</span>
+        )
+    } else {
+<span class="nc" id="L629">        textView.text = textView.context.getString(</span>
+<span class="nc" id="L630">            R.string.please_select_a_procedure_to_get_recommendations</span>
+        )
+    }
+<span class="nc" id="L633">}</span>
+
+@BindingAdapter(&quot;childNumberStep&quot;, &quot;stepChild&quot;, &quot;totalStepChild&quot;)
+fun bindChildNumberStep(
+    textView: TextView,
+    number: String,
+    stepChild: String,
+    totalStepChild: String
+) {
+<span class="nc" id="L642">    textView.text =</span>
+<span class="nc" id="L643">        textView.context.getString(R.string.child_details_s, number, stepChild, totalStepChild)</span>
+<span class="nc" id="L644">}</span>
+
+@BindingAdapter(&quot;locationType&quot;, &quot;miles&quot;, &quot;locationName&quot;, requireAll = true)
+fun bindLocationFilterText(
+    toolbar: TextView,
+    locationType: String?,
+    miles: String?,
+    locationName: String?
+) {
+<span class="nc bnc" id="L653" title="All 4 branches missed.">    if (locationType != null &amp;&amp; miles != null) {</span>
+<span class="nc bnc" id="L654" title="All 4 branches missed.">        if (locationType.equals(&quot;NearBy&quot;, true) || locationType.equals(&quot;1&quot;, true)) {</span>
+<span class="nc bnc" id="L655" title="All 2 branches missed.">            if (miles.isBlank()) {</span>
+<span class="nc" id="L656">                toolbar.text = toolbar.context.getString(</span>
+<span class="nc" id="L657">                    R.string.location_with_in_nolimit,</span>
+<span class="nc" id="L658">                    toolbar.context.getString(R.string.near_by),</span>
+<span class="nc" id="L659">                    toolbar.context.getString(R.string.no_limits)</span>
+                )
+            } else {
+<span class="nc" id="L662">                toolbar.text =</span>
+<span class="nc" id="L663">                    toolbar.context.getString(</span>
+<span class="nc" id="L664">                        R.string.location_with_in_miles,</span>
+<span class="nc" id="L665">                        toolbar.context.getString(R.string.near_by),</span>
+<span class="nc" id="L666">                        miles</span>
+                    )
+            }
+<span class="nc bnc" id="L669" title="All 4 branches missed.">        } else if (locationType.equals(&quot;Home&quot;, true) || locationType.equals(&quot;2&quot;, true)) {</span>
+<span class="nc bnc" id="L670" title="All 2 branches missed.">            if (miles.isBlank()) {</span>
+<span class="nc" id="L671">                toolbar.text = toolbar.context.getString(</span>
+<span class="nc" id="L672">                    R.string.location_with_in_nolimit,</span>
+<span class="nc" id="L673">                    toolbar.context.getString(R.string.home),</span>
+
+<span class="nc" id="L675">                    toolbar.context.getString(R.string.no_limits)</span>
+                )
+            } else {
+<span class="nc" id="L678">                toolbar.text =</span>
+<span class="nc" id="L679">                    toolbar.context.getString(</span>
+<span class="nc" id="L680">                        R.string.location_with_in_miles,</span>
+<span class="nc" id="L681">                        toolbar.context.getString(R.string.home),</span>
+<span class="nc" id="L682">                        miles</span>
+                    )
+            }
+<span class="nc bnc" id="L685" title="All 4 branches missed.">        } else if (locationType.equals(&quot;Work&quot;, true) || locationType.equals(&quot;3&quot;, true)) {</span>
+<span class="nc bnc" id="L686" title="All 2 branches missed.">            if (miles.isBlank()) {</span>
+<span class="nc" id="L687">                toolbar.text = toolbar.context.getString(</span>
+<span class="nc" id="L688">                    R.string.location_with_in_nolimit,</span>
+<span class="nc" id="L689">                    toolbar.context.getString(R.string.work),</span>
+
+<span class="nc" id="L691">                    toolbar.context.getString(R.string.no_limits)</span>
+                )
+            } else {
+<span class="nc" id="L694">                toolbar.text =</span>
+<span class="nc" id="L695">                    toolbar.context.getString(</span>
+<span class="nc" id="L696">                        R.string.location_with_in_miles,</span>
+<span class="nc" id="L697">                        toolbar.context.getString(R.string.work),</span>
+<span class="nc" id="L698">                        miles</span>
+                    )
+            }
+        } else {
+<span class="nc bnc" id="L702" title="All 6 branches missed.">            if (!locationName.isNullOrEmpty()) {</span>
+<span class="nc bnc" id="L703" title="All 2 branches missed.">                if (miles.isBlank()) {</span>
+<span class="nc" id="L704">                    toolbar.text =</span>
+<span class="nc" id="L705">                        toolbar.context.getString(R.string.custom_within_nolimits, locationName)</span>
+                } else {
+<span class="nc" id="L707">                    toolbar.text =</span>
+<span class="nc" id="L708">                        toolbar.context.getString(</span>
+<span class="nc" id="L709">                            R.string.custom_miles_location,</span>
+<span class="nc" id="L710">                            miles,</span>
+<span class="nc" id="L711">                            locationName</span>
+                        )
+                }
+            }
+        }
+    }
+<span class="nc" id="L717">}</span>
+
+@BindingAdapter(&quot;locationType&quot;, &quot;miles&quot;, &quot;locationName&quot;, &quot;showSubtitle&quot;, requireAll = true)
+fun bindLocationFilter(
+    toolbar: MaterialToolbar,
+    locationType: String?,
+    miles: String?,
+    locationName: String?,
+    showSubtitle: Boolean
+) {
+<span class="nc bnc" id="L727" title="All 2 branches missed.">    if (showSubtitle) {</span>
+<span class="nc bnc" id="L728" title="All 4 branches missed.">        if (locationType != null &amp;&amp; miles != null) {</span>
+<span class="nc bnc" id="L729" title="All 2 branches missed.">            if (locationType.equals(&quot;1&quot;, true)) {</span>
+<span class="nc bnc" id="L730" title="All 2 branches missed.">                if (miles.isBlank()) {</span>
+<span class="nc" id="L731">                    toolbar.subtitle = toolbar.context.getString(</span>
+<span class="nc" id="L732">                        R.string.location_with_in_nolimit,</span>
+<span class="nc" id="L733">                        toolbar.context.getString(R.string.near_by),</span>
+<span class="nc" id="L734">                        toolbar.context.getString(R.string.no_limits)</span>
+                    )
+                } else {
+<span class="nc" id="L737">                    toolbar.subtitle =</span>
+<span class="nc" id="L738">                        toolbar.context.getString(</span>
+<span class="nc" id="L739">                            R.string.location_with_in_miles,</span>
+<span class="nc" id="L740">                            toolbar.context.getString(R.string.near_by),</span>
+<span class="nc" id="L741">                            miles</span>
+                        )
+                }
+<span class="nc bnc" id="L744" title="All 2 branches missed.">            } else if (locationType.equals(&quot;2&quot;, true)) {</span>
+<span class="nc bnc" id="L745" title="All 2 branches missed.">                if (miles.isBlank()) {</span>
+<span class="nc" id="L746">                    toolbar.subtitle = toolbar.context.getString(</span>
+<span class="nc" id="L747">                        R.string.location_with_in_nolimit,</span>
+<span class="nc" id="L748">                        toolbar.context.getString(R.string.home),</span>
+<span class="nc" id="L749">                        toolbar.context.getString(R.string.no_limits)</span>
+                    )
+                } else {
+<span class="nc" id="L752">                    toolbar.subtitle =</span>
+<span class="nc" id="L753">                        toolbar.context.getString(</span>
+<span class="nc" id="L754">                            R.string.location_with_in_miles,</span>
+<span class="nc" id="L755">                            toolbar.context.getString(R.string.home),</span>
+<span class="nc" id="L756">                            miles</span>
+                        )
+                }
+<span class="nc bnc" id="L759" title="All 2 branches missed.">            } else if (locationType.equals(&quot;3&quot;, true)) {</span>
+<span class="nc bnc" id="L760" title="All 2 branches missed.">                if (miles.isBlank()) {</span>
+<span class="nc" id="L761">                    toolbar.subtitle = toolbar.context.getString(</span>
+<span class="nc" id="L762">                        R.string.location_with_in_nolimit,</span>
+<span class="nc" id="L763">                        toolbar.context.getString(R.string.work),</span>
+<span class="nc" id="L764">                        toolbar.context.getString(R.string.no_limits)</span>
+                    )
+                } else {
+<span class="nc" id="L767">                    toolbar.subtitle =</span>
+<span class="nc" id="L768">                        toolbar.context.getString(</span>
+<span class="nc" id="L769">                            R.string.location_with_in_miles,</span>
+<span class="nc" id="L770">                            toolbar.context.getString(R.string.work),</span>
+<span class="nc" id="L771">                            miles</span>
+                        )
+                }
+            } else {
+<span class="nc bnc" id="L775" title="All 6 branches missed.">                if (!locationName.isNullOrEmpty()) {</span>
+<span class="nc bnc" id="L776" title="All 2 branches missed.">                    if (miles.isBlank()) {</span>
+<span class="nc" id="L777">                        toolbar.subtitle =</span>
+<span class="nc" id="L778">                            toolbar.context.getString(R.string.custom_within_nolimits, locationName)</span>
+                    } else {
+<span class="nc" id="L780">                        toolbar.subtitle =</span>
+<span class="nc" id="L781">                            toolbar.context.getString(</span>
+<span class="nc" id="L782">                                R.string.custom_miles_location,</span>
+<span class="nc" id="L783">                                miles,</span>
+<span class="nc" id="L784">                                locationName</span>
+                            )
+                    }
+                }
+            }
+        } else {
+<span class="nc" id="L790">            toolbar.subtitle = null</span>
+        }
+    }
+<span class="nc" id="L793">}</span>
+
+@BindingAdapter(&quot;firstName&quot;, &quot;lastName&quot;, requireAll = false)
+fun bindName(
+    textView: TextView,
+    firstName: String,
+    lastName: String
+
+) {
+<span class="nc bnc" id="L802" title="All 4 branches missed.">    if (lastName.isNotBlank()) {</span>
+<span class="nc" id="L803">        textView.text = &quot;${lastName.trim()}, ${firstName.trim()}&quot;</span>
+    }
+<span class="nc" id="L805">}</span>
+
+@BindingAdapter(&quot;hoursBanked&quot;, requireAll = false)
+fun bindHours(
+    textView: TextView,
+
+    hoursBanked: String?
+
+) {
+<span class="nc bnc" id="L814" title="All 2 branches missed.">    hoursBanked?.let {</span>
+<span class="nc" id="L815">        textView.text = textView.context.getString(R.string.hours_banked, hoursBanked)</span>
+<span class="nc" id="L816">    }</span>
+<span class="nc" id="L817">}</span>
+
+@BindingAdapter(&quot;customColor&quot;)
+fun bindColor(
+    view: View,
+    customColor: String?
+
+) {
+<span class="nc" id="L825">    view.setBackgroundResource(R.drawable.rounded_2)</span>
+
+<span class="nc" id="L827">    var root = view.background</span>
+
+<span class="nc" id="L829">    var wrapRoot = DrawableCompat.wrap(root!!)</span>
+<span class="nc bnc" id="L830" title="All 6 branches missed.">    if (!customColor.isNullOrBlank()) {</span>
+<span class="nc" id="L831">        view.visibility = View.VISIBLE</span>
+<span class="nc" id="L832">        DrawableCompat.setTint(</span>
+<span class="nc" id="L833">            wrapRoot,</span>
+<span class="nc" id="L834">            Color.parseColor(customColor)</span>
+        )
+    } else {
+<span class="nc" id="L837">        view.visibility = View.GONE</span>
+    }
+<span class="nc" id="L839">}</span>
+
+@BindingAdapter(&quot;type&quot;)
+fun bindStatus(
+    view: View,
+    type: String?
+
+) {
+<span class="nc" id="L847">    view.setBackgroundResource(R.drawable.rounded_2)</span>
+
+<span class="nc" id="L849">    var root = view.background</span>
+
+<span class="nc" id="L851">    var wrapRoot = DrawableCompat.wrap(root!!)</span>
+
+<span class="nc bnc" id="L853" title="All 2 branches missed.">    type?.let {</span>
+<span class="nc" id="L854">        when {</span>
+<span class="nc bnc" id="L855" title="All 2 branches missed.">            type.contains(&quot;Personal &amp; Identification&quot;, true) -&gt; {</span>
+<span class="nc" id="L856">                DrawableCompat.setTint(</span>
+<span class="nc" id="L857">                    wrapRoot,</span>
+<span class="nc" id="L858">                    ContextCompat.getColor(view.context, R.color.greenSlime)</span>
+                )
+
+//                wrapRoot.setTint(ContextCompat.getColor(view.context, R.color.greenSlime))
+            }
+
+<span class="nc bnc" id="L864" title="All 2 branches missed.">            type.contains(&quot;Health, Benefits and Claims&quot;, true) -&gt; {</span>
+<span class="nc" id="L865">                DrawableCompat.setTint(</span>
+<span class="nc" id="L866">                    wrapRoot,</span>
+<span class="nc" id="L867">                    ContextCompat.getColor(view.context, R.color.azul)</span>
+                )
+//                root.setBackgroundColor(ContextCompat.getColor(view.context, R.color.azul))
+            }
+
+<span class="nc bnc" id="L872" title="All 2 branches missed.">            type.contains(&quot;Work &amp; Employment&quot;, true) -&gt; {</span>
+<span class="nc" id="L873">                DrawableCompat.setTint(</span>
+<span class="nc" id="L874">                    wrapRoot,</span>
+<span class="nc" id="L875">                    ContextCompat.getColor(view.context, R.color.coral)</span>
+                )
+//                root.setBackgroundColor(ContextCompat.getColor(view.context, R.color.coral))
+            }
+
+<span class="nc bnc" id="L880" title="All 2 branches missed.">            type.contains(&quot;Other&quot;, true) -&gt; {</span>
+<span class="nc" id="L881">                DrawableCompat.setTint(</span>
+<span class="nc" id="L882">                    wrapRoot,</span>
+<span class="nc" id="L883">                    ContextCompat.getColor(view.context, R.color.purple)</span>
+                )
+//                root.setBackgroundColor(ContextCompat.getColor(view.context, R.color.purple))
+            }
+
+<span class="nc bnc" id="L888" title="All 2 branches missed.">            type.contains(&quot;Incentives&quot;, true) -&gt; {</span>
+<span class="nc" id="L889">                DrawableCompat.setTint(</span>
+<span class="nc" id="L890">                    wrapRoot,</span>
+<span class="nc" id="L891">                    ContextCompat.getColor(view.context, R.color.redDoc)</span>
+                )
+//                view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.redDoc))
+            }
+
+<span class="nc bnc" id="L896" title="All 2 branches missed.">            type.contains(&quot;All&quot;, true) -&gt; {</span>
+<span class="nc" id="L897">                view.visibility = View.GONE</span>
+            }
+
+            else -&gt; {
+<span class="nc" id="L901">                DrawableCompat.setTint(</span>
+<span class="nc" id="L902">                    wrapRoot,</span>
+<span class="nc" id="L903">                    ContextCompat.getColor(view.context, R.color.colorAccent)</span>
+                )
+//                view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.colorAccent))
+            }
+        }
+<span class="nc" id="L908">    }</span>
+<span class="nc bnc" id="L909" title="All 6 branches missed.">    if (type.isNullOrBlank()) {</span>
+<span class="nc" id="L910">        view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.colorAccent))</span>
+    }
+<span class="nc" id="L912">}</span>
+
+@BindingAdapter(&quot;docType&quot;, &quot;docName&quot;, requireAll = false)
+fun bindDocName(
+    textView: TextView,
+    docType: String?,
+    docName: String?
+
+) {
+<span class="nc" id="L921">    var name = &quot;&quot;</span>
+<span class="nc" id="L922">    var type = &quot;&quot;</span>
+<span class="nc bnc" id="L923" title="All 2 branches missed.">    docName?.let {</span>
+<span class="nc" id="L924">        name = docName</span>
+<span class="nc" id="L925">    }</span>
+
+<span class="nc bnc" id="L927" title="All 2 branches missed.">    docType?.let {</span>
+<span class="nc" id="L928">        type = docType</span>
+<span class="nc" id="L929">    }</span>
+<span class="nc" id="L930">    textView.text = &quot;$type - $name&quot;</span>
+<span class="nc" id="L931">}</span>
+
+@BindingAdapter(&quot;name&quot;)
+fun bindFName(
+    textView: TextView,
+    firstName: String
+
+) {
+<span class="nc" id="L939">    textView.text = textView.context.getString(R.string.hello_name, firstName)</span>
+<span class="nc" id="L940">}</span>
+
+@BindingAdapter(&quot;firstNameStep&quot;, &quot;lastNameStep&quot;, &quot;currentStep&quot;, &quot;totalStep&quot;, requireAll = false)
+fun bindNameStep(
+    textView: TextView,
+    firstName: String,
+    lastName: String,
+    currentStep: String,
+    totalStep: String
+
+) {
+<span class="nc" id="L951">    textView.text =</span>
+<span class="nc" id="L952">        textView.context.getString(</span>
+<span class="nc" id="L953">            R.string.step_name,</span>
+<span class="nc" id="L954">            &quot;$lastName,&quot;,</span>
+<span class="nc" id="L955">            firstName,</span>
+<span class="nc" id="L956">            currentStep,</span>
+<span class="nc" id="L957">            totalStep</span>
+        )
+<span class="nc" id="L959">}</span>
+
+@BindingAdapter(&quot;current&quot;, &quot;total&quot;, requireAll = false)
+fun bindStep(
+    textView: TextView,
+    current: String,
+    total: String
+
+) {
+<span class="nc" id="L968">    textView.text = textView.context.getString(R.string.steps, current, total)</span>
+<span class="nc" id="L969">}</span>
+
+@BindingAdapter(&quot;currency&quot;)
+fun bindCurrency(
+    textView: TextView,
+    currency: Double?
+
+) {
+<span class="nc bnc" id="L977" title="All 2 branches missed.">    if (currency != null) {</span>
+<span class="nc" id="L978">        val amount = String.format(Locale.getDefault(), &quot;%#.2f&quot;, currency)</span>
+<span class="nc" id="L979">        textView.text = &quot;$$amount&quot;</span>
+    }
+<span class="nc" id="L981">}</span>
+
+@BindingAdapter(&quot;selectedItem&quot;)
+fun bindSelectedItem(
+    textView: TextView,
+    selectedItem: String
+) {
+<span class="nc bnc" id="L988" title="All 2 branches missed.">    if (selectedItem == &quot;&quot;) {</span>
+<span class="nc" id="L989">        textView.visibility = View.GONE</span>
+    } else {
+<span class="nc" id="L991">        textView.visibility = View.VISIBLE</span>
+
+<span class="nc" id="L993">        textView.text = textView.context.getString(R.string.selected, selectedItem)</span>
+    }
+<span class="nc" id="L995">}</span>
+
+@BindingAdapter(&quot;selectedString&quot;)
+fun bindSelectedString(
+    textView: TextView,
+    selectedItem: String
+) {
+<span class="nc bnc" id="L1002" title="All 2 branches missed.">    if (selectedItem == &quot;&quot;) {</span>
+<span class="nc" id="L1003">        textView.visibility = View.GONE</span>
+    } else {
+<span class="nc" id="L1005">        textView.visibility = View.VISIBLE</span>
+
+<span class="nc" id="L1007">        textView.text = textView.context.getString(R.string.selected_s, selectedItem)</span>
+    }
+<span class="nc" id="L1009">}</span>
+
+@BindingAdapter(&quot;firstNameInitial&quot;, &quot;lastNameInitial&quot;, requireAll = false)
+fun bindInitialsStep(
+    textView: TextView,
+    firstName: String?,
+    lastName: String?
+
+) {
+<span class="nc" id="L1018">    val initial = try {</span>
+<span class="nc bnc" id="L1019" title="All 4 branches missed.">        lastName?.substring(0, 1) + firstName?.substring(0, 1)</span>
+<span class="nc" id="L1020">    } catch (e: Exception) {</span>
+<span class="nc" id="L1021">        &quot;&quot;</span>
+    }
+
+<span class="nc" id="L1024">    textView.text = initial</span>
+<span class="nc" id="L1025">}</span>
+
+@BindingAdapter(&quot;selected&quot;)
+fun bindImageViewPrimary(
+    image: CircleImageView,
+    selected: Boolean
+
+) {
+<span class="nc bnc" id="L1033" title="All 2 branches missed.">    if (selected) {</span>
+//        image.layoutParams.height = 180
+//        image.layoutParams.width =180
+<span class="nc" id="L1036">        image.borderColor = ContextCompat.getColor(image.context, R.color.white)</span>
+<span class="nc" id="L1037">        image.borderWidth = 3</span>
+<span class="nc" id="L1038">        val layoutParams: ViewGroup.LayoutParams = image.layoutParams</span>
+<span class="nc" id="L1039">        layoutParams.height = 180</span>
+<span class="nc" id="L1040">        layoutParams.width = 180</span>
+
+<span class="nc" id="L1042">        image.layoutParams = layoutParams</span>
+    } else {
+<span class="nc" id="L1044">        val layoutParams: ViewGroup.LayoutParams = image.layoutParams</span>
+<span class="nc" id="L1045">        layoutParams.height = 140</span>
+<span class="nc" id="L1046">        layoutParams.width = 140</span>
+//        image.layoutParams.height = 140
+//        image.layoutParams.width = 140
+<span class="nc" id="L1049">        image.layoutParams = layoutParams</span>
+
+<span class="nc" id="L1051">        image.borderColor = ContextCompat.getColor(image.context, R.color.colorTransparent)</span>
+<span class="nc" id="L1052">        image.borderWidth = 0</span>
+    }
+<span class="nc" id="L1054">}</span>
+
+@BindingAdapter(&quot;selectedFilterItem&quot;)
+fun bindSelectedFilterItem(
+    textView: TextView,
+    selected: Boolean
+) {
+<span class="nc bnc" id="L1061" title="All 2 branches missed.">    if (selected) {</span>
+<span class="nc" id="L1062">        textView.background =</span>
+<span class="nc" id="L1063">            ContextCompat.getDrawable(textView.context, R.drawable.bavkgroundclick)</span>
+<span class="nc" id="L1064">        textView.setTextColor(ContextCompat.getColor(textView.context, R.color.btnPrimary))</span>
+<span class="nc" id="L1065">        val font = ResourcesCompat.getFont(textView.context, R.font.roboto_bold)</span>
+<span class="nc" id="L1066">        textView.typeface = font</span>
+    } else {
+<span class="nc" id="L1068">        textView.background =</span>
+<span class="nc" id="L1069">            ContextCompat.getDrawable(textView.context, R.drawable.backgroundclicker)</span>
+<span class="nc" id="L1070">        textView.setTextColor(ContextCompat.getColor(textView.context, R.color.TextGrey))</span>
+<span class="nc" id="L1071">        val font = ResourcesCompat.getFont(textView.context, R.font.roboto_medium)</span>
+<span class="nc" id="L1072">        textView.typeface = font</span>
+    }
+<span class="nc" id="L1074">}</span>
+
+@BindingAdapter(&quot;selectedInitial&quot;)
+fun bindImageViewInitialPrimary(
+    image: TextView,
+    selected: Boolean
+
+) {
+<span class="nc bnc" id="L1082" title="All 2 branches missed.">    if (selected) {</span>
+//        image.layoutParams.height = 180
+//        image.layoutParams.width = 180
+<span class="nc" id="L1085">        val layoutParams: ViewGroup.LayoutParams = image.layoutParams</span>
+<span class="nc" id="L1086">        layoutParams.height = 180</span>
+<span class="nc" id="L1087">        layoutParams.width = 180</span>
+<span class="nc" id="L1088">        image.layoutParams = layoutParams</span>
+<span class="nc" id="L1089">        image.background =</span>
+<span class="nc" id="L1090">            ContextCompat.getDrawable(image.context, R.drawable.text_border_white_initial_pressed)</span>
+    } else {
+<span class="nc" id="L1092">        val layoutParams: ViewGroup.LayoutParams = image.layoutParams</span>
+<span class="nc" id="L1093">        layoutParams.height = 140</span>
+<span class="nc" id="L1094">        layoutParams.width = 140</span>
+<span class="nc" id="L1095">        image.layoutParams = layoutParams</span>
+//        image.layoutParams.height = 140
+//        image.layoutParams.width = 140
+<span class="nc" id="L1098">        image.background =</span>
+<span class="nc" id="L1099">            ContextCompat.getDrawable(image.context, R.drawable.text_border_white_initial)</span>
+    }
+<span class="nc" id="L1101">}</span>
+
+@BindingAdapter(&quot;shareSelected&quot;)
+fun bindShareSelected(
+    view: TextView,
+    shareSelected: Boolean
+
+) {
+<span class="nc bnc" id="L1109" title="All 2 branches missed.">    if (shareSelected) {</span>
+<span class="nc" id="L1110">        view.background = ContextCompat.getDrawable(view.context, R.drawable.blue_rounded_border)</span>
+    } else {
+<span class="nc" id="L1112">        view.background = ContextCompat.getDrawable(view.context, R.drawable.white_rounded)</span>
+    }
+<span class="nc" id="L1114">}</span>
+
+@BindingAdapter(&quot;disableEmoji&quot;)
+fun bindDisableEmoji(
+    view: TextInputEditText,
+    disableEmoji: Boolean
+) {
+<span class="nc bnc" id="L1121" title="All 2 branches missed.">    if (disableEmoji) {</span>
+<span class="nc" id="L1122">        view.filterEmoji()</span>
+    }
+<span class="nc" id="L1124">}</span>
+
+@BindingAdapter(&quot;disableEmoji&quot;)
+fun bindDisableEmoji(
+    view: SearchView,
+    disableEmoji: Boolean
+) {
+<span class="nc bnc" id="L1131" title="All 2 branches missed.">    if (disableEmoji) {</span>
+<span class="nc" id="L1132">        view.disableEmoji()</span>
+    }
+<span class="nc" id="L1134">}</span>
+
+@BindingAdapter(&quot;disableNonAscii&quot;)
+fun bindDisableNonAscii(
+    view: TextInputEditText,
+    disableNonAscii: Boolean
+) {
+<span class="nc bnc" id="L1141" title="All 2 branches missed.">    if (disableNonAscii) {</span>
+<span class="nc" id="L1142">        view.disableEmoji()</span>
+    }
+<span class="nc" id="L1144">}</span>
+
+@BindingAdapter(&quot;monthToMMM&quot;)
+fun bindMonthToMMM(
+    view: TextView,
+    monthToMMM: String
+) {
+<span class="nc bnc" id="L1151" title="All 13 branches missed.">    if (monthToMMM == &quot;1&quot;) {</span>
+<span class="nc" id="L1152">        view.text = view.context.getString(R.string.jan)</span>
+    } else if (monthToMMM == &quot;2&quot;) {
+<span class="nc" id="L1154">        view.text = view.context.getString(R.string.feb)</span>
+    } else if (monthToMMM == &quot;3&quot;) {
+<span class="nc" id="L1156">        view.text = view.context.getString(R.string.mar)</span>
+    } else if (monthToMMM == &quot;4&quot;) {
+<span class="nc" id="L1158">        view.text = view.context.getString(R.string.apr)</span>
+    } else if (monthToMMM == &quot;5&quot;) {
+<span class="nc" id="L1160">        view.text = view.context.getString(R.string.may)</span>
+    } else if (monthToMMM == &quot;6&quot;) {
+<span class="nc" id="L1162">        view.text = view.context.getString(R.string.jun)</span>
+    } else if (monthToMMM == &quot;7&quot;) {
+<span class="nc" id="L1164">        view.text = view.context.getString(R.string.jul)</span>
+    } else if (monthToMMM == &quot;8&quot;) {
+<span class="nc" id="L1166">        view.text = view.context.getString(R.string.aug)</span>
+    } else if (monthToMMM == &quot;9&quot;) {
+<span class="nc" id="L1168">        view.text = view.context.getString(R.string.sep)</span>
+    } else if (monthToMMM == &quot;10&quot;) {
+<span class="nc" id="L1170">        view.text = view.context.getString(R.string.oct)</span>
+    } else if (monthToMMM == &quot;11&quot;) {
+<span class="nc" id="L1172">        view.text = view.context.getString(R.string.nov)</span>
+    } else if (monthToMMM == &quot;12&quot;) {
+<span class="nc" id="L1174">        view.text = view.context.getString(R.string.dec)</span>
+    }
+<span class="nc" id="L1176">}</span>
+
+@BindingAdapter(&quot;menuSelected&quot;)
+fun bindMenuSelected(
+    view: MaterialTextView,
+    menuSelected: Boolean
+
+) {
+<span class="nc bnc" id="L1184" title="All 2 branches missed.">    if (!menuSelected) {</span>
+<span class="nc" id="L1185">        view.background =</span>
+<span class="nc" id="L1186">            ContextCompat.getDrawable(view.context, R.drawable.white_rounded_background)</span>
+    } else {
+<span class="nc" id="L1188">        view.background = ContextCompat.getDrawable(view.context, R.drawable.light_blue_rounded)</span>
+    }
+<span class="nc" id="L1190">}</span>
+
+@BindingAdapter(&quot;listDown&quot;)
+fun bindListDown(
+    view: ImageView,
+    listDown: Boolean
+
+) {
+<span class="nc bnc" id="L1198" title="All 2 branches missed.">    if (listDown) {</span>
+<span class="nc" id="L1199">        view.setImageResource(R.drawable.ic_chevron_dark_side)</span>
+    } else {
+<span class="nc" id="L1201">        view.setImageResource(R.drawable.ic_chevron_down)</span>
+    }
+<span class="nc" id="L1203">}</span>
+
+@BindingAdapter(&quot;htmlString&quot;)
+fun bindHtmlString(
+    view: TextView,
+    htmlString: String
+) {
+<span class="nc bnc" id="L1210" title="All 2 branches missed.">    if (htmlString.contains(&quot;&lt;/&quot;)) {</span>
+<span class="nc" id="L1211">        view.autoLinkMask = Linkify.PHONE_NUMBERS or Linkify.EMAIL_ADDRESSES or Linkify.WEB_URLS</span>
+<span class="nc" id="L1212">        view.linksClickable = true</span>
+<span class="nc" id="L1213">        val htmlText = &quot;&lt;html&gt;$htmlString&lt;/html&gt;&quot;</span>
+<span class="nc" id="L1214">        view.text = HtmlCompat.fromHtml(htmlText, HtmlCompat.FROM_HTML_MODE_LEGACY)</span>
+<span class="nc" id="L1215">        view.movementMethod = LinkMovementMethod.getInstance()</span>
+    } else {
+<span class="nc" id="L1217">        view.text = htmlString</span>
+    }
+<span class="nc" id="L1219">}</span>
+
+@BindingAdapter(&quot;spanFirstName&quot;, &quot;spanDateEnroll&quot;, requireAll = true)
+fun bindSpanEnrollTextDate(
+    textView: TextView,
+    spanFirstName: String?,
+    spanDateEnroll: String?
+) {
+<span class="nc bnc" id="L1227" title="All 12 branches missed.">    if (spanFirstName.isNullOrBlank() || spanDateEnroll.isNullOrBlank()) {</span>
+<span class="nc" id="L1228">        textView.text = &quot;&quot;</span>
+<span class="nc" id="L1229">        return</span>
+    }
+
+<span class="nc" id="L1232">    val context = textView.context</span>
+<span class="nc" id="L1233">    val fullText = context.getString(R.string.enrollment_greeting, spanFirstName, spanDateEnroll)</span>
+<span class="nc" id="L1234">    val stringBuilder = SpannableStringBuilder(fullText)</span>
+
+    // Find and style first name
+<span class="nc" id="L1237">    val firstNameStart = fullText.indexOf(spanFirstName)</span>
+<span class="nc bnc" id="L1238" title="All 2 branches missed.">    if (firstNameStart &gt;= 0) {</span>
+<span class="nc" id="L1239">        val firstNameEnd = firstNameStart + spanFirstName.length</span>
+<span class="nc" id="L1240">        stringBuilder.setSpan(</span>
+<span class="nc" id="L1241">            StyleSpan(Typeface.BOLD),</span>
+<span class="nc" id="L1242">            firstNameStart,</span>
+<span class="nc" id="L1243">            firstNameEnd,</span>
+<span class="nc" id="L1244">            Spannable.SPAN_INCLUSIVE_INCLUSIVE</span>
+        )
+<span class="nc" id="L1246">        stringBuilder.setSpan(</span>
+<span class="nc" id="L1247">            ForegroundColorSpan(ContextCompat.getColor(context, R.color.TextGrey)),</span>
+<span class="nc" id="L1248">            firstNameStart,</span>
+<span class="nc" id="L1249">            firstNameEnd,</span>
+<span class="nc" id="L1250">            Spannable.SPAN_INCLUSIVE_INCLUSIVE</span>
+        )
+    }
+
+    // Find and style date
+<span class="nc" id="L1255">    val dateStart = fullText.indexOf(spanDateEnroll)</span>
+<span class="nc bnc" id="L1256" title="All 2 branches missed.">    if (dateStart &gt;= 0) {</span>
+<span class="nc" id="L1257">        val dateEnd = dateStart + spanDateEnroll.length</span>
+<span class="nc" id="L1258">        stringBuilder.setSpan(</span>
+<span class="nc" id="L1259">            StyleSpan(Typeface.BOLD),</span>
+<span class="nc" id="L1260">            dateStart,</span>
+<span class="nc" id="L1261">            dateEnd,</span>
+<span class="nc" id="L1262">            Spannable.SPAN_INCLUSIVE_INCLUSIVE</span>
+        )
+<span class="nc" id="L1264">        stringBuilder.setSpan(</span>
+<span class="nc" id="L1265">            ForegroundColorSpan(ContextCompat.getColor(context, R.color.TextGrey)),</span>
+<span class="nc" id="L1266">            dateStart,</span>
+<span class="nc" id="L1267">            dateEnd,</span>
+<span class="nc" id="L1268">            Spannable.SPAN_INCLUSIVE_INCLUSIVE</span>
+        )
+    }
+
+<span class="nc" id="L1272">    textView.text = stringBuilder</span>
+<span class="nc" id="L1273">}</span>
+
+@BindingAdapter(&quot;spanFirst&quot;, &quot;spanDate&quot;, requireAll = true)
+fun bindSpanTextDate(textView: TextView, spanFirst: String, spanDate: String) {
+<span class="nc" id="L1277">    var font = ResourcesCompat.getFont(textView.context, R.font.roboto_medium)</span>
+
+<span class="nc" id="L1279">    val text = String.format(</span>
+<span class="nc" id="L1280">        textView.context.getString(R.string.you_have_already_started_your_enrollment_on_viveka_on),</span>
+<span class="nc" id="L1281">        textView.context.getString(R.string.app_name_short)</span>
+    )
+
+<span class="nc" id="L1284">    val finalText = &quot;$text $spanDate&quot;</span>
+<span class="nc" id="L1285">    val stringBuilder = SpannableStringBuilder(finalText)</span>
+
+// Apply regular style to the full text (optional)
+<span class="nc" id="L1288">    stringBuilder.setSpan(</span>
+<span class="nc" id="L1289">        StyleSpan(Typeface.NORMAL),</span>
+<span class="nc" id="L1290">        0,</span>
+<span class="nc" id="L1291">        text.length,</span>
+<span class="nc" id="L1292">        Spannable.SPAN_INCLUSIVE_INCLUSIVE</span>
+    )
+
+// Apply bold style to the spanDate part
+<span class="nc" id="L1296">    stringBuilder.setSpan(</span>
+<span class="nc" id="L1297">        StyleSpan(Typeface.BOLD),</span>
+<span class="nc" id="L1298">        text.length + 1, // +1 for the space</span>
+<span class="nc" id="L1299">        finalText.length,</span>
+<span class="nc" id="L1300">        Spannable.SPAN_INCLUSIVE_INCLUSIVE</span>
+    )
+
+<span class="nc" id="L1303">    textView.text = stringBuilder</span>
+<span class="nc" id="L1304">}</span>
+
+@BindingAdapter(&quot;spanTextFirst&quot;, &quot;spanTextSecond&quot;, &quot;spanTextThird&quot;, requireAll = true)
+fun bindSpanText(
+    textView: TextView,
+    spanTextFirst: String,
+    spanTextSecond: String,
+    spanTextThird: String
+) {
+<span class="nc" id="L1313">    var font = ResourcesCompat.getFont(textView.context, R.font.roboto_medium)</span>
+
+<span class="nc" id="L1315">    val stringBuilder = SpannableStringBuilder(&quot;$spanTextFirst $spanTextSecond $spanTextThird&quot;)</span>
+//    stringBuilder.setSpan(
+//        StyleSpan(R.font.roboto), 0, spanTextFirst.length+1,
+//        Spannable.SPAN_INCLUSIVE_INCLUSIVE
+//    )
+<span class="nc" id="L1320">    stringBuilder.setSpan(</span>
+<span class="nc" id="L1321">        StyleSpan(Typeface.BOLD),</span>
+<span class="nc" id="L1322">        0,</span>
+<span class="nc" id="L1323">        spanTextFirst.trim().length + 1,</span>
+<span class="nc" id="L1324">        Spannable.SPAN_INCLUSIVE_INCLUSIVE</span>
+    )
+<span class="nc" id="L1326">    stringBuilder.setSpan(</span>
+<span class="nc" id="L1327">        StyleSpan(R.font.roboto),</span>
+<span class="nc" id="L1328">        spanTextFirst.length + 1,</span>
+<span class="nc" id="L1329">        spanTextFirst.trim().length + 1 + spanTextSecond.trim().length + 1,</span>
+<span class="nc" id="L1330">        Spannable.SPAN_INCLUSIVE_INCLUSIVE</span>
+    )
+//    stringBuilder.setSpan(
+//        StyleSpan(R.font.roboto), spanTextFirst.length +1+ spanTextSecond.length+1,
+//        spanTextFirst.length +1+ spanTextSecond.length +1+  spanTextThird.length, Spannable.SPAN_INCLUSIVE_INCLUSIVE
+//    )
+
+<span class="nc" id="L1337">    stringBuilder.setSpan(</span>
+<span class="nc" id="L1338">        StyleSpan(Typeface.BOLD),</span>
+<span class="nc" id="L1339">        spanTextFirst.trim().length + 1 + spanTextSecond.trim().length + 1,</span>
+<span class="nc" id="L1340">        spanTextFirst.trim().length + 1 + spanTextSecond.trim().length + 1 + spanTextThird.trim().length,</span>
+<span class="nc" id="L1341">        Spannable.SPAN_INCLUSIVE_INCLUSIVE</span>
+    )
+<span class="nc" id="L1343">    stringBuilder.setSpan(</span>
+<span class="nc" id="L1344">        ForegroundColorSpan(ContextCompat.getColor(textView.context, R.color.btnPrimary)),</span>
+<span class="nc" id="L1345">        spanTextFirst.trim().length + 1 + spanTextSecond.trim().length + 1,</span>
+<span class="nc" id="L1346">        spanTextFirst.trim().length + 1 + spanTextSecond.trim().length + 1 + spanTextThird.trim().length,</span>
+<span class="nc" id="L1347">        Spannable.SPAN_INCLUSIVE_INCLUSIVE</span>
+    )
+<span class="nc" id="L1349">    textView.text = stringBuilder</span>
+<span class="nc" id="L1350">}</span>
+
+@BindingAdapter(&quot;opened&quot;, &quot;documentSent&quot;)
+fun bindOpened(imageView: ImageView, opened: Boolean, documentSent: String) {
+<span class="nc bnc" id="L1354" title="All 2 branches missed.">    if (documentSent != &quot;1&quot;) {</span>
+<span class="nc" id="L1355">        imageView.visibility = View.VISIBLE</span>
+<span class="nc bnc" id="L1356" title="All 2 branches missed.">        if (opened) {</span>
+<span class="nc" id="L1357">            imageView.setImageResource(R.drawable.ic_opened)</span>
+        } else {
+<span class="nc" id="L1359">            imageView.setImageResource(R.drawable.ic_envelope)</span>
+        }
+    } else {
+<span class="nc" id="L1362">        imageView.visibility = View.GONE</span>
+    }
+<span class="nc" id="L1364">}</span>
+
+@BindingAdapter(&quot;documentSent&quot;)
+fun bindDocState(materialTextView: MaterialTextView, documentSent: String) {
+<span class="nc bnc" id="L1368" title="All 2 branches missed.">    if (documentSent == &quot;1&quot;) {</span>
+<span class="nc" id="L1369">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_sent, 0, 0, 0)</span>
+<span class="nc" id="L1370">        materialTextView.text = materialTextView.context.getString(R.string.snet)</span>
+    } else {
+<span class="nc" id="L1372">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_recieved, 0, 0, 0)</span>
+<span class="nc" id="L1373">        materialTextView.text = materialTextView.context.getString(R.string.received)</span>
+    }
+<span class="nc" id="L1375">}</span>
+
+@BindingAdapter(&quot;isActive&quot;)
+fun bindIsActive(materialTextView: MaterialTextView, isActive: String) {
+<span class="nc bnc" id="L1379" title="All 2 branches missed.">    if (isActive.equals(&quot;active&quot;, true)) {</span>
+<span class="nc" id="L1380">        materialTextView.visibility = View.VISIBLE</span>
+
+<span class="nc" id="L1382">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(</span>
+<span class="nc" id="L1383">            R.drawable.ic_green_circle,</span>
+<span class="nc" id="L1384">            0,</span>
+<span class="nc" id="L1385">            0,</span>
+<span class="nc" id="L1386">            0</span>
+        )
+<span class="nc" id="L1388">        materialTextView.text = materialTextView.context.getString(R.string.active)</span>
+<span class="nc" id="L1389">        materialTextView.setTextColor(</span>
+<span class="nc" id="L1390">            ContextCompat.getColor(</span>
+<span class="nc" id="L1391">                materialTextView.context,</span>
+<span class="nc" id="L1392">                R.color.check_green</span>
+            )
+        )
+    } else {
+<span class="nc" id="L1396">        materialTextView.visibility = View.GONE</span>
+<span class="nc" id="L1397">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_red_dot, 0, 0, 0)</span>
+<span class="nc" id="L1398">        materialTextView.text = materialTextView.context.getString(R.string.inactive)</span>
+<span class="nc" id="L1399">        materialTextView.setTextColor(ContextCompat.getColor(materialTextView.context, R.color.red))</span>
+    }
+<span class="nc" id="L1401">}</span>
+
+@BindingAdapter(&quot;isAdd&quot;)
+fun bindIsAdd(view: CircleImageView, isAdd: Boolean) {
+<span class="nc bnc" id="L1405" title="All 2 branches missed.">    if (isAdd) {</span>
+<span class="nc" id="L1406">        view.setImageDrawable(ContextCompat.getDrawable(view.context, R.drawable.ic_add_dependent))</span>
+<span class="nc" id="L1407">        view.borderWidth = 0</span>
+    }
+<span class="nc" id="L1409">}</span>
+
+@BindingAdapter(&quot;eligible&quot;)
+fun bindEligible(materialTextView: MaterialTextView, eligible: Boolean) {
+<span class="nc bnc" id="L1413" title="All 2 branches missed.">    if (eligible) {</span>
+<span class="nc" id="L1414">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(</span>
+<span class="nc" id="L1415">            R.drawable.ic_card_eligible,</span>
+<span class="nc" id="L1416">            0,</span>
+<span class="nc" id="L1417">            0,</span>
+<span class="nc" id="L1418">            0</span>
+        )
+<span class="nc" id="L1420">        materialTextView.text = materialTextView.context.getString(R.string.eligible)</span>
+<span class="nc" id="L1421">        materialTextView.setTextColor(</span>
+<span class="nc" id="L1422">            ContextCompat.getColor(</span>
+<span class="nc" id="L1423">                materialTextView.context,</span>
+<span class="nc" id="L1424">                R.color.check_green</span>
+            )
+        )
+<span class="nc" id="L1427">        materialTextView.background =</span>
+<span class="nc" id="L1428">            ContextCompat.getDrawable(materialTextView.context, R.drawable.text_eligible)</span>
+    } else {
+<span class="nc" id="L1430">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_close_red, 0, 0, 0)</span>
+<span class="nc" id="L1431">        materialTextView.text = materialTextView.context.getString(R.string.not_eligible)</span>
+<span class="nc" id="L1432">        materialTextView.setTextColor(ContextCompat.getColor(materialTextView.context, R.color.red))</span>
+<span class="nc" id="L1433">        materialTextView.background =</span>
+<span class="nc" id="L1434">            ContextCompat.getDrawable(materialTextView.context, R.drawable.text_ineligible)</span>
+    }
+<span class="nc" id="L1436">}</span>
+
+@BindingAdapter(&quot;date&quot;)
+fun bindDate(view: TextView, date: String?) {
+<span class="nc bnc" id="L1440" title="All 8 branches missed.">    if (date?.isNotBlank() == true) {</span>
+<span class="nc" id="L1441">        view.text = DateUtils.getMonthYearFromServerDate(date.toString())</span>
+    } else {
+<span class="nc" id="L1443">        view.text = &quot;&quot;</span>
+    }
+<span class="nc" id="L1445">}</span>
+
+@BindingAdapter(&quot;minPrice&quot;, &quot;maxPrice&quot;, requireAll = false)
+fun bindPriceRange(view: TextView, minPrice: Double?, maxPrice: Double?) {
+<span class="nc bnc" id="L1449" title="All 4 branches missed.">    if (minPrice != null &amp;&amp; maxPrice != null) {</span>
+<span class="nc" id="L1450">        val minAmount = String.format(Locale.getDefault(), &quot;%#.2f&quot;, minPrice)</span>
+<span class="nc" id="L1451">        val maxAmount = String.format(Locale.getDefault(), &quot;%#.2f&quot;, maxPrice)</span>
+<span class="nc" id="L1452">        view.text = &quot;$$minAmount - $$maxAmount&quot;</span>
+    } else {
+    }
+<span class="nc" id="L1455">}</span>
+
+// @BindingAdapter(&quot;tilesSelected&quot;)
+// fun bindTilesSelected(view:CardView,tilesSelected:Boolean) {
+//
+//
+//
+//    if(tilesSelected){
+//
+//        view.setCardBackgroundColor(ContextCompat.getColor(view.context, R.color.white))
+//        view.background = (ContextCompat.getDrawable(view.context, R.drawable.white_rounded_slight_background))
+//
+//    }else{
+//
+//        view.setCardBackgroundColor(ContextCompat.getColor(view.context, R.color.border_card_benefit))
+//        view.background = (ContextCompat.getDrawable(view.context, R.drawable.gray_rounded_slight_background))
+//
+// //        view.setCardBackgroundColor(ContextCompat.getColor(view.context, R.color.white))
+//    }
+//
+// }
+
+@BindingAdapter(
+    &quot;maxPriceProcedure&quot;,
+    &quot;minPriceProcedure&quot;,
+    &quot;priceSingle&quot;,
+    &quot;clicked&quot;,
+    &quot;short&quot;,
+    &quot;selectedList&quot;,
+    &quot;loadingPrice&quot;,
+    requireAll = false
+)
+fun bindProcedurePrice(
+    textView: TextView,
+    maxPriceProcedure: Double?,
+    minPriceProcedure: Double?,
+    priceSingle: Double?,
+    clicked: Boolean,
+    short: Boolean?,
+    selectedList: Boolean,
+    loadingPrice: Boolean?
+) {
+<span class="nc bnc" id="L1497" title="All 2 branches missed.">    if (loadingPrice == true) {</span>
+<span class="nc" id="L1498">        textView.visibility = View.GONE</span>
+<span class="nc" id="L1499">        return</span>
+    }
+
+<span class="nc bnc" id="L1502" title="All 4 branches missed.">    if ((maxPriceProcedure != null &amp;&amp; minPriceProcedure != null)) {</span>
+<span class="nc" id="L1503">        textView.visibility = View.VISIBLE</span>
+<span class="nc" id="L1504">        val minAmount = String.format(Locale.getDefault(), &quot;%#.2f&quot;, minPriceProcedure)</span>
+<span class="nc" id="L1505">        val maxAmount = String.format(Locale.getDefault(), &quot;%#.2f&quot;, maxPriceProcedure)</span>
+<span class="nc" id="L1506">        textView.text = &quot;$$minAmount - $$maxAmount&quot;</span>
+<span class="nc" id="L1507">        textView.setTextColor(ContextCompat.getColor(textView.context, R.color.btnPrimary))</span>
+<span class="nc bnc" id="L1508" title="All 4 branches missed.">    } else if (priceSingle != null &amp;&amp; priceSingle != 0.0) {</span>
+<span class="nc" id="L1509">        textView.visibility = View.VISIBLE</span>
+<span class="nc" id="L1510">        val amount = String.format(Locale.getDefault(), &quot;%#.2f&quot;, priceSingle)</span>
+<span class="nc" id="L1511">        textView.text = &quot;$$amount&quot;</span>
+<span class="nc" id="L1512">        textView.setTextColor(ContextCompat.getColor(textView.context, R.color.btnPrimary))</span>
+<span class="nc bnc" id="L1513" title="All 2 branches missed.">    } else if (selectedList) {</span>
+<span class="nc" id="L1514">        textView.text = textView.context.getString(R.string.unknown)</span>
+<span class="nc" id="L1515">        textView.setTextColor(ContextCompat.getColor(textView.context, R.color.red_text))</span>
+    } else {
+<span class="nc" id="L1517">        textView.visibility = View.VISIBLE</span>
+<span class="nc" id="L1518">        textView.setTextColor(ContextCompat.getColor(textView.context, R.color.btnPrimary))</span>
+<span class="nc bnc" id="L1519" title="All 2 branches missed.">        if (short == true) {</span>
+<span class="nc" id="L1520">            textView.text = textView.context.getString(R.string.get_estimate_v2)</span>
+        } else {
+<span class="nc" id="L1522">            textView.text = textView.context.getString(R.string.faith_estimate)</span>
+        }
+    }
+<span class="nc" id="L1525">}</span>
+
+@BindingAdapter(&quot;maxPriceProcedure&quot;, &quot;minPriceProcedure&quot;, &quot;priceSingle&quot;, requireAll = false)
+fun bindProcedurePriceEditText(
+    textView: EditText,
+    maxPriceProcedure: Double?,
+    minPriceProcedure: Double?,
+    priceSingle: Double?
+) {
+<span class="nc bnc" id="L1534" title="All 4 branches missed.">    if ((maxPriceProcedure != null &amp;&amp; minPriceProcedure != null)) {</span>
+<span class="nc" id="L1535">        textView.visibility = View.VISIBLE</span>
+<span class="nc" id="L1536">        val minAmount = String.format(Locale.getDefault(), &quot;%#.2f&quot;, minPriceProcedure)</span>
+<span class="nc" id="L1537">        val maxAmount = String.format(Locale.getDefault(), &quot;%#.2f&quot;, maxPriceProcedure)</span>
+<span class="nc" id="L1538">        textView.setText(&quot;$$minAmount - $$maxAmount&quot;)</span>
+<span class="nc bnc" id="L1539" title="All 4 branches missed.">    } else if (priceSingle != null &amp;&amp; priceSingle != 0.0) {</span>
+<span class="nc" id="L1540">        textView.visibility = View.VISIBLE</span>
+<span class="nc" id="L1541">        val amount = String.format(Locale.getDefault(), &quot;%#.2f&quot;, priceSingle)</span>
+<span class="nc" id="L1542">        textView.setText(&quot;$$amount&quot;)</span>
+    } else {
+<span class="nc" id="L1544">        textView.visibility = View.VISIBLE</span>
+
+<span class="nc" id="L1546">        textView.setText(textView.context.getString(R.string.faith_estimate))</span>
+    }
+<span class="nc" id="L1548">    textView.isEnabled = false</span>
+//    if ((maxPriceProcedure == null || minPriceProcedure == null) &amp;&amp; (priceSingle != null &amp;&amp; priceSingle != 0.0 )){
+//        textView.visibility = View.VISIBLE
+//        val amount = String.format(Locale.getDefault(), &quot;%#.2f&quot;,priceSingle)
+//        textView.text = &quot;$$amount&quot;
+//
+//    }else if((maxPriceProcedure == null || minPriceProcedure == null)  &amp;&amp; ((priceSingle == null ||priceSingle == 0.0 ))){
+//        textView.visibility = View.VISIBLE
+//        textView.text = textView.context.getString(R.string.faith_estimate)
+//
+//    }else{
+//
+//
+//    }
+<span class="nc" id="L1562">}</span>
+
+@BindingAdapter(&quot;selectedBackground&quot;)
+fun bindSelectedBackground(view: ConstraintLayout, selectedBackground: Boolean) {
+<span class="nc bnc" id="L1566" title="All 2 branches missed.">    if (selectedBackground) {</span>
+<span class="nc" id="L1567">        view.background = (</span>
+<span class="nc" id="L1568">            ContextCompat.getDrawable(</span>
+<span class="nc" id="L1569">                view.context,</span>
+<span class="nc" id="L1570">                R.drawable.background_stroke_blue_back_light</span>
+            )
+            )
+    } else {
+<span class="nc" id="L1574">        view.background = ContextCompat.getDrawable(view.context, R.color.white)</span>
+    }
+<span class="nc" id="L1576">}</span>
+
+@BindingAdapter(&quot;tilesClickedNew&quot;, &quot;tilesSelectedNew&quot;, requireAll = true)
+fun bindTilesStateNew(view: CardView, tilesClickedNew: Boolean, tilesSelectedNew: Boolean) {
+<span class="nc bnc" id="L1580" title="All 2 branches missed.">    if (!tilesClickedNew) {</span>
+<span class="nc bnc" id="L1581" title="All 2 branches missed.">        if (tilesSelectedNew) {</span>
+<span class="nc" id="L1582">            view.setCardBackgroundColor(ContextCompat.getColor(view.context, R.color.white))</span>
+<span class="nc" id="L1583">            view.background = (</span>
+<span class="nc" id="L1584">                ContextCompat.getDrawable(</span>
+<span class="nc" id="L1585">                    view.context,</span>
+<span class="nc" id="L1586">                    R.drawable.white_rounded_slight_background</span>
+                )
+                )
+        } else {
+<span class="nc" id="L1590">            view.setCardBackgroundColor(</span>
+<span class="nc" id="L1591">                ContextCompat.getColor(</span>
+<span class="nc" id="L1592">                    view.context,</span>
+<span class="nc" id="L1593">                    R.color.white</span>
+                )
+            )
+<span class="nc" id="L1596">            view.background =</span>
+<span class="nc" id="L1597">                (ContextCompat.getDrawable(view.context, R.drawable.gray_rounded_slight_background))</span>
+        }
+    } else {
+<span class="nc" id="L1600">        view.background = (ContextCompat.getDrawable(view.context, R.drawable.work_tiles_blue))</span>
+    }
+<span class="nc" id="L1602">}</span>
+
+@BindingAdapter(&quot;tilesClicked&quot;, &quot;tilesSelected&quot;, requireAll = true)
+fun bindTilesState(view: CardView, tilesClicked: Boolean, tilesSelected: Boolean) {
+<span class="nc bnc" id="L1606" title="All 2 branches missed.">    if (!tilesClicked) {</span>
+<span class="nc bnc" id="L1607" title="All 2 branches missed.">        if (tilesSelected) {</span>
+<span class="nc" id="L1608">            view.setCardBackgroundColor(ContextCompat.getColor(view.context, R.color.white))</span>
+<span class="nc" id="L1609">            view.background = (</span>
+<span class="nc" id="L1610">                ContextCompat.getDrawable(</span>
+<span class="nc" id="L1611">                    view.context,</span>
+<span class="nc" id="L1612">                    R.drawable.white_rounded_slight_background</span>
+                )
+                )
+        } else {
+<span class="nc" id="L1616">            view.setCardBackgroundColor(</span>
+<span class="nc" id="L1617">                ContextCompat.getColor(</span>
+<span class="nc" id="L1618">                    view.context,</span>
+<span class="nc" id="L1619">                    R.color.border_card_benefit</span>
+                )
+            )
+<span class="nc" id="L1622">            view.background =</span>
+<span class="nc" id="L1623">                (ContextCompat.getDrawable(view.context, R.drawable.gray_rounded_slight_background))</span>
+
+//        view.setCardBackgroundColor(ContextCompat.getColor(view.context, R.color.white))
+        }
+//        view.setCardBackgroundColor(ContextCompat.getColor(view.context, R.color.white))
+//        view.background = (ContextCompat.getDrawable(view.context, R.drawable.white_rounded_slight_background))
+    } else {
+//        view.setCardBackgroundColor(ContextCompat.getColor(view.context, R.color.border_card))
+<span class="nc" id="L1631">        view.background = (ContextCompat.getDrawable(view.context, R.drawable.gradient_work_tiles))</span>
+    }
+<span class="nc" id="L1633">}</span>
+
+@BindingAdapter(&quot;hideHrs&quot;)
+fun bindHideHrs(view: TextView, hideHrs: String) {
+<span class="nc bnc" id="L1637" title="All 6 branches missed.">    if (hideHrs.isNullOrBlank() || hideHrs.equals(&quot;null&quot;, true)) {</span>
+<span class="nc" id="L1638">        view.visibility = View.GONE</span>
+    } else {
+<span class="nc" id="L1640">        view.visibility = View.VISIBLE</span>
+    }
+<span class="nc" id="L1642">}</span>
+
+@BindingAdapter(&quot;hrs&quot;)
+fun bindHrs(view: TextView, hrs: Double) {
+<span class="nc" id="L1646">    val df = DecimalFormat(&quot;#.##&quot;)</span>
+<span class="nc" id="L1647">    val hour = df.format(hrs).toString()</span>
+<span class="nc" id="L1648">    view.text = &quot;$hour ${view.context.getString(R.string.hrs)}&quot;</span>
+<span class="nc" id="L1649">}</span>
+
+@BindingAdapter(&quot;hrsOnly&quot;)
+fun bindHrsOnly(view: TextView, hrs: Double?) {
+<span class="nc bnc" id="L1653" title="All 2 branches missed.">    if (hrs != null) {</span>
+<span class="nc" id="L1654">        val df = DecimalFormat(&quot;#.##&quot;)</span>
+<span class="nc" id="L1655">        val hour = df.format(hrs).toString()</span>
+<span class="nc" id="L1656">        view.text = &quot;$hour&quot;</span>
+    } else {
+<span class="nc" id="L1658">        view.text = &quot;-&quot;</span>
+    }
+<span class="nc" id="L1660">}</span>
+
+@BindingAdapter(&quot;furthestDate&quot;)
+fun bindFurthestDate(view: TextView, date: String) {
+<span class="nc" id="L1664">    view.text = view.context.getString(</span>
+<span class="nc" id="L1665">        R.string.please_note_that_the_information_provided_is_based_on_data_available_up_to,</span>
+<span class="nc" id="L1666">        date</span>
+    )
+<span class="nc" id="L1668">}</span>
+
+@BindingAdapter(&quot;lastUpdatedDate&quot;)
+fun bindLastUpdatedDate(view: TextView, date: String) {
+<span class="nc" id="L1672">    view.text = view.context.getString(</span>
+<span class="nc" id="L1673">        R.string.last_updated,</span>
+<span class="nc" id="L1674">        date</span>
+    )
+<span class="nc" id="L1676">}</span>
+
+@BindingAdapter(&quot;hrsNullable&quot;)
+fun bindHrsNullable(view: TextView, hrs: Double?) {
+<span class="nc bnc" id="L1680" title="All 2 branches missed.">    if (hrs != null) {</span>
+<span class="nc" id="L1681">        val df = DecimalFormat(&quot;#.##&quot;)</span>
+<span class="nc" id="L1682">        val hour = df.format(hrs).toString()</span>
+<span class="nc" id="L1683">        view.text = &quot;$hour ${view.context.getString(R.string.hrs)}&quot;</span>
+    } else {
+<span class="nc" id="L1685">        view.text = &quot;&quot;</span>
+    }
+<span class="nc" id="L1687">}</span>
+
+@BindingAdapter(&quot;hrsNone&quot;)
+fun bindHrsNone(view: TextView, hrsNone: Double) {
+<span class="nc bnc" id="L1691" title="All 2 branches missed.">    if (hrsNone &gt; 0) {</span>
+<span class="nc" id="L1692">        val df = DecimalFormat(&quot;#.##&quot;)</span>
+<span class="nc" id="L1693">        val hour = df.format(hrsNone).toString()</span>
+<span class="nc" id="L1694">        view.text = &quot;$hour ${view.context.getString(R.string.hrs)}&quot;</span>
+    } else {
+<span class="nc" id="L1696">        view.text = view.context.getString(R.string.none)</span>
+    }
+<span class="nc" id="L1698">}</span>
+
+@BindingAdapter(&quot;bindCalendarIcon&quot;)
+fun bindCalendarIcon(view: ImageView, enable: Boolean) {
+<span class="nc bnc" id="L1702" title="All 2 branches missed.">    if (enable) {</span>
+<span class="nc" id="L1703">        view.setImageDrawable(ContextCompat.getDrawable(view.context, R.drawable.ic_calendar_clock))</span>
+    } else {
+<span class="nc" id="L1705">        view.setImageDrawable(</span>
+<span class="nc" id="L1706">            ContextCompat.getDrawable(view.context, R.drawable.ic_calendar_clock_disable)</span>
+        )
+    }
+<span class="nc" id="L1709">}</span>
+
+@BindingAdapter(&quot;benefitEligible&quot;)
+fun bindBenefitEligible(view: ImageView, benefitEligible: String) {
+<span class="nc bnc" id="L1713" title="All 2 branches missed.">    if (benefitEligible.equals(&quot;true&quot;, true)) {</span>
+<span class="nc" id="L1714">        view.setImageDrawable(ContextCompat.getDrawable(view.context, R.drawable.ic_green_dot))</span>
+    } else {
+<span class="nc" id="L1716">        view.setImageDrawable(ContextCompat.getDrawable(view.context, R.drawable.ic_red_dot))</span>
+    }
+<span class="nc" id="L1718">}</span>
+
+@BindingAdapter(&quot;benefitEligibleFor&quot;, &quot;isFutureAddedMonth&quot;)
+fun bindBenefitEligibleFor(view: TextView, benefitEligible: String, isFutureMonth: Boolean) {
+<span class="nc bnc" id="L1722" title="All 2 branches missed.">    if (isFutureMonth) {</span>
+<span class="nc" id="L1723">        view.text = &quot;&quot;</span>
+<span class="nc" id="L1724">        return</span>
+    }
+<span class="nc bnc" id="L1726" title="All 2 branches missed.">    if (benefitEligible.equals(&quot;true&quot;, true)) {</span>
+<span class="nc" id="L1727">        view.setTextColor(ContextCompat.getColor(view.context, R.color.green_eligible))</span>
+<span class="nc" id="L1728">        view.text = view.context.getString(R.string.eligible_for)</span>
+    } else {
+<span class="nc" id="L1730">        view.setTextColor(ContextCompat.getColor(view.context, R.color.red_not_eligible))</span>
+<span class="nc" id="L1731">        view.text = view.context.getString(R.string.not_eligible_small)</span>
+    }
+<span class="nc" id="L1733">}</span>
+
+@BindingAdapter(&quot;benefitEligibleNone&quot;)
+fun bindBenefitEligibleNone(view: TextView, benefitEligible: String) {
+<span class="nc bnc" id="L1737" title="All 2 branches missed.">    if (benefitEligible.equals(&quot;true&quot;, true)) {</span>
+<span class="nc" id="L1738">        view.setTextColor(ContextCompat.getColor(view.context, R.color.green_eligible))</span>
+<span class="nc" id="L1739">        view.text = view.context.getString(R.string.eligible)</span>
+    } else {
+<span class="nc" id="L1741">        view.setTextColor(ContextCompat.getColor(view.context, R.color.red_not_eligible))</span>
+<span class="nc" id="L1742">        view.text = view.context.getString(R.string.not_eligible)</span>
+    }
+<span class="nc" id="L1744">}</span>
+
+@BindingAdapter(&quot;reasonList&quot;)
+fun bindBenefitEligibleNone(view: MaterialTextView, inEligibilityReason: List&lt;String&gt;?) {
+<span class="nc bnc" id="L1748" title="All 6 branches missed.">    if (!inEligibilityReason.isNullOrEmpty()) {</span>
+<span class="nc" id="L1749">        val params = view.layoutParams</span>
+<span class="nc" id="L1750">        params.height = ViewGroup.LayoutParams.WRAP_CONTENT</span>
+<span class="nc" id="L1751">        view.layoutParams = params</span>
+<span class="nc bnc" id="L1752" title="All 2 branches missed.">        val string = inEligibilityReason.filter { it.isNotBlank() }.joinToString { it }</span>
+<span class="nc" id="L1753">        view.text = string</span>
+    } else {
+<span class="nc" id="L1755">        val params = view.layoutParams</span>
+<span class="nc" id="L1756">        params.height = 0</span>
+<span class="nc" id="L1757">        view.layoutParams = params</span>
+    }
+<span class="nc" id="L1759">}</span>
+
+@BindingAdapter(&quot;isGoneHeight&quot;)
+fun bindIsGoneHeight(view: TextView, isGone: Boolean) {
+<span class="nc bnc" id="L1763" title="All 2 branches missed.">    if (isGone) {</span>
+<span class="nc" id="L1764">        val params = view.layoutParams</span>
+<span class="nc" id="L1765">        params.height = 0</span>
+<span class="nc" id="L1766">        view.layoutParams = params</span>
+<span class="nc" id="L1767">        view.requestLayout()</span>
+    } else {
+<span class="nc" id="L1769">        val params = view.layoutParams</span>
+<span class="nc" id="L1770">        params.height = ViewGroup.LayoutParams.WRAP_CONTENT</span>
+<span class="nc" id="L1771">        view.layoutParams = params</span>
+    }
+<span class="nc" id="L1773">}</span>
+
+@BindingAdapter(&quot;addedToMobile&quot;, &quot;eligibilityStatus&quot;, requireAll = true)
+fun bindMemberBenefitStatus(view: ImageView, addedToMobile: Boolean, eligibilityStatus: Boolean) {
+<span class="nc bnc" id="L1777" title="All 2 branches missed.">    if (addedToMobile) {</span>
+<span class="nc" id="L1778">        view.visibility = View.GONE</span>
+
+<span class="nc bnc" id="L1780" title="All 2 branches missed.">        if (eligibilityStatus) {</span>
+<span class="nc" id="L1781">            view.visibility = View.GONE</span>
+        } else {
+<span class="nc" id="L1783">            view.setImageDrawable(</span>
+<span class="nc" id="L1784">                ContextCompat.getDrawable(</span>
+<span class="nc" id="L1785">                    view.context,</span>
+<span class="nc" id="L1786">                    R.drawable.ic_benefit_error</span>
+                )
+            )
+<span class="nc" id="L1789">            view.visibility = View.VISIBLE</span>
+        }
+    } else {
+<span class="nc" id="L1792">        view.setImageDrawable(ContextCompat.getDrawable(view.context, R.drawable.ic_add))</span>
+<span class="nc" id="L1793">        view.visibility = View.VISIBLE</span>
+    }
+<span class="nc" id="L1795">}</span>
+
+@BindingAdapter(&quot;cellSelected&quot;)
+fun bindCellSelected(view: TextView, cellSelected: Boolean) {
+<span class="nc bnc" id="L1799" title="All 2 branches missed.">    if (cellSelected) {</span>
+<span class="nc" id="L1800">        view.setTextColor(ContextCompat.getColor(view.context, R.color.btnPrimary))</span>
+<span class="nc" id="L1801">        view.background = ContextCompat.getDrawable(view.context, R.drawable.year_cell_selected)</span>
+    } else {
+<span class="nc" id="L1803">        view.setTextColor(ContextCompat.getColor(view.context, R.color.TextGreyReg))</span>
+<span class="nc" id="L1804">        view.background =</span>
+<span class="nc" id="L1805">            ContextCompat.getDrawable(view.context, R.drawable.white_rounded_background)</span>
+    }
+<span class="nc" id="L1807">}</span>
+
+@BindingAdapter(&quot;typeSelected&quot;)
+fun bindTypeSelected(view: TextView, typeSelected: Boolean) {
+<span class="nc bnc" id="L1811" title="All 2 branches missed.">    if (typeSelected) {</span>
+<span class="nc" id="L1812">        view.setTextColor(ContextCompat.getColor(view.context, R.color.btnPrimary))</span>
+    } else {
+<span class="nc" id="L1814">        view.setTextColor(ContextCompat.getColor(view.context, R.color.TextGrey))</span>
+    }
+<span class="nc" id="L1816">}</span>
+
+@BindingAdapter(&quot;viewSelected&quot;)
+fun bindViewSelected(view: ConstraintLayout, viewSelected: Boolean) {
+<span class="nc bnc" id="L1820" title="All 2 branches missed.">    if (viewSelected) {</span>
+<span class="nc" id="L1821">        view.background = ContextCompat.getDrawable(view.context, R.drawable.rounded_4)</span>
+    } else {
+<span class="nc" id="L1823">        view.background = ContextCompat.getDrawable(view.context, R.color.white)</span>
+    }
+<span class="nc" id="L1825">}</span>
+
+@BindingAdapter(&quot;more&quot;)
+fun bindMore(view: TextView, more: String) {
+<span class="nc bnc" id="L1829" title="All 2 branches missed.">    if (more != &quot;0&quot;) {</span>
+<span class="nc" id="L1830">        view.text = view.context.getString(R.string.s_more, more)</span>
+    } else {
+<span class="nc" id="L1832">        view.text = &quot;&quot;</span>
+    }
+<span class="nc" id="L1834">}</span>
+
+@BindingAdapter(&quot;moreEmployer&quot;)
+fun bindMoreEmployer(view: TextView, moreEmployer: String?) {
+<span class="nc bnc" id="L1838" title="All 12 branches missed.">    if (moreEmployer != &quot;0&quot; &amp;&amp; moreEmployer != &quot;&quot; &amp;&amp; !moreEmployer.isNullOrBlank() &amp;&amp; moreEmployer.toInt() &gt; 0) {</span>
+<span class="nc" id="L1839">        view.text = &quot;+$moreEmployer&quot;</span>
+    } else {
+<span class="nc" id="L1841">        view.text = &quot;&quot;</span>
+    }
+<span class="nc" id="L1843">}</span>
+
+@BindingAdapter(&quot;labFlag&quot;)
+fun bindLabFlag(view: TextView, labFlag: String?) {
+<span class="nc" id="L1847">    when {</span>
+<span class="nc bnc" id="L1848" title="All 2 branches missed.">        labFlag.equals(&quot;N&quot;, true) -&gt; {</span>
+<span class="nc" id="L1849">            view.text = view.context.getString(R.string.normal)</span>
+<span class="nc" id="L1850">            view.setTextColor(ContextCompat.getColor(view.context, R.color.check_green))</span>
+        }
+
+<span class="nc bnc" id="L1853" title="All 2 branches missed.">        labFlag.equals(&quot;H&quot;, true) -&gt; {</span>
+<span class="nc" id="L1854">            view.text = view.context.getString(R.string.high)</span>
+
+<span class="nc" id="L1856">            view.setTextColor(ContextCompat.getColor(view.context, R.color.low_lab))</span>
+        }
+
+<span class="nc bnc" id="L1859" title="All 2 branches missed.">        labFlag.equals(&quot;A&quot;, true) -&gt; {</span>
+<span class="nc" id="L1860">            view.text = view.context.getString(R.string.abnormal)</span>
+
+<span class="nc" id="L1862">            view.setTextColor(ContextCompat.getColor(view.context, R.color.red))</span>
+        }
+
+<span class="nc bnc" id="L1865" title="All 2 branches missed.">        labFlag.equals(&quot;L&quot;, true) -&gt; {</span>
+<span class="nc" id="L1866">            view.text = view.context.getString(R.string.low)</span>
+<span class="nc" id="L1867">            view.setTextColor(ContextCompat.getColor(view.context, R.color.low_lab))</span>
+        }
+
+<span class="nc bnc" id="L1870" title="All 6 branches missed.">        labFlag.isNullOrBlank() -&gt; {</span>
+<span class="nc" id="L1871">            view.text = view.context.getString(R.string.normal)</span>
+<span class="nc" id="L1872">            view.setTextColor(ContextCompat.getColor(view.context, R.color.check_green))</span>
+        }
+    }
+//    view.text = labFlag
+<span class="nc" id="L1876">}</span>
+
+@BindingAdapter(&quot;dose&quot;)
+fun bindDose(view: TextView, dose: String?) {
+<span class="nc" id="L1880">    view.text = &quot;${dose}x&quot;</span>
+<span class="nc" id="L1881">}</span>
+
+@BindingAdapter(&quot;price&quot;)
+fun bindPrice(view: TextView, price: Double?) {
+<span class="nc bnc" id="L1885" title="All 2 branches missed.">    if (price != null) {</span>
+<span class="nc" id="L1886">        val amount = String.format(Locale.getDefault(), &quot;%#.2f&quot;, price)</span>
+<span class="nc" id="L1887">        view.text = &quot;$$amount&quot;</span>
+<span class="nc" id="L1888">        view.setTextColor(</span>
+<span class="nc" id="L1889">            ContextCompat.getColor(</span>
+<span class="nc" id="L1890">                view.context,</span>
+<span class="nc" id="L1891">                R.color.TextGrey</span>
+            )
+        )
+    }
+<span class="nc" id="L1895">}</span>
+
+@BindingAdapter(&quot;paidOrDue&quot;)
+fun bindPaidOrDue(view: TextView, price: Double?) {
+<span class="nc bnc" id="L1899" title="All 2 branches missed.">    if (price != null) {</span>
+<span class="nc" id="L1900">        val amount = String.format(Locale.getDefault(), &quot;%#.2f&quot;, price)</span>
+<span class="nc" id="L1901">        view.text = &quot;$$amount&quot;</span>
+<span class="nc" id="L1902">        view.setTextColor(</span>
+<span class="nc" id="L1903">            ContextCompat.getColor(</span>
+<span class="nc" id="L1904">                view.context,</span>
+<span class="nc" id="L1905">                R.color.TextGrey</span>
+            )
+        )
+    } else {
+<span class="nc" id="L1909">        view.text = &quot;-&quot;</span>
+    }
+<span class="nc" id="L1911">}</span>
+
+@BindingAdapter(&quot;priceAny&quot;)
+fun bindPriceAny(view: TextView, priceAny: Double?) {
+<span class="nc bnc" id="L1915" title="All 2 branches missed.">    if (priceAny != null) {</span>
+<span class="nc" id="L1916">        val amount = String.format(Locale.getDefault(), &quot;%#.2f&quot;, priceAny)</span>
+<span class="nc" id="L1917">        view.text = &quot;$$amount&quot;</span>
+    }
+<span class="nc" id="L1919">}</span>
+
+@BindingAdapter(&quot;percentage&quot;)
+fun bindPercentage(view: TextView, percentage: Double?) {
+<span class="nc bnc" id="L1923" title="All 2 branches missed.">    if (percentage != null) {</span>
+<span class="nc" id="L1924">        val amount = String.format(Locale.getDefault(), &quot;%#.2f&quot;, percentage)</span>
+<span class="nc" id="L1925">        view.text = &quot;$amount %&quot;</span>
+    }
+<span class="nc" id="L1927">}</span>
+
+@BindingAdapter(&quot;priceFindCare&quot;)
+fun bindPriceFindCare(view: TextView, priceFindCare: Double?) {
+<span class="nc bnc" id="L1931" title="All 2 branches missed.">    if (priceFindCare != null) {</span>
+<span class="nc bnc" id="L1932" title="All 2 branches missed.">        if (priceFindCare == 0.0) {</span>
+<span class="nc" id="L1933">            view.text = view.context.getString(R.string.faith_estimate)</span>
+<span class="nc" id="L1934">            view.setTextColor(</span>
+<span class="nc" id="L1935">                ContextCompat.getColor(</span>
+<span class="nc" id="L1936">                    view.context,</span>
+<span class="nc" id="L1937">                    R.color.btnPrimary</span>
+                )
+            )
+        } else {
+<span class="nc" id="L1941">            val amount = String.format(Locale.getDefault(), &quot;%#.2f&quot;, priceFindCare)</span>
+<span class="nc" id="L1942">            view.text = &quot;$$amount&quot;</span>
+<span class="nc" id="L1943">            view.setTextColor(</span>
+<span class="nc" id="L1944">                ContextCompat.getColor(</span>
+<span class="nc" id="L1945">                    view.context,</span>
+<span class="nc" id="L1946">                    R.color.TextGrey</span>
+                )
+            )
+        }
+    }
+<span class="nc" id="L1951">}</span>
+
+@BindingAdapter(&quot;dateTime&quot;)
+fun bindDateFromDateTime(view: TextView, dateTime: String) {
+<span class="nc" id="L1955">    view.text = DateUtils.getMonthYearFromServerDateTime(dateTime)</span>
+<span class="nc" id="L1956">}</span>
+
+@BindingAdapter(&quot;dateMMDDYYYY&quot;)
+fun bindDateFromMMDDYYYY(view: TextView, dateMMDDYYYY: String?) {
+<span class="nc bnc" id="L1960" title="All 6 branches missed.">    if (!dateMMDDYYYY.isNullOrEmpty()) {</span>
+<span class="nc" id="L1961">        view.text = DateUtils.getMonthYearFromServerDateSlashedToMMM(dateMMDDYYYY)</span>
+    }
+<span class="nc" id="L1963">}</span>
+
+@BindingAdapter(&quot;imageBase64&quot;)
+fun bindImageBase64(view: ImageView, imageBase64: String?) {
+<span class="nc bnc" id="L1967" title="All 6 branches missed.">    if (!imageBase64.isNullOrEmpty()) {</span>
+<span class="nc" id="L1968">        Glide.with(view.context).clear(view)</span>
+<span class="nc" id="L1969">        val imageBit = Base64.decode(imageBase64.toByteArray(), Base64.DEFAULT)</span>
+
+//    view.setImageBitmap(BitmapFactory.decodeByteArray(imageBit,0,imageBit.size))
+
+<span class="nc bnc" id="L1973" title="All 6 branches missed.">        if (imageBit.isNotEmpty()) {</span>
+<span class="nc" id="L1974">            Glide.with(view.context)</span>
+<span class="nc" id="L1975">                .load(imageBit)</span>
+<span class="nc" id="L1976">                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)</span>
+<span class="nc" id="L1977">                .into(view)</span>
+        }
+    } else {
+<span class="nc" id="L1980">        Glide.with(view.context).clear(view)</span>
+    }
+<span class="nc" id="L1982">}</span>
+
+@BindingAdapter(&quot;checkGreen&quot;)
+fun bindCheckGreen(materialTextView: MaterialTextView, match: Boolean) {
+<span class="nc bnc" id="L1986" title="All 2 branches missed.">    if (match) {</span>
+<span class="nc bnc" id="L1987" title="All 2 branches missed.">        for (drawable in materialTextView.compoundDrawablesRelative) {</span>
+<span class="nc bnc" id="L1988" title="All 2 branches missed.">            if (drawable != null) {</span>
+<span class="nc" id="L1989">                drawable.colorFilter = PorterDuffColorFilter(</span>
+<span class="nc" id="L1990">                    ContextCompat.getColor(</span>
+<span class="nc" id="L1991">                        materialTextView.context,</span>
+<span class="nc" id="L1992">                        R.color.check_green</span>
+                    ),
+<span class="nc" id="L1994">                    PorterDuff.Mode.SRC_IN</span>
+                )
+            }
+        }
+//        materialTextView.compoundDrawables[0].setTint(materialTextView.context.resources.getColor(R.color.check_green))
+    } else {
+<span class="nc bnc" id="L2000" title="All 2 branches missed.">        for (drawable in materialTextView.compoundDrawablesRelative) {</span>
+<span class="nc bnc" id="L2001" title="All 2 branches missed.">            if (drawable != null) {</span>
+<span class="nc" id="L2002">                drawable.colorFilter = PorterDuffColorFilter(</span>
+<span class="nc" id="L2003">                    ContextCompat.getColor(</span>
+<span class="nc" id="L2004">                        materialTextView.context,</span>
+<span class="nc" id="L2005">                        R.color.TextGreyReg</span>
+                    ),
+<span class="nc" id="L2007">                    PorterDuff.Mode.SRC_IN</span>
+                )
+            }
+        }
+//        materialTextView.compoundDrawables[0].setTint(materialTextView.context.resources.getColor(R.color.TextGreyReg))
+    }
+<span class="nc" id="L2013">}</span>
+
+@BindingAdapter(&quot;childGreen&quot;)
+fun bindChildGreen(materialTextView: MaterialTextView, count: String) {
+<span class="nc bnc" id="L2017" title="All 2 branches missed.">    if (StringUtils.equals(count, &quot;5&quot;)) {</span>
+<span class="nc" id="L2018">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_checked, 0, 0, 0)</span>
+<span class="nc" id="L2019">        materialTextView.text = materialTextView.context.getString(R.string.complete, count)</span>
+<span class="nc" id="L2020">        materialTextView.setTextColor(</span>
+<span class="nc" id="L2021">            ContextCompat.getColor(</span>
+<span class="nc" id="L2022">                materialTextView.context,</span>
+<span class="nc" id="L2023">                R.color.check_green</span>
+            )
+        )
+    } else {
+<span class="nc" id="L2027">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.error, 0, 0, 0)</span>
+<span class="nc" id="L2028">        materialTextView.text = materialTextView.context.getString(R.string.complete, count)</span>
+<span class="nc" id="L2029">        materialTextView.setTextColor(ContextCompat.getColor(materialTextView.context, R.color.red))</span>
+    }
+<span class="nc" id="L2031">}</span>
+
+@BindingAdapter(&quot;childNext&quot;)
+fun bindChildGreen(materialButton: MaterialButton, count: String) {
+<span class="nc bnc" id="L2035" title="All 2 branches missed.">    if (StringUtils.equals(count, &quot;5&quot;)) {</span>
+<span class="nc" id="L2036">        materialButton.text = materialButton.context.getString(R.string.edit)</span>
+    } else {
+<span class="nc" id="L2038">        materialButton.text = materialButton.context.getString(R.string.next)</span>
+    }
+<span class="nc" id="L2040">}</span>
+
+@BindingAdapter(&quot;agoDate&quot;)
+fun bindAgoDate(textView: TextView, agoDate: String) {
+<span class="nc" id="L2044">    textView.text = DateUtils.covertTimeToText(agoDate)</span>
+<span class="nc" id="L2045">}</span>
+
+@BindingAdapter(&quot;childMinus&quot;)
+fun bindChildGreen(imageButton: ImageButton, count: String) {
+<span class="nc bnc" id="L2049" title="All 2 branches missed.">    if (StringUtils.equals(count, &quot;0&quot;)) {</span>
+<span class="nc" id="L2050">        imageButton.setImageResource(R.drawable.ic_minus_disabled)</span>
+    } else {
+<span class="nc" id="L2052">        imageButton.setImageResource(R.drawable.ic_subtract)</span>
+    }
+<span class="nc" id="L2054">}</span>
+
+@BindingAdapter(&quot;incompleteProfile&quot;)
+fun bindIncompleteProfile(textView: TextView, incompleteProfile: String?) {
+<span class="nc bnc" id="L2058" title="All 2 branches missed.">    incompleteProfile?.let {</span>
+<span class="nc" id="L2059">        textView.text = textView.context.getString(</span>
+<span class="nc" id="L2060">            R.string.s_s_profile_is_incomplete_we_are_missing_the_following_information,</span>
+<span class="nc" id="L2061">            incompleteProfile</span>
+        )
+<span class="nc" id="L2063">    }</span>
+<span class="nc" id="L2064">}</span>
+
+@BindingAdapter(&quot;docTypeNotification&quot;)
+fun bindDocType(imageView: ImageView, title: String) {
+<span class="nc bnc" id="L2068" title="All 4 branches missed.">    if (StringUtils.equals(title, &quot;3&quot;) || StringUtils.equals(title, &quot;5&quot;)) {</span>
+<span class="nc" id="L2069">        imageView.setImageResource(R.drawable.document_notification)</span>
+<span class="nc bnc" id="L2070" title="All 2 branches missed.">    } else if (StringUtils.equals(title, &quot;2&quot;)) {</span>
+<span class="nc" id="L2071">        imageView.setImageResource(R.drawable.reminder)</span>
+<span class="nc bnc" id="L2072" title="All 2 branches missed.">    } else if (StringUtils.equals(title, &quot;4&quot;)) {</span>
+<span class="nc" id="L2073">        imageView.setImageResource(R.drawable.ic_message_blue)</span>
+    } else {
+<span class="nc" id="L2075">        imageView.setImageResource(R.drawable.other_notification)</span>
+    }
+<span class="nc" id="L2077">}</span>
+
+@BindingAdapter(&quot;active&quot;)
+fun bindActiveMember(materialTextView: MaterialTextView, active: Boolean) {
+<span class="nc bnc" id="L2081" title="All 2 branches missed.">    if (active) {</span>
+<span class="nc" id="L2082">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(</span>
+<span class="nc" id="L2083">            R.drawable.ic_green_circle,</span>
+<span class="nc" id="L2084">            0,</span>
+<span class="nc" id="L2085">            0,</span>
+<span class="nc" id="L2086">            0</span>
+        )
+<span class="nc" id="L2088">        materialTextView.text = materialTextView.context.getString(R.string.active)</span>
+<span class="nc" id="L2089">        materialTextView.setTextColor(</span>
+<span class="nc" id="L2090">            ContextCompat.getColor(</span>
+<span class="nc" id="L2091">                materialTextView.context,</span>
+<span class="nc" id="L2092">                R.color.check_green</span>
+            )
+        )
+    } else {
+<span class="nc" id="L2096">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_red_dot, 0, 0, 0)</span>
+<span class="nc" id="L2097">        materialTextView.text = materialTextView.context.getString(R.string.not_active)</span>
+<span class="nc" id="L2098">        materialTextView.setTextColor(ContextCompat.getColor(materialTextView.context, R.color.red))</span>
+    }
+<span class="nc" id="L2100">}</span>
+
+@BindingAdapter(&quot;claimStatus&quot;)
+fun bindClaimStatus(materialTextView: MaterialTextView, claimStatus: String?) {
+<span class="nc" id="L2104">    when {</span>
+<span class="nc bnc" id="L2105" title="All 2 branches missed.">        claimStatus.equals(&quot;paid&quot;, true) -&gt; {</span>
+<span class="nc" id="L2106">            materialTextView.setCompoundDrawablesWithIntrinsicBounds(</span>
+<span class="nc" id="L2107">                R.drawable.ic_green_circle,</span>
+<span class="nc" id="L2108">                0,</span>
+<span class="nc" id="L2109">                0,</span>
+<span class="nc" id="L2110">                0</span>
+            )
+<span class="nc" id="L2112">            materialTextView.text = materialTextView.context.getString(R.string.paid)</span>
+<span class="nc" id="L2113">            materialTextView.setTextColor(</span>
+<span class="nc" id="L2114">                ContextCompat.getColor(</span>
+<span class="nc" id="L2115">                    materialTextView.context,</span>
+<span class="nc" id="L2116">                    R.color.check_green</span>
+                )
+            )
+        }
+
+<span class="nc bnc" id="L2121" title="All 2 branches missed.">        claimStatus.equals(&quot;denied&quot;, true) -&gt; {</span>
+<span class="nc" id="L2122">            materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_red_dot, 0, 0, 0)</span>
+<span class="nc" id="L2123">            materialTextView.text = materialTextView.context.getString(R.string.denied)</span>
+<span class="nc" id="L2124">            materialTextView.setTextColor(</span>
+<span class="nc" id="L2125">                ContextCompat.getColor(</span>
+<span class="nc" id="L2126">                    materialTextView.context,</span>
+<span class="nc" id="L2127">                    R.color.red</span>
+                )
+            )
+        }
+
+<span class="nc bnc" id="L2132" title="All 2 branches missed.">        claimStatus.equals(&quot;pending&quot;, true) -&gt; {</span>
+<span class="nc" id="L2133">            materialTextView.setCompoundDrawablesWithIntrinsicBounds(</span>
+<span class="nc" id="L2134">                R.drawable.ic_yellow_dot,</span>
+<span class="nc" id="L2135">                0,</span>
+<span class="nc" id="L2136">                0,</span>
+<span class="nc" id="L2137">                0</span>
+            )
+<span class="nc" id="L2139">            materialTextView.text = materialTextView.context.getString(R.string.pending)</span>
+<span class="nc" id="L2140">            materialTextView.setTextColor(</span>
+<span class="nc" id="L2141">                ContextCompat.getColor(</span>
+<span class="nc" id="L2142">                    materialTextView.context,</span>
+<span class="nc" id="L2143">                    R.color.low_lab</span>
+                )
+            )
+        }
+
+<span class="nc bnc" id="L2148" title="All 2 branches missed.">        claimStatus.equals(&quot;new&quot;, true) -&gt; {</span>
+<span class="nc" id="L2149">            materialTextView.setCompoundDrawablesWithIntrinsicBounds(</span>
+<span class="nc" id="L2150">                R.drawable.ic_blue_dot,</span>
+<span class="nc" id="L2151">                0,</span>
+<span class="nc" id="L2152">                0,</span>
+<span class="nc" id="L2153">                0</span>
+            )
+<span class="nc" id="L2155">            materialTextView.text = materialTextView.context.getString(R.string.new_st)</span>
+<span class="nc" id="L2156">            materialTextView.setTextColor(</span>
+<span class="nc" id="L2157">                ContextCompat.getColor(</span>
+<span class="nc" id="L2158">                    materialTextView.context,</span>
+<span class="nc" id="L2159">                    R.color.btnPrimary</span>
+                )
+            )
+        }
+
+<span class="nc bnc" id="L2164" title="All 6 branches missed.">        claimStatus.isNullOrEmpty() -&gt; {</span>
+<span class="nc" id="L2165">            materialTextView.text = &quot;&quot;</span>
+<span class="nc" id="L2166">            materialTextView.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null)</span>
+        }
+    }
+<span class="nc" id="L2169">}</span>
+
+@BindingAdapter(&quot;errorMessage&quot;, &quot;errorOrNot&quot;, requireAll = false)
+fun bindErrorMessage(materialTextView: MaterialTextView, message: String, error: Boolean) {
+<span class="nc bnc" id="L2173" title="All 2 branches missed.">    if (!error) {</span>
+<span class="nc" id="L2174">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_checked, 0, 0, 0)</span>
+<span class="nc" id="L2175">        materialTextView.text = message</span>
+<span class="nc" id="L2176">        materialTextView.setTextColor(</span>
+<span class="nc" id="L2177">            ContextCompat.getColor(</span>
+<span class="nc" id="L2178">                materialTextView.context,</span>
+<span class="nc" id="L2179">                R.color.check_green</span>
+            )
+        )
+    } else {
+<span class="nc" id="L2183">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.error, 0, 0, 0)</span>
+<span class="nc" id="L2184">        materialTextView.text = message</span>
+<span class="nc" id="L2185">        materialTextView.setTextColor(ContextCompat.getColor(materialTextView.context, R.color.red))</span>
+    }
+<span class="nc" id="L2187">}</span>
+
+@BindingAdapter(&quot;message&quot;, &quot;show&quot;, requireAll = false)
+fun bindErrorDate(materialTextView: MaterialTextView, message: String, show: Boolean) {
+<span class="nc bnc" id="L2191" title="All 2 branches missed.">    if (show) {</span>
+<span class="nc" id="L2192">        materialTextView.visibility = View.VISIBLE</span>
+
+<span class="nc" id="L2194">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.error, 0, 0, 0)</span>
+<span class="nc" id="L2195">        materialTextView.text = message</span>
+<span class="nc" id="L2196">        materialTextView.setTextColor(ContextCompat.getColor(materialTextView.context, R.color.red))</span>
+    } else {
+<span class="nc" id="L2198">        materialTextView.visibility = View.GONE</span>
+    }
+<span class="nc" id="L2200">}</span>
+
+@BindingAdapter(&quot;showError&quot;)
+fun bindTextInputLayoutError(layout: TextInputLayout, show: Boolean) {
+<span class="nc bnc" id="L2204" title="All 2 branches missed.">    layout.error = if (show) &quot; &quot; else null</span>
+<span class="nc" id="L2205">}</span>
+
+@BindingAdapter(&quot;legalUploadStatus&quot;)
+fun bindLegalUploadStatus(materialTextView: MaterialTextView, uploded: Boolean) {
+<span class="nc bnc" id="L2209" title="All 2 branches missed.">    if (uploded) {</span>
+<span class="nc" id="L2210">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_checked, 0, 0, 0)</span>
+<span class="nc" id="L2211">        materialTextView.text = materialTextView.context.getString(R.string.one_of_one)</span>
+<span class="nc" id="L2212">        materialTextView.setTextColor(</span>
+<span class="nc" id="L2213">            ContextCompat.getColor(</span>
+<span class="nc" id="L2214">                materialTextView.context,</span>
+<span class="nc" id="L2215">                R.color.check_green</span>
+            )
+        )
+    } else {
+<span class="nc" id="L2219">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.error, 0, 0, 0)</span>
+<span class="nc" id="L2220">        materialTextView.text = materialTextView.context.getString(R.string.o_of_one)</span>
+<span class="nc" id="L2221">        materialTextView.setTextColor(ContextCompat.getColor(materialTextView.context, R.color.red))</span>
+    }
+<span class="nc" id="L2223">}</span>
+
+@BindingAdapter(&quot;providerNetwork&quot;)
+fun bindProviderNetwork(materialTextView: TextView, providerNetwork: String) {
+<span class="nc bnc" id="L2227" title="All 2 branches missed.">    if (providerNetwork.equals(&quot;IN_NETWORK_PROVIDER&quot;, true)) {</span>
+<span class="nc" id="L2228">        materialTextView.text = materialTextView.context.getString(R.string.inetwork)</span>
+<span class="nc" id="L2229">        materialTextView.setTextColor(</span>
+<span class="nc" id="L2230">            ContextCompat.getColor(</span>
+<span class="nc" id="L2231">                materialTextView.context,</span>
+<span class="nc" id="L2232">                R.color.check_green</span>
+            )
+        )
+    } else {
+<span class="nc" id="L2236">        materialTextView.text = materialTextView.context.getString(R.string.out_of_network)</span>
+<span class="nc" id="L2237">        materialTextView.setTextColor(</span>
+<span class="nc" id="L2238">            ContextCompat.getColor(</span>
+<span class="nc" id="L2239">                materialTextView.context,</span>
+<span class="nc" id="L2240">                R.color.redDoc</span>
+            )
+        )
+    }
+<span class="nc" id="L2244">}</span>
+
+@BindingAdapter(&quot;ein&quot;, &quot;einValue&quot;, requireAll = true)
+fun bindEin(textView: TextView, ein: String?, einValue: String?) {
+<span class="nc" id="L2248">    var first: String = &quot;&quot;</span>
+<span class="nc" id="L2249">    var second: String = &quot;&quot;</span>
+<span class="nc bnc" id="L2250" title="All 6 branches missed.">    first = if (ein != null &amp;&amp; ein.isNotBlank()) {</span>
+<span class="nc" id="L2251">        ein</span>
+    } else {
+<span class="nc" id="L2253">        &quot;&quot;</span>
+    }
+<span class="nc bnc" id="L2255" title="All 6 branches missed.">    second = if (einValue != null &amp;&amp; einValue.isNotBlank()) {</span>
+<span class="nc" id="L2256">        einValue</span>
+    } else {
+<span class="nc" id="L2258">        &quot;&quot;</span>
+    }
+
+<span class="nc" id="L2261">    textView.text = &quot;EIN: $first $second&quot;</span>
+<span class="nc bnc" id="L2262" title="All 4 branches missed.">    if (first.isBlank() &amp;&amp; second.isBlank()) {</span>
+<span class="nc" id="L2263">        textView.visibility = View.GONE</span>
+    } else {
+<span class="nc" id="L2265">        textView.visibility = View.VISIBLE</span>
+    }
+<span class="nc" id="L2267">}</span>
+
+@BindingAdapter(&quot;miles&quot;)
+fun bindMiles(materialTextView: TextView, miles: String?) {
+<span class="nc bnc" id="L2271" title="All 2 branches missed.">    if (miles != null) {</span>
+<span class="nc bnc" id="L2272" title="All 2 branches missed.">        if (miles.equals(&quot;N/A&quot;, false)) {</span>
+<span class="nc" id="L2273">            materialTextView.text = miles</span>
+        } else {
+<span class="nc" id="L2275">            val mile = String.format(Locale.getDefault(), &quot;%#.2f&quot;, (miles.toDouble()))</span>
+
+<span class="nc" id="L2277">            materialTextView.text = materialTextView.context.getString(R.string.miles, mile)</span>
+        }
+    }
+<span class="nc" id="L2280">}</span>
+
+@BindingAdapter(&quot;dependentNamePicture&quot;)
+fun bindDependentNamePicture(materialTextView: MaterialTextView, name: String) {
+<span class="nc" id="L2284">    materialTextView.text = materialTextView.context.getString(R.string.picture, name)</span>
+<span class="nc" id="L2285">}</span>
+
+@BindingAdapter(&quot;welcome&quot;)
+fun bindWelcome(materialTextView: TextView, welcome: MemberInfo) {
+<span class="nc bnc" id="L2289" title="All 12 branches missed.">    if (!welcome.firstName.isNullOrBlank() || !welcome.lastName.isNullOrBlank()) {</span>
+<span class="nc" id="L2290">        val name = welcome.lastName + &quot;, &quot; + welcome.firstName</span>
+<span class="nc" id="L2291">        materialTextView.text = materialTextView.context.getString(R.string.welcome, name)</span>
+    }
+<span class="nc" id="L2293">}</span>
+
+@BindingAdapter(&quot;address&quot;)
+fun bindAddress(textView: TextView, address: PracticeAddress?) {
+<span class="nc bnc" id="L2297" title="All 2 branches missed.">    if (address != null) {</span>
+<span class="nc bnc" id="L2298" title="All 6 branches missed.">        val streetSecond = if (!address.street2.isNullOrEmpty()) {</span>
+<span class="nc" id="L2299">            val value = address.street2</span>
+<span class="nc" id="L2300">            &quot;$value, &quot;</span>
+        } else {
+<span class="nc" id="L2302">            &quot;&quot;</span>
+        }
+
+<span class="nc" id="L2305">        textView.text =</span>
+<span class="nc bnc" id="L2306" title="All 6 branches missed.">            address.street1?.let { &quot;$it, &quot; } + streetSecond + address.city?.let { &quot;$it, &quot; } + address.state?.let { &quot;$it, &quot; } + address.postalCode</span>
+    }
+<span class="nc" id="L2308">}</span>
+
+@BindingAdapter(&quot;documentUploadStatus&quot;)
+fun bindDocumentUploadStatus(materialTextView: MaterialTextView, uploded: Boolean) {
+<span class="nc bnc" id="L2312" title="All 2 branches missed.">    if (uploded) {</span>
+<span class="nc" id="L2313">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_checked, 0, 0, 0)</span>
+<span class="nc" id="L2314">        materialTextView.text = materialTextView.context.getString(R.string.uploaded)</span>
+<span class="nc" id="L2315">        materialTextView.setTextColor(</span>
+<span class="nc" id="L2316">            ContextCompat.getColor(</span>
+<span class="nc" id="L2317">                materialTextView.context,</span>
+<span class="nc" id="L2318">                R.color.check_green</span>
+            )
+        )
+    } else {
+<span class="nc" id="L2322">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.error, 0, 0, 0)</span>
+<span class="nc" id="L2323">        materialTextView.text = materialTextView.context.getString(R.string.not_uploaded)</span>
+<span class="nc" id="L2324">        materialTextView.setTextColor(ContextCompat.getColor(materialTextView.context, R.color.red))</span>
+    }
+<span class="nc" id="L2326">}</span>
+
+@BindingAdapter(&quot;data&quot;)
+fun bindData(pieChart: PieChart, data: PieData) {
+<span class="nc" id="L2330">    pieChart.data = data</span>
+    // Set desired properties
+<span class="nc" id="L2332">    pieChart.legend.isEnabled = false</span>
+<span class="nc" id="L2333">    pieChart.description.isEnabled = false</span>
+<span class="nc" id="L2334">    pieChart.holeRadius = 75f</span>
+<span class="nc" id="L2335">    pieChart.setCenterTextSize(14f)</span>
+<span class="nc" id="L2336">    pieChart.rotationAngle = 0f</span>
+<span class="nc" id="L2337">    pieChart.invalidate()</span>
+<span class="nc" id="L2338">}</span>
+
+/**
+ * Bind the horizontal weight of a view in a Constraint layout chain.
+ */
+@BindingAdapter(&quot;chainWeight&quot;)
+fun bindChainWeight(view: View, weight: Float) {
+<span class="nc bnc" id="L2345" title="All 2 branches missed.">    val layoutParams = view.layoutParams as? ConstraintLayout.LayoutParams</span>
+<span class="nc bnc" id="L2346" title="All 2 branches missed.">    layoutParams?.let {</span>
+<span class="nc" id="L2347">        it.horizontalWeight = weight</span>
+<span class="nc" id="L2348">        view.layoutParams = it</span>
+<span class="nc" id="L2349">    }</span>
+<span class="nc" id="L2350">}</span>
+
+@BindingAdapter(&quot;terminationDate&quot;)
+fun bindTerminationDate(view: MaterialTextView, terminationDate: String) {
+<span class="nc" id="L2354">    view.text = view.context.getString(R.string.termination_date, terminationDate)</span>
+<span class="nc" id="L2355">}</span>
+
+@BindingAdapter(&quot;licensePlaceholder&quot;)
+fun ShapeableImageView.setLicensePlaceholder(documentType: DocumentType) {
+<span class="nc bnc" id="L2359" title="All 3 branches missed.">    val placeholder = when (documentType) {</span>
+<span class="nc" id="L2360">        DocumentType.DL_FRONT -&gt; R.drawable.license_placeholder</span>
+<span class="nc" id="L2361">        DocumentType.SSN, DocumentType.SSN_ONLY -&gt; R.drawable.ssn_placeholder</span>
+<span class="nc" id="L2362">        else -&gt; R.drawable.placeholder_back</span>
+    }
+
+<span class="nc" id="L2365">    setImageResource(</span>
+<span class="nc" id="L2366">        placeholder</span>
+    )
+<span class="nc" id="L2368">}</span>
+
+@BindingAdapter(&quot;retakeIcon&quot;)
+fun ImageView.setRetakeIcon(nextEnable: Boolean) {
+<span class="nc bnc" id="L2372" title="All 2 branches missed.">    val drawable = if (nextEnable) R.drawable.document_retake else R.drawable.document_add</span>
+<span class="nc" id="L2373">    setImageResource(drawable)</span>
+<span class="nc" id="L2374">}</span>
+
+@BindingAdapter(&quot;radioIconSelected&quot;)
+fun setRadioIcon(view: RadioButton, isSelected: Boolean?) {
+<span class="nc" id="L2378">    val context = view.context</span>
+
+<span class="nc bnc" id="L2380" title="All 2 branches missed.">    val icon = if (isSelected == true) {</span>
+<span class="nc" id="L2381">        ContextCompat.getDrawable(context, R.drawable.ic_radio_selected)</span>
+    } else {
+<span class="nc" id="L2383">        ContextCompat.getDrawable(context, R.drawable.ic_radio_unselected)</span>
+    }
+<span class="nc" id="L2385">    view.setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null)</span>
+<span class="nc" id="L2386">}</span>
+
+@BindingAdapter(&quot;radioItemSelectedBackground&quot;)
+fun setRadioItemBackground(view: View, isSelected: Boolean?) {
+<span class="nc" id="L2390">    val context = view.context</span>
+<span class="nc bnc" id="L2391" title="All 2 branches missed.">    val background = if (isSelected == true) {</span>
+<span class="nc" id="L2392">        ContextCompat.getDrawable(context, R.drawable.checkbox_checked)</span>
+    } else {
+<span class="nc" id="L2394">        ContextCompat.getDrawable(context, R.drawable.checkbox_unchecked)</span>
+    }
+<span class="nc" id="L2396">    view.background = background</span>
+<span class="nc" id="L2397">}</span>
+
+@BindingAdapter(&quot;textFromInt&quot;)
+fun setTextFromInt(view: AppCompatTextView, value: Int?) {
+<span class="nc bnc" id="L2401" title="All 4 branches missed.">    view.text = value?.toString() ?: &quot;0&quot;</span>
+<span class="nc" id="L2402">}</span>
+
+@BindingAdapter(&quot;customCheckboxIcon&quot;)
+fun setCustomCheckboxIcon(view: ImageView, isChecked: Boolean?) {
+<span class="nc bnc" id="L2406" title="All 2 branches missed.">    val iconRes = if (isChecked == true) {</span>
+<span class="nc" id="L2407">        R.drawable.ic_chekced</span>
+    } else {
+<span class="nc" id="L2409">        R.drawable.ic_unchecked</span>
+    }
+<span class="nc" id="L2411">    view.setImageResource(iconRes)</span>
+<span class="nc" id="L2412">}</span>
+
+@BindingAdapter(&quot;completeDetails&quot;)
+fun bindCompleteDetails(materialTextView: MaterialTextView, uploded: Boolean) {
+<span class="nc bnc" id="L2416" title="All 2 branches missed.">    if (uploded) {</span>
+<span class="nc" id="L2417">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_checked, 0, 0, 0)</span>
+<span class="nc" id="L2418">        materialTextView.text = materialTextView.context.getString(R.string.complete)</span>
+<span class="nc" id="L2419">        materialTextView.setTextColor(</span>
+<span class="nc" id="L2420">            ContextCompat.getColor(</span>
+<span class="nc" id="L2421">                materialTextView.context,</span>
+<span class="nc" id="L2422">                R.color.check_green</span>
+            )
+        )
+    } else {
+<span class="nc" id="L2426">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.error, 0, 0, 0)</span>
+<span class="nc" id="L2427">        materialTextView.text = materialTextView.context.getString(R.string.complete_details)</span>
+<span class="nc" id="L2428">        materialTextView.setTextColor(ContextCompat.getColor(materialTextView.context, R.color.red))</span>
+    }
+<span class="nc" id="L2430">}</span>
+
+@BindingAdapter(&quot;completeData&quot;, &quot;uploadCount&quot;)
+fun bindCompleteData(
+    materialTextView: MaterialTextView,
+    docsComplete: Boolean,
+    fieldsComplete: Boolean
+) {
+<span class="nc" id="L2438">    val useUploadCount = materialTextView.context.resources.getBoolean(</span>
+<span class="nc" id="L2439">        R.bool.complete_data_use_upload_count</span>
+    )
+<span class="nc bnc" id="L2441" title="All 2 branches missed.">    if (useUploadCount) {</span>
+<span class="nc" id="L2442">        when {</span>
+<span class="nc bnc" id="L2443" title="All 2 branches missed.">            docsComplete -&gt; {</span>
+<span class="nc" id="L2444">                materialTextView.setCompoundDrawablesWithIntrinsicBounds(</span>
+<span class="nc" id="L2445">                    R.drawable.ic_checked,</span>
+<span class="nc" id="L2446">                    0,</span>
+<span class="nc" id="L2447">                    0,</span>
+<span class="nc" id="L2448">                    0</span>
+                )
+<span class="nc" id="L2450">                materialTextView.text = materialTextView.context.getString(R.string.completed)</span>
+<span class="nc" id="L2451">                materialTextView.setTextColor(</span>
+<span class="nc" id="L2452">                    ContextCompat.getColor(materialTextView.context, R.color.check_green)</span>
+                )
+            }
+<span class="nc bnc" id="L2455" title="All 2 branches missed.">            fieldsComplete -&gt; {</span>
+<span class="nc" id="L2456">                val amber = ContextCompat.getColor(</span>
+<span class="nc" id="L2457">                    materialTextView.context,</span>
+<span class="nc" id="L2458">                    R.color.partial_complete_amber</span>
+                )
+<span class="nc" id="L2460">                val icon = ContextCompat.getDrawable(materialTextView.context, R.drawable.ic_info)</span>
+<span class="nc bnc" id="L2461" title="All 2 branches missed.">                    ?.mutate()</span>
+<span class="nc bnc" id="L2462" title="All 2 branches missed.">                    ?.also { DrawableCompat.setTint(it, amber) }</span>
+<span class="nc" id="L2463">                materialTextView.setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null)</span>
+<span class="nc" id="L2464">                materialTextView.text = materialTextView.context.getString(</span>
+<span class="nc" id="L2465">                    R.string.partially_completed</span>
+                )
+<span class="nc" id="L2467">                materialTextView.setTextColor(amber)</span>
+            }
+            else -&gt; {
+<span class="nc" id="L2470">                materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.error, 0, 0, 0)</span>
+<span class="nc" id="L2471">                materialTextView.text = materialTextView.context.getString(</span>
+<span class="nc" id="L2472">                    R.string.enter_details</span>
+                )
+<span class="nc" id="L2474">                materialTextView.setTextColor(</span>
+<span class="nc" id="L2475">                    ContextCompat.getColor(materialTextView.context, R.color.red)</span>
+                )
+            }
+        }
+    } else {
+<span class="nc bnc" id="L2480" title="All 2 branches missed.">        if (docsComplete) {</span>
+<span class="nc" id="L2481">            materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_checked, 0, 0, 0)</span>
+<span class="nc" id="L2482">            materialTextView.text = materialTextView.context.getString(R.string.completed)</span>
+<span class="nc" id="L2483">            materialTextView.setTextColor(</span>
+<span class="nc" id="L2484">                ContextCompat.getColor(materialTextView.context, R.color.check_green)</span>
+            )
+        } else {
+<span class="nc" id="L2487">            materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.error, 0, 0, 0)</span>
+<span class="nc" id="L2488">            materialTextView.text = materialTextView.context.getString(R.string.complete_details)</span>
+<span class="nc" id="L2489">            materialTextView.setTextColor(</span>
+<span class="nc" id="L2490">                ContextCompat.getColor(materialTextView.context, R.color.red)</span>
+            )
+        }
+    }
+<span class="nc" id="L2494">}</span>
+
+@BindingAdapter(&quot;requiredDocument&quot;)
+fun bindRequiredDocument(textView: TextView, name: String) {
+<span class="nc" id="L2498">    textView.text = textView.context.getString(R.string.required_document_for, name.trim())</span>
+<span class="nc" id="L2499">}</span>
+
+@BindingAdapter(&quot;employedDesc&quot;)
+fun bindemployedDesc(textView: TextView, name: String) {
+<span class="nc" id="L2503">    textView.text = textView.context.getString(R.string.let_us_know, name.trim())</span>
+<span class="nc" id="L2504">}</span>
+
+@BindingAdapter(&quot;source&quot;)
+fun bindSource(textView: TextView, name: String) {
+<span class="nc" id="L2508">    textView.text = textView.context.getString(R.string.source_s, name.trim())</span>
+<span class="nc" id="L2509">}</span>
+
+@BindingAdapter(&quot;legalStage&quot;)
+fun bindLegalState(materialTextView: MaterialTextView, uploded: Boolean) {
+<span class="nc bnc" id="L2513" title="All 2 branches missed.">    if (uploded) {</span>
+<span class="nc" id="L2514">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_checked, 0, 0, 0)</span>
+<span class="nc" id="L2515">        materialTextView.text = materialTextView.context.getString(R.string.completed)</span>
+<span class="nc" id="L2516">        materialTextView.setTextColor(</span>
+<span class="nc" id="L2517">            ContextCompat.getColor(</span>
+<span class="nc" id="L2518">                materialTextView.context,</span>
+<span class="nc" id="L2519">                R.color.check_green</span>
+            )
+        )
+    } else {
+<span class="nc" id="L2523">        materialTextView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.error, 0, 0, 0)</span>
+<span class="nc" id="L2524">        materialTextView.text = materialTextView.context.getString(R.string.incomplete)</span>
+<span class="nc" id="L2525">        materialTextView.setTextColor(ContextCompat.getColor(materialTextView.context, R.color.red))</span>
+    }
+<span class="nc" id="L2527">}</span>
+
+@BindingAdapter(&quot;relationType&quot;, &quot;firstNameSpouse&quot;)
+fun setDependentMessage(textView: TextView, relationType: Int?, firstNameSpouse: String?) {
+<span class="nc" id="L2531">    val context = textView.context</span>
+<span class="nc bnc" id="L2532" title="All 4 branches missed.">    val text = if (relationType == RelationshipType.PRIMARY.code) {</span>
+<span class="nc" id="L2533">        context.getString(</span>
+<span class="nc" id="L2534">            R.string.please_submit_the_following_documents_to_gain_benefits_for_s,</span>
+<span class="nc bnc" id="L2535" title="All 2 branches missed.">            firstNameSpouse ?: &quot;&quot;</span>
+        )
+    } else {
+<span class="nc" id="L2538">        context.getString(</span>
+<span class="nc" id="L2539">            R.string.please_submit_the_following_documents_to_gain_benefits_for_this_dependent</span>
+        )
+    }
+<span class="nc" id="L2542">    textView.text = text</span>
+<span class="nc" id="L2543">}</span>
+
+@BindingAdapter(&quot;rawEnglishText&quot;)
+fun TextView.setRawEnglishText(text: String?) {
+<span class="nc bnc" id="L2547" title="All 2 branches missed.">    if (text == null) return</span>
+
+    // Force English locale just for this view
+<span class="nc" id="L2550">    val config = Configuration()</span>
+<span class="nc" id="L2551">    config.setLocale(Locale.ENGLISH)</span>
+<span class="nc" id="L2552">    val englishContext = context.createConfigurationContext(config)</span>
+
+    // Optional: prevent text shaping or direction override
+<span class="nc" id="L2555">    this.textDirection = View.TEXT_DIRECTION_LTR</span>
+<span class="nc" id="L2556">    this.textLocale = Locale.ENGLISH</span>
+<span class="nc" id="L2557">    this.text = text</span>
+<span class="nc" id="L2558">}</span>
+
+@BindingAdapter(&quot;buttonEnabled&quot;)
+fun setButtonEnabled(view: SecondaryButton, enabled: Boolean) {
+<span class="nc" id="L2562">    view.isEnabled = enabled</span>
+<span class="nc" id="L2563">}</span>
+
+@BindingAdapter(&quot;boldText&quot;)
+fun setBoldText(textView: TextView, text: String?) {
+<span class="nc bnc" id="L2567" title="All 2 branches missed.">    if (text != null) {</span>
+<span class="nc" id="L2568">        val fullText = textView.context.getString(R.string.did_you_mean_s, text)</span>
+<span class="nc" id="L2569">        val spannableString = SpannableString(fullText)</span>
+<span class="nc" id="L2570">        val start = fullText.indexOf(text)</span>
+<span class="nc" id="L2571">        val end = start + text.length</span>
+<span class="nc" id="L2572">        spannableString.setSpan(</span>
+<span class="nc" id="L2573">            StyleSpan(Typeface.BOLD),</span>
+<span class="nc" id="L2574">            start,</span>
+<span class="nc" id="L2575">            end,</span>
+<span class="nc" id="L2576">            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE</span>
+        )
+<span class="nc" id="L2578">        textView.text = spannableString</span>
+    }
+<span class="nc" id="L2580">}</span>
+
+@SuppressLint(&quot;SetTextI18n&quot;)
+@BindingAdapter(&quot;surveyStatus&quot;)
+fun bindSurveyStatus(textView: TextView, surveyStatus: SurveyStatus?) {
+<span class="nc" id="L2585">    val context = textView.context</span>
+
+<span class="nc bnc" id="L2587" title="All 7 branches missed.">    when (surveyStatus) {</span>
+        SurveyStatus.COMPLETED -&gt; {
+<span class="nc" id="L2589">            textView.text = &quot;⬤ ${context.getString(R.string.completed)}&quot;</span>
+<span class="nc" id="L2590">            textView.setTextColor(&quot;#00D671&quot;.toColorInt())</span>
+        }
+        SurveyStatus.NEW -&gt; {
+<span class="nc" id="L2593">            textView.text = &quot;⬤ ${context.getString(R.string.new_st)}&quot;</span>
+<span class="nc" id="L2594">            textView.setTextColor(&quot;#F0C614&quot;.toColorInt())</span>
+        }
+        SurveyStatus.EXPIRED -&gt; {
+<span class="nc" id="L2597">            textView.text = &quot;⬤ ${context.getString(R.string.expired)}&quot;</span>
+<span class="nc" id="L2598">            textView.setTextColor(&quot;#8E8E93&quot;.toColorInt())</span>
+        }
+
+        null -&gt; {
+        }
+    }
+<span class="nc" id="L2604">}</span>
+
+@BindingAdapter(&quot;surveyData&quot;)
+fun bindSurveyDate(textView: TextView, surveyData: SurveyData?) {
+<span class="nc" id="L2608">    val context = textView.context</span>
+
+<span class="nc bnc" id="L2610" title="All 9 branches missed.">    textView.text = when (surveyData?.status) {</span>
+<span class="nc" id="L2611">        SurveyStatus.NEW -&gt; context.getString(R.string.submit_by_s, surveyData.getDisplayDate())</span>
+<span class="nc" id="L2612">        SurveyStatus.COMPLETED -&gt; context.getString(</span>
+<span class="nc" id="L2613">            R.string.completed_on_s,</span>
+<span class="nc" id="L2614">            surveyData.getSubmittedDate()</span>
+        )
+<span class="nc" id="L2616">        SurveyStatus.EXPIRED -&gt; context.getString(</span>
+<span class="nc" id="L2617">            R.string.expired_on_s,</span>
+<span class="nc" id="L2618">            surveyData.getDisplayDate()</span>
+        )
+
+        null -&gt; {
+<span class="nc" id="L2622">            &quot;&quot;</span>
+        }
+    }
+<span class="nc" id="L2625">}</span>
+
+@BindingAdapter(&quot;enablePulseAnimation&quot;)
+fun TakePicturePillView.enablePulseAnimationAdapter(enable: Boolean) {
+<span class="nc" id="L2629">    this.enablePulseAnimation(enable)</span>
+<span class="nc" id="L2630">}</span>
+
+@BindingAdapter(&quot;isRetake&quot;)
+fun TakePicturePillView.isRetakeAdapter(retake: Boolean) {
+<span class="nc" id="L2634">    this.setIsRetake(retake)</span>
+<span class="nc" id="L2635">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoginMainViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.login</a> &gt; <span class="el_source">LoginMainViewModel.kt</span></div><h1>LoginMainViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.login
+
+import android.content.Context
+import android.content.SharedPreferences
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.utils.AppUpdateHelper
+import com.vivekahealth.vivekahealth.utils.Constants
+import javax.inject.Inject
+
+<span class="fc" id="L14">class LoginMainViewModel @Inject constructor(</span>
+    context: Context,
+    preferences: SharedPreferences
+<span class="fc" id="L17">) : ViewModel(), Observable {</span>
+
+<span class="pc" id="L19">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="fc" id="L20">    private val _isAppUpdateAvailable = MutableLiveData&lt;Boolean&gt;()</span>
+<span class="nc" id="L21">    val getAppUpdateAvailable: LiveData&lt;Boolean&gt; get() = _isAppUpdateAvailable</span>
+<span class="nc" id="L22">    var update: Boolean = false</span>
+
+<span class="fc" id="L24">    init {</span>
+        // reset device prompt flag
+<span class="fc" id="L26">        preferences.edit().putBoolean(Constants.REQUEST_DEVICE_PROMPT, false).apply()</span>
+        // reset magic login flags
+<span class="fc" id="L28">        preferences.edit().putBoolean(Constants.IS_MAGIC_LOGIN, false).apply()</span>
+<span class="fc" id="L29">        preferences.edit().remove(Constants.MAGIC_TEMP_TOKEN).apply()</span>
+
+<span class="fc" id="L31">        preferences.edit().putBoolean(Constants.SHOWN_HOME_TUT_FOR_SESSION, false).apply()</span>
+<span class="fc" id="L32">        preferences.edit().putBoolean(Constants.SHOWN_MEDICAL_TUT_FOR_SESSION, false).apply()</span>
+<span class="fc" id="L33">        preferences.edit().putBoolean(Constants.SHOWN_MORE_TUT_FOR_SESSION, false).apply()</span>
+<span class="fc" id="L34">        preferences.edit().putBoolean(Constants.SHOWN_ACC_DET_TUT_FOR_SESSION, false).apply()</span>
+<span class="fc" id="L35">        preferences.edit().putBoolean(Constants.SHOWN_FIND_CARE_TUT_FOR_SESSION, false).apply()</span>
+<span class="fc" id="L36">        preferences.edit().putBoolean(Constants.SHOWN_CALENDAR_TUT_FOR_SESSION, false).apply()</span>
+<span class="fc" id="L37">        preferences.edit().putBoolean(Constants.SHOWN_BENEFITS_TUT_FOR_SESSION, false).apply()</span>
+<span class="fc" id="L38">        preferences.edit().putBoolean(Constants.SHOWN_CLAIMS_TUT_FOR_SESSION, false).apply()</span>
+<span class="fc" id="L39">        preferences.edit().putBoolean(Constants.SHOWN_DIAGNOSIS_TUT_FOR_SESSION, false).apply()</span>
+<span class="fc" id="L40">        preferences.edit().putBoolean(Constants.SHOWN_PRESCRIPTION_TUT_FOR_SESSION, false).apply()</span>
+
+<span class="fc" id="L42">        AppUpdateHelper.isAppUpdateAvailable(context = context) { appUpdate -&gt;</span>
+<span class="fc" id="L43">            update = appUpdate</span>
+<span class="fc" id="L44">            _isAppUpdateAvailable.postValue(appUpdate)</span>
+<span class="fc" id="L45">        }</span>
+<span class="fc" id="L46">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L49">        callbacks.remove(callback)</span>
+<span class="nc" id="L50">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L53">        callbacks.add(callback)</span>
+<span class="nc" id="L54">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

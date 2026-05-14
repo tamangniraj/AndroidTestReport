@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SummaryCard.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.pension.ui.component</a> &gt; <span class="el_source">SummaryCard.kt</span></div><h1>SummaryCard.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.pension.ui.component
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.vivekahealth.vivekahealth.pension.data.model.SummaryImpactData
+import com.vivekahealth.vivekahealth.pension.data.model.SummaryTheme
+
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.pension.ui.tagged
+import java.text.DecimalFormat
+import java.util.Locale
+
+/**
+ * Formats credit values to display whole numbers without decimal points,
+ * or up to 2 decimal places for non-whole numbers.
+ * Examples: 0.0 → &quot;0&quot;, 5.0 → &quot;5&quot;, 5.5 → &quot;5.5&quot;, 5.567 → &quot;5.57&quot;
+ */
+fun formatCreditValue(value: Double): String {
+<span class="fc" id="L35">    val df = DecimalFormat(&quot;#.##&quot;)</span>
+<span class="fc" id="L36">    return df.format(value).toString()</span>
+}
+
+fun formatAmountValue(value: Double): String {
+<span class="nc" id="L40">    return &quot;$&quot; + String.format(Locale.getDefault(), &quot;%#.2f&quot;, value)</span>
+}
+
+@Composable
+fun getTealTheme(
+<span class="nc bnc" id="L45" title="All 2 branches missed.">    gradientStartColor: Color = colorResource(R.color.gradient_home_end),</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">    gradientEndColor: Color = colorResource(R.color.gradient_home_start)</span>
+<span class="nc" id="L47">): SummaryTheme {</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">    return SummaryTheme(</span>
+<span class="nc" id="L49">        backgroundGradient = Brush.verticalGradient(</span>
+<span class="nc" id="L50">            colors = listOf(gradientStartColor, gradientEndColor)</span>
+        ),
+<span class="nc" id="L52">        primaryTextColor = Color.White,</span>
+<span class="nc" id="L53">        secondaryTextColor = Color.White.copy(alpha = 0.9f),</span>
+<span class="nc" id="L54">        lostCreditsColor = Color.White,</span>
+<span class="nc" id="L55">        titleTextColor = Color.White,</span>
+<span class="nc" id="L56">        dividerColor = Color.White.copy(alpha = 0.5f)</span>
+    )
+}
+
+@Composable
+<span class="nc" id="L61">fun getLightTheme(): SummaryTheme {</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">    return SummaryTheme(</span>
+<span class="nc" id="L63">        backgroundGradient = Brush.verticalGradient(</span>
+<span class="nc" id="L64">            colors = listOf(</span>
+<span class="nc" id="L65">                Color(0xFFFFFFFF), // Light gray</span>
+<span class="nc" id="L66">                Color(0xFFFFFFFF) // Slightly darker gray</span>
+            )
+        ),
+<span class="nc" id="L69">        primaryTextColor = Color(0xFF0088c3),</span>
+<span class="nc" id="L70">        secondaryTextColor = Color(0xFF757575),</span>
+<span class="nc" id="L71">        lostCreditsColor = Color.Red,</span>
+<span class="nc" id="L72">        titleTextColor = Color.Black,</span>
+<span class="nc" id="L73">        dividerColor = Color(0xFFDFDFDF)</span>
+    )
+}
+
+@Composable
+fun SummaryImpactCard(
+<span class="nc bnc" id="L79" title="All 2 branches missed.">    modifier: Modifier = Modifier,</span>
+    data: SummaryImpactData,
+    isOffline: Boolean,
+<span class="nc bnc" id="L82" title="All 2 branches missed.">    theme: SummaryTheme = getTealTheme(),</span>
+<span class="nc bnc" id="L83" title="All 4 branches missed.">    onClick: (() -&gt; Unit)? = null</span>
+<span class="nc bnc" id="L84" title="All 40 branches missed.">) {</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">    Card(</span>
+<span class="nc" id="L86">        modifier = modifier</span>
+<span class="nc" id="L87">            .fillMaxWidth()</span>
+<span class="nc" id="L88">            .tagged(&quot;Summary Impact Card&quot;),</span>
+<span class="nc" id="L89">        shape = RoundedCornerShape(12.dp),</span>
+<span class="nc" id="L90">        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        onClick = onClick ?: {}</span>
+<span class="nc" id="L92">    ) {</span>
+<span class="pc bpc" id="L93" title="1 of 6 branches missed.">        Box(</span>
+<span class="fc" id="L94">            modifier = Modifier</span>
+<span class="fc" id="L95">                .fillMaxWidth()</span>
+<span class="fc" id="L96">                .background(theme.backgroundGradient)</span>
+<span class="fc" id="L97">                .padding(20.dp)</span>
+        ) {
+<span class="fc" id="L99">            Column {</span>
+                // Title
+<span class="fc" id="L101">                Row(</span>
+<span class="fc" id="L102">                    modifier = Modifier.fillMaxWidth(),</span>
+<span class="fc" id="L103">                    horizontalArrangement = Arrangement.SpaceBetween,</span>
+<span class="fc" id="L104">                    verticalAlignment = Alignment.CenterVertically</span>
+                ) {
+<span class="fc" id="L106">                    Text(</span>
+<span class="fc" id="L107">                        text = stringResource(R.string.total_pension_credit),</span>
+<span class="fc" id="L108">                        color = theme.titleTextColor,</span>
+<span class="fc" id="L109">                        fontSize = 16.sp,</span>
+<span class="fc" id="L110">                        fontWeight = FontWeight.Medium</span>
+                    )
+
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">                    if (isOffline) {</span>
+<span class="pc" id="L114">                        Text(</span>
+<span class="nc" id="L115">                            text = &quot;As of: ${data.date}&quot;,</span>
+<span class="nc" id="L116">                            style = MaterialTheme.typography.bodySmall,</span>
+<span class="nc" id="L117">                            color = theme.secondaryTextColor,</span>
+<span class="nc" id="L118">                            fontSize = 12.sp</span>
+                        )
+                    }
+<span class="fc" id="L121">                }</span>
+
+                // Credits row
+<span class="fc" id="L124">                Row(</span>
+<span class="fc" id="L125">                    modifier = Modifier.fillMaxWidth(),</span>
+<span class="fc" id="L126">                    horizontalArrangement = Arrangement.SpaceBetween</span>
+                ) {
+                    // Total Credits Earned
+<span class="fc" id="L129">                    Column(</span>
+<span class="fc" id="L130">                        horizontalAlignment = Alignment.Start,</span>
+<span class="fc" id="L131">                        modifier = Modifier</span>
+<span class="fc" id="L132">                            .weight(1f)</span>
+<span class="fc" id="L133">                            .padding(top = 8.dp)</span>
+<span class="fc" id="L134">                            .tagged(&quot;Total Credits Earned Column&quot;)</span>
+                    ) {
+<span class="fc" id="L136">                        BasicText(</span>
+<span class="fc" id="L137">                            text = formatCreditValue(data.totalCreditsEarned),</span>
+<span class="fc" id="L138">                            style = MaterialTheme.typography.headlineMedium.copy(</span>
+<span class="fc" id="L139">                                color = theme.primaryTextColor,</span>
+<span class="fc" id="L140">                                fontWeight = FontWeight.Bold</span>
+                            ),
+<span class="fc" id="L142">                            autoSize = TextAutoSize.StepBased(</span>
+<span class="fc" id="L143">                                minFontSize = 24.sp,</span>
+<span class="fc" id="L144">                                maxFontSize = 32.sp,</span>
+<span class="fc" id="L145">                                stepSize = 1.sp</span>
+                                // Adjust step for smoother/faster scaling
+                            ),
+<span class="fc" id="L148">                            maxLines = 1,</span>
+<span class="fc" id="L149">                            modifier = Modifier.tagged(&quot;Total Credits Earned Value&quot;)</span>
+
+                        )
+<span class="fc" id="L152">                    }</span>
+
+                    // Credits Kept
+<span class="fc" id="L155">                    Column(</span>
+<span class="fc" id="L156">                        horizontalAlignment = Alignment.End,</span>
+<span class="fc" id="L157">                        modifier = Modifier</span>
+<span class="fc" id="L158">                            .weight(1f)</span>
+
+                    ) {
+<span class="fc" id="L161">                        Icon(</span>
+<span class="fc" id="L162">                            painter = painterResource(R.drawable.verified_user),</span>
+<span class="fc" id="L163">                            contentDescription = &quot;verified&quot;,</span>
+<span class="fc" id="L164">                            modifier = Modifier,</span>
+<span class="fc" id="L165">                            tint = Color.White</span>
+                        )
+<span class="fc" id="L167">                    }</span>
+<span class="fc" id="L168">                }</span>
+<span class="fc" id="L169">            }</span>
+<span class="fc" id="L170">        }</span>
+<span class="fc" id="L171">    }</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

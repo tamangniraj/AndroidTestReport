@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LegalAffirmation.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.enroll.fragments.legal</a> &gt; <span class="el_source">LegalAffirmation.kt</span></div><h1>LegalAffirmation.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.enroll.fragments.legal
+
+import android.content.Intent
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
+import com.github.gcacace.signaturepad.views.SignaturePad
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.databinding.FragmentEnrollmentLegalAffirmationBinding
+import com.vivekahealth.vivekahealth.di.Injectable
+import com.vivekahealth.vivekahealth.ui.BaseFragment
+import com.vivekahealth.vivekahealth.ui.enroll.EnrollActivity
+import com.vivekahealth.vivekahealth.ui.enroll.NextClickListener
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.enrollmentEnd.SuccessCallback
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.enrollmentEnd.SuccessEnrollmentFragment
+import com.vivekahealth.vivekahealth.ui.login.LoginActivity
+import com.vivekahealth.vivekahealth.utils.*
+import com.vivekahealth.vivekahealth.utils.remote.Status
+import javax.inject.Inject
+
+<span class="nc" id="L25">class LegalAffirmation : BaseFragment(), Injectable, NextClickListener {</span>
+
+    companion object {
+<span class="nc" id="L28">        fun newInstance() = LegalAffirmation()</span>
+    }
+
+    private lateinit var viewModel: LegalAffirmationViewModel
+
+    private lateinit var binding: FragmentEnrollmentLegalAffirmationBinding
+
+<span class="nc" id="L35">    @Inject</span>
+<span class="nc" id="L36">    lateinit var viewModelFactory: ViewModelProvider.Factory</span>
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+<span class="nc" id="L42">        binding = FragmentEnrollmentLegalAffirmationBinding.inflate(inflater, container, false)</span>
+<span class="nc" id="L43">        return binding.root</span>
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+<span class="nc" id="L47">        super.onActivityCreated(savedInstanceState)</span>
+<span class="nc" id="L48">        viewModel = ViewModelProvider(this, viewModelFactory).get(</span>
+<span class="nc" id="L49">            LegalAffirmationViewModel::class.java</span>
+<span class="nc" id="L50">        ).apply {</span>
+<span class="nc" id="L51">            nextClickListener = this@LegalAffirmation</span>
+<span class="nc" id="L52">        }</span>
+<span class="nc" id="L53">        binding.viewModel = viewModel</span>
+
+<span class="nc" id="L55">        binding.firstShow = true</span>
+<span class="nc" id="L56">        binding.secondShow = false</span>
+<span class="nc" id="L57">        binding.thirdShow = false</span>
+
+<span class="nc" id="L59">        binding.nextEnable = false</span>
+<span class="nc" id="L60">        binding.disclaimerText = resources.getString(R.string.disclaimer_legal)</span>
+<span class="nc" id="L61">        intSig()</span>
+<span class="nc" id="L62">        viewModel.loadData()</span>
+<span class="nc" id="L63">        (activity as EnrollActivity).changeState(6)</span>
+<span class="nc" id="L64">        (activity as EnrollActivity).focusRight()</span>
+
+<span class="nc" id="L66">        viewModel.filesDir = requireActivity().filesDir</span>
+
+<span class="nc" id="L68">        binding.totalStep = &quot;1&quot;</span>
+<span class="nc" id="L69">        viewModel.navigateToBack.observe(</span>
+<span class="nc" id="L70">            viewLifecycleOwner,</span>
+<span class="nc" id="L71">            EventObserver {</span>
+<span class="nc" id="L72">                when {</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">                    binding.firstShow == true -&gt; {</span>
+<span class="nc" id="L74">                        (activity as EnrollActivity).changeState(5)</span>
+<span class="nc" id="L75">                        (activity as EnrollActivity).focusLeft()</span>
+
+<span class="nc" id="L77">                        viewModel.spouseDone = false</span>
+<span class="nc" id="L78">                        viewModel.memberDone = false</span>
+<span class="nc" id="L79">                        findNavController().navigateUp()</span>
+                    }
+//                binding.secondShow == true -&gt; {
+//                    viewModel.currentStep = &quot;1&quot;
+//                    binding.firstShow = true
+//                    binding.secondShow = false
+//                    binding.thirdShow = false
+//                    binding.nextEnable = true
+//                }
+<span class="nc bnc" id="L88" title="All 2 branches missed.">                    binding.thirdShow == true -&gt; {</span>
+<span class="nc" id="L89">                        viewModel.currentStep = &quot;1&quot;</span>
+//                    binding.firstShow = false
+//                    binding.secondShow = true
+//                    binding.thirdShow = false
+<span class="nc" id="L93">                        binding.checkbox.isChecked = false</span>
+<span class="nc" id="L94">                        viewModel.checkBox = false</span>
+<span class="nc" id="L95">                        binding.signaturePad.clear()</span>
+
+<span class="nc" id="L97">                        binding.firstShow = true</span>
+<span class="nc" id="L98">                        binding.secondShow = false</span>
+<span class="nc" id="L99">                        binding.thirdShow = false</span>
+
+<span class="nc" id="L101">                        binding.nextEnable = viewModel.memberDone</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                        if (binding.showSpouse == true) {</span>
+<span class="nc" id="L103">                            binding.nextEnable = viewModel.spouseDone</span>
+                        }
+                    }
+                }
+<span class="nc" id="L107">            }</span>
+        )
+
+<span class="nc" id="L110">        viewModel.navigateToEnroll.observe(viewLifecycleOwner) {</span>
+<span class="nc bnc" id="L111" title="All 3 branches missed.">            when (it.status) {</span>
+                Status.LOADING -&gt; {
+<span class="nc" id="L113">                    (activity as EnrollActivity).showLoading(getString(R.string.loading))</span>
+                }
+                Status.SUCCESS -&gt; {
+<span class="nc" id="L116">                    (activity as EnrollActivity).dismissLoading()</span>
+
+<span class="nc bnc" id="L118" title="All 4 branches missed.">                    if (it.data?.code.equals(Constants.SUCCESS_CODE)) {</span>
+<span class="nc" id="L119">                        success()</span>
+                    } else {
+<span class="nc" id="L121">                        DialogUtils(</span>
+<span class="nc" id="L122">                            requireActivity(),</span>
+<span class="nc" id="L123">                            object : DialogListener {</span>
+                                override fun onNeutralClicked() {
+<span class="nc" id="L125">                                }</span>
+
+                                override fun onPositiveClicked() {
+<span class="nc" id="L128">                                    val intent = Intent(requireContext(), LoginActivity::class.java)</span>
+<span class="nc" id="L129">                                    startActivity(intent)</span>
+<span class="nc" id="L130">                                    requireActivity().finish()</span>
+<span class="nc" id="L131">                                }</span>
+
+                                override fun onNegativeClicked() {
+<span class="nc" id="L134">                                }</span>
+                            }
+<span class="nc" id="L136">                        ).dialog(</span>
+
+<span class="nc" id="L138">                            it.data!!.message,</span>
+<span class="nc" id="L139">                            getString(R.string.ok_string),</span>
+<span class="nc" id="L140">                            &quot;&quot;,</span>
+<span class="nc" id="L141">                            &quot;&quot;</span>
+                        )
+                    }
+                }
+                Status.ERROR -&gt; {
+<span class="nc" id="L146">                    DialogUtils(</span>
+<span class="nc" id="L147">                        requireActivity(),</span>
+<span class="nc" id="L148">                        object : DialogListener {</span>
+                            override fun onNeutralClicked() {
+<span class="nc" id="L150">                            }</span>
+
+                            override fun onPositiveClicked() {
+<span class="nc" id="L153">                                val intent = Intent(requireContext(), LoginActivity::class.java)</span>
+<span class="nc" id="L154">                                startActivity(intent)</span>
+<span class="nc" id="L155">                                requireActivity().finish()</span>
+<span class="nc" id="L156">                            }</span>
+
+                            override fun onNegativeClicked() {
+<span class="nc" id="L159">                            }</span>
+                        }
+<span class="nc" id="L161">                    ).dialog(</span>
+
+<span class="nc" id="L163">                        it.error.toString(),</span>
+<span class="nc" id="L164">                        getString(R.string.ok_string),</span>
+<span class="nc" id="L165">                        &quot;&quot;,</span>
+<span class="nc" id="L166">                        &quot;&quot;</span>
+                    )
+
+//                    //Timber.d(it.error)
+                }
+            }
+<span class="nc" id="L172">        }</span>
+<span class="nc" id="L173">        viewModel.navigateToUpload.observe(viewLifecycleOwner) {</span>
+<span class="nc bnc" id="L174" title="All 3 branches missed.">            when (it.status) {</span>
+                Status.LOADING -&gt; {
+<span class="nc" id="L176">                    (activity as EnrollActivity).showLoading(getString(R.string.loading))</span>
+                }
+                Status.SUCCESS -&gt; {
+<span class="nc bnc" id="L179" title="All 4 branches missed.">                    viewModel.setDocumentName(it.data?.id.toString(), it.data?.fileName.toString())</span>
+
+<span class="nc" id="L181">                    binding.signaturePad.clear()</span>
+<span class="nc" id="L182">                    binding.checkbox.isChecked = false</span>
+<span class="nc" id="L183">                    viewModel.checkBox = false</span>
+
+<span class="nc" id="L185">                    binding.firstShow = true</span>
+<span class="nc" id="L186">                    binding.secondShow = false</span>
+<span class="nc" id="L187">                    binding.thirdShow = false</span>
+
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                    if (viewModel.currentPerson == viewModel.user.subscriber) {</span>
+<span class="nc" id="L190">                        binding.memberUploaded = true</span>
+<span class="nc" id="L191">                        viewModel.memberDone = true</span>
+                    } else {
+<span class="nc" id="L193">                        viewModel.spouseDone = true</span>
+
+<span class="nc" id="L195">                        binding.spouseUploaded = true</span>
+                    }
+
+<span class="nc bnc" id="L198" title="All 2 branches missed.">                    if (binding.showSpouse == false) {</span>
+//                        binding.nextEnable = binding.memberUploaded == true
+<span class="nc" id="L200">                        binding.nextEnable = viewModel.memberDone</span>
+                    } else {
+//                        binding.nextEnable =
+//                            binding.memberUploaded == true &amp;&amp; binding.spouseUploaded == true
+
+<span class="nc" id="L205">                        binding.nextEnable =</span>
+<span class="nc bnc" id="L206" title="All 4 branches missed.">                            viewModel.memberDone &amp;&amp; viewModel.spouseDone</span>
+                    }
+
+<span class="nc bnc" id="L209" title="All 6 branches missed.">                    if (viewModel.married &amp;&amp; viewModel.memberDone &amp;&amp; viewModel.spouseDone) {</span>
+<span class="nc" id="L210">                        binding.nextEnable = true</span>
+<span class="nc bnc" id="L211" title="All 4 branches missed.">                    } else if (!viewModel.married &amp;&amp; viewModel.memberDone) {</span>
+<span class="nc" id="L212">                        binding.nextEnable = true</span>
+                    }
+<span class="nc" id="L214">                    (activity as EnrollActivity).dismissLoading()</span>
+                }
+                Status.ERROR -&gt; {
+                    // Timber.d(it.error)
+                }
+            }
+<span class="nc" id="L220">        }</span>
+
+<span class="nc" id="L222">        viewModel.navigateToNext.observe(</span>
+<span class="nc" id="L223">            viewLifecycleOwner,</span>
+<span class="nc" id="L224">            EventObserver {</span>
+<span class="nc bnc" id="L225" title="All 4 branches missed.">                if (binding.memberUploaded == true &amp;&amp; binding.spouseUploaded == true) {</span>
+<span class="nc" id="L226">                    viewModel.uploadData((activity as EnrollActivity).enrollId())</span>
+                } else {
+<span class="nc bnc" id="L228" title="All 2 branches missed.">                    if (binding.showSpouse == true) {</span>
+<span class="nc bnc" id="L229" title="All 2 branches missed.">                        if (binding.firstShow == true) {</span>
+<span class="nc" id="L230">                            viewModel.currentStep = &quot;1&quot;</span>
+<span class="nc" id="L231">                            binding.firstShow = false</span>
+<span class="nc" id="L232">                            binding.secondShow = true</span>
+<span class="nc" id="L233">                            binding.thirdShow = true</span>
+<span class="nc" id="L234">                            binding.checkbox.isChecked = false</span>
+<span class="nc" id="L235">                            viewModel.checkBox = false</span>
+<span class="nc" id="L236">                            binding.nextEnable = false</span>
+                        }
+//                    else if (binding.secondShow == true) {
+//                        viewModel.currentStep = &quot;1&quot;
+//                        binding.firstShow = false
+//                        binding.secondShow = false
+//                        binding.thirdShow = true
+//                        binding.nextEnable = false
+//
+//                    }
+<span class="nc bnc" id="L246" title="All 2 branches missed.">                        else if (binding.thirdShow == true) {</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">                            if (viewModel.signed) {</span>
+<span class="nc" id="L248">                                val file = HelperUtils.persistImage(</span>
+<span class="nc" id="L249">                                    viewModel.signatureBitmap,</span>
+<span class="nc" id="L250">                                    &quot;sign&quot;,</span>
+<span class="nc" id="L251">                                    requireContext()</span>
+                                )
+<span class="nc" id="L253">                                viewModel.uploadSign(file)</span>
+                            }
+                        }
+                    } else {
+<span class="nc bnc" id="L257" title="All 6 branches missed.">                        if (viewModel.married &amp;&amp; viewModel.memberDone &amp;&amp; viewModel.spouseDone) {</span>
+<span class="nc" id="L258">                            viewModel.uploadData((activity as EnrollActivity).enrollId())</span>
+<span class="nc bnc" id="L259" title="All 4 branches missed.">                        } else if (!viewModel.married &amp;&amp; viewModel.memberDone) {</span>
+<span class="nc" id="L260">                            viewModel.uploadData((activity as EnrollActivity).enrollId())</span>
+                        } else {
+<span class="nc bnc" id="L262" title="All 2 branches missed.">                            if (binding.thirdShow == true) {</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">                                if (viewModel.signed) {</span>
+<span class="nc" id="L264">                                    val file = HelperUtils.persistImage(</span>
+<span class="nc" id="L265">                                        viewModel.signatureBitmap,</span>
+<span class="nc" id="L266">                                        &quot;sign&quot;,</span>
+<span class="nc" id="L267">                                        requireContext()</span>
+                                    )
+<span class="nc" id="L269">                                    viewModel.uploadSign(file)</span>
+                                }
+                            }
+                        }
+                    }
+                }
+<span class="nc" id="L275">            }</span>
+        )
+
+<span class="nc" id="L278">        viewModel.memberClicked.observe(</span>
+<span class="nc" id="L279">            viewLifecycleOwner,</span>
+<span class="nc" id="L280">            EventObserver {</span>
+<span class="nc" id="L281">                viewModel.memberDone = false</span>
+<span class="nc" id="L282">                viewModel.signed = false</span>
+<span class="nc" id="L283">                binding.memberUploaded = false</span>
+<span class="nc" id="L284">                viewModel.currentStep = &quot;1&quot;</span>
+
+<span class="nc" id="L286">                binding.firstShow = false</span>
+<span class="nc" id="L287">                binding.secondShow = true</span>
+<span class="nc" id="L288">                binding.thirdShow = true</span>
+<span class="nc" id="L289">                binding.nextEnable = false</span>
+<span class="nc" id="L290">            }</span>
+        )
+
+<span class="nc" id="L293">        viewModel.spouseClicked.observe(</span>
+<span class="nc" id="L294">            viewLifecycleOwner,</span>
+<span class="nc" id="L295">            EventObserver {</span>
+<span class="nc" id="L296">                viewModel.spouseDone = false</span>
+<span class="nc" id="L297">                viewModel.signed = false</span>
+<span class="nc" id="L298">                binding.spouseUploaded = false</span>
+
+<span class="nc" id="L300">                viewModel.currentStep = &quot;1&quot;</span>
+
+<span class="nc" id="L302">                binding.firstShow = false</span>
+<span class="nc" id="L303">                binding.secondShow = true</span>
+<span class="nc" id="L304">                binding.thirdShow = true</span>
+<span class="nc" id="L305">                binding.nextEnable = false</span>
+<span class="nc" id="L306">            }</span>
+        )
+
+<span class="nc" id="L309">        viewModel.check.observe(</span>
+<span class="nc" id="L310">            viewLifecycleOwner,</span>
+<span class="nc" id="L311">            EventObserver {</span>
+<span class="nc" id="L312">                binding.checkbox.isChecked = it</span>
+
+<span class="nc bnc" id="L314" title="All 4 branches missed.">                binding.nextEnable = it &amp;&amp; viewModel.signed</span>
+<span class="nc" id="L315">            }</span>
+        )
+<span class="nc" id="L317">        viewModel.clearClicked.observe(</span>
+<span class="nc" id="L318">            viewLifecycleOwner,</span>
+<span class="nc" id="L319">            EventObserver {</span>
+<span class="nc" id="L320">                binding.signaturePad.clear()</span>
+<span class="nc" id="L321">                binding.nextEnable = false</span>
+<span class="nc" id="L322">            }</span>
+        )
+
+<span class="nc" id="L325">        viewModel.childRetrieved.observe(</span>
+<span class="nc" id="L326">            viewLifecycleOwner,</span>
+<span class="nc" id="L327">            EventObserver { list -&gt;</span>
+
+<span class="nc bnc" id="L329" title="All 2 branches missed.">                if (viewModel.married) {</span>
+<span class="nc bnc" id="L330" title="All 8 branches missed.">                    binding.showSpouse = !list.spouse?.firstName.isNullOrEmpty()</span>
+                }
+<span class="nc" id="L332">            }</span>
+        )
+<span class="nc" id="L334">    }</span>
+
+    fun success() {
+<span class="nc" id="L337">        val dialog: DialogFragment = SuccessEnrollmentFragment.newInstance()</span>
+
+<span class="nc" id="L339">        dialog.isCancelable = false</span>
+
+<span class="nc" id="L341">        (dialog as SuccessEnrollmentFragment).setSuccessCallback(</span>
+<span class="nc" id="L342">            object : SuccessCallback {</span>
+                override fun onBackClick() {
+<span class="nc" id="L344">                    dialog.dismiss()</span>
+<span class="nc" id="L345">                    val intent = Intent(requireActivity(), LoginActivity::class.java)</span>
+<span class="nc" id="L346">                    requireActivity().startActivity(intent)</span>
+<span class="nc" id="L347">                    requireActivity().finish()</span>
+<span class="nc" id="L348">                }</span>
+
+                override fun onOkClick() {
+<span class="nc" id="L351">                    dialog.dismiss()</span>
+
+<span class="nc" id="L353">                    val intent = Intent(requireActivity(), LoginActivity::class.java)</span>
+<span class="nc" id="L354">                    requireActivity().startActivity(intent)</span>
+<span class="nc" id="L355">                    requireActivity().finish()</span>
+<span class="nc" id="L356">                }</span>
+            },
+<span class="nc" id="L358">            false</span>
+        )
+
+<span class="nc" id="L361">        dialog.show(parentFragmentManager, &quot;tag&quot;)</span>
+<span class="nc" id="L362">    }</span>
+
+    private fun intSig() {
+<span class="nc" id="L365">        binding.signaturePad.setOnSignedListener(object : SignaturePad.OnSignedListener {</span>
+            override fun onStartSigning() {
+                // Event triggered when the pad is touched
+<span class="nc" id="L368">                viewModel.signed = true</span>
+<span class="nc" id="L369">            }</span>
+
+            override fun onSigned() {
+<span class="nc" id="L372">                viewModel.signatureBitmap = binding.signaturePad.transparentSignatureBitmap</span>
+
+<span class="nc bnc" id="L374" title="All 4 branches missed.">                binding.nextEnable = viewModel.checkBox &amp;&amp; viewModel.signed</span>
+<span class="nc bnc" id="L375" title="All 2 branches missed.">                viewModel.checkBoxErrorVisibility = if (viewModel.signed) {</span>
+<span class="nc bnc" id="L376" title="All 2 branches missed.">                    if (viewModel.checkBox) View.GONE else View.VISIBLE</span>
+                } else {
+<span class="nc" id="L378">                    View.GONE</span>
+                }
+<span class="nc" id="L380">            }</span>
+
+            override fun onClear() {
+<span class="nc" id="L383">                viewModel.signed = false</span>
+
+                // Event triggered when the pad is cleared
+<span class="nc" id="L386">            }</span>
+        })
+<span class="nc" id="L388">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

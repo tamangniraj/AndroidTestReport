@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Typography.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.theme</a> &gt; <span class="el_source">Typography.kt</span></div><h1>Typography.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.theme
+
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.vivekahealth.vivekahealth.R
+
+// Define Roboto font family
+<span class="nc" id="L12">val RobotoFamily = FontFamily(</span>
+<span class="nc" id="L13">    Font(R.font.roboto_light, FontWeight.Light),</span>
+<span class="nc" id="L14">    Font(R.font.roboto_regular, FontWeight.Normal),</span>
+<span class="nc" id="L15">    Font(R.font.roboto_medium, FontWeight.Medium),</span>
+<span class="nc" id="L16">    Font(R.font.roboto_bold, FontWeight.Bold)</span>
+)
+
+// Material 3 Typography with Roboto fonts
+<span class="nc" id="L20">val VivekaTypography = Typography(</span>
+<span class="nc" id="L21">    displayLarge = TextStyle(</span>
+<span class="nc" id="L22">        fontFamily = RobotoFamily,</span>
+<span class="nc" id="L23">        fontWeight = FontWeight.Normal,</span>
+<span class="nc" id="L24">        fontSize = 57.sp,</span>
+<span class="nc" id="L25">        lineHeight = 64.sp,</span>
+<span class="nc" id="L26">        letterSpacing = 0.sp</span>
+    ),
+<span class="nc" id="L28">    displayMedium = TextStyle(</span>
+<span class="nc" id="L29">        fontFamily = RobotoFamily,</span>
+<span class="nc" id="L30">        fontWeight = FontWeight.Normal,</span>
+<span class="nc" id="L31">        fontSize = 45.sp,</span>
+<span class="nc" id="L32">        lineHeight = 52.sp,</span>
+<span class="nc" id="L33">        letterSpacing = 0.sp</span>
+    ),
+<span class="nc" id="L35">    displaySmall = TextStyle(</span>
+<span class="nc" id="L36">        fontFamily = RobotoFamily,</span>
+<span class="nc" id="L37">        fontWeight = FontWeight.Normal,</span>
+<span class="nc" id="L38">        fontSize = 36.sp,</span>
+<span class="nc" id="L39">        lineHeight = 44.sp,</span>
+<span class="nc" id="L40">        letterSpacing = 0.sp</span>
+    ),
+<span class="nc" id="L42">    headlineLarge = TextStyle(</span>
+<span class="nc" id="L43">        fontFamily = RobotoFamily,</span>
+<span class="nc" id="L44">        fontWeight = FontWeight.Normal,</span>
+<span class="nc" id="L45">        fontSize = 32.sp,</span>
+<span class="nc" id="L46">        lineHeight = 40.sp,</span>
+<span class="nc" id="L47">        letterSpacing = 0.sp</span>
+    ),
+<span class="nc" id="L49">    headlineMedium = TextStyle(</span>
+<span class="nc" id="L50">        fontFamily = RobotoFamily,</span>
+<span class="nc" id="L51">        fontWeight = FontWeight.Normal,</span>
+<span class="nc" id="L52">        fontSize = 28.sp,</span>
+<span class="nc" id="L53">        lineHeight = 36.sp,</span>
+<span class="nc" id="L54">        letterSpacing = 0.sp</span>
+    ),
+<span class="nc" id="L56">    headlineSmall = TextStyle(</span>
+<span class="nc" id="L57">        fontFamily = RobotoFamily,</span>
+<span class="nc" id="L58">        fontWeight = FontWeight.Normal,</span>
+<span class="nc" id="L59">        fontSize = 24.sp,</span>
+<span class="nc" id="L60">        lineHeight = 32.sp,</span>
+<span class="nc" id="L61">        letterSpacing = 0.sp</span>
+    ),
+<span class="nc" id="L63">    titleLarge = TextStyle(</span>
+<span class="nc" id="L64">        fontFamily = RobotoFamily,</span>
+<span class="nc" id="L65">        fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L66">        fontSize = 22.sp,</span>
+<span class="nc" id="L67">        lineHeight = 28.sp,</span>
+<span class="nc" id="L68">        letterSpacing = 0.sp</span>
+    ),
+<span class="nc" id="L70">    titleMedium = TextStyle(</span>
+<span class="nc" id="L71">        fontFamily = RobotoFamily,</span>
+<span class="nc" id="L72">        fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L73">        fontSize = 16.sp,</span>
+<span class="nc" id="L74">        lineHeight = 24.sp,</span>
+<span class="nc" id="L75">        letterSpacing = 0.15.sp</span>
+    ),
+<span class="nc" id="L77">    titleSmall = TextStyle(</span>
+<span class="nc" id="L78">        fontFamily = RobotoFamily,</span>
+<span class="nc" id="L79">        fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L80">        fontSize = 14.sp,</span>
+<span class="nc" id="L81">        lineHeight = 20.sp,</span>
+<span class="nc" id="L82">        letterSpacing = 0.1.sp</span>
+    ),
+<span class="nc" id="L84">    bodyLarge = TextStyle(</span>
+<span class="nc" id="L85">        fontFamily = RobotoFamily,</span>
+<span class="nc" id="L86">        fontWeight = FontWeight.Normal,</span>
+<span class="nc" id="L87">        fontSize = 16.sp,</span>
+<span class="nc" id="L88">        lineHeight = 24.sp,</span>
+<span class="nc" id="L89">        letterSpacing = 0.5.sp</span>
+    ),
+<span class="nc" id="L91">    bodyMedium = TextStyle(</span>
+<span class="nc" id="L92">        fontFamily = RobotoFamily,</span>
+<span class="nc" id="L93">        fontWeight = FontWeight.Normal,</span>
+<span class="nc" id="L94">        fontSize = 14.sp,</span>
+<span class="nc" id="L95">        lineHeight = 20.sp,</span>
+<span class="nc" id="L96">        letterSpacing = 0.25.sp</span>
+    ),
+<span class="nc" id="L98">    bodySmall = TextStyle(</span>
+<span class="nc" id="L99">        fontFamily = RobotoFamily,</span>
+<span class="nc" id="L100">        fontWeight = FontWeight.Normal,</span>
+<span class="nc" id="L101">        fontSize = 12.sp,</span>
+<span class="nc" id="L102">        lineHeight = 16.sp,</span>
+<span class="nc" id="L103">        letterSpacing = 0.4.sp</span>
+    ),
+<span class="nc" id="L105">    labelLarge = TextStyle(</span>
+<span class="nc" id="L106">        fontFamily = RobotoFamily,</span>
+<span class="nc" id="L107">        fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L108">        fontSize = 14.sp,</span>
+<span class="nc" id="L109">        lineHeight = 20.sp,</span>
+<span class="nc" id="L110">        letterSpacing = 0.1.sp</span>
+    ),
+<span class="nc" id="L112">    labelMedium = TextStyle(</span>
+<span class="nc" id="L113">        fontFamily = RobotoFamily,</span>
+<span class="nc" id="L114">        fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L115">        fontSize = 12.sp,</span>
+<span class="nc" id="L116">        lineHeight = 16.sp,</span>
+<span class="nc" id="L117">        letterSpacing = 0.5.sp</span>
+    ),
+<span class="nc" id="L119">    labelSmall = TextStyle(</span>
+<span class="nc" id="L120">        fontFamily = RobotoFamily,</span>
+<span class="nc" id="L121">        fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L122">        fontSize = 11.sp,</span>
+<span class="nc" id="L123">        lineHeight = 16.sp,</span>
+<span class="nc" id="L124">        letterSpacing = 0.5.sp</span>
+    )
+)
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

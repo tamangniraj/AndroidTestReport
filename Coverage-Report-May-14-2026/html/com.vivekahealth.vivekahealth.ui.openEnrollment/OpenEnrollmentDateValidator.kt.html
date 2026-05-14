@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenEnrollmentDateValidator.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.openEnrollment</a> &gt; <span class="el_source">OpenEnrollmentDateValidator.kt</span></div><h1>OpenEnrollmentDateValidator.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.openEnrollment
+
+import androidx.annotation.StringRes
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import java.text.SimpleDateFormat
+import java.util.Locale
+
+/**
+ * Pure validation logic for every date field in the open enrollment flow.
+ * Returns a string resource ID (null = valid) so fragments can call getString()
+ * and tests can assert directly — no duplication, no Android Context needed here.
+ */
+object OpenEnrollmentDateValidator {
+
+<span class="fc" id="L16">    @StringRes</span>
+    fun memberDobError(
+        display: String,
+<span class="fc" id="L19">        dateOfHireServer: String = &quot;&quot;,</span>
+<span class="fc" id="L20">        marriageDateServer: String = &quot;&quot;</span>
+    ): Int? {
+<span class="fc bfc" id="L22" title="All 2 branches covered.">        if (!isFormatValid(display)) return R.string.date_of_birth_is_not_valid</span>
+<span class="fc bfc" id="L23" title="All 2 branches covered.">        if (isFuture(display)) return R.string.date_of_birth_is_not_valid</span>
+<span class="fc bfc" id="L24" title="All 2 branches covered.">        if (!DateUtils.isUserMature(display)) return R.string.error_member_must_be_16</span>
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">        val dobServer = DateUtils.toAPIDate(display) ?: return R.string.date_of_birth_is_not_valid</span>
+<span class="fc bfc" id="L26" title="All 6 branches covered.">        if (dateOfHireServer.isNotBlank() &amp;&amp; DateUtils.ageAtDate(dobServer, dateOfHireServer) &lt; 16) {</span>
+<span class="fc" id="L27">            return R.string.error_date_of_hire_is_invalid_for_updated_dob</span>
+        }
+<span class="fc bfc" id="L29" title="All 6 branches covered.">        if (marriageDateServer.isNotBlank() &amp;&amp; DateUtils.ageAtDate(dobServer, marriageDateServer) &lt; 16) {</span>
+<span class="fc" id="L30">            return R.string.error_marriage_date_is_invalid_for_updated_dob</span>
+        }
+<span class="fc" id="L32">        return null</span>
+    }
+
+<span class="fc" id="L35">    @StringRes</span>
+<span class="fc" id="L36">    fun dateOfHireError(display: String, memberDobServer: String = &quot;&quot;): Int? {</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (!isFormatValid(display)) return R.string.error_date_of_hire_invalid</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (isFuture(display)) return R.string.error_date_of_hire_future</span>
+<span class="fc bfc" id="L39" title="All 4 branches covered.">        if (memberDobServer.isNotBlank()) {</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">            val hireServer = DateUtils.toAPIDate(display) ?: &quot;&quot;</span>
+<span class="pc bpc" id="L41" title="2 of 6 branches missed.">            if (hireServer.isNotBlank() &amp;&amp; DateUtils.ageAtDate(memberDobServer, hireServer) &lt; 16) {</span>
+<span class="fc" id="L42">                return R.string.error_member_must_be_16_at_hire</span>
+            }
+        }
+<span class="fc" id="L45">        return null</span>
+    }
+
+<span class="fc" id="L48">    @StringRes</span>
+<span class="fc" id="L49">    fun spouseDobError(display: String, marriageDateServer: String = &quot;&quot;): Int? {</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (!isFormatValid(display)) return R.string.date_of_birth_is_not_valid</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (isFuture(display)) return R.string.date_of_birth_is_not_valid</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (!DateUtils.isUserMature(display)) return R.string.error_spouse_must_be_16</span>
+<span class="fc bfc" id="L53" title="All 4 branches covered.">        if (marriageDateServer.isNotBlank()) {</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">            val spouseDobServer = DateUtils.toAPIDate(display) ?: &quot;&quot;</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">            if (DateUtils.ageAtDate(spouseDobServer, marriageDateServer) &lt; 16) {</span>
+<span class="fc" id="L56">                return R.string.error_spouse_must_be_16_at_marriage</span>
+            }
+        }
+<span class="fc" id="L59">        return null</span>
+    }
+
+<span class="fc" id="L62">    @StringRes</span>
+    fun marriageDateError(
+        display: String,
+<span class="fc" id="L65">        spouseDobServer: String = &quot;&quot;,</span>
+<span class="fc" id="L66">        memberDobServer: String = &quot;&quot;</span>
+    ): Int? {
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (!isFormatValid(display)) return R.string.marriage_date_is_not_valid</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        if (isFuture(display)) return R.string.marriage_date_is_not_valid</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        val marriageServer = DateUtils.toAPIDate(display) ?: return R.string.marriage_date_is_not_valid</span>
+<span class="fc bfc" id="L71" title="All 4 branches covered.">        if (spouseDobServer.isNotBlank()) {</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">            if (DateUtils.ageAtDate(spouseDobServer, marriageServer) &lt; 0) {</span>
+<span class="fc" id="L73">                return R.string.error_marriage_date_before_dob</span>
+            }
+<span class="fc bfc" id="L75" title="All 2 branches covered.">            if (DateUtils.ageAtDate(spouseDobServer, marriageServer) &lt; 16) {</span>
+<span class="fc" id="L76">                return R.string.error_spouse_must_be_16_at_marriage</span>
+            }
+        }
+<span class="fc bfc" id="L79" title="All 6 branches covered.">        if (memberDobServer.isNotBlank() &amp;&amp; DateUtils.ageAtDate(memberDobServer, marriageServer) &lt; 16) {</span>
+<span class="fc" id="L80">            return R.string.error_member_must_be_16_at_marriage</span>
+        }
+<span class="fc" id="L82">        return null</span>
+    }
+
+    @StringRes
+    fun childDobError(display: String): Int? {
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        if (!isFormatValid(display)) return R.string.date_of_birth_is_not_valid</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (isFuture(display)) return R.string.date_is_not_valid</span>
+<span class="fc" id="L89">        return null</span>
+    }
+
+<span class="fc" id="L92">    private fun isFormatValid(display: String): Boolean = try {</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        SimpleDateFormat(&quot;MM/dd/yyyy&quot;, Locale.US).also { it.isLenient = false }.parse(display) != null</span>
+<span class="fc" id="L94">    } catch (_: Exception) { false }</span>
+
+<span class="fc" id="L96">    private fun isFuture(display: String): Boolean = try {</span>
+<span class="fc" id="L97">        DateUtils.isFutureMonth(DateUtils.stringDateToDate(display))</span>
+<span class="pc" id="L98">    } catch (_: Exception) { false }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

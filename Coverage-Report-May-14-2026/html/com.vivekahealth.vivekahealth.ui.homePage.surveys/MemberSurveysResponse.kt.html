@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MemberSurveysResponse.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.surveys</a> &gt; <span class="el_source">MemberSurveysResponse.kt</span></div><h1>MemberSurveysResponse.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.surveys
+
+import java.io.Serializable
+import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.util.Locale
+
+<span class="pc" id="L8">data class MemberSurveysResponse(val responseData: List&lt;SurveyData&gt;?)</span>
+
+<span class="nc" id="L10">data class SurveyData(</span>
+<span class="nc" id="L11">    val title: String,</span>
+<span class="nc" id="L12">    val description: String,</span>
+<span class="nc" id="L13">    val endDate: String,</span>
+<span class="nc" id="L14">    val submissionDate: String,</span>
+<span class="nc" id="L15">    val status: SurveyStatus,</span>
+<span class="nc" id="L16">    val fullScreenSplash: Boolean,</span>
+<span class="nc" id="L17">    val mobileDisplaySection: String,</span>
+<span class="nc" id="L18">    val links: List&lt;Link&gt;</span>
+) : Serializable {
+    /**
+     * Get the [endDate] of the survey as a user-friendly string.
+     */
+    fun getDisplayDate(): String {
+<span class="nc" id="L24">        val date = SimpleDateFormat(&quot;yyyy-MM-dd&quot;, Locale(&quot;en&quot;)).parse(endDate)</span>
+<span class="nc" id="L25">        val mediumDate = DateFormat.getDateInstance(DateFormat.MEDIUM).format(date)</span>
+<span class="nc" id="L26">        return &quot;$mediumDate&quot;</span>
+    }
+
+    fun getSubmittedDate(): String {
+<span class="nc" id="L30">        val date = SimpleDateFormat(&quot;yyyy-MM-dd&quot;, Locale(&quot;en&quot;)).parse(submissionDate)</span>
+<span class="nc" id="L31">        val mediumDate = DateFormat.getDateInstance(DateFormat.MEDIUM).format(date)</span>
+<span class="nc" id="L32">        return &quot;$mediumDate&quot;</span>
+    }
+}
+
+<span class="nc" id="L36">data class Link(val rel: String, val href: String)</span>
+
+enum class SurveyStatus {
+<span class="fc" id="L39">    NEW,</span>
+<span class="fc" id="L40">    COMPLETED,</span>
+<span class="fc" id="L41">    EXPIRED</span>
+<span class="nc" id="L42">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

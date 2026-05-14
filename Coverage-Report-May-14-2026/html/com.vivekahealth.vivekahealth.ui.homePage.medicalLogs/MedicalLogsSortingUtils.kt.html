@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MedicalLogsSortingUtils.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.medicalLogs</a> &gt; <span class="el_source">MedicalLogsSortingUtils.kt</span></div><h1>MedicalLogsSortingUtils.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.medicalLogs
+
+import com.vivekahealth.vivekahealth.data.remote.home.ClaimsQuickView
+import com.vivekahealth.vivekahealth.data.remote.home.DiagnosisHistoryQuickView
+import com.vivekahealth.vivekahealth.data.remote.home.ImmunizationQuickView
+import com.vivekahealth.vivekahealth.data.remote.home.LabResultQuickView
+import com.vivekahealth.vivekahealth.data.remote.home.PrescriptionQuickView
+import com.vivekahealth.vivekahealth.data.remote.home.medicalLogs.MedicalLogsAll
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.MedicalLogsSortingUtils.MEDICAL_LOG_CLAIMS
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.MedicalLogsSortingUtils.MEDICAL_LOG_DIAGNOSIS
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.MedicalLogsSortingUtils.MEDICAL_LOG_LAB
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.MedicalLogsSortingUtils.MEDICAL_LOG_PRESCRIPTION
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import timber.log.Timber
+import java.util.Date
+
+object MedicalLogsSortingUtils {
+
+    // this is used in this class only
+    const val MEDICAL_LOG_CLAIMS = 1
+    const val MEDICAL_LOG_DIAGNOSIS = 2
+    const val MEDICAL_LOG_PRESCRIPTION = 3
+    const val MEDICAL_LOG_LAB = 4
+
+    /**
+     * Sort and group ALL medical logs (diagnosis, prescriptions, lab, claims)
+     */
+    fun sortAllMedicalLogs(logsData: MedicalLogsAll, sortAction: String): List&lt;Any&gt; {
+<span class="fc" id="L29">        val isDescending = sortAction.equals(&quot;desc&quot;, true)</span>
+
+        // Collect all medical items
+<span class="fc" id="L32">        val allMedicalItems = collectAllMedicalItems(logsData)</span>
+
+        // Sort, group, and flatten in one operation
+<span class="fc" id="L35">        return sortGroupAndFlatten(allMedicalItems, isDescending)</span>
+    }
+
+    /**
+     * Sort and group PRESCRIPTIONS only with specific sort criteria
+     * Jun 17, 2025
+     */
+    fun sortPrescriptionsOnly(
+        logsData: MedicalLogsAll,
+        sortAction: String,
+        sortBy: String
+    ): List&lt;Any&gt; {
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        val prescriptionList = logsData.prescriptionList ?: return emptyList()</span>
+
+<span class="fc" id="L49">        val isDescending = sortAction.equals(&quot;desc&quot;, true)</span>
+<span class="fc" id="L50">        val useActionDate = sortBy.equals(&quot;recentlyUpdated&quot;, true)</span>
+
+        // Create and collect prescription items
+<span class="fc" id="L53">        val prescriptionItems = prescriptionList.mapNotNull { prescription -&gt;</span>
+<span class="fc" id="L54">            val dateString = prescription.dateOfService</span>
+
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">            extractDate(dateString) { DateUtils.stringServerDateToDate(it) }?.let { date -&gt;</span>
+<span class="fc" id="L57">                MedicalItem(prescription, date, MEDICAL_LOG_PRESCRIPTION, prescription.drugName)</span>
+<span class="fc" id="L58">            }</span>
+        }
+
+        // Sort, group, and flatten in one operation
+<span class="fc" id="L62">        return sortGroupAndFlatten(</span>
+<span class="fc" id="L63">            prescriptionItems,</span>
+<span class="fc" id="L64">            isDescending,</span>
+<span class="fc" id="L65">            isPrescriptionsOnly = true,</span>
+<span class="fc" id="L66">            sortBy = sortBy</span>
+        )
+    }
+
+    fun sortClaimsOnly(logsData: MedicalLogsAll, sortAction: String, sortBy: String): List&lt;Any&gt; {
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        val claimsList = logsData.claimsList ?: return emptyList()</span>
+
+<span class="fc" id="L73">        val isDescending = sortAction.equals(&quot;desc&quot;, true)</span>
+<span class="fc" id="L74">        val useActionDate = sortBy.equals(&quot;recentlyUpdated&quot;, true)</span>
+
+        // Create and collect claim items
+<span class="fc" id="L77">        val claimItems = claimsList.mapNotNull { claim -&gt;</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">            val dateString = if (useActionDate) claim.actionDate else claim.visitedDate</span>
+
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">            extractDate(dateString) { DateUtils.stringServerDateToDate(it) }?.let { date -&gt;</span>
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">                MedicalItem(claim, date, MEDICAL_LOG_CLAIMS, claim.providerDisplayName ?: &quot;&quot;)</span>
+<span class="fc" id="L82">            }</span>
+        }
+
+        // Sort, group, and flatten in one operation
+<span class="fc" id="L86">        return sortGroupAndFlatten(claimItems, isDescending, isClaimsOnly = true, sortBy = sortBy)</span>
+    }
+
+    fun sortDiagnosisOnly(logsData: MedicalLogsAll): List&lt;DiagnosisHistoryQuickView&gt; {
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        return logsData.diagnosisList ?: emptyList()</span>
+    }
+    fun sortImmunizationsOnly(logsData: MedicalLogsAll): List&lt;ImmunizationQuickView&gt; {
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        return logsData.immunizationList ?: emptyList()</span>
+    }
+
+    // Combined sort, group, and flatten operation
+<span class="fc" id="L97">    private fun sortGroupAndFlatten(</span>
+        items: List&lt;MedicalItem&gt;,
+        isDescending: Boolean,
+<span class="fc" id="L100">        isClaimsOnly: Boolean = false,</span>
+<span class="fc" id="L101">        isPrescriptionsOnly: Boolean = false,</span>
+<span class="fc" id="L102">        sortBy: String? = null</span>
+    ): List&lt;Any&gt; {
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">        if (items.isEmpty()) return emptyList()</span>
+
+        // Group by appropriate date key based on context
+<span class="fc" id="L107">        val groupedByDate = items.groupBy { item -&gt;</span>
+<span class="fc" id="L108">            when {</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">                isClaimsOnly -&gt; getClaimDateGroupKey(item.data, sortBy)</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">                isPrescriptionsOnly -&gt; getPrescriptionDateGroupKey(item.data, sortBy)</span>
+<span class="fc" id="L111">                else -&gt; getAllDateGroupKey(item.data, item.data.getLogViewType())</span>
+<span class="fc" id="L112">            }</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">        }.filterKeys { it != null }</span>
+
+<span class="fc" id="L115">        val sortedGroups = when {</span>
+<span class="fc bfc" id="L116" title="All 4 branches covered.">            isPrescriptionsOnly &amp;&amp; sortBy.equals(&quot;drugName&quot;) -&gt; {</span>
+                // Keys are Strings when sorting by drug name
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">                if (isDescending) {</span>
+<span class="nc" id="L119">                    groupedByDate.toSortedMap(compareByDescending { it as String })</span>
+                } else {
+<span class="fc" id="L121">                    groupedByDate.toSortedMap(compareBy { it as String })</span>
+                }
+            }
+
+            else -&gt; {
+                // Keys are Dates for all other cases
+<span class="fc bfc" id="L127" title="All 2 branches covered.">                if (isDescending) {</span>
+<span class="fc" id="L128">                    groupedByDate.toSortedMap(compareByDescending { it as Date })</span>
+                } else {
+<span class="fc" id="L130">                    groupedByDate.toSortedMap(compareBy { it as Date })</span>
+                }
+            }
+        }
+
+        // Create final flattened list with headers
+        // Main sorting logic
+<span class="fc" id="L137">        return sortedGroups.flatMap { (dateKey, groupItems) -&gt;</span>
+
+<span class="fc bfc" id="L139" title="All 4 branches covered.">            val sortedGroupItems = if (isPrescriptionsOnly &amp;&amp; sortBy == &quot;drugName&quot;) {</span>
+<span class="fc" id="L140">                groupItems.sortedBy { (it.data as PrescriptionQuickView).drugName }</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">            } else if (isDescending) {</span>
+<span class="fc" id="L142">                groupItems.sortedWith(</span>
+<span class="fc" id="L143">                    compareByDescending&lt;MedicalItem&gt; { it.data.getSortingDate() } // First sort by date descending</span>
+<span class="fc" id="L144">                        .thenBy { it.data.getLogViewType() } // Then sort by viewType ascending</span>
+                )
+            } else {
+<span class="fc" id="L147">                groupItems.sortedWith(</span>
+<span class="fc" id="L148">                    compareBy&lt;MedicalItem&gt; { it.data.getSortingDate() } // First sort by date descending</span>
+<span class="fc" id="L149">                        .thenBy { it.data.getLogViewType() } // Then sort by viewType ascending</span>
+                )
+            }
+
+            // Date header followed by items
+<span class="fc" id="L154">            arrayListOf&lt;Any&gt;(dateKey!!) + sortedGroupItems.map { it.data }</span>
+        }
+    }
+
+    // Private helper functions
+
+    private fun collectAllMedicalItems(logsData: MedicalLogsAll): List&lt;MedicalItem&gt; {
+<span class="fc" id="L161">        val allMedicalItems = mutableListOf&lt;MedicalItem&gt;()</span>
+
+        // Diagnosis
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        logsData.diagnosisList?.forEach { diagnosis -&gt;</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">            extractDate(diagnosis.diagnosisDate) { DateUtils.stringDateToDate(it) }?.let { date -&gt;</span>
+<span class="nc" id="L166">                allMedicalItems.add(</span>
+<span class="nc" id="L167">                    MedicalItem(</span>
+<span class="nc" id="L168">                        diagnosis.copy(sortingDate = date),</span>
+<span class="nc" id="L169">                        date,</span>
+<span class="nc" id="L170">                        MEDICAL_LOG_DIAGNOSIS,</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">                        diagnosis.icd10Code.description ?: &quot;&quot;</span>
+                    )
+                )
+<span class="nc" id="L174">            }</span>
+<span class="nc" id="L175">        }</span>
+
+        // Prescriptions
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">        logsData.prescriptionList?.forEach { prescription -&gt;</span>
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">            extractDate(prescription.dateOfService) { DateUtils.stringServerDateToDate(it) }?.let { date -&gt;</span>
+<span class="fc" id="L180">                allMedicalItems.add(</span>
+<span class="fc" id="L181">                    MedicalItem(</span>
+<span class="fc" id="L182">                        prescription.copy(sortingDate = date),</span>
+<span class="fc" id="L183">                        date,</span>
+<span class="fc" id="L184">                        MEDICAL_LOG_PRESCRIPTION,</span>
+<span class="fc" id="L185">                        prescription.drugName</span>
+                    )
+                )
+<span class="fc" id="L188">            }</span>
+<span class="fc" id="L189">        }</span>
+
+        // Lab Results
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">        logsData.labInfoList?.forEach { lab -&gt;</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">            extractDate(lab.latestReadingDateTime) { DateUtils.labDateStringToDate(it) }?.let { date -&gt;</span>
+<span class="nc" id="L194">                allMedicalItems.add(</span>
+<span class="nc" id="L195">                    MedicalItem(lab.copy(sortingDate = date), date, MEDICAL_LOG_LAB, lab.loincCode)</span>
+                )
+<span class="nc" id="L197">            }</span>
+<span class="nc" id="L198">        }</span>
+
+        // Claims (using visitedDate for all medical logs view)
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">        logsData.claimsList?.forEach { claim -&gt;</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">            claim.visitedDate?.let { visitedDate -&gt;</span>
+<span class="nc bnc" id="L203" title="All 2 branches missed.">                extractDate(visitedDate) { DateUtils.stringServerDateToDate(it) }?.let { date -&gt;</span>
+<span class="nc" id="L204">                    allMedicalItems.add(</span>
+<span class="nc" id="L205">                        MedicalItem(</span>
+<span class="nc" id="L206">                            claim.copy(sortingDate = date),</span>
+<span class="nc" id="L207">                            date,</span>
+<span class="nc" id="L208">                            MEDICAL_LOG_CLAIMS,</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">                            claim.providerDisplayName ?: &quot;&quot;</span>
+                        )
+                    )
+<span class="nc" id="L212">                }</span>
+<span class="nc" id="L213">            }</span>
+<span class="nc" id="L214">        }</span>
+
+<span class="fc" id="L216">        return allMedicalItems</span>
+    }
+
+    // Date group key for ALL medical logs view
+    private fun getAllDateGroupKey(data: Any, viewType: Int): Date? {
+<span class="fc" id="L221">        return try {</span>
+<span class="pc bpc" id="L222" title="4 of 5 branches missed.">            when (viewType) {</span>
+<span class="nc bnc" id="L223" title="All 4 branches missed.">                MEDICAL_LOG_DIAGNOSIS -&gt; (data as? DiagnosisHistoryQuickView)?.let { diagnosis -&gt;</span>
+<span class="nc" id="L224">                    DateUtils.groupStringToDate(</span>
+<span class="nc" id="L225">                        DateUtils.getMonthServerDateSlashedToMMMM(diagnosis.diagnosisDate)</span>
+<span class="nc" id="L226">                    )</span>
+                }
+
+<span class="pc bpc" id="L229" title="2 of 4 branches missed.">                MEDICAL_LOG_PRESCRIPTION -&gt; (data as? PrescriptionQuickView)?.let { prescription -&gt;</span>
+<span class="fc" id="L230">                    DateUtils.groupStringToDate(</span>
+<span class="fc" id="L231">                        DateUtils.getDashToMMMMPrescription(prescription.dateOfService)</span>
+<span class="fc" id="L232">                    )</span>
+                }
+
+<span class="nc bnc" id="L235" title="All 4 branches missed.">                MEDICAL_LOG_LAB -&gt; (data as? LabResultQuickView)?.let { lab -&gt;</span>
+<span class="nc" id="L236">                    DateUtils.groupStringToDate(</span>
+<span class="nc" id="L237">                        DateUtils.getDashMMMMLab(lab.latestReadingDateTime)</span>
+<span class="nc" id="L238">                    )</span>
+                }
+
+<span class="nc bnc" id="L241" title="All 4 branches missed.">                MEDICAL_LOG_CLAIMS -&gt; (data as? ClaimsQuickView)?.let { claim -&gt;</span>
+<span class="nc" id="L242">                    DateUtils.groupStringToDate(</span>
+<span class="nc" id="L243">                        DateUtils.getDashToMMMMClaim(claim.visitedDate.toString())</span>
+<span class="nc" id="L244">                    )</span>
+                }
+
+<span class="pc" id="L247">                else -&gt; null</span>
+            }
+<span class="nc" id="L249">        } catch (e: Exception) {</span>
+<span class="nc" id="L250">            Timber.e(&quot;Error extracting ALL date group key: ${e.message}&quot;)</span>
+<span class="pc" id="L251">            null</span>
+        }
+    }
+
+    // Date group key for PRESCRIPTIONS ONLY view
+    private fun getPrescriptionDateGroupKey(data: Any, sortBy: String?): Any? {
+<span class="fc" id="L257">        return try {</span>
+<span class="pc bpc" id="L258" title="2 of 4 branches missed.">            (data as? PrescriptionQuickView)?.let { prescription -&gt;</span>
+
+<span class="fc bfc" id="L260" title="All 2 branches covered.">                if (sortBy.equals(&quot;drugName&quot;)) {</span>
+<span class="fc" id="L261">                    prescription.drugName.first().uppercaseChar().toString()</span>
+                } else {
+<span class="fc" id="L263">                    val dateString = prescription.dateOfService</span>
+                    // Different grouping logic for prescriptions only
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">                    dateString?.let {</span>
+<span class="fc" id="L266">                        DateUtils.stringServerDateToDate(</span>
+<span class="fc" id="L267">                            it</span>
+<span class="fc" id="L268">                        )</span>
+                    }
+<span class="fc" id="L270">                }</span>
+            }
+<span class="nc" id="L272">        } catch (e: Exception) {</span>
+<span class="nc" id="L273">            Timber.e(&quot;Error extracting PRESCRIPTIONS date group key: ${e.message}&quot;)</span>
+<span class="pc" id="L274">            null</span>
+        }
+    }
+
+    private fun getClaimDateGroupKey(data: Any, sortBy: String?): Date? {
+<span class="fc" id="L279">        return try {</span>
+<span class="pc bpc" id="L280" title="2 of 4 branches missed.">            (data as? ClaimsQuickView)?.let { claim -&gt;</span>
+<span class="pc bpc" id="L281" title="1 of 6 branches missed.">                val dateString = if (sortBy?.equals(&quot;recentlyUpdated&quot;, true) == true) {</span>
+<span class="fc" id="L282">                    claim.actionDate</span>
+                } else {
+<span class="fc" id="L284">                    claim.visitedDate</span>
+                }
+
+                // Different grouping logic for claims only
+<span class="pc bpc" id="L288" title="1 of 2 branches missed.">                dateString?.let {</span>
+<span class="fc" id="L289">                    DateUtils.groupStringToDate(</span>
+<span class="fc" id="L290">                        DateUtils.getDashToMMMMClaim(it)</span>
+<span class="fc" id="L291">                    )</span>
+<span class="fc" id="L292">                }</span>
+            }
+<span class="nc" id="L294">        } catch (e: Exception) {</span>
+<span class="nc" id="L295">            Timber.e(&quot;Error extracting CLAIMS date group key: ${e.message}&quot;)</span>
+<span class="pc" id="L296">            null</span>
+        }
+    }
+
+    private fun extractDate(dateString: String?, dateParser: (String) -&gt; Date?): Date? {
+<span class="fc" id="L301">        return try {</span>
+<span class="pc bpc" id="L302" title="1 of 2 branches missed.">            dateString?.let { dateParser(it) }</span>
+<span class="nc" id="L303">        } catch (e: Exception) {</span>
+<span class="nc" id="L304">            Timber.e(&quot;Error parsing date '$dateString': ${e.message}&quot;)</span>
+<span class="pc" id="L305">            null</span>
+        }
+    }
+}
+
+// Internal data class for processing
+<span class="fc" id="L311">data class MedicalItem(</span>
+<span class="fc" id="L312">    val data: Any,</span>
+<span class="pc" id="L313">    val date: Date,</span>
+<span class="pc" id="L314">    val viewType: Int,</span>
+<span class="pc" id="L315">    val title: String</span>
+)
+
+<span class="fc" id="L318">fun Any.getSortingDate(): Date? = when (this) {</span>
+<span class="fc bfc" id="L319" title="All 2 branches covered.">    is ClaimsQuickView -&gt; this.sortingDate</span>
+<span class="pc bpc" id="L320" title="1 of 2 branches missed.">    is DiagnosisHistoryQuickView -&gt; this.sortingDate</span>
+<span class="pc bpc" id="L321" title="1 of 2 branches missed.">    is LabResultQuickView -&gt; this.sortingDate</span>
+<span class="pc bpc" id="L322" title="1 of 2 branches missed.">    is PrescriptionQuickView -&gt; this.sortingDate</span>
+<span class="nc" id="L323">    else -&gt; null</span>
+<span class="fc" id="L324">}</span>
+
+<span class="fc" id="L326">fun Any.getLogViewType(): Int = when (this) {</span>
+<span class="pc bpc" id="L327" title="1 of 2 branches missed.">    is DiagnosisHistoryQuickView -&gt; MEDICAL_LOG_DIAGNOSIS</span>
+<span class="fc bfc" id="L328" title="All 2 branches covered.">    is ClaimsQuickView -&gt; MEDICAL_LOG_CLAIMS</span>
+<span class="fc bfc" id="L329" title="All 2 branches covered.">    is PrescriptionQuickView -&gt; MEDICAL_LOG_PRESCRIPTION</span>
+<span class="pc bpc" id="L330" title="1 of 2 branches missed.">    is LabResultQuickView -&gt; MEDICAL_LOG_LAB</span>
+<span class="fc" id="L331">    else -&gt; -1 // or throw an exception if you prefer</span>
+<span class="fc" id="L332">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DiagnosisFilterViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.diagnosis.filter</a> &gt; <span class="el_source">DiagnosisFilterViewModel.kt</span></div><h1>DiagnosisFilterViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.diagnosis.filter
+
+import android.content.SharedPreferences
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.google.android.material.slider.RangeSlider
+import com.vivekahealth.vivekahealth.data.local.VivekaDatabase
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.data.remote.home.medicalLogs.AvailPrescriptionFiltersItem
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import io.reactivex.disposables.CompositeDisposable
+import java.util.*
+import javax.inject.Inject
+import kotlin.collections.ArrayList
+
+<span class="nc" id="L23">class DiagnosisFilterViewModel @Inject constructor(</span>
+<span class="nc" id="L24">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L25">    private val homeRepository: HomeRepository,</span>
+<span class="nc" id="L26">    private val vivekaDatabase: VivekaDatabase</span>
+<span class="nc" id="L27">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L29">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L31">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L33">    private val _navigateToPres = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToPres: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L35">        get() = _navigateToPres</span>
+
+<span class="nc" id="L37">    private val _navigateToValues = MutableLiveData&lt;Event&lt;List&lt;Float&gt;&gt;&gt;()</span>
+    val navigateToValues: LiveData&lt;Event&lt;List&lt;Float&gt;&gt;&gt;
+<span class="nc" id="L39">        get() = _navigateToValues</span>
+<span class="nc" id="L40">    private val _navigateToDocFilter = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToDocFilter: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L42">        get() = _navigateToDocFilter</span>
+
+<span class="nc" id="L44">    private val _navigateToClear = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToClear: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L46">        get() = _navigateToClear</span>
+
+<span class="nc" id="L48">    private val _dependentListGenerated = MutableLiveData&lt;Event&lt;List&lt;MemberInfo&gt;&gt;&gt;()</span>
+    val dependentListGenerated: LiveData&lt;Event&lt;List&lt;MemberInfo&gt;&gt;&gt;
+<span class="nc" id="L50">        get() = _dependentListGenerated</span>
+
+<span class="nc" id="L52">    var drugNameList: ArrayList&lt;AvailPrescriptionFiltersItem&gt; = arrayListOf()</span>
+<span class="nc" id="L53">    var typeList: ArrayList&lt;AvailPrescriptionFiltersItem&gt; = arrayListOf()</span>
+
+<span class="nc" id="L55">    var listOption: ArrayList&lt;AvailPrescriptionFiltersItem&gt; = arrayListOf()</span>
+<span class="nc" id="L56">    var drugNameListID: ArrayList&lt;AvailPrescriptionFiltersItem&gt; = arrayListOf()</span>
+<span class="nc" id="L57">    var typeListID: ArrayList&lt;AvailPrescriptionFiltersItem&gt; = arrayListOf()</span>
+<span class="nc" id="L58">    var drugNameListIDFinal: ArrayList&lt;AvailPrescriptionFiltersItem&gt; = arrayListOf()</span>
+<span class="nc" id="L59">    var typeListIDFinal: ArrayList&lt;AvailPrescriptionFiltersItem&gt; = arrayListOf()</span>
+    var count: Int = 0
+<span class="nc" id="L61">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L63">            field = value</span>
+
+<span class="nc" id="L65">            callbacks.notifyCallbacks(this, BR.count, null)</span>
+<span class="nc" id="L66">        }</span>
+
+    var showType: Boolean = false
+<span class="nc" id="L69">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L71">            field = value</span>
+
+<span class="nc" id="L73">            callbacks.notifyCallbacks(this, BR.showType, null)</span>
+<span class="nc" id="L74">        }</span>
+    var showName: Boolean = false
+<span class="nc" id="L76">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L78">            field = value</span>
+
+<span class="nc" id="L80">            callbacks.notifyCallbacks(this, BR.showName, null)</span>
+<span class="nc" id="L81">        }</span>
+    var mailOrder: Boolean = false
+<span class="nc" id="L83">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L85">            field = value</span>
+
+<span class="nc" id="L87">            callbacks.notifyCallbacks(this, BR.mailOrder, null)</span>
+<span class="nc" id="L88">        }</span>
+
+    var inStore: Boolean = false
+<span class="nc" id="L91">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L93">            field = value</span>
+
+<span class="nc" id="L95">            callbacks.notifyCallbacks(this, BR.inStore, null)</span>
+<span class="nc" id="L96">        }</span>
+
+<span class="nc" id="L98">    var maxRange: Float = 10F</span>
+//        @Bindable get
+//        set(value) {
+//            field = value
+//
+//            callbacks.notifyCallbacks(this, BR.maxRange, null)
+//        }
+
+<span class="nc" id="L106">    var rangeValue: List&lt;Float&gt; = listOf()</span>
+<span class="nc" id="L107">    var minRange: Float = 1F</span>
+
+//        @Bindable get
+//        set(value) {
+//            field = value
+//
+//            callbacks.notifyCallbacks(this, BR.minRange, null)
+//        }
+<span class="nc" id="L115">    var range: String = HelperUtils.floor(minRange.toDouble()) + &quot;-&quot; + HelperUtils.floor(</span>
+<span class="nc" id="L116">        maxRange.toDouble()</span>
+    )
+<span class="nc" id="L118">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L120">            field = value</span>
+
+<span class="nc" id="L122">            callbacks.notifyCallbacks(this, BR.range, null)</span>
+<span class="nc" id="L123">        }</span>
+
+<span class="nc" id="L125">    var rangeMin: String = &quot;&quot;</span>
+<span class="nc" id="L126">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L128">            field = value</span>
+
+<span class="nc" id="L130">            callbacks.notifyCallbacks(this, BR.rangeMin, null)</span>
+<span class="nc" id="L131">        }</span>
+<span class="nc" id="L132">    var rangeMax: String = &quot;&quot;</span>
+<span class="nc" id="L133">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L135">            field = value</span>
+
+<span class="nc" id="L137">            callbacks.notifyCallbacks(this, BR.rangeMax, null)</span>
+<span class="nc" id="L138">        }</span>
+
+<span class="nc" id="L140">    var groupedName: List&lt;AvailPrescriptionFiltersItem&gt;? = null</span>
+<span class="nc" id="L141">    var groupedType: List&lt;AvailPrescriptionFiltersItem&gt;? = null</span>
+
+    fun name() {
+<span class="nc bnc" id="L144" title="All 2 branches missed.">        showName = !showName</span>
+<span class="nc" id="L145">    }</span>
+    fun type() {
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        showType = !showType</span>
+<span class="nc" id="L148">    }</span>
+
+    fun apply() {
+<span class="nc" id="L151">        drugNameListIDFinal = drugNameListID</span>
+<span class="nc" id="L152">        typeListIDFinal = typeListID</span>
+<span class="nc" id="L153">        _navigateToDocFilter.value = Event(Unit)</span>
+<span class="nc" id="L154">    }</span>
+
+    fun close() {
+<span class="nc" id="L157">        _navigateToPres.value = Event(Unit)</span>
+<span class="nc" id="L158">    }</span>
+
+<span class="nc" id="L160">    @get:Bindable</span>
+    val sliderWatcher =
+<span class="nc" id="L162">        RangeSlider.OnChangeListener { slider, value, fromUser -&gt;</span>
+
+//            if (fromUser){
+<span class="nc" id="L165">            minRange = slider.valueFrom.toFloat()</span>
+<span class="nc" id="L166">            maxRange = slider.valueTo.toFloat()</span>
+<span class="nc" id="L167">            _navigateToValues.value = Event(slider.values)</span>
+//            }
+<span class="nc" id="L169">        }</span>
+
+    fun clear() {
+<span class="nc" id="L172">        typeListID.clear()</span>
+<span class="nc" id="L173">        drugNameListID.clear()</span>
+<span class="nc" id="L174">        count = 0</span>
+
+<span class="nc" id="L176">        _navigateToClear.value = Event(Unit)</span>
+<span class="nc" id="L177">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L180">        callbacks.add(callback)</span>
+<span class="nc" id="L181">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L184">        callbacks.remove(callback)</span>
+<span class="nc" id="L185">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L188">        super.onCleared()</span>
+<span class="nc" id="L189">        compositeDisposable.dispose()</span>
+<span class="nc" id="L190">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

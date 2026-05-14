@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BenefitWorkRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.benefit.repository</a> &gt; <span class="el_source">BenefitWorkRepository.kt</span></div><h1>BenefitWorkRepository.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.benefit.repository
+
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
+import com.vivekahealth.vivekahealth.data.local.home.BarModel
+import com.vivekahealth.vivekahealth.data.local.home.EligibilityReason
+import com.vivekahealth.vivekahealth.data.local.home.InsuranceWithCardCardDataDao
+import com.vivekahealth.vivekahealth.data.local.home.WorkBenefitV2Dao
+import com.vivekahealth.vivekahealth.data.remote.home.CardsInsurance
+import com.vivekahealth.vivekahealth.data.remote.home.ContractBenefitDetails
+import com.vivekahealth.vivekahealth.data.remote.home.InsuranceDataModel
+import com.vivekahealth.vivekahealth.data.remote.home.InsuranceDataNewModel
+import com.vivekahealth.vivekahealth.data.remote.home.ValueInsurance
+import com.vivekahealth.vivekahealth.data.remote.home.WorkBenefit
+import com.vivekahealth.vivekahealth.data.remote.home.WorkHour
+import com.vivekahealth.vivekahealth.data.remote.home.WorkHourV2
+import com.vivekahealth.vivekahealth.data.remote.home.hoursSummary.WorkHourSummary
+import com.vivekahealth.vivekahealth.data.remote.home.workBenefit.ContractDetails
+import com.vivekahealth.vivekahealth.data.remote.home.workBenefit.benefitPerMonth.MemberBenefitPerMonth
+import com.vivekahealth.vivekahealth.data.remote.home.workBenefit.workLog.WorkBenefitV2
+import com.vivekahealth.vivekahealth.data.remote.home.workBenefit.workLog.WorkBenefitV2Entity
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.service.BenefitWorkService
+import com.vivekahealth.vivekahealth.utils.thread.AppExecutors
+import io.reactivex.Single
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * Repository that handles User objects.
+ */
+@Singleton
+<span class="fc" id="L32">class BenefitWorkRepository @Inject constructor(</span>
+<span class="fc" id="L33">    private val appExecutors: AppExecutors,</span>
+<span class="fc" id="L34">    private val benefitWorkService: BenefitWorkService,</span>
+<span class="fc" id="L35">    private val insuranceWithCardDataDao: InsuranceWithCardCardDataDao,</span>
+<span class="fc" id="L36">    private val workLogV2Dao: WorkBenefitV2Dao</span>
+) {
+
+    fun insertInsurance(insuranceDataModel: InsuranceDataModel) {
+<span class="fc" id="L40">        var insuranceDataNewModel = InsuranceDataNewModel(</span>
+<span class="fc" id="L41">            selfId = insuranceDataModel.selfId.toLong(),</span>
+<span class="fc" id="L42">            updatedDate = insuranceDataModel.updatedDate</span>
+        )
+
+<span class="fc" id="L45">        var list = ArrayList&lt;CardsInsurance&gt;()</span>
+
+<span class="fc" id="L47">        insuranceDataModel.values.forEachIndexed {</span>
+                index, it -&gt;
+<span class="fc" id="L49">            list.add(</span>
+<span class="fc" id="L50">                CardsInsurance(</span>
+<span class="fc" id="L51">                    selfId = insuranceDataModel.selfId.toLong(),</span>
+<span class="fc" id="L52">                    front = it.front,</span>
+<span class="fc" id="L53">                    back = it.back,</span>
+<span class="fc" id="L54">                    benefitType = it.benefitType,</span>
+<span class="fc" id="L55">                    indexOrder = index</span>
+                )
+            )
+<span class="fc" id="L58">        }</span>
+
+<span class="fc" id="L60">        insuranceWithCardDataDao.insert(insuranceDataNewModel)</span>
+<span class="fc" id="L61">        insuranceWithCardDataDao.insertAll(*list.toTypedArray())</span>
+<span class="fc" id="L62">    }</span>
+
+    fun getInsuranceFromDb(selfId: String): InsuranceDataModel? {
+<span class="nc" id="L65">        val data = insuranceWithCardDataDao.getInsuranceCardNewLiveData(selfId)</span>
+
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        data?.let {</span>
+                it -&gt;
+<span class="nc" id="L69">            val cards = it.cards.map {</span>
+<span class="nc" id="L70">                ValueInsurance(it.front, it.back, it.benefitType)</span>
+            }
+<span class="nc" id="L72">            return InsuranceDataModel(</span>
+<span class="nc" id="L73">                selfId = it.data.selfId.toString(),</span>
+<span class="nc" id="L74">                updatedDate = it.data.updatedDate,</span>
+<span class="nc" id="L75">                values = cards.sortedByDescending { it.benefitType }</span>
+            )
+        }
+<span class="nc" id="L78">        return null</span>
+    }
+
+    fun getInsuranceFromDbLiveData(selfId: String): LiveData&lt;InsuranceDataModel?&gt; {
+<span class="nc" id="L82">        val mediator = MediatorLiveData&lt;InsuranceDataModel?&gt;()</span>
+<span class="nc" id="L83">        val metadataLiveData = insuranceWithCardDataDao.getInsuranceMetadataLiveData(selfId)</span>
+<span class="nc" id="L84">        val cardsLiveData = insuranceWithCardDataDao.getCardDataOrderedLiveData(selfId)</span>
+
+<span class="nc" id="L86">        var metadata: InsuranceDataNewModel? = null</span>
+<span class="nc" id="L87">        var cards: List&lt;CardsInsurance&gt;? = null</span>
+
+<span class="nc" id="L89">        val combineAndEmit = {</span>
+<span class="nc" id="L90">            when {</span>
+<span class="nc bnc" id="L91" title="All 4 branches missed.">                metadata != null &amp;&amp; cards != null -&gt; {</span>
+<span class="nc" id="L92">                    mediator.value = InsuranceDataModel(</span>
+<span class="nc" id="L93">                        selfId = metadata!!.selfId.toString(),</span>
+<span class="nc" id="L94">                        updatedDate = metadata!!.updatedDate,</span>
+<span class="nc" id="L95">                        values = cards!!.map {</span>
+<span class="nc" id="L96">                            ValueInsurance(it.front, it.back, it.benefitType)</span>
+                        }
+                    )
+                }
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                metadata == null -&gt; mediator.value = null</span>
+            }
+<span class="nc" id="L102">        }</span>
+
+<span class="nc" id="L104">        mediator.addSource(metadataLiveData) {</span>
+<span class="nc" id="L105">            metadata = it</span>
+<span class="nc" id="L106">            combineAndEmit()</span>
+<span class="nc" id="L107">        }</span>
+
+<span class="nc" id="L109">        mediator.addSource(cardsLiveData) {</span>
+<span class="nc" id="L110">            cards = it</span>
+<span class="nc" id="L111">            combineAndEmit()</span>
+<span class="nc" id="L112">        }</span>
+
+<span class="nc" id="L114">        return mediator</span>
+    }
+
+    fun insertWorkLog(workBenefitV2: WorkBenefitV2?, selfId: String) {
+<span class="nc" id="L118">        val workBenefitV2Entity = WorkBenefitV2Entity(selfId, workBenefitV2)</span>
+<span class="nc" id="L119">        workLogV2Dao.insert(workBenefitV2Entity)</span>
+<span class="nc" id="L120">    }</span>
+
+    fun getWorkLogFromDb(selfId: String): WorkBenefitV2? {
+<span class="nc" id="L123">        val data = workLogV2Dao.getWorkLogLiveData(selfId)</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        data?.let { entity -&gt;</span>
+<span class="nc" id="L125">            entity.workBenefitV2.let {</span>
+<span class="nc" id="L126">                return it</span>
+            }
+        }
+<span class="nc" id="L129">        return null</span>
+    }
+
+<span class="nc" id="L132">    fun getWorkBenefitOld(memberId: String): Single&lt;ArrayList&lt;WorkHour&gt;&gt; = benefitWorkService.getBenefitApi().getWorkHourOld(</span>
+<span class="nc" id="L133">        memberId</span>
+<span class="nc" id="L134">    )</span>
+<span class="nc" id="L135">    fun getWorkBenefit(year: Int?, month: Int?): Single&lt;ArrayList&lt;WorkHourV2&gt;&gt; = benefitWorkService.getBenefitApi().getWorkHour(</span>
+<span class="nc" id="L136">        year,</span>
+<span class="nc" id="L137">        month</span>
+<span class="nc" id="L138">    )</span>
+<span class="fc" id="L139">    fun getWorkBenefitV2(selfId: String): Single&lt;WorkBenefitV2&gt; = benefitWorkService.getBenefitApi().getWorkHourV2(</span>
+<span class="fc" id="L140">        selfId</span>
+<span class="fc" id="L141">    )</span>
+
+<span class="nc" id="L143">    fun getMemberBenefits(selfId: String, year: Int, month: Int): Single&lt;MemberBenefitPerMonth&gt; = benefitWorkService.getBenefitApi().getMemberBenefits(</span>
+<span class="nc" id="L144">        selfId,</span>
+<span class="nc" id="L145">        year,</span>
+<span class="nc" id="L146">        month</span>
+<span class="nc" id="L147">    )</span>
+
+<span class="nc" id="L149">    fun getContractDetails(selfId: String): Single&lt;ContractDetails&gt; = benefitWorkService.getBenefitApi().getContractDetails(</span>
+<span class="nc" id="L150">        selfId</span>
+<span class="nc" id="L151">    )</span>
+<span class="nc" id="L152">    fun getPerMonthBenefit(selfId: String, year: Int, month: Int): Single&lt;WorkBenefit&gt; = benefitWorkService.getBenefitApi().getBenefitPerMonth(</span>
+<span class="nc" id="L153">        selfId,</span>
+<span class="nc" id="L154">        year,</span>
+<span class="nc" id="L155">        month</span>
+<span class="nc" id="L156">    )</span>
+
+    fun getContractDetails(
+        selfId: String,
+        year: Int,
+        month: Int,
+        benefitId: String,
+        contractId: String
+<span class="nc" id="L164">    ): Single&lt;ContractBenefitDetails&gt; = benefitWorkService.getBenefitApi().getMemberEligibilityDetails(</span>
+<span class="nc" id="L165">        selfId,</span>
+<span class="nc" id="L166">        year,</span>
+<span class="nc" id="L167">        month,</span>
+<span class="nc" id="L168">        benefitId,</span>
+<span class="nc" id="L169">        contractId</span>
+<span class="nc" id="L170">    )</span>
+<span class="fc" id="L171">    fun getInsuranceCard(selfId: String, cardTypes: String, includeHtmlCards: Boolean? = true): Single&lt;InsuranceDataModel&gt; = benefitWorkService.getBenefitApi().getInsuranceCard(</span>
+<span class="fc" id="L172">        selfId,</span>
+<span class="fc" id="L173">        cardTypes,</span>
+<span class="fc" id="L174">        includeHtmlCards</span>
+<span class="fc" id="L175">    )</span>
+
+<span class="nc" id="L177">    fun getBarInfo(selfId: String, family: Boolean, year: Int, month: Int): Single&lt;BarModel&gt; = benefitWorkService.getBenefitApi().getBarData(</span>
+<span class="nc" id="L178">        selfId,</span>
+<span class="nc" id="L179">        family,</span>
+<span class="nc" id="L180">        year,</span>
+<span class="nc" id="L181">        month</span>
+<span class="nc" id="L182">    )</span>
+
+<span class="nc" id="L184">    fun getEligibilityReason(memberId: String, year: Int, month: Int): Single&lt;EligibilityReason&gt; = benefitWorkService.getBenefitApi().getEligibilityReason(</span>
+<span class="nc" id="L185">        memberId,</span>
+<span class="nc" id="L186">        year,</span>
+<span class="nc" id="L187">        month</span>
+<span class="nc" id="L188">    )</span>
+
+<span class="nc" id="L190">    fun getWorkSummary(selfId: String, filterBy: String, year: Int, month: Int): Single&lt;WorkHourSummary&gt; = benefitWorkService.getBenefitApi().getWorkHoursSummary(</span>
+<span class="nc" id="L191">        selfId,</span>
+<span class="nc" id="L192">        filterBy,</span>
+<span class="nc" id="L193">        year,</span>
+<span class="nc" id="L194">        month</span>
+<span class="nc" id="L195">    )</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

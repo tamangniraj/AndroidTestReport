@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EligBenefit.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.remote.home</a> &gt; <span class="el_source">EligBenefit.kt</span></div><h1>EligBenefit.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.remote.home
+
+import com.google.gson.annotations.Expose
+import com.google.gson.annotations.SerializedName
+
+<span class="nc" id="L6">data class EligBenefit(</span>
+
+<span class="nc" id="L8">    protected var id: Long = 0,</span>
+
+<span class="nc" id="L10">    var name: String? = null,</span>
+
+<span class="nc" id="L12">    var insuranceCardAvailable: Boolean = false,</span>
+
+<span class="nc" id="L14">    var vendor: String? = null,</span>
+
+<span class="nc" id="L16">    var insuranceCardType: String? = null,</span>
+
+<span class="nc" id="L18">    @SerializedName(&quot;planExpenses&quot;)</span>
+    @Expose
+<span class="nc" id="L20">    var planDetail: MemberPlanResponse? = null,</span>
+
+<span class="nc" id="L22">    var benefitDetails: String? = null,</span>
+
+<span class="nc" id="L24">    private val showDeductibleBar: Boolean = true,</span>
+
+<span class="nc" id="L26">    private val showOOPBar: Boolean = true,</span>
+
+<span class="nc" id="L28">    private val showCopay: Boolean = true,</span>
+
+<span class="nc" id="L30">    private val showCoinsurance: Boolean = true,</span>
+
+<span class="nc" id="L32">    private val showOONBalance: Boolean = true,</span>
+
+<span class="nc" id="L34">    private val showMemberResponsible: Boolean = true,</span>
+
+<span class="nc" id="L36">    private val showPlanResponsible: Boolean = true</span>
+<span class="nc" id="L37">)</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

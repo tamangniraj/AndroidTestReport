@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AppModule.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.di</a> &gt; <span class="el_source">AppModule.kt</span></div><h1>AppModule.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.di
+
+/* ktlint-disable */
+import android.app.Application
+import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import androidx.appcompat.app.AppCompatActivity
+import androidx.navigation.fragment.NavHostFragment
+import com.afollestad.materialdialogs.MaterialDialog
+import com.google.gson.FieldNamingPolicy
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.vivekahealth.vivekahealth.BuildConfig
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.VivekaHealthApplication
+import com.vivekahealth.vivekahealth.ui.BaseActivity
+import com.vivekahealth.vivekahealth.ui.BaseComposeActivity
+import com.vivekahealth.vivekahealth.ui.guestRegister.GuestRegisterActivity
+import com.vivekahealth.vivekahealth.ui.guestVerify.GuestVerifyActivity
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import com.vivekahealth.vivekahealth.utils.SessionLogoutHelper
+import com.vivekahealth.vivekahealth.utils.remote.NetworkMessage
+import dagger.Module
+import dagger.Provides
+import okhttp3.ConnectionPool
+import okhttp3.Dispatcher
+import okhttp3.Interceptor
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.ResponseBody
+import okhttp3.internal.http2.ErrorCode
+import okhttp3.internal.http2.StreamResetException
+import okhttp3.logging.HttpLoggingInterceptor
+import okio.buffer
+import okio.source
+import timber.log.Timber
+import java.io.IOException
+import java.lang.reflect.Modifier
+import java.net.UnknownHostException
+import java.util.concurrent.TimeUnit
+import javax.inject.Singleton
+
+<span class="fc" id="L46">@Module(includes = [ViewModelModule::class])</span>
+class AppModule {
+
+    @Provides
+    internal fun provideGson(): Gson {
+<span class="fc" id="L51">        return GsonBuilder()</span>
+<span class="fc" id="L52">            .excludeFieldsWithModifiers(Modifier.FINAL, Modifier.TRANSIENT, Modifier.STATIC)</span>
+<span class="fc" id="L53">            .setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE)</span>
+<span class="fc" id="L54">            .setLenient()</span>
+<span class="fc" id="L55">            .create()</span>
+    }
+
+    @Provides
+    @Singleton
+    fun okHttpClient(): OkHttpClient {
+<span class="nc" id="L61">        val logging = HttpLoggingInterceptor()</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (BuildConfig.DEBUG) {</span>
+<span class="nc" id="L63">            logging.level = HttpLoggingInterceptor.Level.BODY</span>
+        } else {
+<span class="nc" id="L65">            logging.level = HttpLoggingInterceptor.Level.NONE</span>
+        }
+
+<span class="nc" id="L68">        return OkHttpClient.Builder()</span>
+<span class="nc" id="L69">            .connectTimeout(45, TimeUnit.SECONDS)</span>
+<span class="nc" id="L70">            .readTimeout(45, TimeUnit.SECONDS)</span>
+<span class="nc" id="L71">            .writeTimeout(45, TimeUnit.SECONDS)</span>
+<span class="nc" id="L72">            .addInterceptor(logging)</span>
+<span class="nc" id="L73">            .build()</span>
+    }
+
+    @Provides
+    internal fun provideOkHttpClientBuilder(application: Application): OkHttpClient.Builder {
+
+<span class="fc" id="L79">        val dispatcher = Dispatcher().apply {</span>
+<span class="fc" id="L80">            maxRequests = 64 // Max parallel requests (default: 64)</span>
+<span class="fc" id="L81">            maxRequestsPerHost = 10 // Max parallel requests per host (default: 5)</span>
+<span class="fc" id="L82">        }</span>
+
+// Configure Connection Pool
+<span class="fc" id="L85">        val connectionPool = ConnectionPool(</span>
+<span class="fc" id="L86">            maxIdleConnections = 10, // Keep 10 idle connections</span>
+<span class="fc" id="L87">            keepAliveDuration = 5, // Keep alive for 5 minutes</span>
+<span class="fc" id="L88">            TimeUnit.MINUTES</span>
+        )
+
+<span class="fc" id="L91">        val builder = OkHttpClient.Builder()</span>
+<span class="fc" id="L92">            .dispatcher(dispatcher)</span>
+<span class="fc" id="L93">            .connectionPool(connectionPool)</span>
+<span class="fc" id="L94">            .connectTimeout(45, TimeUnit.SECONDS)</span>
+<span class="fc" id="L95">            .readTimeout(45, TimeUnit.SECONDS)</span>
+<span class="fc" id="L96">            .writeTimeout(45, TimeUnit.SECONDS)</span>
+<span class="fc" id="L97">            .retryOnConnectionFailure(true)</span>
+<span class="fc" id="L98">            .followRedirects(false)</span>
+<span class="fc" id="L99">            .followSslRedirects(false)</span>
+
+<span class="fc" id="L101">        val loggingInterceptor = HttpLoggingInterceptor()</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">        if (BuildConfig.DEBUG) {</span>
+<span class="fc" id="L103">            loggingInterceptor.level = HttpLoggingInterceptor.Level.BODY</span>
+        } else {
+<span class="nc" id="L105">            loggingInterceptor.level = HttpLoggingInterceptor.Level.BODY</span>
+        }
+
+//        builder.addInterceptor(loggingInterceptor)
+<span class="fc" id="L109">        builder.addNetworkInterceptor(ResponseInterceptor(application as VivekaHealthApplication))</span>
+//        builder.addInterceptor(ServerDownInterceptor(application))
+<span class="fc" id="L111">        return builder</span>
+    }
+//
+//    @Provides
+//    @Singleton
+//    fun providesVivekaDatabase(context: Application): VivekaDatabase {
+//      return Room.databaseBuilder(context.applicationContext, VivekaDatabase::class.java, &quot;viveka_db.db&quot;)
+//            .allowMainThreadQueries()
+//          .fallbackToDestructiveMigration()
+//
+// //                .addTypeConverter(VivekaTypeConverters()
+//            .build()
+//    }
+//
+//
+//    @Singleton
+//    @Provides
+//    fun provideMemberInfoDao(database: VivekaDatabase): MemberInfoDao {
+//        return database.memberInfoDao()
+//    }
+
+<span class="pc" id="L132">    internal class ResponseInterceptor constructor(val appContext: VivekaHealthApplication) :</span>
+        Interceptor {
+
+        // Helper function to set server down status for both activity types
+        private fun setServerDownStatus(status: Boolean) {
+<span class="fc" id="L137">            when (val activity = appContext.currentActivity) {</span>
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">                is BaseActivity -&gt; activity._serverDown.postValue(status)</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">                is BaseComposeActivity -&gt; activity._serverDown.postValue(status)</span>
+<span class="nc" id="L140">                else -&gt; Timber.w(&quot;Current activity is neither BaseActivity nor BaseComposeActivity&quot;)</span>
+            }
+<span class="fc" id="L142">        }</span>
+
+        override fun intercept(chain: Interceptor.Chain): Response {
+<span class="fc" id="L145">            val request: Request = chain.request()</span>
+<span class="fc" id="L146">            try {</span>
+<span class="fc" id="L147">                val response: Response = chain.proceed(request)</span>
+<span class="fc" id="L148">                val currentActivity = appContext.currentActivity</span>
+
+<span class="pc bpc" id="L150" title="4 of 6 branches missed.">                when (response.code) {</span>
+                    401 -&gt; {
+<span class="nc" id="L152">                        when (currentActivity) {</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">                            is BaseActivity -&gt; {</span>
+<span class="nc" id="L154">                                val body = response.peekBody(1000000)</span>
+<span class="nc" id="L155">                                val s = bodyToString(body)</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                                if (!s.contains(&quot;An Authentication object was not found in the SecurityContext&quot;)) {</span>
+<span class="nc" id="L157">                                    SessionLogoutHelper.showSessionLogoutDialog(currentActivity)</span>
+                                }
+                            }
+<span class="nc bnc" id="L160" title="All 2 branches missed.">                            is BaseComposeActivity -&gt; {</span>
+<span class="nc" id="L161">                                val body = response.peekBody(1000000)</span>
+<span class="nc" id="L162">                                val s = bodyToString(body)</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                                if (!s.contains(&quot;An Authentication object was not found in the SecurityContext&quot;)) {</span>
+<span class="nc" id="L164">                                    SessionLogoutHelper.showSessionLogoutDialog(currentActivity as AppCompatActivity)</span>
+                                }
+                            }
+                        }
+<span class="nc" id="L168">                        return response</span>
+                    }
+                    500 -&gt; {
+<span class="nc" id="L171">                        when (currentActivity) {</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">                            is BaseActivity -&gt; {</span>
+<span class="nc bnc" id="L173" title="All 4 branches missed.">                                if (currentActivity !is GuestRegisterActivity &amp;&amp; currentActivity !is GuestVerifyActivity) {</span>
+<span class="nc" id="L174">                                    val body = response.peekBody(1000000)</span>
+<span class="nc" id="L175">                                    val s = NetworkMessage.getErrorMessage(body)</span>
+<span class="nc" id="L176">                                    SessionLogoutHelper.handleServer(currentActivity, s)</span>
+                                }
+                            }
+<span class="nc bnc" id="L179" title="All 2 branches missed.">                            is BaseComposeActivity -&gt; {</span>
+<span class="nc" id="L180">                                val body = response.peekBody(1000000)</span>
+<span class="nc" id="L181">                                val s = NetworkMessage.getErrorMessage(body)</span>
+<span class="nc" id="L182">                                SessionLogoutHelper.handleServer(currentActivity as AppCompatActivity, s)</span>
+                            }
+                        }
+<span class="nc" id="L185">                        return response</span>
+                    }
+                    408 -&gt; {
+<span class="nc" id="L188">                        when (currentActivity) {</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                            is BaseActivity -&gt; {</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">                                if (currentActivity !is GuestRegisterActivity) {</span>
+<span class="nc" id="L191">                                    SessionLogoutHelper.showTimeoutError(currentActivity)</span>
+                                }
+                            }
+<span class="nc bnc" id="L194" title="All 2 branches missed.">                            is BaseComposeActivity -&gt; {</span>
+<span class="nc" id="L195">                                SessionLogoutHelper.showTimeoutError(currentActivity as AppCompatActivity)</span>
+                            }
+                        }
+<span class="nc" id="L198">                        return response</span>
+                    }
+                    502, 503 -&gt; {
+<span class="nc" id="L201">                        Timber.e(&quot;502 or 503 NETWORK CHECK&quot;)</span>
+<span class="nc" id="L202">                        setServerDownStatus(true)</span>
+<span class="nc" id="L203">                        return response</span>
+                    }
+                    200 -&gt; {
+<span class="fc" id="L206">                        Timber.d(&quot; e ${request.url}&quot;)</span>
+<span class="fc" id="L207">                        setServerDownStatus(false)</span>
+                    }
+                }
+
+<span class="fc" id="L211">                return response</span>
+<span class="fc" id="L212">            } catch (e: Exception) {</span>
+<span class="fc" id="L213">                throw e</span>
+            }
+
+        }
+
+        companion object {
+
+            fun bodyToString(response: ResponseBody): String {
+<span class="nc" id="L221">                return try {</span>
+<span class="nc" id="L222">                    val bufferedSource = response.byteStream().source().buffer()</span>
+<span class="nc" id="L223">                    bufferedSource.readUtf8()</span>
+<span class="nc" id="L224">                } catch (e: IOException) {</span>
+<span class="nc" id="L225">                    &quot;did not work&quot;</span>
+                }
+            }
+        }
+    }
+
+<span class="nc" id="L231">    internal class ServerDownInterceptor(private var appContext: VivekaHealthApplication) :</span>
+        Interceptor {
+        private var isShowingServerDialog: Boolean = false
+<span class="nc" id="L234">        private var errorMsg: String = appContext.resources.getString(R.string.apologies_msg)</span>
+        override fun intercept(chain: Interceptor.Chain): Response {
+<span class="nc" id="L236">            val request: Request = chain.request()</span>
+<span class="nc" id="L237">            return try {</span>
+<span class="nc" id="L238">                chain.proceed(request)</span>
+<span class="nc" id="L239">            } catch (e: IOException) {</span>
+<span class="nc" id="L240">                val context = appContext.currentActivity as Context</span>
+<span class="nc" id="L241">                var shouldShowForException = false</span>
+<span class="nc bnc" id="L242" title="All 4 branches missed.">                val isOffline = Constants.IS_OFFLINE &amp;&amp; !HelperUtils.isNetworkConnected(context)</span>
+<span class="nc bnc" id="L243" title="All 4 branches missed.">                (e as? StreamResetException)?.let {</span>
+<span class="nc bnc" id="L244" title="All 2 branches missed.">                    shouldShowForException = !e.errorCode.name.equals(&quot;cancel&quot;, true)</span>
+<span class="nc" id="L245">                } ?: run {</span>
+<span class="nc bnc" id="L246" title="All 4 branches missed.">                    (e as? UnknownHostException)?.let {</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">                        shouldShowForException = !isOffline</span>
+<span class="nc bnc" id="L248" title="All 2 branches missed.">                        errorMsg = if (!HelperUtils.isNetworkConnected(context)) {</span>
+<span class="nc" id="L249">                            context.resources.getString(R.string.no_internet_msg)</span>
+<span class="nc" id="L250">                        } else {</span>
+<span class="nc" id="L251">                            context.resources.getString(R.string.apologies_msg)</span>
+                        }
+<span class="nc" id="L253">                    } ?: run {</span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">                        shouldShowForException = !e.message.equals(</span>
+<span class="nc" id="L255">                            &quot;canceled&quot;,</span>
+<span class="nc" id="L256">                            true</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">                        ) &amp;&amp; !e.message.equals(&quot;socket closed&quot;, true)</span>
+<span class="nc bnc" id="L258" title="All 2 branches missed.">                        errorMsg = if (!HelperUtils.isNetworkConnected(context)) {</span>
+<span class="nc" id="L259">                            context.resources.getString(R.string.no_internet_msg)</span>
+<span class="nc" id="L260">                        } else {</span>
+<span class="nc" id="L261">                            context.resources.getString(R.string.apologies_msg)</span>
+                        }
+<span class="nc" id="L263">                    }</span>
+<span class="nc" id="L264">                }</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">                if (!isShowingServerDialog</span>
+<span class="nc bnc" id="L266" title="All 2 branches missed.">                    &amp;&amp; shouldShowForException</span>
+<span class="nc bnc" id="L267" title="All 2 branches missed.">                    &amp;&amp; !isOffline</span>
+<span class="nc bnc" id="L268" title="All 2 branches missed.">                    &amp;&amp; !request.url.pathSegments.contains(&quot;unreadNotificationCount&quot;)</span>
+<span class="nc bnc" id="L269" title="All 2 branches missed.">                    &amp;&amp; !request.url.pathSegments.contains(&quot;pendingDocuments&quot;)</span>
+<span class="nc bnc" id="L270" title="All 2 branches missed.">                    &amp;&amp; !request.url.pathSegments.contains(&quot;logPageView&quot;)</span>
+                ) {
+<span class="nc" id="L272">                    val isChatAPI = request.url.pathSegments.contains(&quot;chat&quot;)</span>
+<span class="nc" id="L273">                    var isChatShown = false</span>
+<span class="nc bnc" id="L274" title="All 2 branches missed.">                    ((appContext.currentActivity as AppCompatActivity).supportFragmentManager.primaryNavigationFragment)?.let {</span>
+<span class="nc" id="L275">                        isChatShown =</span>
+<span class="nc bnc" id="L276" title="All 2 branches missed.">                            (it as NavHostFragment).navController.currentDestination?.label == &quot;customerCare&quot;</span>
+<span class="nc" id="L277">                    }</span>
+<span class="nc bnc" id="L278" title="All 4 branches missed.">                    if (isChatAPI &amp;&amp; !isChatShown) {</span>
+<span class="nc" id="L279">                        throw (e)</span>
+                    }
+<span class="nc" id="L281">                    isShowingServerDialog = true</span>
+<span class="nc" id="L282">                    Handler(Looper.getMainLooper()).postDelayed({</span>
+<span class="nc" id="L283">                        val dialog = MaterialDialog.Builder(context)</span>
+<span class="nc" id="L284">                            .tag(&quot;network&quot;)</span>
+<span class="nc" id="L285">                            .content(errorMsg)</span>
+<span class="nc" id="L286">                            .positiveText(R.string.ok_string)</span>
+<span class="nc" id="L287">                            .onPositive { dialog, _ -&gt;</span>
+<span class="nc" id="L288">                                isShowingServerDialog = false</span>
+<span class="nc" id="L289">                                dialog.dismiss()</span>
+<span class="nc" id="L290">                            }</span>
+<span class="nc" id="L291">                            .dismissListener {</span>
+<span class="nc" id="L292">                                isShowingServerDialog = false</span>
+<span class="nc" id="L293">                            }</span>
+<span class="nc" id="L294">                            .autoDismiss(false)</span>
+<span class="nc" id="L295">                            .cancelable(false)</span>
+<span class="nc" id="L296">                            .build()</span>
+<span class="nc bnc" id="L297" title="All 2 branches missed.">                        if (!(context as AppCompatActivity).isDestroyed) {</span>
+<span class="nc" id="L298">                            isShowingServerDialog = true</span>
+<span class="nc" id="L299">                            dialog.show()</span>
+                        } else {
+<span class="nc" id="L301">                            isShowingServerDialog = false</span>
+                        }
+<span class="nc" id="L303">                    }, 1000)</span>
+                }
+<span class="nc" id="L305">                throw (e)</span>
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

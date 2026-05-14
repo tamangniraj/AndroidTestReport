@@ -1,0 +1,1140 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HomeViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.home</a> &gt; <span class="el_source">HomeViewModel.kt</span></div><h1>HomeViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.home
+
+import android.content.Context
+import android.content.SharedPreferences
+import android.content.res.Resources
+import android.location.Location
+import android.net.Uri
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.remote.enroll.DocumentUploadSuccessEnroll
+import com.vivekahealth.vivekahealth.data.remote.home.ClientDetailResponse
+import com.vivekahealth.vivekahealth.data.remote.home.InsuranceCardHome
+import com.vivekahealth.vivekahealth.data.remote.home.InsuranceCardQuickViewDTO
+import com.vivekahealth.vivekahealth.data.remote.home.LocationData
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.data.remote.home.RecentActivityHome
+import com.vivekahealth.vivekahealth.data.remote.home.UpdateDetails
+import com.vivekahealth.vivekahealth.data.remote.login.AuthToken
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.repository.BenefitWorkRepository
+import com.vivekahealth.vivekahealth.ui.homePage.documents.repository.DocumentRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.AnalyticsRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.remote.APIResponse
+import com.vivekahealth.vivekahealth.utils.remote.NetworkMessage
+import com.vivekahealth.vivekahealth.utils.remote.RetrofitException
+import com.vivekahealth.vivekahealth.utils.thread.ThreadUtils
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
+import okhttp3.MultipartBody
+import timber.log.Timber
+import java.io.File
+import javax.inject.Inject
+import androidx.core.content.edit
+import com.vivekahealth.vivekahealth.data.remote.home.SwitcherResponse
+import io.reactivex.disposables.Disposable
+
+<span class="fc" id="L52">class HomeViewModel @Inject constructor(</span>
+<span class="fc" id="L53">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L54">    private val resources: Resources,</span>
+<span class="fc" id="L55">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L56">    private val documentRepository: DocumentRepository,</span>
+<span class="fc" id="L57">    private val benefitWorkRepository: BenefitWorkRepository,</span>
+<span class="fc" id="L58">    private val analyticsRepository: AnalyticsRepository</span>
+<span class="fc" id="L59">) : ViewModel(), Observable {</span>
+
+<span class="fc" id="L61">    private val _initiateHome = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val initiateHome: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L63">        get() = _initiateHome</span>
+
+<span class="fc" id="L65">    private val _enrollmentStatus = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val enrollmentStatus: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L67">        get() = _enrollmentStatus</span>
+
+<span class="nc" id="L69">    var uriImage: Uri? = null</span>
+    private lateinit var picFile: File
+<span class="pc" id="L71">    var savedUserNameEncoded: String = preferences.getString(</span>
+<span class="fc" id="L72">        Constants.encodedEmail,</span>
+<span class="fc" id="L73">        &quot;&quot;</span>
+<span class="pc" id="L74">    ).toString()</span>
+<span class="nc" id="L75">    lateinit var filePart: MultipartBody.Part</span>
+<span class="pc" id="L76">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L78">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="pc" id="L80">    var memberInfo = MemberInfo()</span>
+
+//    private lateinit var benefitHome: LiveData&lt;InsuranceCardHome&gt;
+//    private lateinit var recentHome: LiveData&lt;RecentActivityHome&gt;
+<span class="pc" id="L84">    var currentPosition: Int = 0</span>
+
+<span class="pc" id="L86">    var currentCacheTime = System.currentTimeMillis().toString()</span>
+
+<span class="fc" id="L88">    var currentMember = MemberInfo()</span>
+<span class="nc" id="L89">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L91">            field = value</span>
+<span class="nc" id="L92">            callbacks.notifyCallbacks(this, BR.currentMember, null)</span>
+<span class="nc" id="L93">        }</span>
+<span class="pc" id="L94">    var address: String = &quot;&quot;</span>
+
+<span class="pc" id="L96">    var gson = Gson()</span>
+
+<span class="fc" id="L98">    private var eligibleBubbleMemberList: java.util.ArrayList&lt;MemberInfo&gt; = java.util.ArrayList()</span>
+
+<span class="fc" id="L100">    private val _notificationCount = MutableLiveData&lt;Event&lt;Int&gt;&gt;()</span>
+    val notificationCount: LiveData&lt;Event&lt;Int&gt;&gt;
+<span class="fc" id="L102">        get() = _notificationCount</span>
+
+<span class="pc" id="L104">    val countLiveData = MediatorLiveData&lt;Pair&lt;Int?, Int?&gt;&gt;()</span>
+
+<span class="pc" id="L106">    var chat: Int = 0</span>
+<span class="pc" id="L107">    var docCount: Int = 0</span>
+<span class="fc" id="L108">    private val _chatCount = MutableLiveData&lt;Event&lt;Int&gt;&gt;()</span>
+    val chatCount: LiveData&lt;Event&lt;Int&gt;&gt;
+<span class="fc" id="L110">        get() = _chatCount</span>
+
+<span class="fc" id="L112">    private val _doc = MutableLiveData&lt;Event&lt;Int&gt;&gt;()</span>
+    val doc: LiveData&lt;Event&lt;Int&gt;&gt;
+<span class="nc" id="L114">        get() = _doc</span>
+
+<span class="fc" id="L116">    private val _serverError = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+
+<span class="fc" id="L118">    private var listForHomeBubbleAdapter: List&lt;MemberInfo&gt; = listOf()</span>
+<span class="pc" id="L119">    var tempList: ArrayList&lt;List&lt;Any&gt;&gt; = arrayListOf()</span>
+<span class="pc" id="L120">    var tempListFlat: ArrayList&lt;Any&gt; = arrayListOf()</span>
+
+<span class="pc" id="L122">    var listOfViewType: ArrayList&lt;Int&gt; = arrayListOf()</span>
+    private var showSwitcherBtn: Boolean = false
+<span class="fc" id="L124">    private var tempToken: String = &quot;&quot;</span>
+<span class="fc" id="L125">    private var relatedID: String? = &quot;&quot;</span>
+<span class="nc" id="L126">    var memberId: String ? = null</span>
+
+    var flagRecentActivity: Boolean = false
+<span class="fc" id="L129">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L131">            field = value</span>
+<span class="nc" id="L132">            callbacks.notifyCallbacks(this, BR.flagRecentActivity, null)</span>
+<span class="nc" id="L133">        }</span>
+<span class="pc" id="L134">    var flagMedicalLog: Boolean = false</span>
+
+    private val _benefitCardListGenerated =
+<span class="fc" id="L137">        MutableLiveData&lt;Event&lt;List&lt;InsuranceCardQuickViewDTO&gt;?&gt;&gt;()</span>
+    val benefitCardListGenerated: LiveData&lt;Event&lt;List&lt;InsuranceCardQuickViewDTO&gt;?&gt;&gt;
+<span class="nc" id="L139">        get() = _benefitCardListGenerated</span>
+
+<span class="fc" id="L141">    private val _navFlag = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navFlag: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L143">        get() = _navFlag</span>
+<span class="fc" id="L144">    private val _recentCardGenerated = MutableLiveData&lt;Event&lt;RecentActivityHome&gt;&gt;()</span>
+    val recentCardGenerated: LiveData&lt;Event&lt;RecentActivityHome&gt;&gt;
+<span class="nc" id="L146">        get() = _recentCardGenerated</span>
+
+<span class="fc" id="L148">    private val _shareInsuranceCard = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+    val shareInsuranceCard: LiveData&lt;Event&lt;Boolean&gt;&gt;
+<span class="nc" id="L150">        get() = _shareInsuranceCard</span>
+
+<span class="fc" id="L152">    private val _printInsuranceCard = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+    val printInsuranceCard: LiveData&lt;Event&lt;Boolean&gt;&gt;
+<span class="nc" id="L154">        get() = _printInsuranceCard</span>
+<span class="fc" id="L155">    private val _navigateToUpload = MutableLiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt;()</span>
+    val navigateToUpload: LiveData&lt;APIResponse&lt;DocumentUploadSuccessEnroll&gt;&gt;
+<span class="nc" id="L157">        get() = _navigateToUpload</span>
+<span class="fc" id="L158">    private val _uploadProfile = MutableLiveData&lt;Event&lt;MemberInfo&gt;&gt;()</span>
+    val uploadProfile: LiveData&lt;Event&lt;MemberInfo&gt;&gt;
+<span class="nc" id="L160">        get() = _uploadProfile</span>
+<span class="fc" id="L161">    private val _disclaimer = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val disclaimer: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L163">        get() = _disclaimer</span>
+<span class="fc" id="L164">    private val _mailInsuranceCard = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+    val mailInsuranceCard: LiveData&lt;Event&lt;Boolean&gt;&gt;
+<span class="nc" id="L166">        get() = _mailInsuranceCard</span>
+
+<span class="fc" id="L168">    private val _language = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val language: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L170">        get() = _language</span>
+
+<span class="fc" id="L172">    private val _directToEnroll = MutableLiveData&lt;Event&lt;MemberInfo&gt;&gt;()</span>
+    val directToEnroll: LiveData&lt;Event&lt;MemberInfo&gt;&gt;
+<span class="nc" id="L174">        get() = _directToEnroll</span>
+
+<span class="fc" id="L176">    private val _enrollmentPending = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val enrollmentPending: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L178">        get() = _enrollmentPending</span>
+
+<span class="fc" id="L180">    private val _directlySetDeviceAsPrimary = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val directlySetDeviceAsPrimary: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L182">        get() = _directlySetDeviceAsPrimary</span>
+
+<span class="fc" id="L184">    private val _checkForPrimaryDevice = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val checkForPrimaryDevice: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L186">        get() = _checkForPrimaryDevice</span>
+
+<span class="fc" id="L188">    private val _showPrimaryDevicePrompt = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val showPrimaryDevicePrompt: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L190">        get() = _showPrimaryDevicePrompt</span>
+<span class="fc" id="L191">    private val _showTutorial = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val showTutorial: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L193">        get() = _showTutorial</span>
+<span class="fc" id="L194">    private val _showResetPasswordPrompt = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val showResetPasswordPrompt: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L196">        get() = _showResetPasswordPrompt</span>
+
+<span class="fc" id="L198">    private val _updateProfile = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val updateProfile: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L200">        get() = _updateProfile</span>
+
+<span class="fc" id="L202">    private var _setLanguage = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val setLanguage: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L204">        get() = _setLanguage</span>
+<span class="fc" id="L205">    private val _checkForNewSurvey = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val checkForNewSurvey: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L207">        get() = _checkForNewSurvey</span>
+<span class="pc" id="L208">    var pendingSelfiePrimaryDevice: Boolean = true</span>
+<span class="pc" id="L209">    var completedSplash: Boolean = false</span>
+
+<span class="fc" id="L211">    var cardGone: Boolean = true</span>
+<span class="fc" id="L212">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L214">            field = value</span>
+<span class="nc" id="L215">            callbacks.notifyCallbacks(this, BR.cardGone, null)</span>
+<span class="nc" id="L216">        }</span>
+<span class="fc" id="L217">    var config: ClientDetailResponse = ClientDetailResponse()</span>
+<span class="nc" id="L218">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L220">            field = value</span>
+<span class="nc" id="L221">            callbacks.notifyCallbacks(this, BR.config, null)</span>
+<span class="nc" id="L222">        }</span>
+    var demoGraphicsUpdateShow: Boolean = false
+<span class="nc" id="L224">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L226">            field = value</span>
+<span class="nc" id="L227">            callbacks.notifyCallbacks(this, BR.demoGraphicsUpdateShow, null)</span>
+<span class="nc" id="L228">        }</span>
+
+    var noSelfie: Boolean = false
+<span class="nc" id="L231">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L233">            field = value</span>
+<span class="nc" id="L234">            callbacks.notifyCallbacks(this, BR.noSelfie, null)</span>
+<span class="nc" id="L235">        }</span>
+    var inReviewSelfie: Boolean = false
+<span class="nc" id="L237">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L239">            field = value</span>
+<span class="nc" id="L240">            callbacks.notifyCallbacks(this, BR.inReviewSelfie, null)</span>
+<span class="nc" id="L241">        }</span>
+<span class="fc" id="L242">    var eligible: Boolean = true</span>
+<span class="nc" id="L243">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L245">            field = value</span>
+<span class="nc" id="L246">            callbacks.notifyCallbacks(this, BR.eligible, null)</span>
+<span class="nc" id="L247">        }</span>
+
+<span class="fc" id="L249">    var limitedView: Boolean = Constants.TRANSPERENCY</span>
+<span class="nc" id="L250">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L252">            field = value</span>
+<span class="nc" id="L253">            callbacks.notifyCallbacks(this, BR.limitedView, null)</span>
+<span class="nc" id="L254">        }</span>
+
+<span class="fc" id="L256">    var recentGone: Boolean = true</span>
+<span class="nc" id="L257">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L259">            field = value</span>
+<span class="nc" id="L260">            callbacks.notifyCallbacks(this, BR.recentGone, null)</span>
+<span class="nc" id="L261">        }</span>
+
+<span class="nc" id="L263">    var labSize: Int = 0</span>
+<span class="nc" id="L264">    var presSize: Int = 0</span>
+    var loading: Boolean = false
+<span class="nc" id="L266">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L268">            field = value</span>
+<span class="nc" id="L269">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L270">        }</span>
+
+<span class="nc" id="L272">    var expiryTimeTempToken: Long = 0</span>
+<span class="fc" id="L273">    var firstName: String = &quot;&quot;</span>
+<span class="nc" id="L274">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L276">            field = value</span>
+<span class="nc" id="L277">            callbacks.notifyCallbacks(this, BR.firstName, null)</span>
+<span class="nc" id="L278">        }</span>
+<span class="fc" id="L279">    var lastName: String = &quot;&quot;</span>
+<span class="nc" id="L280">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L282">            field = value</span>
+<span class="nc" id="L283">            callbacks.notifyCallbacks(this, BR.lastName, null)</span>
+<span class="nc" id="L284">        }</span>
+<span class="fc" id="L285">    var memberType: String = &quot;&quot;</span>
+<span class="nc" id="L286">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L288">            field = value</span>
+<span class="nc" id="L289">            callbacks.notifyCallbacks(this, BR.memberType, null)</span>
+<span class="nc" id="L290">        }</span>
+<span class="fc" id="L291">    var memberRole: String = &quot;&quot;</span>
+<span class="nc" id="L292">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L294">            field = value</span>
+<span class="nc" id="L295">            callbacks.notifyCallbacks(this, BR.memberRole, null)</span>
+<span class="nc" id="L296">        }</span>
+<span class="fc" id="L297">    var status: String = &quot;&quot;</span>
+<span class="nc" id="L298">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L300">            field = value</span>
+<span class="nc" id="L301">            callbacks.notifyCallbacks(this, BR.status, null)</span>
+<span class="nc" id="L302">        }</span>
+
+<span class="fc" id="L304">    private val _insuranceCardsData = MutableLiveData&lt;Event&lt;InsuranceCardHome?&gt;&gt;()</span>
+    val insuranceCardsData: LiveData&lt;Event&lt;InsuranceCardHome?&gt;&gt;
+<span class="nc" id="L306">        get() = _insuranceCardsData</span>
+
+    private var benefitCardTutorialAdded = false
+    private var recentActivityTutorialAdded = false
+    private var chatbotTutorialAdded = false
+    private var notificationTutorialAdded = false
+    private var addDependentTutorialAdded = false
+
+<span class="fc" id="L314">    private val _tutorialsAdded = MutableLiveData(false)</span>
+    val tutorialsAdded: LiveData&lt;Boolean&gt;
+<span class="nc" id="L316">        get() = _tutorialsAdded</span>
+
+<span class="fc" id="L318">    private val _recentCardsData = MutableLiveData&lt;Event&lt;RecentActivityHome?&gt;&gt;()</span>
+    val recentCardsData: LiveData&lt;Event&lt;RecentActivityHome?&gt;&gt;
+<span class="nc" id="L320">        get() = _recentCardsData</span>
+
+<span class="fc" id="L322">    var memberInfoPic = MemberInfo()</span>
+<span class="nc" id="L323">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L325">            field = value</span>
+<span class="nc" id="L326">            callbacks.notifyCallbacks(this, BR.memberInfoPic, null)</span>
+<span class="nc" id="L327">        }</span>
+<span class="pc" id="L328">    var name = memberInfoPic.firstName + &quot; &quot; + memberInfoPic.lastName</span>
+
+<span class="pc" id="L330">    var skipSelfie: Boolean = preferences.getBoolean(</span>
+<span class="fc" id="L331">        preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString() + Constants.skippedProfileUpload,</span>
+<span class="fc" id="L332">        false</span>
+<span class="nc" id="L333">    )</span>
+
+    fun name() {
+<span class="nc" id="L336">        name = memberInfoPic.firstName + &quot; &quot; + memberInfoPic.lastName</span>
+<span class="nc" id="L337">    }</span>
+
+<span class="pc" id="L339">    var image: String = &quot;&quot;</span>
+
+<span class="nc" id="L341">    var checkForPrimaryDevicePromptCompleted = false</span>
+<span class="nc" id="L342">    var benefitCardsFetched = false</span>
+<span class="nc" id="L343">    var recentActivityFetched = false</span>
+<span class="nc" id="L344">    var switcherFetched = false</span>
+<span class="pc" id="L345">    var tutorialShown = false</span>
+
+<span class="fc" id="L347">    init {</span>
+<span class="fc" id="L348">        countLiveData.addSource(chatCount) {</span>
+<span class="nc bnc" id="L349" title="All 2 branches missed.">            countLiveData.value = Pair(it.peekContent(), _notificationCount.value?.peekContent())</span>
+<span class="nc" id="L350">        }</span>
+<span class="fc" id="L351">        countLiveData.addSource(notificationCount) {</span>
+<span class="nc bnc" id="L352" title="All 2 branches missed.">            countLiveData.value = Pair(_chatCount.value?.peekContent(), it.peekContent())</span>
+<span class="nc" id="L353">        }</span>
+<span class="fc" id="L354">    }</span>
+
+    fun showTutorialIfConditionMatched() {
+<span class="nc bnc" id="L357" title="All 2 branches missed.">        if (memberInfo.shouldEnroll == true) {</span>
+<span class="nc" id="L358">            return</span>
+        }
+<span class="nc bnc" id="L360" title="All 10 branches missed.">        if (checkForPrimaryDevicePromptCompleted &amp;&amp; benefitCardsFetched &amp;&amp; recentActivityFetched &amp;&amp; switcherFetched &amp;&amp; !preferences.getBoolean(</span>
+<span class="nc" id="L361">                Constants.SHOWN_MORE_TUT_FOR_SESSION,</span>
+<span class="nc" id="L362">                false</span>
+<span class="nc bnc" id="L363" title="All 2 branches missed.">            ) &amp;&amp; !tutorialShown</span>
+        ) {
+<span class="nc" id="L365">            _showTutorial.value = Event(Unit)</span>
+<span class="nc" id="L366">            tutorialShown = true</span>
+<span class="nc" id="L367">            preferences.edit().putBoolean(Constants.SHOWN_HOME_TUT_FOR_SESSION, true).apply()</span>
+        }
+
+<span class="nc bnc" id="L370" title="All 2 branches missed.">        if (!shouldShowTutorial()) {</span>
+<span class="nc" id="L371">            tutorialShown = true</span>
+        }
+<span class="nc" id="L373">        readyToCallCheckForNewSurvey()</span>
+<span class="nc" id="L374">    }</span>
+
+<span class="fc" id="L376">    init {</span>
+<span class="fc" id="L377">        viewModelScope.launch {</span>
+<span class="fc bfc" id="L378" title="All 2 branches covered.">            if (homeRepository.getMemberSid(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="fc" id="L379">                .firstOrNull() == null</span>
+            ) {
+<span class="fc" id="L381">                compositeDisposable.add(</span>
+<span class="fc" id="L382">                    homeRepository.getMember()</span>
+<span class="fc" id="L383">                        .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L384">                        .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="pc" id="L385">                        .subscribe({</span>
+<span class="nc bnc" id="L386" title="All 2 branches missed.">                            if (!Constants.IS_OFFLINE) {</span>
+<span class="nc" id="L387">                                homeRepository.insertMember(it)</span>
+                            }
+<span class="pc" id="L389">                        }, {</span>
+<span class="nc" id="L390">                        })</span>
+                )
+            }
+<span class="fc" id="L393">        }</span>
+<span class="fc" id="L394">    }</span>
+
+    fun addBenefitCardTutorial() {
+<span class="nc" id="L397">        benefitCardTutorialAdded = true</span>
+<span class="nc" id="L398">        updateTutorialAdditionStatus()</span>
+<span class="nc" id="L399">    }</span>
+
+    fun addRecentActivityTutorial() {
+<span class="nc" id="L402">        recentActivityTutorialAdded = true</span>
+<span class="nc" id="L403">        updateTutorialAdditionStatus()</span>
+<span class="nc" id="L404">    }</span>
+
+    fun addChatbotTutorial() {
+<span class="nc" id="L407">        chatbotTutorialAdded = true</span>
+<span class="nc" id="L408">        updateTutorialAdditionStatus()</span>
+<span class="nc" id="L409">    }</span>
+
+    fun addNotificationTutorial() {
+<span class="nc" id="L412">        notificationTutorialAdded = true</span>
+<span class="nc" id="L413">        updateTutorialAdditionStatus()</span>
+<span class="nc" id="L414">    }</span>
+
+    fun addDependentTutorial() {
+<span class="nc" id="L417">        addDependentTutorialAdded = true</span>
+<span class="nc" id="L418">        updateTutorialAdditionStatus()</span>
+<span class="nc" id="L419">    }</span>
+
+    private fun updateTutorialAdditionStatus() {
+<span class="nc" id="L422">        _tutorialsAdded.value =</span>
+<span class="nc bnc" id="L423" title="All 6 branches missed.">            benefitCardTutorialAdded &amp;&amp; recentActivityTutorialAdded &amp;&amp; chatbotTutorialAdded &amp;&amp;</span>
+<span class="nc bnc" id="L424" title="All 6 branches missed.">            notificationTutorialAdded &amp;&amp; addDependentTutorialAdded &amp;&amp; !preferences.getBoolean(</span>
+<span class="nc" id="L425">            Constants.SHOWN_MORE_TUT_FOR_SESSION,</span>
+<span class="nc" id="L426">            false</span>
+        )
+<span class="nc" id="L428">    }</span>
+
+    fun shouldShowTutorial(): Boolean {
+<span class="nc bnc" id="L431" title="All 2 branches missed.">        return !preferences.getBoolean(memberInfo.selfId + &quot;homeTutorialShown&quot;, false)</span>
+    }
+
+    fun shareInsuranceCard() {
+<span class="nc bnc" id="L435" title="All 2 branches missed.">        if (Constants.IS_OFFLINE) {</span>
+<span class="nc" id="L436">            _shareInsuranceCard.value = Event(false)</span>
+        } else {
+<span class="nc" id="L438">            _shareInsuranceCard.value = Event(true)</span>
+        }
+<span class="nc" id="L440">    }</span>
+
+    fun printInsuranceCard() {
+<span class="nc bnc" id="L443" title="All 2 branches missed.">        if (Constants.IS_OFFLINE) {</span>
+<span class="nc" id="L444">            _printInsuranceCard.value = Event(false)</span>
+        } else {
+<span class="nc" id="L446">            _printInsuranceCard.value = Event(true)</span>
+        }
+<span class="nc" id="L448">    }</span>
+
+<span class="nc" id="L450">    fun missingData(isSsnMandatory: Boolean): List&lt;String&gt; = buildList {</span>
+<span class="nc" id="L451">        memberInfoPic.lastName.let {</span>
+<span class="nc bnc" id="L452" title="All 6 branches missed.">            if (it.isNullOrBlank()) {</span>
+<span class="nc" id="L453">                add(&quot;Last Name, First Name&quot;)</span>
+            }
+<span class="nc" id="L455">        }</span>
+<span class="nc" id="L456">        memberInfoPic.gender.let {</span>
+<span class="nc bnc" id="L457" title="All 8 branches missed.">            if (it.isNullOrBlank() || it.equals(&quot;U&quot;, true)) {</span>
+<span class="nc" id="L458">                add(&quot;Gender&quot;)</span>
+            }
+<span class="nc" id="L460">        }</span>
+<span class="nc" id="L461">        memberInfoPic.birthDate.let {</span>
+<span class="nc bnc" id="L462" title="All 6 branches missed.">            if (it.isNullOrBlank()) {</span>
+<span class="nc" id="L463">                add(&quot;Date of Birth&quot;)</span>
+            }
+<span class="nc" id="L465">        }</span>
+        // Only check SSN if it's mandatory
+<span class="nc bnc" id="L467" title="All 2 branches missed.">        if (isSsnMandatory) {</span>
+<span class="nc" id="L468">            memberInfoPic.ssn.let {</span>
+<span class="nc bnc" id="L469" title="All 6 branches missed.">                if (it.isNullOrBlank()) {</span>
+<span class="nc" id="L470">                    add(resources.getString(R.string.social_security_number))</span>
+                }
+<span class="nc" id="L472">            }</span>
+        }
+<span class="nc" id="L474">    }</span>
+
+    fun getAppOpen(location: Location?) {
+<span class="nc" id="L477">        val memberId = preferences.getString(</span>
+<span class="nc" id="L478">            &quot;memberID&quot;,</span>
+<span class="nc" id="L479">            &quot;&quot;</span>
+<span class="nc" id="L480">        ).toString()</span>
+<span class="nc bnc" id="L481" title="All 4 branches missed.">        if (memberId.isEmpty()) {</span>
+<span class="nc" id="L482">            return</span>
+        }
+<span class="nc" id="L484">        compositeDisposable.add(</span>
+<span class="nc" id="L485">            analyticsRepository.logAppOpen(</span>
+<span class="nc" id="L486">                memberId,</span>
+<span class="nc bnc" id="L487" title="All 4 branches missed.">                locationData = LocationData(location?.latitude, location?.longitude)</span>
+            )
+<span class="nc" id="L489">                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L490">                .doOnSubscribe {</span>
+<span class="nc" id="L491">                }.subscribe({</span>
+<span class="nc" id="L492">                }, {</span>
+<span class="nc" id="L493">                })</span>
+        )
+<span class="nc" id="L495">    }</span>
+
+    fun mailInsuranceCard() {
+<span class="nc bnc" id="L498" title="All 2 branches missed.">        if (Constants.IS_OFFLINE) {</span>
+<span class="nc" id="L499">            _mailInsuranceCard.value = Event(false)</span>
+        } else {
+<span class="nc" id="L501">            _mailInsuranceCard.value = Event(true)</span>
+        }
+<span class="nc" id="L503">    }</span>
+
+    fun fetchMemberInfo() {
+<span class="nc" id="L506">        compositeDisposable.add(</span>
+<span class="nc" id="L507">            homeRepository.getMember()</span>
+<span class="nc" id="L508">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L509">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L510">                .doOnDispose {</span>
+<span class="nc" id="L511">                    Timber.d(&quot;disposed&quot;)</span>
+<span class="nc" id="L512">                }.doOnSubscribe {</span>
+<span class="nc" id="L513">                    loading = true</span>
+<span class="nc" id="L514">                }.doOnError {</span>
+<span class="nc" id="L515">                    Timber.d(&quot;error form socket&quot;)</span>
+<span class="nc" id="L516">                }.subscribe({</span>
+<span class="nc" id="L517">                    memberInfo = it</span>
+<span class="nc" id="L518">                    _enrollmentStatus.value = Event(Unit)</span>
+<span class="nc" id="L519">                }, {})</span>
+        )
+<span class="nc" id="L521">    }</span>
+
+    fun initiateHome() {
+<span class="nc" id="L524">        Timber.d(&quot;Finding2b inititate Home calle&quot;)</span>
+        // should call memberInfo and client id
+<span class="nc" id="L526">        _initiateHome.value = Event(Unit)</span>
+<span class="nc" id="L527">    }</span>
+
+    fun updateMemberInfoRelatedConfig(memberInfo: MemberInfo?) {
+<span class="nc bnc" id="L530" title="All 2 branches missed.">        memberInfo?.let {</span>
+<span class="nc bnc" id="L531" title="All 2 branches missed.">            if (it.shouldEnroll == true) {</span>
+<span class="nc" id="L532">                _directlySetDeviceAsPrimary.value = Event(Unit)</span>
+<span class="nc bnc" id="L533" title="All 2 branches missed.">                if (!Constants.IS_OFFLINE) {</span>
+<span class="nc" id="L534">                    _enrollmentStatus.value = Event(Unit)</span>
+                }
+<span class="nc" id="L536">                return@let</span>
+            }
+
+//            updateUserLanguage(memberInfo)
+<span class="nc" id="L540">            pendingSelfiePrimaryDevice = true</span>
+<span class="nc" id="L541">        }</span>
+<span class="nc" id="L542">    }</span>
+
+    fun fetchForPrimaryDevice(memberInfo: MemberInfo?) {
+<span class="nc bnc" id="L545" title="All 2 branches missed.">        memberInfo?.let {</span>
+<span class="nc bnc" id="L546" title="All 4 branches missed.">            if (memberInfo.selfieMandatorySwitch &amp;&amp; !memberInfo.hasAvatar.equals(</span>
+<span class="nc" id="L547">                    &quot;true&quot;,</span>
+<span class="nc" id="L548">                    true</span>
+                ) || (
+<span class="nc bnc" id="L550" title="All 4 branches missed.">                    !memberInfo.selfieMandatorySwitch &amp;&amp; !memberInfo.hasAvatar.equals(</span>
+<span class="nc" id="L551">                            &quot;true&quot;,</span>
+<span class="nc" id="L552">                            true</span>
+<span class="nc bnc" id="L553" title="All 2 branches missed.">                        ) &amp;&amp; !preferences.getBoolean(</span>
+<span class="nc" id="L554">                            memberInfo.selfId + Constants.skippedProfileUpload,</span>
+<span class="nc" id="L555">                            false</span>
+                        )
+                    )
+            ) {
+<span class="nc" id="L559">                _uploadProfile.value = Event(memberInfo)</span>
+<span class="nc" id="L560">                _directlySetDeviceAsPrimary.value = Event(Unit)</span>
+            } else {
+                // check if device prompt has already been request in this session
+<span class="nc bnc" id="L563" title="All 2 branches missed.">                if (!preferences.getBoolean(</span>
+<span class="nc" id="L564">                        Constants.REQUEST_DEVICE_PROMPT,</span>
+<span class="nc" id="L565">                        false</span>
+                    )
+                ) {
+                    // set device prompt flag for this session (flag is reset when login screen is shown)
+<span class="nc" id="L569">                    preferences.edit().putBoolean(</span>
+<span class="nc" id="L570">                        Constants.REQUEST_DEVICE_PROMPT,</span>
+<span class="nc" id="L571">                        true</span>
+<span class="nc" id="L572">                    ).apply()</span>
+
+<span class="nc" id="L574">                    _checkForPrimaryDevice.value = Event(Unit)</span>
+                }
+            }
+<span class="nc" id="L577">        }</span>
+<span class="nc" id="L578">        pendingSelfiePrimaryDevice = false</span>
+<span class="nc" id="L579">    }</span>
+
+    fun updateUserLanguage(memberInfo: MemberInfo?) {
+<span class="nc bnc" id="L582" title="All 2 branches missed.">        memberInfo?.let {</span>
+<span class="nc" id="L583">            val locale = DateUtils.getCurrentLocale(resources)</span>
+
+<span class="nc bnc" id="L585" title="All 4 branches missed.">            if (locale.language != &quot;en&quot; &amp;&amp; it.languagePreference != locale.language) {</span>
+<span class="nc" id="L586">                compositeDisposable.add(</span>
+<span class="nc" id="L587">                    homeRepository.updateUserDetails(</span>
+<span class="nc" id="L588">                        preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc" id="L589">                        UpdateDetails(languagePreference = locale.language)</span>
+                    )
+<span class="nc" id="L591">                        .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L592">                        .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L593">                        .doOnSubscribe {</span>
+<span class="nc" id="L594">                            loading = true</span>
+<span class="nc" id="L595">                        }.subscribe({</span>
+<span class="nc" id="L596">                            loading = false</span>
+<span class="nc" id="L597">                            _setLanguage.value = Event(locale.language)</span>
+<span class="nc" id="L598">                        }, {</span>
+<span class="nc" id="L599">                            loading = false</span>
+<span class="nc" id="L600">                        })</span>
+                )
+            } else {
+<span class="nc" id="L603">                val editor = preferences.edit()</span>
+<span class="nc" id="L604">                val memberId = preferences.getString(&quot;memberID&quot;, &quot;&quot;)</span>
+<span class="nc" id="L605">                editor.putString(</span>
+<span class="nc" id="L606">                    &quot;$memberId${Constants.LanguagePref}&quot;,</span>
+<span class="nc bnc" id="L607" title="All 2 branches missed.">                    it.languagePreference ?: &quot;en&quot;</span>
+                )
+<span class="nc" id="L609">                editor.apply()</span>
+<span class="nc bnc" id="L610" title="All 2 branches missed.">                it.languagePreference ?.let { langPref -&gt;</span>
+<span class="nc bnc" id="L611" title="All 2 branches missed.">                    if (langPref != locale.language) {</span>
+<span class="nc" id="L612">                        _setLanguage.value = Event(langPref)</span>
+<span class="nc" id="L613">                        Constants.LOCAL_LANG_MODIFIED = langPref</span>
+                    }
+<span class="nc" id="L615">                }</span>
+<span class="nc" id="L616">            }</span>
+        }
+<span class="nc" id="L618">    }</span>
+
+    fun setConstants(it: ClientDetailResponse, memberInfo: MemberInfo) {
+<span class="nc bnc" id="L621" title="All 2 branches missed.">        Constants.CLIENT_DISCLAIMER = it.benefitDisclaimerTextV2 ?: &quot;&quot;</span>
+<span class="nc" id="L622">        Constants.BENEFIT_ROLLING_PERIOD = 12</span>
+<span class="nc" id="L623">        Constants.SHOW_BANKED_HOURS = it.hasHoursbank == true</span>
+<span class="nc bnc" id="L624" title="All 2 branches missed.">        Constants.hasHoursBank = it.hasHoursbank ?: false</span>
+<span class="nc" id="L625">        Constants.showCardsOnlyIfEligible = it.cardsOnlyIfEligibleSwitch</span>
+<span class="nc bnc" id="L626" title="All 2 branches missed.">        if (it.mobileNavigationSectionVisibility != null) {</span>
+<span class="nc" id="L627">            it.mobileNavigationSectionVisibility.forEach { value -&gt;</span>
+
+<span class="nc bnc" id="L629" title="All 2 branches missed.">                if (value.type.equals(&quot;MEDICAL_LOGS&quot;)) {</span>
+<span class="nc" id="L630">                    flagMedicalLog = value.value == true</span>
+                    // if flag medical log is true, then  hide medical log should be false
+<span class="nc bnc" id="L632" title="All 2 branches missed.">                    Constants.HIDE_MEDICAL_LOG = !flagMedicalLog</span>
+<span class="nc" id="L633">                    _navFlag.value = Event(Unit)</span>
+<span class="nc bnc" id="L634" title="All 2 branches missed.">                } else if (value.type.equals(&quot;RECENT_ACTIVITY&quot;)) {</span>
+<span class="nc" id="L635">                    flagRecentActivity = value.value == true</span>
+                }
+<span class="nc" id="L637">            }</span>
+        } else {
+<span class="nc bnc" id="L639" title="All 2 branches missed.">            flagRecentActivity = !memberInfo.registrationType.equals(&quot;3&quot;)</span>
+        }
+
+<span class="nc" id="L642">        preferences.edit().putString(&quot;last_logged_client_id&quot;, memberInfo.clientId.toString())</span>
+<span class="nc" id="L643">            .apply()</span>
+
+<span class="nc" id="L645">        Constants.LoggedIn = true</span>
+<span class="nc bnc" id="L646" title="All 4 branches missed.">        Constants.FIRST_NAME = memberInfo.firstName.toString().replaceFirstChar(Char::uppercase)</span>
+<span class="nc" id="L647">        Constants.TRANSPERENCY = memberInfo.registrationType.equals(&quot;3&quot;)</span>
+
+<span class="nc bnc" id="L649" title="All 10 branches missed.">        if ((memberInfo.isEligible || !Constants.showCardsOnlyIfEligible) &amp;&amp; !Constants.IS_OFFLINE &amp;&amp; memberInfo.selfId.isNotBlank()) {</span>
+<span class="nc" id="L650">            preFetchInsurance(memberInfo.selfId)</span>
+        }
+<span class="nc" id="L652">    }</span>
+
+<span class="fc" id="L654">    private val _updateRelatedId = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val updateRelatedId: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L656">        get() = _updateRelatedId</span>
+
+    fun clearRelatedId() {
+<span class="nc" id="L659">        _updateRelatedId.value = Event(&quot;&quot;)</span>
+<span class="nc" id="L660">    }</span>
+
+    fun loginSwitcher() {
+<span class="nc" id="L663">        compositeDisposable.add(</span>
+<span class="nc" id="L664">            homeRepository.getLogin(tempToken, relatedID!!)</span>
+<span class="nc" id="L665">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L666">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L667">                .doOnSubscribe {</span>
+<span class="nc" id="L668">                    loading = true</span>
+<span class="nc" id="L669">                }</span>
+<span class="nc" id="L670">                .subscribe({</span>
+<span class="nc bnc" id="L671" title="All 2 branches missed.">                    relatedID?.let {</span>
+                            rel -&gt;
+<span class="nc" id="L673">                        preferences.edit { putString(Constants.MEMBER_ID, relatedID) }</span>
+<span class="nc bnc" id="L674" title="All 2 branches missed.">                        it.body()?.let { it1 -&gt; saveTokens(it1) }</span>
+
+<span class="nc bnc" id="L676" title="All 2 branches missed.">                        _updateRelatedId.postValue(Event(relatedID ?: &quot;&quot;))</span>
+<span class="nc" id="L677">                    }</span>
+
+<span class="nc" id="L679">                    loading = false</span>
+<span class="nc" id="L680">                }, {</span>
+<span class="nc" id="L681">                    loading = false</span>
+<span class="nc" id="L682">                })</span>
+        )
+<span class="nc" id="L684">    }</span>
+
+    fun stringGson(value: MemberInfo): String {
+<span class="nc" id="L687">        return gson.toJson(value)</span>
+    }
+
+    fun uploadPicture(pic: File) {
+<span class="nc" id="L691">        picFile = pic</span>
+<span class="nc" id="L692">        ThreadUtils.runOnUiThread {</span>
+<span class="nc" id="L693">            compositeDisposable.add(</span>
+<span class="nc" id="L694">                homeRepository.uploadProfile(memberInfoPic.selfId, filePart)</span>
+<span class="nc" id="L695">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L696">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L697">                    .doOnSubscribe {</span>
+<span class="nc" id="L698">                        loading = true</span>
+<span class="nc" id="L699">                        _navigateToUpload.value =</span>
+<span class="nc" id="L700">                            APIResponse&lt;DocumentUploadSuccessEnroll&gt;().loading()</span>
+<span class="nc" id="L701">                    }</span>
+<span class="nc" id="L702">                    .subscribe({</span>
+<span class="nc" id="L703">                        loading = false</span>
+<span class="nc" id="L704">                        preferences.edit().remove(&quot;uri${memberInfoPic.selfId}&quot;).apply()</span>
+<span class="nc" id="L705">                        _navigateToUpload.value =</span>
+<span class="nc" id="L706">                            APIResponse&lt;DocumentUploadSuccessEnroll&gt;().success(it)</span>
+<span class="nc" id="L707">                    }, {</span>
+<span class="nc" id="L708">                        loading = false</span>
+
+<span class="nc" id="L710">                        _navigateToUpload.value =</span>
+<span class="nc" id="L711">                            APIResponse&lt;DocumentUploadSuccessEnroll&gt;().error(</span>
+<span class="nc" id="L712">                                it.localizedMessage!!</span>
+                            )
+<span class="nc" id="L714">                    })</span>
+            )
+<span class="nc" id="L716">        }</span>
+<span class="nc" id="L717">    }</span>
+
+    fun disclaimer(memberId: String) {
+<span class="nc" id="L720">        Constants.CLIENT_DISCLAIMER =</span>
+<span class="nc" id="L721">            preferences.getString(memberId + &quot;_client_disclaimer&quot;, &quot;&quot;).toString()</span>
+
+<span class="nc" id="L723">        Constants.CLIENT_DISCLAIMER_BILL_PREVIEW =</span>
+<span class="nc" id="L724">            preferences.getString(memberId + &quot;_client_disclaimer_bill_preview&quot;, &quot;&quot;).toString()</span>
+<span class="nc" id="L725">    }</span>
+
+    private fun preFetchInsurance(memberId: String) {
+<span class="nc" id="L728">        compositeDisposable.add(</span>
+<span class="nc" id="L729">            benefitWorkRepository.getInsuranceCard(memberId, &quot;&quot;)</span>
+<span class="nc" id="L730">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L731">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L732">                .doOnSubscribe {</span>
+<span class="nc" id="L733">                }</span>
+<span class="nc" id="L734">                .subscribe({</span>
+<span class="nc bnc" id="L735" title="All 6 branches missed.">                    if (!it.values.isNullOrEmpty()) {</span>
+<span class="nc" id="L736">                        it.selfId = memberId</span>
+<span class="nc" id="L737">                        benefitWorkRepository.insertInsurance(it)</span>
+                    }
+<span class="nc" id="L739">                }, {</span>
+<span class="nc" id="L740">                })</span>
+        )
+<span class="nc" id="L742">    }</span>
+
+    fun chatCounter() {
+<span class="nc" id="L745">        compositeDisposable.add(</span>
+<span class="nc" id="L746">            homeRepository.getChat(&quot;new&quot;, null, null, null, null, false)</span>
+<span class="nc" id="L747">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L748">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L749">                .doOnSubscribe {</span>
+<span class="nc" id="L750">                }</span>
+<span class="nc" id="L751">                .subscribe({</span>
+<span class="nc" id="L752">                    Timber.d(it.toString())</span>
+<span class="nc bnc" id="L753" title="All 4 branches missed.">                    if (it.values.isNotEmpty()) {</span>
+<span class="nc" id="L754">                        chat = it.values.count()</span>
+<span class="nc" id="L755">                        _chatCount.value = Event(it.values.count())</span>
+                    } else {
+<span class="nc" id="L757">                        chat = 0</span>
+
+<span class="nc" id="L759">                        _chatCount.value = Event(0)</span>
+                    }
+<span class="nc" id="L761">                }, {</span>
+<span class="nc" id="L762">                    Timber.d(it.toString())</span>
+<span class="nc" id="L763">                })</span>
+        )
+<span class="nc" id="L765">    }</span>
+
+    private fun saveLanguage(language: String) {
+<span class="nc" id="L768">        val edit = preferences.edit()</span>
+<span class="nc" id="L769">        edit.putString(</span>
+<span class="nc" id="L770">            preferences.getString(&quot;memberID&quot;, &quot;&quot;) + Constants.LanguagePref,</span>
+<span class="nc" id="L771">            language</span>
+        )
+<span class="nc" id="L773">        edit.apply()</span>
+<span class="nc" id="L774">    }</span>
+
+    fun postLanguage(languageCode: String) {
+<span class="nc" id="L777">        saveLanguage(languageCode)</span>
+
+<span class="nc" id="L779">        compositeDisposable.add(</span>
+<span class="nc" id="L780">            homeRepository.updateUserDetails(</span>
+<span class="nc" id="L781">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc" id="L782">                UpdateDetails(languagePreference = languageCode)</span>
+            )
+<span class="nc" id="L784">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L785">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L786">                .doOnSubscribe {</span>
+<span class="nc" id="L787">                }</span>
+<span class="nc" id="L788">                .subscribe({</span>
+<span class="nc" id="L789">                }, {</span>
+<span class="nc" id="L790">                })</span>
+        )
+<span class="nc" id="L792">    }</span>
+
+    fun notificationCounter() {
+<span class="nc" id="L795">        val memberId = preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+<span class="nc bnc" id="L796" title="All 4 branches missed.">        if (memberId.isEmpty()) {</span>
+<span class="nc" id="L797">            return</span>
+        }
+<span class="nc" id="L799">        compositeDisposable.add(</span>
+<span class="nc" id="L800">            homeRepository.getUnreadNotification(memberId)</span>
+<span class="nc" id="L801">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L802">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L803">                .doOnSubscribe {</span>
+<span class="nc" id="L804">                }</span>
+<span class="nc" id="L805">                .subscribe({</span>
+<span class="nc" id="L806">                    Timber.d(it.toString())</span>
+<span class="nc" id="L807">                    _notificationCount.value = Event(it.count)</span>
+<span class="nc" id="L808">                }, {</span>
+<span class="nc" id="L809">                    Timber.d(it.toString())</span>
+<span class="nc" id="L810">                })</span>
+        )
+<span class="nc" id="L812">    }</span>
+
+    fun language(ln: String?) {
+<span class="nc" id="L815">        preferences.edit().putString(</span>
+<span class="nc" id="L816">            preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString() + Constants.LanguagePref,</span>
+<span class="nc" id="L817">            ln</span>
+<span class="nc" id="L818">        ).apply()</span>
+<span class="nc bnc" id="L819" title="All 2 branches missed.">        ln?.let {</span>
+<span class="nc" id="L820">            _language.value = Event(it)</span>
+<span class="nc" id="L821">        }</span>
+<span class="nc" id="L822">    }</span>
+
+    fun isDependent(memberInfo: MemberInfo): Boolean {
+<span class="nc bnc" id="L825" title="All 2 branches missed.">        return !memberInfo.memberRelationship.equals(&quot;insured&quot;, true)</span>
+    }
+
+    private fun saveTokens(data: AuthToken) {
+<span class="nc" id="L829">        preferences.edit().putString(Constants.ACCESS_TOKEN, data.access_token).apply()</span>
+<span class="nc" id="L830">        preferences.edit().putString(Constants.TOKEN_TYPE, data.token_type).apply()</span>
+<span class="nc" id="L831">        preferences.edit().putString(Constants.EXPIRES_IN, data.expires_in).apply()</span>
+<span class="nc" id="L832">        preferences.edit().putString(Constants.SCOPE, data.scope).apply()</span>
+
+<span class="nc" id="L834">        initiateHome()</span>
+<span class="nc" id="L835">    }</span>
+
+    fun fcmRefresh(isPrimary: Boolean) {
+<span class="nc" id="L838">        checkForPrimaryDevicePromptCompleted = true</span>
+<span class="nc" id="L839">        showTutorialIfConditionMatched()</span>
+<span class="pc bpc" id="L840" title="1 of 2 branches missed.">        viewModelScope.launch {</span>
+<span class="fc" id="L841">            compositeDisposable.add(</span>
+<span class="fc" id="L842">                homeRepository.refreshFcm(</span>
+<span class="fc" id="L843">                    preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="fc" id="L844">                    preferences.getString(&quot;FCM_TOKEN&quot;, &quot;&quot;).toString(),</span>
+<span class="fc" id="L845">                    isPrimary</span>
+                )
+<span class="fc" id="L847">                    .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L848">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L849">                    .doOnSubscribe {</span>
+<span class="fc" id="L850">                    }</span>
+<span class="pc" id="L851">                    .subscribe({</span>
+<span class="pc" id="L852">                    }, {</span>
+<span class="fc" id="L853">                    })</span>
+            )
+<span class="pc bpc" id="L855" title="1 of 2 branches missed.">            if (preferences.getBoolean(Constants.IS_MAGIC_LOGIN, false)) {</span>
+<span class="nc" id="L856">                _showResetPasswordPrompt.value = Event(Unit)</span>
+            }
+<span class="fc" id="L858">        }</span>
+<span class="nc" id="L859">    }</span>
+
+    fun checkForPrimaryDevicePrompt() {
+<span class="nc" id="L862">        compositeDisposable.add(</span>
+<span class="nc" id="L863">            homeRepository.shouldPromptForPrimaryDevice(</span>
+<span class="nc" id="L864">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+            )
+<span class="nc" id="L866">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L867">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L868">                .subscribe({</span>
+<span class="nc bnc" id="L869" title="All 2 branches missed.">                    if (it.shouldPrompt) {</span>
+<span class="nc" id="L870">                        _showPrimaryDevicePrompt.value = Event(Unit)</span>
+                    } else {
+<span class="nc" id="L872">                        _directlySetDeviceAsPrimary.value = Event(Unit)</span>
+                    }
+<span class="nc" id="L874">                }, {</span>
+<span class="nc" id="L875">                    Timber.d(it.toString())</span>
+<span class="nc" id="L876">                })</span>
+        )
+<span class="nc" id="L878">    }</span>
+
+    fun getSwitcherStatusRefresh() {
+<span class="nc" id="L881">        compositeDisposable.add(</span>
+<span class="nc" id="L882">            homeRepository.getSwitcher(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="nc" id="L883">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L884">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L885">                .doOnSubscribe {</span>
+<span class="nc" id="L886">                }</span>
+<span class="nc" id="L887">                .subscribe({</span>
+<span class="nc" id="L888">                    tempToken = it.temporaryLoginToken</span>
+<span class="nc" id="L889">                    relatedID = it.relatedMemberId</span>
+<span class="nc" id="L890">                    expiryTimeTempToken = it.createdOn</span>
+<span class="nc" id="L891">                    showSwitcherBtn = it.switcherAvailable</span>
+<span class="nc" id="L892">                    relatedID = it.relatedMemberId</span>
+<span class="nc" id="L893">                    loginSwitcher()</span>
+<span class="nc" id="L894">                }, {</span>
+<span class="nc" id="L895">                })</span>
+        )
+<span class="nc" id="L897">    }</span>
+
+    fun updateSwitchData(response: SwitcherResponse) {
+<span class="nc" id="L900">        response.let {</span>
+<span class="nc" id="L901">            showSwitcherBtn = it.switcherAvailable</span>
+<span class="nc bnc" id="L902" title="All 2 branches missed.">            if (showSwitcherBtn) {</span>
+<span class="nc" id="L903">                tempToken = it.temporaryLoginToken</span>
+<span class="nc" id="L904">                expiryTimeTempToken = it.createdOn</span>
+<span class="nc" id="L905">                relatedID = it.relatedMemberId</span>
+            }
+<span class="nc" id="L907">        }</span>
+<span class="nc" id="L908">    }</span>
+<span class="nc" id="L909">    var recentCardDisposable: Disposable? = null</span>
+<span class="nc" id="L910">    var recentBenefitDisposable: Disposable? = null</span>
+
+    private fun getRecentCards(memberId: String, apiDataShow: Boolean, currentMember: MemberInfo) {
+<span class="nc bnc" id="L913" title="All 2 branches missed.">        recentCardDisposable?.let {</span>
+<span class="nc" id="L914">            it.dispose()</span>
+<span class="nc" id="L915">            compositeDisposable.remove(it)</span>
+        }
+<span class="pc bpc" id="L917" title="1 of 2 branches missed.">        viewModelScope.launch {</span>
+<span class="fc" id="L918">            recentCardDisposable = homeRepository.getRecentActivities(</span>
+<span class="fc" id="L919">                currentMember.selfId,</span>
+<span class="fc" id="L920">                memberId</span>
+            )
+<span class="fc" id="L922">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L923">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L924">                .doOnSubscribe {</span>
+<span class="fc" id="L925">                }</span>
+<span class="fc" id="L926">                .subscribe({</span>
+<span class="fc" id="L927">                    loading = false</span>
+
+<span class="pc bpc" id="L929" title="1 of 2 branches missed.">                    it?.let {</span>
+<span class="fc" id="L930">                        val recentGone =</span>
+<span class="pc bpc" id="L931" title="1 of 4 branches missed.">                            (it.claimsQuickViewList?.isEmpty() ?: true) &amp;&amp;</span>
+<span class="pc bpc" id="L932" title="2 of 4 branches missed.">                                (it.diagnosisHistoryQuickViewList?.isEmpty() ?: true) &amp;&amp;</span>
+<span class="pc bpc" id="L933" title="2 of 4 branches missed.">                                (it.labResultQuickViewList?.isEmpty() ?: true) &amp;&amp;</span>
+<span class="pc bpc" id="L934" title="2 of 4 branches missed.">                                (it.prescriptionQuickViewList?.isEmpty() ?: true)</span>
+
+<span class="fc" id="L936">                        it.selfId = memberId</span>
+<span class="fc bfc" id="L937" title="All 2 branches covered.">                        if (recentGone) {</span>
+<span class="fc" id="L938">                            homeRepository.deleteRecent(memberId)</span>
+                        } else {
+<span class="fc" id="L940">                            homeRepository.insertRecent(it)</span>
+                        }
+<span class="fc bfc" id="L942" title="All 4 branches covered.">                        if (apiDataShow &amp;&amp; !recentGone) {</span>
+<span class="fc" id="L943">                            _recentCardsData.value = Event(it)</span>
+                        }
+<span class="pc bpc" id="L945" title="1 of 2 branches missed.">                        if (memberId == currentMember.selfId) {</span>
+<span class="fc" id="L946">                            recentActivityFetched = true</span>
+<span class="fc" id="L947">                            showTutorialIfConditionMatched()</span>
+                        }
+<span class="fc" id="L949">                    }</span>
+<span class="pc" id="L950">                }, {</span>
+<span class="nc" id="L951">                    loading = false</span>
+<span class="nc" id="L952">                })</span>
+<span class="fc" id="L953">            compositeDisposable.add(recentCardDisposable!!)</span>
+<span class="fc" id="L954">        }</span>
+<span class="nc" id="L955">    }</span>
+
+    private fun getBenefitCards(memberId: String, apiDataShow: Boolean, currentMember: MemberInfo) {
+<span class="nc bnc" id="L958" title="All 2 branches missed.">        recentBenefitDisposable?.let {</span>
+<span class="nc" id="L959">            it.dispose()</span>
+<span class="nc" id="L960">            compositeDisposable.remove(it)</span>
+        }
+<span class="pc bpc" id="L962" title="1 of 2 branches missed.">        viewModelScope.launch {</span>
+<span class="fc" id="L963">            recentBenefitDisposable = homeRepository.getBenefitsCards(memberId)</span>
+<span class="fc" id="L964">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L965">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L966">                .doOnSubscribe {</span>
+<span class="fc" id="L967">                    loading = true</span>
+<span class="fc" id="L968">                }</span>
+<span class="fc" id="L969">                .subscribe({</span>
+<span class="fc" id="L970">                    loading = false</span>
+
+<span class="pc bpc" id="L972" title="1 of 4 branches missed.">                    cardGone = it.insuranceCardQuickViewDTOList.isNullOrEmpty()</span>
+<span class="fc" id="L973">                    it.selfId = memberId</span>
+<span class="pc bpc" id="L974" title="1 of 2 branches missed.">                    it.insuranceCardQuickViewDTOList?.forEach { data -&gt;</span>
+<span class="fc" id="L975">                        data.date = DateUtils.getSystemDateTimeAsString().toString()</span>
+<span class="fc" id="L976">                    }</span>
+<span class="fc bfc" id="L977" title="All 2 branches covered.">                    if (cardGone) {</span>
+<span class="fc" id="L978">                        homeRepository.deleteBenefit(memberId)</span>
+                    } else {
+<span class="fc" id="L980">                        homeRepository.insertBenefit(it)</span>
+                    }
+
+<span class="fc bfc" id="L983" title="All 4 branches covered.">                    if (apiDataShow &amp;&amp; !cardGone) {</span>
+<span class="fc" id="L984">                        _insuranceCardsData.value = Event(it)</span>
+                    }
+<span class="pc bpc" id="L986" title="1 of 2 branches missed.">                    if (memberId == currentMember.selfId) {</span>
+<span class="fc" id="L987">                        benefitCardsFetched = true</span>
+<span class="fc" id="L988">                        showTutorialIfConditionMatched()</span>
+                    }
+<span class="pc" id="L990">                }, {</span>
+<span class="nc" id="L991">                    loading = false</span>
+<span class="nc" id="L992">                    Timber.d(it)</span>
+<span class="nc bnc" id="L993" title="All 2 branches missed.">                    if (it is RetrofitException) {</span>
+<span class="nc" id="L994">                        _serverError.value = Event(</span>
+<span class="nc" id="L995">                            NetworkMessage.getErrorMessage(</span>
+<span class="nc bnc" id="L996" title="All 2 branches missed.">                                it.response?.errorBody()</span>
+                            )
+                        )
+                    }
+<span class="nc" id="L1000">                })</span>
+<span class="fc" id="L1001">            compositeDisposable.add(recentBenefitDisposable!!)</span>
+<span class="fc" id="L1002">        }</span>
+<span class="nc" id="L1003">    }</span>
+
+    fun getOfflineDataBenefit(selfId: String, currentMember: MemberInfo) {
+<span class="nc" id="L1006">        val data = homeRepository.getBenefit(selfId)</span>
+<span class="nc bnc" id="L1007" title="All 6 branches missed.">        cardGone = data?.insuranceCardQuickViewDTOList.isNullOrEmpty()</span>
+
+<span class="nc bnc" id="L1009" title="All 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L1010">            _insuranceCardsData.value = Event(data)</span>
+<span class="nc bnc" id="L1011" title="All 2 branches missed.">            if (selfId == currentMember.selfId) {</span>
+<span class="nc" id="L1012">                benefitCardsFetched = true</span>
+<span class="nc" id="L1013">                showTutorialIfConditionMatched()</span>
+            }
+        }
+
+<span class="nc bnc" id="L1017" title="All 2 branches missed.">        if (!Constants.IS_OFFLINE) {</span>
+<span class="nc" id="L1018">            getBenefitCards(selfId, cardGone, currentMember)</span>
+        }
+<span class="nc" id="L1020">    }</span>
+
+    fun getOfflineDataRecent(selfId: String, currentMember: MemberInfo) {
+<span class="nc" id="L1023">        val data = homeRepository.getRecent(selfId)</span>
+<span class="nc" id="L1024">        recentGone =</span>
+<span class="nc bnc" id="L1025" title="All 24 branches missed.">            data?.claimsQuickViewList.isNullOrEmpty() and data?.diagnosisHistoryQuickViewList.isNullOrEmpty() and data?.labResultQuickViewList.isNullOrEmpty() and data?.prescriptionQuickViewList.isNullOrEmpty()</span>
+
+<span class="nc bnc" id="L1027" title="All 2 branches missed.">        if (!recentGone) {</span>
+<span class="nc" id="L1028">            _recentCardsData.value = Event(data)</span>
+<span class="nc bnc" id="L1029" title="All 2 branches missed.">            if (selfId == currentMember.selfId) {</span>
+<span class="nc" id="L1030">                recentActivityFetched = true</span>
+<span class="nc" id="L1031">                showTutorialIfConditionMatched()</span>
+            }
+        }
+
+<span class="nc bnc" id="L1035" title="All 2 branches missed.">        if (!Constants.IS_OFFLINE) {</span>
+<span class="nc bnc" id="L1036" title="All 2 branches missed.">            if (selfId.toLong() &gt; 0) {</span>
+<span class="nc" id="L1037">                getRecentCards(selfId, recentGone, currentMember)</span>
+            }
+        }
+<span class="nc" id="L1040">    }</span>
+
+    fun getOfflineBenefit(benefit: InsuranceCardHome?) {
+<span class="nc bnc" id="L1043" title="All 2 branches missed.">        if (benefit != null) {</span>
+<span class="nc bnc" id="L1044" title="All 4 branches missed.">            cardGone = benefit.insuranceCardQuickViewDTOList.isNullOrEmpty()</span>
+<span class="nc" id="L1045">            _benefitCardListGenerated.value = Event(benefit.insuranceCardQuickViewDTOList)</span>
+        } else {
+<span class="nc" id="L1047">            cardGone = true</span>
+        }
+<span class="nc" id="L1049">    }</span>
+
+    fun getOfflineRecent(recentActivityHome: RecentActivityHome?) {
+<span class="nc bnc" id="L1052" title="All 2 branches missed.">        if (recentActivityHome != null) {</span>
+<span class="nc" id="L1053">            recentGone =</span>
+<span class="nc" id="L1054">                recentActivityHome.claimsQuickViewList.isEmpty() and recentActivityHome.diagnosisHistoryQuickViewList.isEmpty() and recentActivityHome.labResultQuickViewList.isEmpty() and recentActivityHome.prescriptionQuickViewList.isEmpty()</span>
+<span class="nc" id="L1055">            _recentCardGenerated.value = Event(recentActivityHome)</span>
+        } else {
+<span class="nc" id="L1057">            recentGone = true</span>
+        }
+<span class="nc" id="L1059">    }</span>
+
+    // updated function
+    fun setSelectedMember(memberInfo: MemberInfo, loginMember: MemberInfo, context: Context) {
+<span class="nc" id="L1063">        firstName = memberInfo.firstName.toString()</span>
+<span class="nc" id="L1064">        lastName = memberInfo.lastName.toString()</span>
+<span class="nc" id="L1065">        eligible = memberInfo.isEligible</span>
+<span class="nc bnc" id="L1066" title="All 2 branches missed.">        if (!memberInfo.employeeRole.toString().equals(&quot;null&quot;, true)) {</span>
+<span class="nc" id="L1067">            memberRole = memberInfo.employeeRole.toString()</span>
+        }
+
+<span class="nc bnc" id="L1070" title="All 2 branches missed.">        inReviewSelfie = !memberInfo.hasAvatar.equals(&quot;true&quot;, true)</span>
+
+<span class="nc" id="L1072">        memberType = when {</span>
+<span class="nc bnc" id="L1073" title="All 2 branches missed.">            memberInfo.memberRelationship.toString().equals(&quot;insured&quot;, true) -&gt; {</span>
+<span class="nc" id="L1074">                context.getString(R.string.primary_benificiary)</span>
+            }
+
+            else -&gt; {
+<span class="nc" id="L1078">                memberInfo.relationDesc.toString()</span>
+            }
+        }
+<span class="nc" id="L1081">        status = memberInfo.employeeStatus.toString()</span>
+
+<span class="nc" id="L1083">        getOfflineDataRecent(memberInfo.selfId, loginMember)</span>
+<span class="nc" id="L1084">        getOfflineDataBenefit(memberInfo.selfId, loginMember)</span>
+<span class="nc" id="L1085">    }</span>
+
+    fun getDocumentPending() {
+<span class="nc" id="L1088">        compositeDisposable.add(</span>
+<span class="nc" id="L1089">            documentRepository.getPendingDocument(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="nc" id="L1090">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L1091">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L1092">                .doOnSubscribe {</span>
+<span class="nc" id="L1093">                }</span>
+<span class="nc" id="L1094">                .subscribe({</span>
+<span class="nc bnc" id="L1095" title="All 2 branches missed.">                    if (it.pendingRequestDTOList != null) {</span>
+<span class="nc" id="L1096">                        docCount = it.pendingRequestDTOList.count()</span>
+
+<span class="nc" id="L1098">                        _doc.value = Event(it.pendingRequestDTOList.count())</span>
+                    }
+<span class="nc" id="L1100">                }, {</span>
+<span class="nc" id="L1101">                })</span>
+        )
+<span class="nc" id="L1103">    }</span>
+
+    fun lastLoggedInClient(): String {
+<span class="nc" id="L1106">        return preferences.getString(&quot;last_logged_client_id&quot;, &quot;&quot;).toString()</span>
+    }
+
+<span class="nc" id="L1109">    fun readyToCallCheckForNewSurvey(tutorialIsSkipped: Boolean = false) {</span>
+<span class="nc bnc" id="L1110" title="All 6 branches missed.">        if ((checkForPrimaryDevicePromptCompleted &amp;&amp; !shouldShowTutorial()) || tutorialIsSkipped) {</span>
+<span class="nc" id="L1111">            _checkForNewSurvey.value = Event(Unit)</span>
+        }
+<span class="nc" id="L1113">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L1116">        callbacks.remove(callback)</span>
+<span class="nc" id="L1117">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L1120">        callbacks.add(callback)</span>
+<span class="nc" id="L1121">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L1124">        super.onCleared()</span>
+<span class="nc" id="L1125">        compositeDisposable.dispose()</span>
+<span class="nc" id="L1126">    }</span>
+
+    fun dontShowTutorial() {
+<span class="nc" id="L1129">        preferences.edit().putBoolean(memberInfo.selfId + &quot;homeTutorialShown&quot;, true).apply()</span>
+<span class="nc" id="L1130">    }</span>
+
+    fun resetTutorial() {
+<span class="nc" id="L1133">        _tutorialsAdded.value = false</span>
+<span class="nc" id="L1134">    }</span>
+
+    fun dispose() {
+<span class="nc" id="L1137">        compositeDisposable.dispose()</span>
+<span class="nc" id="L1138">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

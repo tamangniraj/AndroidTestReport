@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SessionLogoutHelper.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils</a> &gt; <span class="el_source">SessionLogoutHelper.kt</span></div><h1>SessionLogoutHelper.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils
+
+import android.content.Intent
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.ui.login.LoginActivity
+import com.vivekahealth.vivekahealth.utils.remote.RetrofitException
+
+object SessionLogoutHelper {
+<span class="nc" id="L11">    var isSessionLogOutShowing: Boolean = false</span>
+<span class="nc" id="L12">    var isShowing: Boolean = false</span>
+
+    fun handleSessionLogout(context: AppCompatActivity, error: Throwable): Boolean {
+<span class="nc bnc" id="L15" title="All 2 branches missed.">        if (error is RetrofitException) {</span>
+            if ((
+<span class="nc bnc" id="L17" title="All 12 branches missed.">                error.response?.code() == 401 || error.message?.contains(</span>
+<span class="nc" id="L18">                        &quot;Too many follow-up requests: 21&quot;,</span>
+<span class="nc" id="L19">                        ignoreCase = true</span>
+<span class="nc" id="L20">                    ) == true</span>
+<span class="nc bnc" id="L21" title="All 2 branches missed.">                ) &amp;&amp; !isSessionLogOutShowing</span>
+            ) {
+<span class="nc" id="L23">                showSessionLogoutDialog(context)</span>
+<span class="nc" id="L24">                return true</span>
+            }
+        }
+
+<span class="nc" id="L28">        return false</span>
+    }
+
+    fun handleServer(context: AppCompatActivity, error: String): Boolean {
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        if (isShowing) {</span>
+<span class="nc" id="L33">            return true</span>
+        } else {
+<span class="nc" id="L35">            isShowing = true</span>
+<span class="nc" id="L36">            context.runOnUiThread {</span>
+<span class="nc" id="L37">                HelperUtils.dismissAllDialogs(context.supportFragmentManager)</span>
+
+<span class="nc" id="L39">                DialogUtils(</span>
+<span class="nc" id="L40">                    context,</span>
+<span class="nc" id="L41">                    object : DialogListener {</span>
+                        override fun onPositiveClicked() {
+<span class="nc" id="L43">                            isShowing = false</span>
+<span class="nc" id="L44">                        }</span>
+
+                        override fun onNeutralClicked() {
+<span class="nc" id="L47">                        }</span>
+
+                        override fun onNegativeClicked() {
+<span class="nc" id="L50">                        }</span>
+                    }
+<span class="nc" id="L52">                ).sessionDialog(error)</span>
+<span class="nc" id="L53">            }</span>
+
+<span class="nc" id="L55">            return true</span>
+        }
+    }
+
+    fun showSessionLogoutDialog(context: AppCompatActivity) {
+<span class="nc bnc" id="L60" title="All 4 branches missed.">        if (isSessionLogOutShowing || context is LoginActivity) return</span>
+
+<span class="nc" id="L62">        isSessionLogOutShowing = true</span>
+
+<span class="nc" id="L64">        context.runOnUiThread {</span>
+<span class="nc" id="L65">            HelperUtils.dismissAllDialogs(context.supportFragmentManager)</span>
+
+<span class="nc" id="L67">            val dialog = DialogUtils(</span>
+<span class="nc" id="L68">                context,</span>
+<span class="nc" id="L69">                object : DialogListener {</span>
+                    override fun onPositiveClicked() {
+                        val isActivityInForeground =
+                            (context as AppCompatActivity).lifecycle.currentState.isAtLeast(
+                                Lifecycle.State.RESUMED
+                            )
+
+                        if (!isActivityInForeground) {
+                            return
+                        }
+                        HelperUtils.dismissAllDialogs(context.supportFragmentManager)
+
+                        val intent = Intent(context, LoginActivity::class.java)
+                        context.startActivity(intent)
+                        isSessionLogOutShowing = false
+                        context.finish()
+                    }
+
+                    override fun onNeutralClicked() {
+                    }
+
+                    override fun onNegativeClicked() {
+                    }
+                }
+            )
+
+<span class="nc" id="L95">            dialog.sessionLoggedOutDialog()</span>
+<span class="nc" id="L96">        }</span>
+<span class="nc" id="L97">    }</span>
+
+    fun showTimeoutError(context: AppCompatActivity): Boolean {
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        return if (isShowing) {</span>
+<span class="nc" id="L101">            true</span>
+        } else {
+<span class="nc" id="L103">            isShowing = true</span>
+<span class="nc" id="L104">            context.runOnUiThread {</span>
+<span class="nc" id="L105">                DialogUtils(</span>
+<span class="nc" id="L106">                    context,</span>
+<span class="nc" id="L107">                    object : DialogListener {</span>
+                        override fun onPositiveClicked() {
+<span class="nc" id="L109">                            isShowing = false</span>
+<span class="nc" id="L110">                        }</span>
+
+                        override fun onNeutralClicked() {
+<span class="nc" id="L113">                        }</span>
+
+                        override fun onNegativeClicked() {
+<span class="nc" id="L116">                        }</span>
+                    }
+<span class="nc" id="L118">                ).dialogWithView(</span>
+<span class="nc" id="L119">                    context.getString(R.string.ok_string),</span>
+<span class="nc" id="L120">                    &quot;&quot;,</span>
+<span class="nc" id="L121">                    &quot;&quot;,</span>
+<span class="nc" id="L122">                    R.layout.layout_network</span>
+                )
+<span class="nc" id="L124">            }</span>
+<span class="nc" id="L125">            true</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

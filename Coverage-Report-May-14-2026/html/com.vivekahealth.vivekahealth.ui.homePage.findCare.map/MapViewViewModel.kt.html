@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MapViewViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findCare.map</a> &gt; <span class="el_source">MapViewViewModel.kt</span></div><h1>MapViewViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findCare.map
+
+import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.location.Location
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
+import com.bumptech.glide.request.transition.DrawableCrossFadeTransition
+import com.vivekahealth.vivekahealth.data.local.home.findCare.ProviderCallData
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.FindCareFilterModel
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.DoctorResponseNew
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.Value
+import com.vivekahealth.vivekahealth.ui.homePage.findcareMyDoctorViewAll.repository.FindAllMapRepository
+import com.vivekahealth.vivekahealth.ui.homePage.findcareMyDoctorViewAll.repository.FindCareViewAllRepository
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.repository.FindCareSearchRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
+
+<span class="nc" id="L34">class MapViewViewModel @Inject constructor(</span>
+<span class="nc" id="L35">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L36">    private val homeRepository: HomeRepository,</span>
+<span class="nc" id="L37">    private val findCareSearchRepository: FindCareSearchRepository,</span>
+<span class="nc" id="L38">    private val findAllMapRepository: FindAllMapRepository,</span>
+<span class="nc" id="L39">    private val findCareViewAllRepository: FindCareViewAllRepository</span>
+
+<span class="nc" id="L41">) : ViewModel(), Observable {</span>
+<span class="nc" id="L42">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="nc" id="L43">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+    var data: Boolean = false
+<span class="nc" id="L45">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L47">            field = value</span>
+<span class="nc" id="L48">            callbacks.notifyCallbacks(this, BR.data, null)</span>
+<span class="nc" id="L49">        }</span>
+<span class="nc" id="L50">    var reason: String = &quot;&quot;</span>
+<span class="nc" id="L51">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L53">            field = value</span>
+<span class="nc" id="L54">            callbacks.notifyCallbacks(this, BR.reason, null)</span>
+<span class="nc" id="L55">        }</span>
+<span class="nc" id="L56">    var listItem: ArrayList&lt;Value&gt; = arrayListOf()</span>
+<span class="nc" id="L57">    var filterData: FindCareFilterModel = FindCareFilterModel()</span>
+<span class="nc" id="L58">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L60">            field = value</span>
+<span class="nc" id="L61">            callbacks.notifyCallbacks(this, BR.filterData, null)</span>
+<span class="nc" id="L62">        }</span>
+<span class="nc" id="L63">    var lastSelectedPosition: Int = 0</span>
+<span class="nc" id="L64">    var currentLocation: Location? = null</span>
+<span class="nc" id="L65">    var mapReady: Boolean = false</span>
+<span class="nc" id="L66">    var search: Boolean = false</span>
+<span class="nc" id="L67">    var title: String = &quot;&quot;</span>
+<span class="nc" id="L68">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L70">            field = value</span>
+<span class="nc" id="L71">            callbacks.notifyCallbacks(this, BR.title, null)</span>
+<span class="nc" id="L72">        }</span>
+<span class="nc" id="L73">    var imageProfile: Bitmap? = null</span>
+<span class="nc" id="L74">    var subTitle: String = &quot;&quot;</span>
+<span class="nc" id="L75">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L77">            field = value</span>
+<span class="nc" id="L78">            callbacks.notifyCallbacks(this, BR.subTitle, null)</span>
+<span class="nc" id="L79">        }</span>
+    var loading: Boolean = false
+<span class="nc" id="L81">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L83">            field = value</span>
+<span class="nc" id="L84">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L85">        }</span>
+<span class="nc" id="L86">    private val _scrolled = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val scrolled: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L88">        get() = _scrolled</span>
+<span class="nc" id="L89">    private val _imageLoaded = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val imageLoaded: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L91">        get() = _imageLoaded</span>
+<span class="nc" id="L92">    private val _mapReadyState = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val mapReadyState: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L94">        get() = _mapReadyState</span>
+<span class="nc" id="L95">    private val _dataUpdated = MutableLiveData&lt;Event&lt;DoctorResponseNew&gt;&gt;()</span>
+    val dataUpdated: LiveData&lt;Event&lt;DoctorResponseNew&gt;&gt;
+<span class="nc" id="L97">        get() = _dataUpdated</span>
+
+<span class="nc" id="L99">    private val _showFilter = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val showFilter: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L101">        get() = _showFilter</span>
+<span class="nc" id="L102">    var searchText: String = &quot;&quot;</span>
+<span class="nc" id="L103">    var providerType: String = &quot;&quot;</span>
+<span class="nc" id="L104">    var within: String = &quot;&quot;</span>
+<span class="nc" id="L105">    var page: Int = 1</span>
+<span class="nc" id="L106">    var pageSize: String = &quot;10&quot;</span>
+<span class="nc" id="L107">    var searchType: String = &quot;&quot;</span>
+<span class="nc" id="L108">    var taxonomyGroup: String = &quot;&quot;</span>
+
+<span class="nc" id="L110">    var locationType: String = &quot;&quot;</span>
+<span class="nc" id="L111">    var lastDistance: String = &quot;&quot;</span>
+<span class="nc" id="L112">    var codeType: String = &quot;&quot;</span>
+<span class="nc" id="L113">    var codeValue: String = &quot;&quot;</span>
+<span class="nc" id="L114">    var isLastPage = false</span>
+<span class="nc" id="L115">    var isScrolling = false</span>
+<span class="nc" id="L116">    var imageBitmap: Bitmap? = null</span>
+<span class="nc" id="L117">    var key: String = &quot;&quot;</span>
+
+<span class="nc" id="L119">    @get:Bindable</span>
+<span class="nc" id="L120">    val listener = object : RequestListener&lt;Drawable&gt; {</span>
+        override fun onLoadFailed(
+            e: GlideException?,
+            model: Any?,
+            target: Target&lt;Drawable&gt;?,
+            isFirstResource: Boolean
+        ): Boolean {
+<span class="nc" id="L127">            loading = false</span>
+
+<span class="nc" id="L129">            return false</span>
+        }
+
+        override fun onResourceReady(
+            resource: Drawable?,
+            model: Any?,
+            target: Target&lt;Drawable&gt;?,
+            dataSource: DataSource?,
+            isFirstResource: Boolean
+        ): Boolean {
+<span class="nc" id="L139">            imageBitmap = (resource as BitmapDrawable).bitmap</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">            target?.onResourceReady(</span>
+<span class="nc" id="L141">                resource,</span>
+<span class="nc" id="L142">                DrawableCrossFadeTransition(10, isFirstResource)</span>
+            )
+<span class="nc" id="L144">            _imageLoaded.value = Event(Unit)</span>
+<span class="nc" id="L145">            loading = false</span>
+
+<span class="nc" id="L147">            return true</span>
+        }
+    }
+<span class="nc" id="L150">    var selfId: String = preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+
+<span class="nc" id="L152">    var grouped: ArrayList&lt;Value&gt; = arrayListOf()</span>
+<span class="nc" id="L153">    var providerCallData: ProviderCallData? = ProviderCallData()</span>
+<span class="nc" id="L154">    private val _listView = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val listView: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L156">        get() = _listView</span>
+<span class="nc" id="L157">    private val _providerListGenerated = MutableLiveData&lt;Event&lt;ArrayList&lt;Value&gt;&gt;&gt;()</span>
+    val providerListGenerated: LiveData&lt;Event&lt;ArrayList&lt;Value&gt;&gt;&gt;
+<span class="nc" id="L159">        get() = _providerListGenerated</span>
+<span class="nc" id="L160">    private val _mapPinSelect = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val mapPinSelect: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L162">        get() = _mapPinSelect</span>
+
+<span class="nc" id="L164">    var showFilterView: Boolean = true</span>
+<span class="nc" id="L165">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L167">            field = value</span>
+
+<span class="nc" id="L169">            callbacks.notifyCallbacks(this, com.vivekahealth.vivekahealth.BR.showFilterView, null)</span>
+<span class="nc" id="L170">        }</span>
+    fun getProfile(): String {
+<span class="nc" id="L172">        val memberId = preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+<span class="nc" id="L173">        return preferences.getString(&quot;uri$memberId&quot;, &quot;&quot;).toString()</span>
+    }
+
+<span class="nc" id="L176">    init {</span>
+<span class="nc" id="L177">    }</span>
+
+    fun updateMapeState() {
+<span class="nc" id="L180">        selfId = preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+<span class="nc" id="L181">        _mapReadyState.value = Event(Unit)</span>
+<span class="nc" id="L182">    }</span>
+    fun selectIndex(index: Int) {
+<span class="nc" id="L184">        try {</span>
+<span class="nc" id="L185">            val item = listItem[index]</span>
+<span class="nc" id="L186">            listItem.forEach {</span>
+<span class="nc" id="L187">                it.selected = it == item</span>
+<span class="nc" id="L188">            }</span>
+<span class="nc" id="L189">            _mapPinSelect.value = Event(Unit)</span>
+<span class="nc" id="L190">        } catch (e: Exception) {</span>
+<span class="nc" id="L191">            e.printStackTrace()</span>
+        }
+<span class="nc" id="L193">    }</span>
+
+    fun listView() {
+<span class="nc" id="L196">        _listView.value = Event(Unit)</span>
+<span class="nc" id="L197">    }</span>
+
+    fun getDataService() {
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        if (search) {</span>
+<span class="nc" id="L201">            getSearchData()</span>
+        } else {
+<span class="nc" id="L203">            getProviderList()</span>
+        }
+<span class="nc" id="L205">    }</span>
+
+    fun getProviderList() {
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        if (key.equals(&quot;doctor&quot;, true)) {</span>
+<span class="nc" id="L209">            showFilterView = false</span>
+<span class="nc" id="L210">            filterData.speciality = &quot;My Doctor&quot;</span>
+<span class="nc" id="L211">            filterData = filterData</span>
+<span class="nc" id="L212">            getDoctorList()</span>
+        } else {
+<span class="nc" id="L214">            showFilterView = true</span>
+
+<span class="nc" id="L216">            getProvider()</span>
+        }
+<span class="nc" id="L218">    }</span>
+    fun openFilter() {
+<span class="nc" id="L220">        _showFilter.value = Event(Unit)</span>
+<span class="nc" id="L221">    }</span>
+
+    fun getDoctorList() {
+<span class="nc" id="L224">        compositeDisposable.add(</span>
+<span class="nc" id="L225">            findCareViewAllRepository.getDoctorList(</span>
+<span class="nc" id="L226">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">                filterData.current?.latitude.toString(),</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">                filterData.current?.longitude.toString(),</span>
+<span class="nc" id="L229">                &quot;&quot;,</span>
+<span class="nc" id="L230">                &quot;&quot;</span>
+            )
+<span class="nc" id="L232">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L233">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L234">                .doOnSubscribe {</span>
+<span class="nc" id="L235">                    loading = true</span>
+<span class="nc" id="L236">                }</span>
+<span class="nc" id="L237">                .subscribe({ it -&gt;</span>
+
+<span class="nc" id="L239">                    loading = false</span>
+
+<span class="nc" id="L241">                    page++</span>
+<span class="nc" id="L242">                    listItem.addAll(it.values)</span>
+
+<span class="nc" id="L244">                    listItem[lastSelectedPosition].selected = true</span>
+<span class="nc bnc" id="L245" title="All 6 branches missed.">                    isLastPage = it.paging?.totalPages == page</span>
+<span class="nc" id="L246">                    data = listItem.isEmpty()</span>
+<span class="nc" id="L247">                    _providerListGenerated.value = Event(listItem)</span>
+<span class="nc" id="L248">                }, {</span>
+<span class="nc" id="L249">                    loading = false</span>
+<span class="nc" id="L250">                    data = listItem.isEmpty()</span>
+<span class="nc" id="L251">                })</span>
+        )
+<span class="nc" id="L253">    }</span>
+
+    fun getProvider() {
+<span class="nc" id="L256">        val list = filterData.selectedSubSpeciality.map { it.speciality }</span>
+<span class="nc" id="L257">        val listTaxonomy = filterData.taxonomyCodes</span>
+
+<span class="nc" id="L259">        var tempSpeciality = list.joinToString(separator = &quot;~&quot;) { item -&gt; item }</span>
+<span class="nc" id="L260">        val tempTaxonomyCode = listTaxonomy.joinToString(separator = &quot;,&quot;) { st -&gt; st }</span>
+<span class="nc" id="L261">        compositeDisposable.add(</span>
+<span class="nc" id="L262">            findAllMapRepository.getProviderList(</span>
+<span class="nc bnc" id="L263" title="All 4 branches missed.">                filterData.current?.latitude.toString(), filterData.current?.longitude.toString(), page, pageSize, tempSpeciality,</span>
+<span class="nc" id="L264">                filterData.searchText.toString(), preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(), filterData.searchType.toString(), filterData.taxonomyGroup.toString(), filterData.locationType.toString(), filterData.providerType.toString(), filterData.radius.toString(), filterData.codeType.toString(), filterData.codeValue.toString(),</span>
+<span class="nc" id="L265">                tempTaxonomyCode</span>
+            )
+<span class="nc" id="L267">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L268">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L269">                .doOnSubscribe {</span>
+<span class="nc" id="L270">                    loading = true</span>
+<span class="nc" id="L271">                }</span>
+<span class="nc" id="L272">                .subscribe({ it -&gt;</span>
+
+<span class="nc" id="L274">                    loading = false</span>
+
+<span class="nc" id="L276">                    page++</span>
+<span class="nc" id="L277">                    listItem.addAll(it.values)</span>
+<span class="nc bnc" id="L278" title="All 4 branches missed.">                    if (listItem.isNotEmpty()) {</span>
+<span class="nc" id="L279">                        listItem[lastSelectedPosition].selected = true</span>
+                    }
+
+<span class="nc bnc" id="L282" title="All 6 branches missed.">                    isLastPage = it.paging?.totalPages == page</span>
+<span class="nc" id="L283">                    data = listItem.isEmpty()</span>
+
+<span class="nc" id="L285">                    _providerListGenerated.value = Event(listItem)</span>
+<span class="nc" id="L286">                }, {</span>
+<span class="nc" id="L287">                    data = listItem.isEmpty()</span>
+
+<span class="nc" id="L289">                    loading = false</span>
+<span class="nc" id="L290">                })</span>
+        )
+<span class="nc" id="L292">    }</span>
+    fun getSearchData() {
+<span class="nc" id="L294">        compositeDisposable.add(</span>
+<span class="nc" id="L295">            findCareSearchRepository.getProcedureList(</span>
+<span class="nc" id="L296">                filterData.searchText.toString(),</span>
+<span class="nc" id="L297">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">                filterData.current?.latitude.toString(),</span>
+<span class="nc bnc" id="L299" title="All 2 branches missed.">                filterData.current?.longitude.toString(),</span>
+<span class="nc" id="L300">                filterData.providerType.toString(),</span>
+<span class="nc" id="L301">                filterData.radius.toString()</span>
+            )
+<span class="nc" id="L303">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L304">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L305">                .doOnSubscribe {</span>
+<span class="nc" id="L306">                    loading = true</span>
+<span class="nc" id="L307">                }</span>
+<span class="nc" id="L308">                .subscribe({ it -&gt;</span>
+<span class="nc" id="L309">                    try {</span>
+<span class="nc" id="L310">                        loading = false</span>
+<span class="nc" id="L311">                        listItem.addAll(it.doctors)</span>
+<span class="nc" id="L312">                        listItem[lastSelectedPosition].selected = true</span>
+<span class="nc" id="L313">                        _providerListGenerated.value = Event(listItem)</span>
+<span class="nc" id="L314">                    } catch (exp: IndexOutOfBoundsException) {</span>
+<span class="nc" id="L315">                        exp.printStackTrace()</span>
+                    }
+<span class="nc" id="L317">                }, {</span>
+<span class="nc" id="L318">                    loading = false</span>
+<span class="nc" id="L319">                })</span>
+        )
+<span class="nc" id="L321">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L324">        callbacks.add(callback)</span>
+<span class="nc" id="L325">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L328">        callbacks.remove(callback)</span>
+<span class="nc" id="L329">    }</span>
+    override fun onCleared() {
+<span class="nc" id="L331">        super.onCleared()</span>
+<span class="nc" id="L332">        compositeDisposable.dispose()</span>
+<span class="nc" id="L333">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

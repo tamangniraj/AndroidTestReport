@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FindCareViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findCare</a> &gt; <span class="el_source">FindCareViewModel.kt</span></div><h1>FindCareViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findCare
+
+import android.content.SharedPreferences
+import android.location.Location
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.viewModelScope
+import com.google.android.gms.maps.model.LatLng
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.BR
+import com.vivekahealth.vivekahealth.data.local.VivekaDatabase
+import com.vivekahealth.vivekahealth.data.remote.home.MemberAddress
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.FindCareFilterModel
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.TaxonomyGroupList
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.DoctorResponseNew
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.Value
+import com.vivekahealth.vivekahealth.ui.homePage.findCare.repository.FindCareRepository
+import com.vivekahealth.vivekahealth.ui.homePage.findCareSelectSpecialityActivity.RetrofitClient
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSelectSpeciality.selectSpecialityAllModel.SpecialityAll
+import com.vivekahealth.vivekahealth.ui.homePage.repository.AnalyticsRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.PageType
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import timber.log.Timber
+import javax.inject.Inject
+
+<span class="fc" id="L41">class FindCareViewModel @Inject constructor(</span>
+<span class="fc" id="L42">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L43">    private val findCareRepository: FindCareRepository,</span>
+<span class="fc" id="L44">    private val vivekaDatabase: VivekaDatabase,</span>
+<span class="fc" id="L45">    private val analyticsRepository: AnalyticsRepository,</span>
+<span class="fc" id="L46">    private val homeRepository: HomeRepository</span>
+<span class="fc" id="L47">) : ViewModel(), Observable {</span>
+
+<span class="fc" id="L49">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="pc" id="L50">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="pc" id="L51">    var ValueList: ArrayList&lt;DoctorResponseNew&gt; = ArrayList()</span>
+<span class="pc" id="L52">    var eligibleValueList: ArrayList&lt;DoctorResponseNew&gt; = ArrayList()</span>
+<span class="pc" id="L53">    var docList: ArrayList&lt;Value&gt; = ArrayList()</span>
+<span class="pc" id="L54">    var listForDoctorAdapter: List&lt;DoctorResponseNew&gt; = listOf()</span>
+<span class="pc" id="L55">    var gson = Gson()</span>
+<span class="pc" id="L56">    var selected_location: String = &quot;Nearby&quot;</span>
+
+<span class="nc" id="L58">    var configDb =</span>
+<span class="pc" id="L59">        homeRepository.getClientDetail(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()).asLiveData()</span>
+
+<span class="pc" id="L61">    var nearByLocation: Location? = null</span>
+<span class="pc" id="L62">    var taxonomyGroupList: TaxonomyGroupList = TaxonomyGroupList()</span>
+<span class="pc" id="L63">    var valueString = &quot;&quot;</span>
+
+    // var memberInfoList  =  findCareRepository.getMemberFromDb().asLiveData()
+    private var mutableSignup: MutableLiveData&lt;SpecialityAll&gt;? = null
+<span class="pc" id="L67">    var memberInfoList = findCareRepository.getMemberFromDb().asLiveData()</span>
+<span class="nc" id="L68">    var memberInfoDb =</span>
+<span class="fc" id="L69">        findCareRepository.getMemberSid(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="pc" id="L70">            .asLiveData()</span>
+<span class="fc" id="L71">    private val _logsListGenerated = MutableLiveData&lt;Event&lt;DoctorResponseNew&gt;&gt;()</span>
+    val logsListGenerated: LiveData&lt;Event&lt;DoctorResponseNew&gt;&gt;
+<span class="fc" id="L73">        get() = _logsListGenerated</span>
+
+<span class="pc" id="L75">    var memberInfo = MemberInfo()</span>
+<span class="pc" id="L76">    var tempListFlat: ArrayList&lt;Any&gt; = arrayListOf()</span>
+<span class="pc" id="L77">    final var memberID = preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+<span class="pc" id="L78">    final var accessToken = preferences.getString(Constants.ACCESS_TOKEN, &quot;&quot;).toString()</span>
+
+<span class="fc" id="L80">    private val _locationGeo = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val locationGeo: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L82">        get() = _locationGeo</span>
+<span class="fc" id="L83">    private val _findClick = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val findClick: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L85">        get() = _findClick</span>
+<span class="fc" id="L86">    private val _findAll = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val findAll: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L88">        get() = _findAll</span>
+<span class="fc" id="L89">    var filterOption: FindCareFilterModel = FindCareFilterModel(showSpeciality = true)</span>
+<span class="nc" id="L90">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L92">            field = value</span>
+
+<span class="nc" id="L94">            callbacks.notifyCallbacks(this, BR.filterOption, null)</span>
+<span class="nc" id="L95">        }</span>
+<span class="pc" id="L96">    var wentToSetting: Boolean = false</span>
+<span class="pc" id="L97">    var loaderCount = 0</span>
+    var loading: Boolean = false
+<span class="fc" id="L99">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L101">            field = value</span>
+<span class="nc" id="L102">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L103">        }</span>
+    var showNoDoc: Boolean = false
+<span class="fc" id="L105">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L107">            field = value</span>
+<span class="nc" id="L108">            callbacks.notifyCallbacks(this, BR.showNoDoc, null)</span>
+<span class="nc" id="L109">        }</span>
+
+<span class="pc" id="L111">    var withIn: String = &quot;10&quot;</span>
+<span class="fc" id="L112">    var addressName: String = &quot;&quot;</span>
+<span class="nc" id="L113">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L115">            field = value</span>
+<span class="nc" id="L116">            callbacks.notifyCallbacks(this, BR.addressName, null)</span>
+<span class="nc" id="L117">        }</span>
+<span class="pc" id="L118">    var currentLocation: String = &quot;&quot;</span>
+<span class="pc" id="L119">    var enteredLocation: String = &quot;&quot;</span>
+<span class="pc" id="L120">    var workLocation: String = &quot;&quot;</span>
+<span class="pc" id="L121">    var homeLocation: String = &quot;&quot;</span>
+<span class="fc" id="L122">    private val _taxonomyListGenerated = MutableLiveData&lt;Event&lt;TaxonomyGroupList&gt;&gt;()</span>
+    val taxonomyListGenerated: LiveData&lt;Event&lt;TaxonomyGroupList&gt;&gt;
+<span class="fc" id="L124">        get() = _taxonomyListGenerated</span>
+
+<span class="fc" id="L126">    init {</span>
+<span class="fc" id="L127">        getLogView()</span>
+<span class="fc" id="L128">    }</span>
+
+    fun selectAll(post: String): LiveData&lt;SpecialityAll&gt; {
+<span class="nc" id="L131">        mutableSignup = MutableLiveData()</span>
+<span class="nc" id="L132">        selectSpecialityAll(post)</span>
+<span class="nc" id="L133">        return mutableSignup!!</span>
+    }
+
+<span class="pc bpc" id="L136" title="1 of 4 branches missed.">    fun locationParse(memberAddress: MemberAddress?): String = memberAddress?.fullAddress() ?: &quot;&quot;</span>
+
+    fun assignAddress(memberInfo: MemberInfo) {
+<span class="nc" id="L139">        val locationHome = LatLng(</span>
+<span class="nc bnc" id="L140" title="All 4 branches missed.">            memberInfo.homeAddress?.latitude ?: 0.0,</span>
+<span class="nc bnc" id="L141" title="All 4 branches missed.">            memberInfo.homeAddress?.longitude ?: 0.0</span>
+        )
+//        locationHome.latitude =   memberInfo.homeAddress?.latitude?:0.0
+//        locationHome.longitude = memberInfo.homeAddress?.longitude?:0.0
+<span class="nc" id="L145">        filterOption.home = locationHome</span>
+<span class="nc" id="L146">        val locationWork = LatLng(</span>
+<span class="nc bnc" id="L147" title="All 4 branches missed.">            memberInfo.workAddress?.latitude ?: 0.0,</span>
+<span class="nc bnc" id="L148" title="All 4 branches missed.">            memberInfo.workAddress?.longitude ?: 0.0</span>
+        )
+//        locationWork.latitude =   memberInfo.workAddress?.latitude?:0.0
+//        locationWork.longitude = memberInfo.workAddress?.longitude?:0.0
+<span class="nc" id="L152">        filterOption.work = locationWork</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        filterOption.showHome = memberInfo.homeAddress != null</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        filterOption.showWork = memberInfo.workAddress != null</span>
+
+<span class="nc" id="L156">        _locationGeo.value = Event(Unit)</span>
+<span class="nc" id="L157">    }</span>
+
+    fun locationCurrent(currentLocation: Location) {
+<span class="nc" id="L160">        filterOption.current = LatLng(currentLocation.latitude, currentLocation.longitude)</span>
+<span class="nc" id="L161">        filterOption.near = LatLng(currentLocation.latitude, currentLocation.longitude)</span>
+<span class="nc" id="L162">        filterOption = filterOption</span>
+<span class="nc" id="L163">        getDoctorList()</span>
+<span class="nc" id="L164">    }</span>
+
+    fun stringGson(value: Value): String {
+<span class="nc" id="L167">        return gson.toJson(value)</span>
+    }
+
+    fun viewAll() {
+<span class="nc" id="L171">        _findAll.value = Event(Unit)</span>
+<span class="nc" id="L172">    }</span>
+
+    fun removeSpeciality() {
+<span class="nc" id="L175">        filterOption.speciality = &quot;&quot;</span>
+<span class="nc" id="L176">        filterOption.selectedSubSpeciality.clear()</span>
+<span class="nc" id="L177">        filterOption.taxonomyCodes.clear()</span>
+<span class="nc" id="L178">    }</span>
+
+    fun getSpeciality() {
+<span class="nc" id="L181">        filterOption.taxonomyGroup = &quot;&quot;</span>
+<span class="nc" id="L182">        val list = filterOption.selectedSubSpeciality.map { it.speciality }</span>
+<span class="nc" id="L183">        filterOption.speciality = list.joinToString(separator = &quot;,&quot;) { it -&gt; it }</span>
+<span class="nc" id="L184">        filterOption = filterOption</span>
+<span class="nc" id="L185">    }</span>
+
+    fun getTaxonomyGroup() {
+<span class="nc" id="L188">        compositeDisposable.add(</span>
+<span class="nc" id="L189">            findCareRepository.getTaxonomyList()</span>
+<span class="nc" id="L190">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L191">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L192">                .doOnSubscribe {</span>
+<span class="nc" id="L193">                    loaderCount++</span>
+<span class="nc" id="L194">                    loading = true</span>
+<span class="nc" id="L195">                }</span>
+<span class="nc" id="L196">                .subscribe({</span>
+<span class="nc" id="L197">                    loaderCount--</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">                    if (loaderCount == 0) {</span>
+<span class="nc" id="L199">                        loading = false</span>
+                    }
+<span class="nc" id="L201">                    taxonomyGroupList = it</span>
+
+<span class="nc" id="L203">                    _taxonomyListGenerated.value = Event(it)</span>
+<span class="nc" id="L204">                }, {</span>
+<span class="nc" id="L205">                    loaderCount--</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">                    if (loaderCount == 0) {</span>
+<span class="nc" id="L207">                        loading = false</span>
+                    }
+<span class="nc" id="L209">                })</span>
+        )
+<span class="nc" id="L211">    }</span>
+
+    private fun selectSpecialityAll(post: String) {
+<span class="nc" id="L214">        val call: Call&lt;SpecialityAll&gt; = RetrofitClient.getApi()!!.getAllAllSpeciality(post)</span>
+<span class="nc" id="L215">        call.enqueue(object : Callback&lt;SpecialityAll&gt; {</span>
+            override fun onResponse(
+                call: Call&lt;SpecialityAll&gt;,
+                response: Response&lt;SpecialityAll&gt;
+            ) {
+<span class="nc" id="L220">                try {</span>
+<span class="nc bnc" id="L221" title="All 2 branches missed.">                    mutableSignup?.value = response.body()</span>
+<span class="nc" id="L222">                } catch (e: Exception) {</span>
+                }
+<span class="nc" id="L224">            }</span>
+
+            override fun onFailure(call: Call&lt;SpecialityAll&gt;, t: Throwable) {
+<span class="nc" id="L227">            }</span>
+        })
+<span class="nc" id="L229">    }</span>
+
+    fun getLogView() {
+<span class="fc" id="L232">        compositeDisposable.add(</span>
+<span class="fc" id="L233">            analyticsRepository.getLogPageView(</span>
+<span class="fc" id="L234">                preferences.getString(</span>
+<span class="fc" id="L235">                    &quot;memberID&quot;,</span>
+<span class="fc" id="L236">                    &quot;&quot;</span>
+<span class="fc" id="L237">                ).toString(),</span>
+<span class="fc" id="L238">                PageType.FIND_DOCTOR_SCREEN.pageName</span>
+            )
+<span class="fc" id="L240">                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())</span>
+<span class="pc" id="L241">                .doOnSubscribe {</span>
+<span class="pc" id="L242">                }.subscribe({</span>
+<span class="pc" id="L243">                }, {</span>
+<span class="nc" id="L244">                })</span>
+        )
+<span class="fc" id="L246">    }</span>
+
+    fun outNetworkClick() {
+<span class="nc" id="L249">        filterOption.providerType = &quot;1&quot;</span>
+<span class="nc" id="L250">        filterOption.outNetwork = false</span>
+<span class="nc" id="L251">        filterOption.outNetwork = filterOption.outNetwork</span>
+<span class="nc" id="L252">    }</span>
+
+    fun findClick() {
+<span class="fc" id="L255">        _findClick.value = Event(Unit)</span>
+<span class="fc" id="L256">    }</span>
+
+<span class="pc" id="L258">    var data: Boolean = false</span>
+    fun getDoctorList() {
+<span class="nc" id="L260">        val memberId = preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+
+<span class="nc" id="L262">        Timber.d(&quot;MemebrId $memberId&quot;)</span>
+
+<span class="nc bnc" id="L264" title="All 2 branches missed.">        if (filterOption.current != null) {</span>
+<span class="nc" id="L265">            compositeDisposable.add(</span>
+<span class="nc" id="L266">                findCareRepository.getDoctorList(</span>
+<span class="nc" id="L267">                    memberId,</span>
+<span class="nc bnc" id="L268" title="All 2 branches missed.">                    filterOption.current?.latitude.toString(),</span>
+<span class="nc bnc" id="L269" title="All 2 branches missed.">                    filterOption.current?.longitude.toString(),</span>
+<span class="nc" id="L270">                    &quot;&quot;,</span>
+<span class="nc" id="L271">                    &quot;&quot;</span>
+                )
+<span class="nc" id="L273">                    .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L274">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L275">                    .doOnSubscribe {</span>
+<span class="nc" id="L276">                        loaderCount++</span>
+<span class="nc" id="L277">                        loading = true</span>
+<span class="nc" id="L278">                    }</span>
+<span class="nc" id="L279">                    .subscribe({</span>
+<span class="nc" id="L280">                        showNoDoc = it.values.isEmpty()</span>
+<span class="nc" id="L281">                        docList.clear()</span>
+<span class="nc" id="L282">                        docList = it.values</span>
+
+<span class="nc" id="L284">                        listForDoctorAdapter = eligibleValueList.toList()</span>
+<span class="nc" id="L285">                        loaderCount--</span>
+<span class="nc bnc" id="L286" title="All 2 branches missed.">                        if (loaderCount == 0) {</span>
+<span class="nc" id="L287">                            loading = false</span>
+                        }
+<span class="nc" id="L289">                        _logsListGenerated.value = Event(it)</span>
+<span class="nc" id="L290">                    }, {</span>
+<span class="nc" id="L291">                        loaderCount--</span>
+<span class="nc bnc" id="L292" title="All 2 branches missed.">                        if (loaderCount == 0) {</span>
+<span class="nc" id="L293">                            loading = false</span>
+                        }
+<span class="nc" id="L295">                        showNoDoc = true</span>
+<span class="nc" id="L296">                    })</span>
+            )
+        }
+<span class="nc" id="L299">    }</span>
+
+    fun getMem() {
+<span class="nc bnc" id="L302" title="All 2 branches missed.">        viewModelScope.launch {</span>
+<span class="nc" id="L303">            memberInfoDb = findCareRepository.getMemberSid(memberID).asLiveData()</span>
+<span class="nc" id="L304">        }</span>
+<span class="nc bnc" id="L305" title="All 2 branches missed.">        viewModelScope.launch {</span>
+<span class="nc" id="L306">            memberInfoList = findCareRepository.getMemberFromDb().asLiveData()</span>
+<span class="nc" id="L307">        }</span>
+        // Timber.d(memberInfoList?.value?.get(0)?.memberRelationship)
+<span class="nc" id="L309">    }</span>
+
+    fun saveLocation(latitude: String, longitude: String) {
+<span class="nc" id="L312">        preferences.edit().putString(Constants.LATITUDE, latitude).apply()</span>
+<span class="nc" id="L313">        preferences.edit().putString(Constants.LONGITUDE, longitude).apply()</span>
+<span class="nc" id="L314">    }</span>
+
+    fun saveLocationString(location: String) {
+<span class="nc" id="L317">        preferences.edit().putString(Constants.LOCATIONSTRING, location).apply()</span>
+<span class="nc" id="L318">    }</span>
+
+    /*
+        private fun check(){
+            memberInfoList = findCareRepository.getMemberFromDb().asLiveData()
+        }
+    */
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L327">        callbacks.add(callback)</span>
+<span class="nc" id="L328">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L331">        callbacks.remove(callback)</span>
+<span class="nc" id="L332">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L335">        super.onCleared()</span>
+<span class="nc" id="L336">        compositeDisposable.dispose()</span>
+<span class="nc" id="L337">    }</span>
+
+<span class="fc" id="L339">    private val _tutorialsAdded = MutableLiveData(false)</span>
+    val tutorialsAdded: LiveData&lt;Boolean&gt;
+<span class="fc" id="L341">        get() = _tutorialsAdded</span>
+
+<span class="fc" id="L343">    private val _showTutorial = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val showTutorial: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L345">        get() = _showTutorial</span>
+
+<span class="pc" id="L347">    var addedMyDoctorTutorial = false</span>
+    private var addedLookingForTutorial = false
+    private var addedSearchTutorials = false
+
+<span class="pc" id="L351">    var tutorialShown = false</span>
+    fun addMyDoctorTutorial() {
+<span class="fc" id="L353">        addedMyDoctorTutorial = true</span>
+<span class="fc" id="L354">        showTutorialIfConditionMatched()</span>
+<span class="fc" id="L355">    }</span>
+
+    fun addLookingForTutorial() {
+<span class="nc" id="L358">        addedLookingForTutorial = true</span>
+<span class="nc" id="L359">        showTutorialIfConditionMatched()</span>
+<span class="nc" id="L360">    }</span>
+    fun addSearchTutorials() {
+<span class="nc" id="L362">        addedSearchTutorials = true</span>
+<span class="nc" id="L363">        updateTutorialAdditionStatus()</span>
+<span class="nc" id="L364">    }</span>
+
+    private fun updateTutorialAdditionStatus() {
+<span class="nc bnc" id="L367" title="All 6 branches missed.">        _tutorialsAdded.value = addedMyDoctorTutorial &amp;&amp; addedSearchTutorials &amp;&amp; addedLookingForTutorial</span>
+<span class="nc" id="L368">    }</span>
+
+    private fun showTutorialIfConditionMatched() {
+<span class="pc bpc" id="L371" title="1 of 2 branches missed.">        if (!preferences.getBoolean(</span>
+<span class="fc" id="L372">                Constants.SHOWN_FIND_CARE_TUT_FOR_SESSION,</span>
+<span class="fc" id="L373">                false</span>
+<span class="pc bpc" id="L374" title="3 of 6 branches missed.">            ) &amp;&amp; !tutorialShown &amp;&amp; addedMyDoctorTutorial &amp;&amp; addedLookingForTutorial</span>
+        ) {
+<span class="nc" id="L376">            _showTutorial.value = Event(Unit)</span>
+<span class="nc" id="L377">            tutorialShown = true</span>
+<span class="nc" id="L378">            preferences.edit().putBoolean(Constants.SHOWN_FIND_CARE_TUT_FOR_SESSION, true).apply()</span>
+        }
+<span class="fc" id="L380">    }</span>
+
+    fun dontShowTutorial() {
+<span class="nc" id="L383">        preferences.edit().putBoolean(memberInfo.selfId + &quot;findCareTutorialShown&quot;, true).apply()</span>
+<span class="nc" id="L384">    }</span>
+
+    fun resetTutorial() {
+<span class="nc" id="L387">        _tutorialsAdded.value = false</span>
+<span class="nc" id="L388">    }</span>
+
+    fun shouldShowTutorial(): Boolean {
+<span class="nc bnc" id="L391" title="All 2 branches missed.">        return !preferences.getBoolean(memberInfo.selfId + &quot;findCareTutorialShown&quot;, false)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PersonalInformationInputCard.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.pension.ui.component</a> &gt; <span class="el_source">PersonalInformationInputCard.kt</span></div><h1>PersonalInformationInputCard.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.pension.ui.component
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.vivekahealth.vivekahealth.FirebaseTags
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.pension.data.model.RetirementOption
+import com.vivekahealth.vivekahealth.pension.ui.tagged
+import com.vivekahealth.vivekahealth.pension.ui.viewmodel.PensionViewModel
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PersonalInformationInputCard(
+    selectedRetirementAge: RetirementOption?,
+    retirementOption: List&lt;RetirementOption&gt;,
+    expectedHours: String?,
+    currentHours: String?,
+<span class="nc bnc" id="L43" title="All 2 branches missed.">    editableExpectedHour: Boolean? = true,</span>
+    min: Int?,
+    max: Int?,
+    onRetirementAgeChange: (RetirementOption) -&gt; Unit,
+    onExpectedHoursChange: (String) -&gt; Unit,
+<span class="nc bnc" id="L48" title="All 2 branches missed.">    viewModel: PensionViewModel? = null</span>
+<span class="nc bnc" id="L49" title="All 66 branches missed.">) {</span>
+<span class="nc" id="L50">    var showBottomSheet by remember { mutableStateOf(false) }</span>
+
+<span class="nc" id="L52">    val focusManger = LocalFocusManager.current</span>
+<span class="nc" id="L53">    val keyboardController = LocalSoftwareKeyboardController.current</span>
+    // Log analytics when bottom sheet opens
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">    LaunchedEffect(showBottomSheet) {</span>
+<span class="pc bpc" id="L56" title="1 of 4 branches missed.">        if (showBottomSheet &amp;&amp; viewModel != null) {</span>
+<span class="fc" id="L57">            viewModel.logEvent(FirebaseTags.PENSION_RETIREMENT_AGE_OPEN)</span>
+        }
+<span class="fc" id="L59">    }</span>
+
+    // Log analytics when expected hours input changes (with debounce)
+<span class="nc bnc" id="L62" title="All 2 branches missed.">    LaunchedEffect(expectedHours) {</span>
+<span class="pc bpc" id="L63" title="1 of 10 branches missed.">        if (expectedHours?.isNotEmpty() == true &amp;&amp; viewModel != null) {</span>
+<span class="fc" id="L64">            kotlinx.coroutines.delay(1000) // Debounce for 1 second</span>
+<span class="fc" id="L65">            viewModel.logEvent(FirebaseTags.PENSION_EXPECTED_HOURS_INPUT)</span>
+        }
+<span class="fc" id="L67">    }</span>
+
+<span class="nc" id="L69">    val bottomSheetState = rememberModalBottomSheetState(</span>
+<span class="nc" id="L70">        skipPartiallyExpanded = true</span>
+    )
+
+<span class="nc" id="L73">    Box(</span>
+<span class="nc" id="L74">        modifier = Modifier</span>
+<span class="nc" id="L75">            .fillMaxWidth()</span>
+<span class="nc" id="L76">            .padding(top = 12.dp)</span>
+<span class="nc" id="L77">            .background(color = Color(0xFFFFFFFF))</span>
+<span class="nc" id="L78">            .tagged(&quot;Personal Information Input Card&quot;)</span>
+
+    ) {
+<span class="nc" id="L81">        Column(</span>
+<span class="nc" id="L82">            modifier = Modifier</span>
+<span class="nc" id="L83">                .fillMaxWidth()</span>
+<span class="nc" id="L84">                .padding(16.dp)</span>
+        ) {
+            // Title
+<span class="nc" id="L87">            Text(</span>
+<span class="nc" id="L88">                text = stringResource(R.string.personal_information),</span>
+<span class="nc" id="L89">                fontSize = 18.sp,</span>
+<span class="nc" id="L90">                fontWeight = FontWeight.SemiBold,</span>
+<span class="nc" id="L91">                color = Color.Black,</span>
+<span class="nc" id="L92">                modifier = Modifier.padding(bottom = 24.dp)</span>
+            )
+
+            // Retirement Age Field
+<span class="nc" id="L96">            Column(</span>
+<span class="nc" id="L97">                modifier = Modifier</span>
+<span class="nc" id="L98">                    .fillMaxWidth()</span>
+<span class="nc" id="L99">                    .padding(bottom = 24.dp)</span>
+            ) {
+<span class="nc" id="L101">                Row(</span>
+<span class="nc" id="L102">                    modifier = Modifier.padding(bottom = 8.dp)</span>
+                ) {
+<span class="nc" id="L104">                    Text(</span>
+<span class="nc" id="L105">                        text = stringResource(R.string.retirement_option),</span>
+<span class="nc" id="L106">                        fontSize = 14.sp,</span>
+<span class="nc" id="L107">                        fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L108">                        color = Color.Black</span>
+                    )
+<span class="nc" id="L110">                    Text(</span>
+<span class="nc" id="L111">                        text = &quot; *&quot;,</span>
+<span class="nc" id="L112">                        fontSize = 14.sp,</span>
+<span class="nc" id="L113">                        color = Color.Red</span>
+                    )
+<span class="nc" id="L115">                }</span>
+
+<span class="nc" id="L117">                Row(</span>
+<span class="nc" id="L118">                    modifier = Modifier</span>
+<span class="nc" id="L119">                        .fillMaxWidth()</span>
+<span class="nc" id="L120">                        .height(56.dp)</span>
+<span class="nc" id="L121">                        .border(</span>
+<span class="nc" id="L122">                            width = 1.dp,</span>
+<span class="nc" id="L123">                            color = Color.Gray,</span>
+<span class="nc" id="L124">                            shape = RoundedCornerShape(4.dp)</span>
+                        )
+<span class="nc" id="L126">                        .clickable { showBottomSheet = true }</span>
+<span class="nc" id="L127">                        .padding(horizontal = 16.dp)</span>
+<span class="nc" id="L128">                        .tagged(&quot;Retirement Age Selector&quot;),</span>
+<span class="nc" id="L129">                    horizontalArrangement = Arrangement.SpaceBetween,</span>
+<span class="nc" id="L130">                    verticalAlignment = Alignment.CenterVertically</span>
+                ) {
+<span class="nc" id="L132">                    Text(</span>
+<span class="nc bnc" id="L133" title="All 4 branches missed.">                        text = selectedRetirementAge?.label ?: &quot;&quot;,</span>
+<span class="nc" id="L134">                        fontSize = 16.sp,</span>
+<span class="nc" id="L135">                        color = Color.Black,</span>
+<span class="nc" id="L136">                        modifier = Modifier.tagged(&quot;Retirement Age Value&quot;)</span>
+                    )
+
+<span class="nc" id="L139">                    Icon(</span>
+<span class="nc" id="L140">                        imageVector = Icons.Default.KeyboardArrowDown,</span>
+<span class="nc" id="L141">                        contentDescription = &quot;Select retirement age&quot;,</span>
+<span class="nc" id="L142">                        tint = Color.Gray</span>
+                    )
+<span class="nc" id="L144">                }</span>
+<span class="nc" id="L145">            }</span>
+
+            // Expected Hours Field
+<span class="nc" id="L148">            Column(</span>
+<span class="nc" id="L149">                modifier = Modifier.fillMaxWidth()</span>
+            ) {
+<span class="nc" id="L151">                Row(</span>
+<span class="nc" id="L152">                    modifier = Modifier.padding(bottom = 8.dp)</span>
+                ) {
+<span class="nc" id="L154">                    Text(</span>
+<span class="nc" id="L155">                        text = stringResource(R.string.expected_hours_per_year),</span>
+<span class="nc" id="L156">                        fontSize = 14.sp,</span>
+<span class="nc" id="L157">                        fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L158">                        color = Color.Black</span>
+                    )
+<span class="nc" id="L160">                    Text(</span>
+<span class="nc" id="L161">                        text = &quot; *&quot;,</span>
+<span class="nc" id="L162">                        fontSize = 14.sp,</span>
+<span class="nc" id="L163">                        color = Color.Red</span>
+                    )
+<span class="nc" id="L165">                }</span>
+
+<span class="nc bnc" id="L167" title="All 8 branches missed.">                val hasError = expectedHours?.toDoubleOrNull()?.let { hours -&gt;</span>
+<span class="nc bnc" id="L168" title="All 8 branches missed.">                    (min == null || hours &gt;= min) &amp;&amp; (max == null || hours &lt;= max)</span>
+<span class="nc" id="L169">                } != true</span>
+
+<span class="nc" id="L171">                var isFocused by remember { mutableStateOf(false) }</span>
+
+<span class="nc" id="L173">                OutlinedTextField(</span>
+<span class="nc bnc" id="L174" title="All 4 branches missed.">                    value = expectedHours ?: &quot;&quot;,</span>
+<span class="nc" id="L175">                    onValueChange = { input -&gt;</span>
+                        // Allow empty, digits, and a single decimal point
+<span class="nc" id="L177">                        onExpectedHoursChange(input)</span>
+<span class="nc" id="L178">                    },</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">                    enabled = editableExpectedHour ?: true,</span>
+<span class="nc" id="L180">                    modifier = Modifier</span>
+<span class="nc" id="L181">                        .fillMaxWidth()</span>
+<span class="nc" id="L182">                        .padding(0.dp)</span>
+<span class="nc" id="L183">                        .border(</span>
+<span class="nc" id="L184">                            width = 1.dp,</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">                            color = if (isFocused) {</span>
+<span class="nc" id="L186">                                colorResource(R.color.primaryLight)</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">                            } else if (hasError) {</span>
+<span class="nc" id="L188">                                Color.Red</span>
+<span class="nc" id="L189">                            } else {</span>
+<span class="nc" id="L190">                                MaterialTheme.colorScheme.outline</span>
+                            },
+<span class="nc" id="L192">                            shape = RoundedCornerShape(4.dp)</span>
+                        )
+<span class="nc" id="L194">                        .tagged(&quot;Expected Hours Input&quot;),</span>
+
+<span class="nc" id="L196">                    placeholder = {</span>
+<span class="pc bpc" id="L197" title="5 of 8 branches missed.">                    },</span>
+<span class="nc" id="L198">                    keyboardOptions = KeyboardOptions(</span>
+<span class="nc" id="L199">                        keyboardType = KeyboardType.Decimal,</span>
+<span class="nc" id="L200">                        imeAction = ImeAction.Done</span>
+                    ),
+<span class="nc" id="L202">                    keyboardActions = KeyboardActions(onDone = {</span>
+<span class="nc" id="L203">                        focusManger.clearFocus()</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">                        keyboardController?.hide()</span>
+<span class="nc" id="L205">                    }),</span>
+<span class="nc" id="L206">                    colors = OutlinedTextFieldDefaults.colors(</span>
+<span class="nc" id="L207">                        focusedTextColor = Color.Black,</span>
+<span class="nc" id="L208">                        unfocusedTextColor = Color.Black,</span>
+<span class="nc" id="L209">                        disabledTextColor = Color.Gray,</span>
+<span class="nc bnc" id="L210" title="All 2 branches missed.">                        focusedBorderColor = if (hasError) {</span>
+<span class="nc" id="L211">                            Color.Red</span>
+                        } else {
+<span class="nc" id="L213">                            colorResource(</span>
+<span class="nc" id="L214">                                R.color.primaryLight</span>
+                            )
+                        },
+<span class="nc bnc" id="L217" title="All 2 branches missed.">                        unfocusedBorderColor = if (hasError) Color.Red else Color.Gray,</span>
+<span class="nc" id="L218">                        errorBorderColor = Color.Red</span>
+                    ),
+<span class="nc" id="L220">                    shape = RoundedCornerShape(4.dp),</span>
+<span class="nc" id="L221">                    isError = hasError</span>
+                )
+
+                // Error message
+<span class="nc bnc" id="L225" title="All 2 branches missed.">                if (hasError) {</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">                    val msg = if (max != null) {</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">                        stringResource(R.string.error_valid_number_range, min ?: 0, max)</span>
+<span class="nc" id="L228">                    } else {</span>
+<span class="nc bnc" id="L229" title="All 2 branches missed.">                        stringResource(R.string.error_valid_number_min, min ?: 0)</span>
+                    }
+
+<span class="nc" id="L232">                    Text(</span>
+<span class="nc" id="L233">                        text = msg,</span>
+<span class="nc" id="L234">                        fontSize = 12.sp,</span>
+<span class="nc" id="L235">                        color = Color.Red,</span>
+<span class="nc" id="L236">                        modifier = Modifier.padding(top = 4.dp, start = 8.dp)</span>
+                    )
+                }
+
+<span class="nc" id="L240">                Text(</span>
+<span class="nc" id="L241">                    text = stringResource(</span>
+<span class="nc" id="L242">                        R.string.current_year_s_hrs,</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">                        currentHours ?: &quot;&quot;</span>
+                    ),
+<span class="nc" id="L245">                    fontSize = 12.sp,</span>
+<span class="nc" id="L246">                    color = Color.Gray,</span>
+<span class="nc" id="L247">                    modifier = Modifier.padding(top = 4.dp)</span>
+                )
+<span class="nc" id="L249">            }</span>
+<span class="nc" id="L250">        }</span>
+<span class="nc" id="L251">    }</span>
+
+    // Bottom Sheet Dialog
+<span class="nc bnc" id="L254" title="All 2 branches missed.">    if (showBottomSheet) {</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">        ModalBottomSheet(</span>
+<span class="nc" id="L256">            onDismissRequest = { showBottomSheet = false },</span>
+<span class="nc" id="L257">            sheetState = bottomSheetState,</span>
+<span class="nc" id="L258">            containerColor = Color.White,</span>
+<span class="nc" id="L259">            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),</span>
+<span class="nc" id="L260">            modifier = Modifier.padding(top = 0.dp),</span>
+<span class="nc" id="L261">            dragHandle = null</span>
+<span class="nc" id="L262">        ) {</span>
+<span class="nc bnc" id="L263" title="All 6 branches missed.">            Column(</span>
+<span class="nc" id="L264">                modifier = Modifier</span>
+<span class="nc" id="L265">                    .fillMaxWidth()</span>
+<span class="nc" id="L266">                    .windowInsetsPadding(WindowInsets.navigationBars)</span>
+            ) {
+                // Header
+<span class="nc" id="L269">                Row(</span>
+<span class="nc" id="L270">                    modifier = Modifier</span>
+<span class="nc" id="L271">                        .fillMaxWidth()</span>
+<span class="nc" id="L272">                        .padding(horizontal = 24.dp),</span>
+<span class="nc" id="L273">                    horizontalArrangement = Arrangement.SpaceBetween,</span>
+<span class="nc" id="L274">                    verticalAlignment = Alignment.CenterVertically</span>
+                ) {
+<span class="nc" id="L276">                    Text(</span>
+<span class="nc" id="L277">                        text = stringResource(R.string.retirement_option),</span>
+<span class="nc" id="L278">                        fontSize = 18.sp,</span>
+<span class="nc" id="L279">                        fontWeight = FontWeight.SemiBold,</span>
+<span class="nc" id="L280">                        color = Color.Black</span>
+
+                    )
+
+<span class="nc" id="L284">                    IconButton(</span>
+<span class="nc" id="L285">                        onClick = { showBottomSheet = false }</span>
+<span class="nc" id="L286">                    ) {</span>
+<span class="pc bpc" id="L287" title="4 of 8 branches missed.">                        Icon(</span>
+<span class="fc" id="L288">                            imageVector = Icons.Default.Close,</span>
+<span class="fc" id="L289">                            contentDescription = &quot;Close&quot;,</span>
+<span class="fc" id="L290">                            tint = Color.Gray,</span>
+<span class="fc" id="L291">                            modifier = Modifier.padding(8.dp)</span>
+<span class="nc" id="L292">                        )</span>
+<span class="fc" id="L293">                    }</span>
+<span class="nc" id="L294">                }</span>
+<span class="nc" id="L295">                HorizontalDivider(color = Color(0xFFf8f8f8), thickness = 2.dp)</span>
+<span class="nc" id="L296">                Spacer(Modifier.height(6.dp))</span>
+                // Retirement Options
+<span class="nc" id="L298">                retirementOption.forEach { option -&gt;</span>
+<span class="nc" id="L299">                    Row(</span>
+<span class="nc" id="L300">                        modifier = Modifier</span>
+<span class="nc" id="L301">                            .fillMaxWidth()</span>
+<span class="nc" id="L302">                            .selectable(</span>
+<span class="nc bnc" id="L303" title="All 2 branches missed.">                                selected = selectedRetirementAge?.label == option.label,</span>
+<span class="nc" id="L304">                                onClick = {</span>
+<span class="nc bnc" id="L305" title="All 2 branches missed.">                                    viewModel?.logEvent(FirebaseTags.PENSION_RETIREMENT_AGE_SELECT)</span>
+<span class="nc" id="L306">                                    onRetirementAgeChange(option)</span>
+<span class="nc" id="L307">                                    showBottomSheet = false</span>
+<span class="nc" id="L308">                                }</span>
+                            )
+<span class="nc" id="L310">                            .padding(horizontal = 12.dp),</span>
+<span class="nc" id="L311">                        verticalAlignment = Alignment.CenterVertically</span>
+                    ) {
+<span class="nc" id="L313">                        RadioButton(</span>
+<span class="nc bnc" id="L314" title="All 2 branches missed.">                            selected = selectedRetirementAge?.label == option.label,</span>
+<span class="nc" id="L315">                            onClick = {</span>
+<span class="nc bnc" id="L316" title="All 2 branches missed.">                                viewModel?.logEvent(FirebaseTags.PENSION_RETIREMENT_AGE_SELECT)</span>
+<span class="nc" id="L317">                                onRetirementAgeChange(option)</span>
+<span class="nc" id="L318">                                showBottomSheet = false</span>
+<span class="nc" id="L319">                            },</span>
+<span class="nc" id="L320">                            colors = RadioButtonDefaults.colors(</span>
+<span class="nc" id="L321">                                selectedColor = colorResource(R.color.primaryLight),</span>
+<span class="nc" id="L322">                                disabledSelectedColor = colorResource(R.color.light_grey)</span>
+                            )
+                        )
+
+<span class="nc" id="L326">                        Spacer(modifier = Modifier.width(12.dp))</span>
+
+<span class="nc" id="L328">                        Text(</span>
+<span class="nc bnc" id="L329" title="All 2 branches missed.">                            text = option.label ?: &quot;&quot;,</span>
+<span class="nc" id="L330">                            fontSize = 16.sp,</span>
+<span class="nc" id="L331">                            color = Color.Black</span>
+                        )
+<span class="nc" id="L333">                    }</span>
+<span class="nc" id="L334">                }</span>
+
+<span class="nc" id="L336">                Spacer(modifier = Modifier.height(16.dp))</span>
+<span class="nc" id="L337">            }</span>
+<span class="nc" id="L338">        }</span>
+    }
+<span class="nc bnc" id="L340" title="All 2 branches missed.">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

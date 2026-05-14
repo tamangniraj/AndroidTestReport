@@ -1,0 +1,432 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PensionEstimateResult.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.pension.ui.screens</a> &gt; <span class="el_source">PensionEstimateResult.kt</span></div><h1>PensionEstimateResult.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.pension.ui.screens
+
+import android.annotation.SuppressLint
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.pension.data.model.PensionEstimateResponse
+import com.vivekahealth.vivekahealth.pension.ui.component.formatAmountValue
+import com.vivekahealth.vivekahealth.pension.ui.component.formatCreditValue
+import com.vivekahealth.vivekahealth.pension.ui.tagged
+
+@Composable
+fun PensionEstimateContent(
+    pensionData: PensionEstimateResponse,
+    pensionType: String?,
+    onBackClick: () -&gt; Unit,
+    onCloseClick: () -&gt; Unit,
+<span class="nc bnc" id="L41" title="All 2 branches missed.">    modifier: Modifier = Modifier</span>
+<span class="nc bnc" id="L42" title="All 36 branches missed.">) {</span>
+<span class="nc" id="L43">    Column(</span>
+<span class="nc" id="L44">        modifier = modifier</span>
+<span class="nc" id="L45">            .fillMaxSize()</span>
+<span class="nc" id="L46">            .background(Color(0xFFF5F5F5))</span>
+    ) {
+        // Header with navigation
+<span class="nc" id="L49">        PensionEstimateHeader(</span>
+<span class="nc" id="L50">            onBackClick = onBackClick,</span>
+<span class="nc" id="L51">            onCloseClick = onCloseClick</span>
+        )
+
+        // Scrollable content
+<span class="nc" id="L55">        LazyColumn(</span>
+<span class="nc" id="L56">            modifier = Modifier.fillMaxSize(),</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">            verticalArrangement = Arrangement.spacedBy(16.dp)</span>
+<span class="nc" id="L58">        ) {</span>
+<span class="nc" id="L59">            item {</span>
+                // Pension Benefit Card
+<span class="pc bpc" id="L61" title="5 of 8 branches missed.">                PensionBenefitCard(</span>
+<span class="pc bpc" id="L62" title="2 of 4 branches missed.">                    monthlyBenefit = pensionData.survivorBenefitCalculation?.memberMonthlyBenefit ?: 0.0,</span>
+<span class="pc bpc" id="L63" title="2 of 4 branches missed.">                    spouseBenefit = pensionData.survivorBenefitCalculation?.survivorMonthlyBenefit ?: 0.0,</span>
+<span class="pc bpc" id="L64" title="2 of 4 branches missed.">                    startingAge = pensionData.selectedOptions?.retirementAge ?: 0,</span>
+<span class="pc bpc" id="L65" title="2 of 4 branches missed.">                    selectedOptionCode = pensionData.survivorBenefitCalculation?.selectedOptionCode</span>
+<span class="nc" id="L66">                        ?: &quot;&quot;</span>
+<span class="nc" id="L67">                )</span>
+<span class="fc" id="L68">            }</span>
+
+<span class="nc" id="L70">            item {</span>
+                // Calculation Breakdown
+<span class="pc bpc" id="L72" title="5 of 8 branches missed.">                CalculationBreakdownCard(pensionData = pensionData, pensionType)</span>
+<span class="fc" id="L73">            }</span>
+
+<span class="nc" id="L75">            item {</span>
+                // Add some bottom padding
+<span class="nc bnc" id="L77" title="All 8 branches missed.">                Spacer(modifier = Modifier.height(32.dp))</span>
+<span class="nc" id="L78">            }</span>
+<span class="nc" id="L79">        }</span>
+<span class="nc" id="L80">    }</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">}</span>
+
+@Composable
+private fun PensionEstimateHeader(
+    onBackClick: () -&gt; Unit,
+    onCloseClick: () -&gt; Unit,
+<span class="nc bnc" id="L87" title="All 2 branches missed.">    modifier: Modifier = Modifier</span>
+<span class="nc bnc" id="L88" title="All 24 branches missed.">) {</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">    Surface(</span>
+<span class="nc" id="L90">        modifier = modifier</span>
+<span class="nc" id="L91">            .fillMaxWidth()</span>
+<span class="nc" id="L92">            .windowInsetsPadding(WindowInsets.statusBars)</span>
+<span class="nc" id="L93">            .tagged(&quot;Pension Estimate Result Header&quot;),</span>
+<span class="nc" id="L94">        color = Color.White,</span>
+<span class="nc" id="L95">        shadowElevation = 2.dp</span>
+<span class="nc" id="L96">    ) {</span>
+<span class="nc bnc" id="L97" title="All 6 branches missed.">        Box(</span>
+<span class="nc" id="L98">            modifier = Modifier</span>
+<span class="nc" id="L99">                .fillMaxWidth()</span>
+<span class="nc" id="L100">                .padding(16.dp)</span>
+        ) {
+<span class="nc" id="L102">            IconButton(</span>
+<span class="nc" id="L103">                onClick = onBackClick,</span>
+<span class="nc" id="L104">                modifier = Modifier</span>
+<span class="nc" id="L105">                    .align(Alignment.CenterStart)</span>
+<span class="nc" id="L106">                    .tagged(&quot;Back Button&quot;)</span>
+<span class="nc" id="L107">            ) {</span>
+<span class="pc bpc" id="L108" title="4 of 8 branches missed.">                Icon(</span>
+<span class="fc" id="L109">                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,</span>
+<span class="fc" id="L110">                    contentDescription = &quot;Back&quot;,</span>
+<span class="fc" id="L111">                    tint = Color.Black</span>
+<span class="nc" id="L112">                )</span>
+<span class="fc" id="L113">            }</span>
+
+<span class="nc" id="L115">            Text(</span>
+<span class="nc" id="L116">                text = stringResource(R.string.your_pension_estimate),</span>
+<span class="nc" id="L117">                style = MaterialTheme.typography.titleMedium,</span>
+<span class="nc" id="L118">                fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L119">                color = Color.Black,</span>
+<span class="nc" id="L120">                modifier = Modifier</span>
+<span class="nc" id="L121">                    .align(Alignment.Center)</span>
+<span class="nc" id="L122">                    .padding(horizontal = 56.dp)</span>
+<span class="nc" id="L123">                    .tagged(&quot;Pension Estimate Result Title&quot;)</span>
+            )
+
+<span class="nc" id="L126">            IconButton(</span>
+<span class="nc" id="L127">                onClick = onCloseClick,</span>
+<span class="nc" id="L128">                modifier = Modifier</span>
+<span class="nc" id="L129">                    .align(Alignment.CenterEnd)</span>
+<span class="nc" id="L130">                    .tagged(&quot;Close Button Result&quot;)</span>
+<span class="nc" id="L131">            ) {</span>
+<span class="pc bpc" id="L132" title="4 of 8 branches missed.">                Icon(</span>
+<span class="fc" id="L133">                    imageVector = Icons.Default.Close,</span>
+<span class="fc" id="L134">                    contentDescription = &quot;Close&quot;,</span>
+<span class="fc" id="L135">                    tint = Color.Black</span>
+<span class="nc" id="L136">                )</span>
+<span class="fc" id="L137">            }</span>
+<span class="nc" id="L138">        }</span>
+<span class="nc" id="L139">    }</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">}</span>
+
+@Composable
+private fun PensionBenefitCard(
+    monthlyBenefit: Double,
+    startingAge: Int?,
+    spouseBenefit: Double,
+    selectedOptionCode: String,
+<span class="nc bnc" id="L148" title="All 2 branches missed.">    modifier: Modifier = Modifier</span>
+<span class="nc bnc" id="L149" title="All 36 branches missed.">) {</span>
+<span class="nc" id="L150">    Box(</span>
+<span class="nc" id="L151">        modifier = modifier</span>
+<span class="nc" id="L152">            .fillMaxWidth()</span>
+<span class="nc" id="L153">            .padding(top = 12.dp, bottom = 8.dp, start = 12.dp, end = 12.dp)</span>
+<span class="nc" id="L154">            .background(</span>
+<span class="nc" id="L155">                brush = Brush.verticalGradient(</span>
+<span class="nc" id="L156">                    colors = listOf(</span>
+<span class="nc" id="L157">                        colorResource(R.color.gradient_home_end),</span>
+<span class="nc" id="L158">                        colorResource(R.color.gradient_home_start)</span>
+                    )
+                ),
+<span class="nc" id="L161">                shape = RoundedCornerShape(12.dp)</span>
+            )
+<span class="nc" id="L163">            .tagged(&quot;Pension Benefit Card&quot;)</span>
+    ) {
+<span class="nc" id="L165">        Column(</span>
+<span class="nc" id="L166">            modifier = Modifier</span>
+<span class="nc" id="L167">                .fillMaxWidth()</span>
+<span class="nc" id="L168">                .padding(24.dp),</span>
+<span class="nc" id="L169">            horizontalAlignment = Alignment.CenterHorizontally</span>
+        ) {
+<span class="nc" id="L171">            Spacer(modifier = Modifier.height(16.dp))</span>
+
+            // Monthly Pension Benefit
+<span class="nc" id="L174">            Text(</span>
+<span class="nc" id="L175">                text = stringResource(R.string.monthly_pension_benefit),</span>
+<span class="nc" id="L176">                style = MaterialTheme.typography.titleMedium,</span>
+<span class="nc" id="L177">                color = Color.White,</span>
+<span class="nc" id="L178">                fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L179">                modifier = Modifier.tagged(&quot;Monthly Pension Benefit Label&quot;)</span>
+            )
+
+<span class="nc" id="L182">            Text(</span>
+<span class="nc" id="L183">                text = formatAmountValue(monthlyBenefit),</span>
+<span class="nc" id="L184">                style = MaterialTheme.typography.displaySmall,</span>
+<span class="nc" id="L185">                color = Color.White,</span>
+<span class="nc" id="L186">                fontWeight = FontWeight.Bold,</span>
+<span class="nc" id="L187">                modifier = Modifier</span>
+<span class="nc" id="L188">                    .padding(vertical = 8.dp)</span>
+<span class="nc" id="L189">                    .tagged(&quot;Monthly Pension Benefit Value&quot;)</span>
+            )
+
+<span class="nc" id="L192">            Text(</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">                text = stringResource(R.string.starting_at_age, startingAge ?: 0),</span>
+<span class="nc" id="L194">                style = MaterialTheme.typography.bodyMedium,</span>
+<span class="nc" id="L195">                color = Color.White.copy(alpha = 0.9f)</span>
+            )
+
+<span class="nc" id="L198">            Spacer(modifier = Modifier.height(24.dp))</span>
+
+<span class="nc bnc" id="L200" title="All 2 branches missed.">            if (selectedOptionCode != &quot;SINGLE_LIFE&quot;) {</span>
+                // Divider
+<span class="nc" id="L202">                HorizontalDivider(</span>
+<span class="nc" id="L203">                    color = Color.White.copy(alpha = 0.3f),</span>
+<span class="nc" id="L204">                    thickness = 1.dp</span>
+                )
+
+<span class="nc" id="L207">                Spacer(modifier = Modifier.height(24.dp))</span>
+
+                // Spouse Survivor Benefit
+<span class="nc" id="L210">                Text(</span>
+<span class="nc" id="L211">                    text = stringResource(R.string.spouse_survivor_benefit),</span>
+<span class="nc" id="L212">                    style = MaterialTheme.typography.titleMedium,</span>
+<span class="nc" id="L213">                    color = Color.White,</span>
+<span class="nc" id="L214">                    fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L215">                    modifier = Modifier.tagged(&quot;Spouse Survivor Benefit Label&quot;)</span>
+                )
+
+<span class="nc" id="L218">                Text(</span>
+<span class="nc" id="L219">                    text = formatAmountValue(spouseBenefit),</span>
+<span class="nc" id="L220">                    style = MaterialTheme.typography.displaySmall,</span>
+<span class="nc" id="L221">                    color = Color.White,</span>
+<span class="nc" id="L222">                    fontWeight = FontWeight.Bold,</span>
+<span class="nc" id="L223">                    modifier = Modifier</span>
+<span class="nc" id="L224">                        .padding(top = 8.dp)</span>
+<span class="nc" id="L225">                        .tagged(&quot;Spouse Survivor Benefit Value&quot;)</span>
+                )
+            }
+<span class="nc" id="L228">        }</span>
+<span class="nc" id="L229">    }</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">}</span>
+
+@SuppressLint(&quot;DefaultLocale&quot;)
+@Composable
+private fun CalculationBreakdownCard(
+    pensionData: PensionEstimateResponse,
+    pensionType: String?,
+<span class="nc bnc" id="L237" title="All 2 branches missed.">    modifier: Modifier = Modifier</span>
+<span class="nc bnc" id="L238" title="All 24 branches missed.">) {</span>
+<span class="nc" id="L239">    Box(</span>
+<span class="nc" id="L240">        modifier</span>
+<span class="nc" id="L241">            .background(Color.White)</span>
+<span class="nc" id="L242">            .tagged(&quot;Calculation Breakdown Card&quot;)</span>
+    ) {
+<span class="nc" id="L244">        Column(</span>
+<span class="nc" id="L245">            modifier = Modifier</span>
+<span class="nc" id="L246">                .fillMaxWidth()</span>
+<span class="nc" id="L247">                .padding(20.dp)</span>
+        ) {
+<span class="nc" id="L249">            Text(</span>
+<span class="nc" id="L250">                text = stringResource(R.string.calculation_breakdown),</span>
+<span class="nc" id="L251">                style = MaterialTheme.typography.titleMedium,</span>
+<span class="nc" id="L252">                fontWeight = FontWeight.SemiBold,</span>
+<span class="nc" id="L253">                color = Color.Black,</span>
+<span class="nc" id="L254">                modifier = Modifier.padding(bottom = 16.dp)</span>
+            )
+
+<span class="nc" id="L257">            BreakdownRow(</span>
+<span class="nc" id="L258">                stringResource(R.string.current_credits),</span>
+<span class="nc bnc" id="L259" title="All 4 branches missed.">                formatCreditValue(pensionData.benefitBreakdown?.actualCredits ?: 0.0),</span>
+<span class="nc" id="L260">                type = &quot;Current&quot;</span>
+            )
+<span class="nc" id="L262">            BreakdownRow(</span>
+<span class="nc" id="L263">                stringResource(R.string.forfeited_credits),</span>
+                &quot;-${
+<span class="nc" id="L265">                formatCreditValue(</span>
+<span class="nc bnc" id="L266" title="All 4 branches missed.">                    pensionData.forfeitureImpact?.totalCreditsForfeit ?: 0.0</span>
+                )
+                }&quot;,
+<span class="nc" id="L269">                Color(0xFFE53E3E),</span>
+<span class="nc" id="L270">                type = &quot;Forfited&quot;</span>
+            )
+<span class="nc" id="L272">            BreakdownRow(</span>
+<span class="nc" id="L273">                stringResource(R.string.future_credits),</span>
+                &quot;+${
+<span class="nc" id="L275">                formatCreditValue(</span>
+<span class="nc bnc" id="L276" title="All 4 branches missed.">                    pensionData.projectionSummary?.additionalCreditsExpected ?: 0.0</span>
+                )
+                }&quot;,
+<span class="nc" id="L279">                Color(0xFF38A169),</span>
+<span class="nc" id="L280">                type = &quot;Future&quot;</span>
+            )
+
+<span class="nc" id="L283">            Spacer(modifier = Modifier.height(16.dp))</span>
+<span class="nc" id="L284">            Divider(color = Color(0xFFE0E0E0))</span>
+<span class="nc" id="L285">            Spacer(modifier = Modifier.height(16.dp))</span>
+
+<span class="nc" id="L287">            BreakdownRow(</span>
+<span class="nc" id="L288">                stringResource(R.string.total_projected_credits),</span>
+<span class="nc" id="L289">                formatCreditValue(</span>
+<span class="nc bnc" id="L290" title="All 4 branches missed.">                    pensionData.retirementProjection?.totalCreditsAtRetirement ?: 0.0</span>
+                ),
+<span class="nc" id="L292">                fontWeight = FontWeight.Bold,</span>
+<span class="nc" id="L293">                type = &quot;Total&quot;</span>
+            )
+
+<span class="nc" id="L296">            BreakdownRow(</span>
+<span class="nc" id="L297">                stringResource(R.string.pension_type),</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">                pensionType ?: &quot;&quot;,</span>
+<span class="nc" id="L299">                Color(0xFF38A169),</span>
+<span class="nc" id="L300">                type = &quot;Type&quot;</span>
+            )
+
+<span class="nc" id="L303">            BreakdownRow(</span>
+<span class="nc" id="L304">                stringResource(R.string.survivor_option),</span>
+<span class="nc bnc" id="L305" title="All 4 branches missed.">                pensionData.survivorBenefitCalculation?.selectedOptionName ?: &quot;&quot;,</span>
+<span class="nc" id="L306">                type = &quot;Option&quot;</span>
+            )
+
+<span class="nc bnc" id="L309" title="All 4 branches missed.">            pensionData.forfeitureImpact?.impactDescription?.let { message -&gt;</span>
+<span class="nc" id="L310">                Spacer(Modifier.height(16.dp))</span>
+<span class="nc" id="L311">                ImpactMessageCard(message = message)</span>
+<span class="nc" id="L312">            }</span>
+
+<span class="nc" id="L314">            Spacer(Modifier.height(16.dp))</span>
+
+<span class="nc bnc" id="L316" title="All 2 branches missed.">            pensionData.notes?.let {</span>
+<span class="nc bnc" id="L317" title="All 4 branches missed.">                if (it.isNotEmpty()) {</span>
+<span class="nc bnc" id="L318" title="All 2 branches missed.">                    DisclaimerCard(pensionData.notes.joinToString(&quot;\n&quot;) ?: &quot;&quot;)</span>
+<span class="nc" id="L319">                    Spacer(Modifier.height(32.dp))</span>
+                }
+<span class="nc" id="L321">            }</span>
+<span class="nc" id="L322">        }</span>
+<span class="nc" id="L323">    }</span>
+<span class="nc bnc" id="L324" title="All 2 branches missed.">}</span>
+
+@Composable
+private fun BreakdownRow(
+    label: String,
+    value: String,
+<span class="nc bnc" id="L330" title="All 2 branches missed.">    valueColor: Color = Color.Black,</span>
+<span class="nc bnc" id="L331" title="All 2 branches missed.">    fontWeight: FontWeight = FontWeight.Normal,</span>
+<span class="nc bnc" id="L332" title="All 2 branches missed.">    modifier: Modifier = Modifier,</span>
+    type: String
+<span class="nc bnc" id="L334" title="All 42 branches missed.">) {</span>
+<span class="nc" id="L335">    Row(</span>
+<span class="nc" id="L336">        modifier = modifier</span>
+<span class="nc" id="L337">            .fillMaxWidth()</span>
+<span class="nc" id="L338">            .padding(vertical = 4.dp),</span>
+<span class="nc" id="L339">        horizontalArrangement = Arrangement.SpaceBetween,</span>
+<span class="nc" id="L340">        verticalAlignment = Alignment.Top</span>
+    ) {
+<span class="nc" id="L342">        Text(</span>
+<span class="nc" id="L343">            text = label,</span>
+<span class="nc" id="L344">            style = MaterialTheme.typography.bodyMedium,</span>
+<span class="nc" id="L345">            color = Color.Gray,</span>
+<span class="nc" id="L346">            modifier = Modifier.weight(1f)</span>
+        )
+<span class="nc" id="L348">        Text(</span>
+<span class="nc" id="L349">            text = value,</span>
+<span class="nc" id="L350">            style = MaterialTheme.typography.bodyMedium,</span>
+<span class="nc" id="L351">            fontWeight = fontWeight,</span>
+<span class="nc" id="L352">            color = valueColor,</span>
+<span class="nc" id="L353">            textAlign = TextAlign.End,</span>
+<span class="nc" id="L354">            modifier = Modifier.tagged(&quot;BreakDown Value $type&quot;)</span>
+        )
+<span class="nc" id="L356">    }</span>
+<span class="nc bnc" id="L357" title="All 2 branches missed.">}</span>
+
+@Composable
+private fun ImpactMessageCard(
+    message: String,
+<span class="nc bnc" id="L362" title="All 2 branches missed.">    modifier: Modifier = Modifier</span>
+<span class="nc bnc" id="L363" title="All 18 branches missed.">) {</span>
+<span class="nc bnc" id="L364" title="All 2 branches missed.">    Card(</span>
+<span class="nc" id="L365">        modifier = modifier.fillMaxWidth(),</span>
+<span class="nc" id="L366">        colors = CardDefaults.cardColors(containerColor = Color(0x10EB4848)),</span>
+<span class="nc" id="L367">        shape = RoundedCornerShape(12.dp)</span>
+<span class="nc" id="L368">    ) {</span>
+<span class="pc bpc" id="L369" title="4 of 6 branches missed.">        Row(</span>
+<span class="fc" id="L370">            modifier = Modifier</span>
+<span class="fc" id="L371">                .fillMaxWidth()</span>
+<span class="fc" id="L372">                .padding(16.dp),</span>
+<span class="fc" id="L373">            verticalAlignment = Alignment.Top</span>
+        ) {
+<span class="fc" id="L375">            Icon(</span>
+<span class="fc" id="L376">                imageVector = Icons.Outlined.Info,</span>
+<span class="fc" id="L377">                contentDescription = null,</span>
+<span class="fc" id="L378">                tint = Color(0xFFE53E3E),</span>
+<span class="fc" id="L379">                modifier = Modifier</span>
+<span class="fc" id="L380">                    .size(20.dp)</span>
+<span class="fc" id="L381">                    .padding(top = 2.dp)</span>
+            )
+
+<span class="fc" id="L384">            Spacer(modifier = Modifier.width(12.dp))</span>
+
+<span class="fc" id="L386">            Text(</span>
+<span class="fc" id="L387">                text = message,</span>
+<span class="fc" id="L388">                style = MaterialTheme.typography.bodyMedium,</span>
+<span class="fc" id="L389">                color = Color(0xFFE53E3E),</span>
+<span class="fc" id="L390">                lineHeight = 20.sp</span>
+            )
+<span class="pc" id="L392">        }</span>
+<span class="fc" id="L393">    }</span>
+<span class="nc bnc" id="L394" title="All 2 branches missed.">}</span>
+
+@Composable
+private fun DisclaimerCard(
+    disclaimerText: String,
+<span class="nc bnc" id="L399" title="All 2 branches missed.">    modifier: Modifier = Modifier</span>
+<span class="nc bnc" id="L400" title="All 18 branches missed.">) {</span>
+<span class="nc bnc" id="L401" title="All 2 branches missed.">    Card(</span>
+<span class="nc" id="L402">        modifier = modifier.fillMaxWidth(),</span>
+<span class="nc" id="L403">        colors = CardDefaults.cardColors(containerColor = Color(0x1016BDFC)),</span>
+<span class="nc" id="L404">        shape = RoundedCornerShape(12.dp)</span>
+<span class="nc" id="L405">    ) {</span>
+<span class="pc bpc" id="L406" title="4 of 6 branches missed.">        Row(</span>
+<span class="fc" id="L407">            modifier = Modifier</span>
+<span class="fc" id="L408">                .fillMaxWidth()</span>
+<span class="fc" id="L409">                .padding(16.dp),</span>
+<span class="fc" id="L410">            verticalAlignment = Alignment.Top</span>
+        ) {
+<span class="fc" id="L412">            Icon(</span>
+<span class="fc" id="L413">                imageVector = Icons.Default.Info,</span>
+<span class="fc" id="L414">                contentDescription = null,</span>
+<span class="fc" id="L415">                tint = Color(0xFF3182CE),</span>
+<span class="fc" id="L416">                modifier = Modifier</span>
+<span class="fc" id="L417">                    .size(20.dp)</span>
+<span class="fc" id="L418">                    .padding(top = 2.dp)</span>
+            )
+
+<span class="fc" id="L421">            Spacer(modifier = Modifier.width(12.dp))</span>
+
+<span class="fc" id="L423">            Text(</span>
+<span class="fc" id="L424">                text = disclaimerText,</span>
+<span class="fc" id="L425">                style = MaterialTheme.typography.bodyMedium,</span>
+<span class="fc" id="L426">                color = Color.Gray,</span>
+<span class="fc" id="L427">                lineHeight = 20.sp</span>
+            )
+<span class="pc" id="L429">        }</span>
+<span class="fc" id="L430">    }</span>
+<span class="nc bnc" id="L431" title="All 2 branches missed.">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

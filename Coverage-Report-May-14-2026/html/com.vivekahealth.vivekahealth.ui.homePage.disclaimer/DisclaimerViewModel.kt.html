@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DisclaimerViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.disclaimer</a> &gt; <span class="el_source">DisclaimerViewModel.kt</span></div><h1>DisclaimerViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.disclaimer
+
+import android.content.SharedPreferences
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.ui.homePage.disclaimer.repository.DisclaimerRepository
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import java.util.*
+import javax.inject.Inject
+
+<span class="fc" id="L19">class DisclaimerViewModel @Inject constructor(</span>
+<span class="fc" id="L20">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L21">    private val disclaimerRepository: DisclaimerRepository</span>
+
+<span class="fc" id="L23">) : ViewModel(), Observable {</span>
+
+<span class="pc" id="L25">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="fc" id="L26">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+    var loading: Boolean = false
+<span class="fc" id="L28">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L30">            field = value</span>
+<span class="nc" id="L31">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L32">        }</span>
+
+<span class="fc" id="L34">    private val _displayDisclaimerText = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val displayDisclaimerText: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="fc" id="L36">        get() = _displayDisclaimerText</span>
+
+<span class="fc" id="L38">    private val _displayDisclaimerUrl = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val displayDisclaimerUrl: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="fc" id="L40">        get() = _displayDisclaimerUrl</span>
+
+    fun getDisclaimerGuest() {
+<span class="nc" id="L43">        compositeDisposable.add(</span>
+<span class="nc" id="L44">            disclaimerRepository.getDisclaimerGuest()</span>
+<span class="nc" id="L45">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L46">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L47">                .doOnSubscribe {</span>
+<span class="nc" id="L48">                    loading = true</span>
+<span class="nc" id="L49">                }.subscribe(</span>
+<span class="nc" id="L50">                    { disText -&gt;</span>
+<span class="nc" id="L51">                        loading = false</span>
+<span class="nc bnc" id="L52" title="All 4 branches missed.">                        disText?.disclaimerTextUrl?.let {</span>
+<span class="nc" id="L53">                            _displayDisclaimerUrl.value = Event(it)</span>
+<span class="nc" id="L54">                        } ?: run {</span>
+<span class="nc bnc" id="L55" title="All 4 branches missed.">                            disText?.disclaimerText?.let {</span>
+<span class="nc" id="L56">                                _displayDisclaimerText.value = Event(it)</span>
+<span class="nc" id="L57">                            }</span>
+<span class="nc" id="L58">                        }</span>
+<span class="nc" id="L59">                    },</span>
+<span class="nc" id="L60">                    {</span>
+<span class="nc" id="L61">                        loading = false</span>
+<span class="nc" id="L62">                    }</span>
+                )
+        )
+<span class="nc" id="L65">    }</span>
+
+    fun getDisclaimer() {
+<span class="nc" id="L68">        compositeDisposable.add(</span>
+<span class="nc" id="L69">            disclaimerRepository.getDisclaimer()</span>
+<span class="nc" id="L70">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L71">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L72">                .doOnSubscribe {</span>
+<span class="nc" id="L73">                    loading = true</span>
+<span class="nc" id="L74">                }.subscribe(</span>
+<span class="nc" id="L75">                    { disText -&gt;</span>
+<span class="nc" id="L76">                        loading = false</span>
+
+<span class="nc bnc" id="L78" title="All 4 branches missed.">                        disText?.disclaimerTextUrl?.let {</span>
+<span class="nc" id="L79">                            var discription = disText.disclaimerTextUrl</span>
+<span class="nc" id="L80">                            _displayDisclaimerUrl.value = Event(discription!!)</span>
+<span class="nc" id="L81">                        } ?: run {</span>
+<span class="nc bnc" id="L82" title="All 4 branches missed.">                            disText?.disclaimerText?.let {</span>
+<span class="nc" id="L83">                                var discription = disText.disclaimerText</span>
+<span class="nc" id="L84">                                _displayDisclaimerText.value = Event(discription!!)</span>
+<span class="nc" id="L85">                            }</span>
+<span class="nc" id="L86">                        }</span>
+<span class="nc" id="L87">                    },</span>
+<span class="nc" id="L88">                    {</span>
+<span class="nc" id="L89">                        loading = false</span>
+<span class="nc" id="L90">                    }</span>
+                )
+        )
+<span class="nc" id="L93">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L96">        callbacks.remove(callback)</span>
+<span class="nc" id="L97">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L100">        callbacks.add(callback)</span>
+<span class="nc" id="L101">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L104">        super.onCleared()</span>
+<span class="nc" id="L105">        compositeDisposable.dispose()</span>
+<span class="nc" id="L106">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

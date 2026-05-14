@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SharingRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.informationSharing.repository</a> &gt; <span class="el_source">SharingRepository.kt</span></div><h1>SharingRepository.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.informationSharing.repository
+
+import com.vivekahealth.vivekahealth.data.remote.home.sharing.SharingDataResponse
+import com.vivekahealth.vivekahealth.data.remote.home.sharing.SharingDataWithDetailsResponse
+import com.vivekahealth.vivekahealth.data.remote.home.sharing.SharingDetailData
+import com.vivekahealth.vivekahealth.data.remote.register.DataResponse
+import com.vivekahealth.vivekahealth.ui.homePage.informationSharing.SharingService
+import com.vivekahealth.vivekahealth.utils.thread.AppExecutors
+import io.reactivex.Single
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+<span class="fc" id="L14">class SharingRepository @Inject constructor(</span>
+<span class="fc" id="L15">    private val appExecutors: AppExecutors,</span>
+<span class="fc" id="L16">    private val sharingService: SharingService</span>
+) {
+
+<span class="fc" id="L19">    fun getMembersWithSharingDetails(selfId: String): Single&lt;SharingDataWithDetailsResponse&gt; = sharingService.getSharingApi().getFamilyResourceSharingDetails(</span>
+<span class="fc" id="L20">        selfId</span>
+<span class="fc" id="L21">    )</span>
+
+<span class="fc" id="L23">    fun getMembers(selfId: String): Single&lt;SharingDataResponse&gt; = sharingService.getSharingApi().getFamilyMembers(</span>
+<span class="fc" id="L24">        selfId</span>
+<span class="fc" id="L25">    )</span>
+
+<span class="fc" id="L27">    fun postShareDetails(selfId: String, detail: SharingDetailData): Single&lt;DataResponse&gt; = sharingService.getSharingApi().postShareDetail(</span>
+<span class="fc" id="L28">        selfId,</span>
+<span class="fc" id="L29">        detail</span>
+<span class="fc" id="L30">    )</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

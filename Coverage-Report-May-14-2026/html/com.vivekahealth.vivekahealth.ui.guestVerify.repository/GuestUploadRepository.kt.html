@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GuestUploadRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.guestVerify.repository</a> &gt; <span class="el_source">GuestUploadRepository.kt</span></div><h1>GuestUploadRepository.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.guestVerify.repository
+
+import com.vivekahealth.vivekahealth.data.remote.guest.AdditionalRequirementResponse
+import com.vivekahealth.vivekahealth.data.remote.guest.DocumentUploadResponse
+import com.vivekahealth.vivekahealth.data.remote.guest.IdentifyErrorResponse
+import com.vivekahealth.vivekahealth.data.remote.guest.UploadDetailsSendParams
+import com.vivekahealth.vivekahealth.data.remote.guest.UploadResponse
+import com.vivekahealth.vivekahealth.ui.guestVerify.documents.DocumentType
+import com.vivekahealth.vivekahealth.ui.guestVerify.service.GuestUploadService
+import com.vivekahealth.vivekahealth.utils.thread.AppExecutors
+import io.reactivex.Single
+import okhttp3.MultipartBody
+import retrofit2.Response
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+<span class="fc" id="L18">class GuestUploadRepository @Inject constructor(</span>
+<span class="fc" id="L19">    private val appExecutors: AppExecutors,</span>
+<span class="fc" id="L20">    private val guestUploadService: GuestUploadService</span>
+) {
+
+    fun scanBarCode(
+        sessionId: String,
+        filePart: MultipartBody.Part,
+        documentType: DocumentType
+    ): Single&lt;Response&lt;DocumentUploadResponse&gt;&gt; {
+<span class="pc bpc" id="L28" title="1 of 7 branches missed.">        val id = when (documentType) {</span>
+<span class="fc" id="L29">            DocumentType.DL_FRONT -&gt; 103</span>
+<span class="fc" id="L30">            DocumentType.DL_BACK -&gt; 104</span>
+<span class="fc" id="L31">            DocumentType.SELFIE -&gt; 105</span>
+<span class="fc" id="L32">            DocumentType.SELFIE_MANUAL -&gt; 106</span>
+<span class="fc" id="L33">            DocumentType.SSN -&gt; 71</span>
+<span class="fc" id="L34">            DocumentType.INSURANCE_CARD -&gt; 60</span>
+<span class="nc" id="L35">            else -&gt; 0</span>
+        }
+
+<span class="fc" id="L38">        return guestUploadService.getGuestHomeApi().scanBarcode(</span>
+<span class="fc" id="L39">            sessionId,</span>
+<span class="fc" id="L40">            filePart,</span>
+<span class="fc" id="L41">            id</span>
+        )
+    }
+
+    fun uploadDoc(
+        sessionId: String,
+        filePart: MultipartBody.Part,
+        documentType: DocumentType
+    ): Single&lt;DocumentUploadResponse&gt; {
+<span class="pc bpc" id="L50" title="3 of 7 branches missed.">        val id = when (documentType) {</span>
+<span class="fc" id="L51">            DocumentType.DL_FRONT -&gt; 103</span>
+<span class="fc" id="L52">            DocumentType.DL_BACK -&gt; 104</span>
+<span class="nc" id="L53">            DocumentType.SELFIE -&gt; 105</span>
+<span class="nc" id="L54">            DocumentType.SELFIE_MANUAL -&gt; 106</span>
+<span class="fc" id="L55">            DocumentType.SSN, DocumentType.SSN_ONLY -&gt; 71</span>
+<span class="fc" id="L56">            DocumentType.INSURANCE_CARD -&gt; 60</span>
+<span class="nc" id="L57">            else -&gt; 0</span>
+        }
+
+<span class="fc" id="L60">        return guestUploadService.getGuestHomeApi().uploadImage(</span>
+<span class="fc" id="L61">            sessionId,</span>
+<span class="fc" id="L62">            filePart,</span>
+<span class="fc" id="L63">            id</span>
+        )
+    }
+
+    fun updateDetails(
+        sessionId: String,
+        uploadDetails: UploadDetailsSendParams
+<span class="nc" id="L70">    ): Single&lt;Response&lt;UploadResponse&gt;&gt; = guestUploadService.getGuestHomeApi().uploadDetails(</span>
+<span class="nc" id="L71">        sessionId,</span>
+<span class="nc" id="L72">        uploadDetails</span>
+<span class="nc" id="L73">    )</span>
+
+    fun verify(sessionId: String): Single&lt;Response&lt;UploadResponse&gt;&gt; =
+<span class="nc" id="L76">        guestUploadService.getGuestHomeApi().verify(</span>
+<span class="nc" id="L77">            sessionId</span>
+<span class="nc" id="L78">        )</span>
+
+<span class="nc" id="L80">    fun identify(</span>
+        sessionId: String,
+<span class="nc" id="L82">        reRegister: Boolean? = null</span>
+<span class="nc" id="L83">    ): Single&lt;Response&lt;IdentifyErrorResponse&gt;&gt; = guestUploadService.getGuestHomeApi().identify(</span>
+<span class="nc" id="L84">        sessionId,</span>
+<span class="nc" id="L85">        reRegister</span>
+<span class="nc" id="L86">    )</span>
+
+    fun additionalRequirements(sessionId: String): Single&lt;Response&lt;AdditionalRequirementResponse&gt;&gt; =
+<span class="nc" id="L89">        guestUploadService.getGuestHomeApi().additionalRequirements(</span>
+<span class="nc" id="L90">            sessionId</span>
+<span class="nc" id="L91">        )</span>
+
+    fun processDocument(sessionId: String): Single&lt;Response&lt;UploadResponse&gt;&gt; =
+<span class="nc" id="L94">        guestUploadService.getGuestHomeApi().processDocument(</span>
+<span class="nc" id="L95">            sessionId</span>
+<span class="nc" id="L96">        )</span>
+
+    fun validateRegisteredEmail(
+        sessionId: String,
+        email: String
+    ): Single&lt;Response&lt;IdentifyErrorResponse&gt;&gt; =
+<span class="nc" id="L102">        guestUploadService.getGuestHomeApi().validateRegisteredEmail(</span>
+<span class="nc" id="L103">            sessionId,</span>
+<span class="nc" id="L104">            email</span>
+<span class="nc" id="L105">        )</span>
+
+    fun logFailedDocumentAttempt(
+        sessionId: String,
+        documentType: Int
+<span class="nc" id="L110">    ): Single&lt;Response&lt;IdentifyErrorResponse&gt;&gt; = guestUploadService.getGuestHomeApi().logFailedAttempt(</span>
+<span class="nc" id="L111">        sessionId,</span>
+<span class="nc" id="L112">        documentType</span>
+<span class="nc" id="L113">    )</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MedicalLogsRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.repository</a> &gt; <span class="el_source">MedicalLogsRepository.kt</span></div><h1>MedicalLogsRepository.kt</h1><pre class="source lang-java linenums">
+
+package com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.repository
+
+import com.vivekahealth.vivekahealth.data.remote.home.*
+import com.vivekahealth.vivekahealth.data.remote.home.medicalLogs.*
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.service.MedicalLogsService
+import io.reactivex.Single
+import java.util.*
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * Repository that handles User objects.
+ */
+@Singleton
+<span class="fc" id="L17">class MedicalLogsRepository @Inject constructor(</span>
+<span class="fc" id="L18">    private val medicalLogsService: MedicalLogsService</span>
+) {
+
+<span class="fc" id="L21">    fun getClaimsMedicalLogs(</span>
+        memberID: String,
+        type: String,
+        sharedMemberIds: String,
+        sort: String,
+        sortBy: String,
+        claimsType: String,
+        claimsStatus: String,
+<span class="fc" id="L29">        pageSize: Int = 30,</span>
+<span class="fc" id="L30">        pageNo: Int = 1</span>
+<span class="fc" id="L31">    ): Single&lt;MedicalLogsAll&gt; = medicalLogsService.getMedicalLogsApi().getClaimsLogsList(</span>
+<span class="fc" id="L32">        memberID,</span>
+<span class="fc" id="L33">        type,</span>
+<span class="fc" id="L34">        sharedMemberIds,</span>
+<span class="fc" id="L35">        sort,</span>
+<span class="fc" id="L36">        sortBy,</span>
+<span class="fc" id="L37">        claimsType,</span>
+<span class="fc" id="L38">        claimsStatus,</span>
+<span class="fc" id="L39">        pageSize,</span>
+<span class="fc" id="L40">        pageNo</span>
+<span class="fc" id="L41">    )</span>
+
+<span class="nc" id="L43">    fun getClaimsDetails(memberID: String, claimNumber: String): Single&lt;ClaimsDetail&gt; = medicalLogsService.getMedicalLogsApi().getClaimsDetails(</span>
+<span class="nc" id="L44">        memberID,</span>
+<span class="nc" id="L45">        claimNumber</span>
+<span class="nc" id="L46">    )</span>
+<span class="nc" id="L47">    fun getDiagnosisDetails(memberID: String, icdCode: String): Single&lt;DiagnosisDetailList&gt; = medicalLogsService.getMedicalLogsApi().getDiagnosisDetails(</span>
+<span class="nc" id="L48">        memberID,</span>
+<span class="nc" id="L49">        icdCode</span>
+<span class="nc" id="L50">    )</span>
+
+<span class="fc" id="L52">    fun getDiagnosisMedicalLogs(</span>
+        memberID: String,
+        type: String,
+        sharedMemberIds: String,
+        sort: String,
+        sortBy: String,
+        range: String,
+<span class="fc" id="L59">        pageSize: Int = 30,</span>
+<span class="fc" id="L60">        pageNo: Int = 1</span>
+<span class="fc" id="L61">    ): Single&lt;MedicalLogsAll&gt; = medicalLogsService.getMedicalLogsApi().getDiagnosisLogsList(</span>
+<span class="fc" id="L62">        memberID,</span>
+<span class="fc" id="L63">        type,</span>
+<span class="fc" id="L64">        sharedMemberIds,</span>
+<span class="fc" id="L65">        sort,</span>
+<span class="fc" id="L66">        sortBy,</span>
+<span class="fc" id="L67">        range,</span>
+<span class="fc" id="L68">        pageSize,</span>
+<span class="fc" id="L69">        pageNo</span>
+<span class="fc" id="L70">    )</span>
+
+<span class="fc" id="L72">    fun getImmunizationMedicalLogs(</span>
+        memberID: String,
+        type: String,
+        sharedMemberIds: String,
+        sort: String,
+        sortBy: String,
+        typeFilter: String,
+<span class="fc" id="L79">        pageSize: Int = 30,</span>
+<span class="fc" id="L80">        pageNo: Int = 1</span>
+<span class="fc" id="L81">    ): Single&lt;MedicalLogsAll&gt; = medicalLogsService.getMedicalLogsApi().getImmunizationLogsList(</span>
+<span class="fc" id="L82">        memberID,</span>
+<span class="fc" id="L83">        type,</span>
+<span class="fc" id="L84">        sharedMemberIds,</span>
+<span class="fc" id="L85">        sort,</span>
+<span class="fc" id="L86">        sortBy,</span>
+<span class="fc" id="L87">        typeFilter,</span>
+<span class="fc" id="L88">        pageSize,</span>
+<span class="fc" id="L89">        pageNo</span>
+<span class="fc" id="L90">    )</span>
+
+<span class="fc" id="L92">    fun getPrescriptionMedicalLogs(</span>
+        memberID: String,
+        type: String,
+        sharedMemberIds: String,
+        sort: String,
+        sortBy: String,
+        drugName: String,
+        typeFilter: String,
+<span class="fc" id="L100">        pageSize: Int = 30,</span>
+<span class="fc" id="L101">        pageNo: Int = 1</span>
+<span class="fc" id="L102">    ): Single&lt;MedicalLogsAll&gt; = medicalLogsService.getMedicalLogsApi().getPresLogsList(</span>
+<span class="fc" id="L103">        memberID,</span>
+<span class="fc" id="L104">        type,</span>
+<span class="fc" id="L105">        sharedMemberIds,</span>
+<span class="fc" id="L106">        sort,</span>
+<span class="fc" id="L107">        sortBy,</span>
+<span class="fc" id="L108">        drugName,</span>
+<span class="fc" id="L109">        typeFilter,</span>
+<span class="fc" id="L110">        pageSize,</span>
+<span class="fc" id="L111">        pageNo</span>
+<span class="fc" id="L112">    )</span>
+
+<span class="nc" id="L114">    fun getMemberList(memberID: String, sharingTypes: String): Single&lt;SharedMember&gt; = medicalLogsService.getMedicalLogsApi().getDependentList(</span>
+<span class="nc" id="L115">        memberID,</span>
+<span class="nc" id="L116">        sharingTypes</span>
+<span class="nc" id="L117">    )</span>
+
+<span class="fc" id="L119">    fun getMedicalLogs(</span>
+        memberId: String,
+<span class="fc" id="L121">        medicalLogType: String = &quot;all&quot;,</span>
+        sharedMemberIds: String,
+<span class="fc" id="L123">        sortAction: String = &quot;desc&quot;,</span>
+<span class="fc" id="L124">        sortBy: String? = null,</span>
+<span class="fc" id="L125">        pageSize: Int = 30,</span>
+<span class="fc" id="L126">        pageNo: Int = 1</span>
+    ): Single&lt;MedicalLogsAll&gt; {
+<span class="fc" id="L128">        return medicalLogsService.getMedicalLogsApi().getAllLogsList(</span>
+<span class="fc" id="L129">            memberId = memberId,</span>
+<span class="fc" id="L130">            medicalLogType = medicalLogType,</span>
+<span class="fc" id="L131">            sharedMemberIds = sharedMemberIds,</span>
+<span class="fc" id="L132">            sortAction = sortAction,</span>
+<span class="fc" id="L133">            sortBy = sortBy,</span>
+<span class="fc" id="L134">            pageSize = pageSize,</span>
+<span class="fc" id="L135">            pageNo = pageNo</span>
+        )
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

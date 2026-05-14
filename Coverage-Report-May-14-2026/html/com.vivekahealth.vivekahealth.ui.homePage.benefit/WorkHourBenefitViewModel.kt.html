@@ -1,0 +1,1683 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WorkHourBenefitViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.benefit</a> &gt; <span class="el_source">WorkHourBenefitViewModel.kt</span></div><h1>WorkHourBenefitViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.benefit
+
+import android.content.SharedPreferences
+import android.content.res.Resources
+import android.graphics.Rect
+import android.view.View
+import android.view.ViewGroup
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.local.home.BarModel
+import com.vivekahealth.vivekahealth.data.remote.home.InsuranceDataModel
+import com.vivekahealth.vivekahealth.data.remote.home.WorkBenefit
+import com.vivekahealth.vivekahealth.data.remote.home.WorkHourV2
+import com.vivekahealth.vivekahealth.data.remote.home.hoursSummary.EmployerHourDTOX
+import com.vivekahealth.vivekahealth.data.remote.home.hoursSummary.WorkHourSummary
+import com.vivekahealth.vivekahealth.data.remote.home.workBenefit.ResponseData
+import com.vivekahealth.vivekahealth.data.remote.home.workBenefit.benefitPerMonth.ResponseDataMemberBenefitPerMonth
+import com.vivekahealth.vivekahealth.data.remote.home.workBenefit.workLog.BenefitsLogo
+import com.vivekahealth.vivekahealth.data.remote.home.workBenefit.workLog.WorkLog
+import com.vivekahealth.vivekahealth.ui.homePage.benefit.repository.BenefitWorkRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.AnalyticsRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import com.vivekahealth.vivekahealth.utils.PageType
+import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.flow.filterNotNull
+import timber.log.Timber
+import java.text.DecimalFormat
+import java.util.Calendar
+import java.util.Locale
+
+<span class="fc" id="L46">class WorkHourBenefitViewModel @javax.inject.Inject constructor(</span>
+<span class="fc" id="L47">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L48">    private val benefitWorkRepository: BenefitWorkRepository,</span>
+<span class="fc" id="L49">    private val analyticsRepository: AnalyticsRepository,</span>
+<span class="fc" id="L50">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L51">    private val resources: Resources</span>
+<span class="fc" id="L52">) : ViewModel(), Observable {</span>
+<span class="fc" id="L53">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="fc" id="L55">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L56">    private var compositeWorkLogDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L57">    private var compositeWorkHourDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L58">    private var compositeBenefitDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L59">    private var compositeInsuranceDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L60">    private var compositeReasonsDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L61">    private var compositeDeductibleDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="pc" id="L63">    var benefitList: WorkBenefit = WorkBenefit()</span>
+
+<span class="fc" id="L65">    private val _enableTab = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;(Event(false))</span>
+    val enableTab: LiveData&lt;Event&lt;Boolean&gt;&gt;
+<span class="fc" id="L67">        get() = _enableTab</span>
+
+<span class="fc" id="L69">    private val _yearListGenerated = MutableLiveData&lt;Event&lt;List&lt;Int&gt;&gt;&gt;()</span>
+    val yearListGenerated: LiveData&lt;Event&lt;List&lt;Int&gt;&gt;&gt;
+<span class="nc" id="L71">        get() = _yearListGenerated</span>
+
+<span class="fc" id="L73">    private val _loadCalendar = MutableLiveData(false)</span>
+    val loadCalendar: LiveData&lt;Boolean&gt;
+<span class="fc" id="L75">        get() = _loadCalendar</span>
+
+<span class="pc" id="L77">    var barModel: BarModel = BarModel()</span>
+<span class="pc" id="L78">    var barModelIndividual: BarModel = BarModel()</span>
+<span class="pc" id="L79">    var filter: String = &quot;REQUESTED_YEAR_MONTH&quot;</span>
+<span class="pc" id="L80">    var month: Int? = null</span>
+<span class="fc" id="L81">    private val _notificationCount = MutableLiveData&lt;Event&lt;Int&gt;&gt;()</span>
+    val notificationCount: LiveData&lt;Event&lt;Int&gt;&gt;
+<span class="nc" id="L83">        get() = _notificationCount</span>
+
+<span class="pc" id="L85">    var configDb =</span>
+<span class="fc" id="L86">        homeRepository.getClientDetail(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()).filterNotNull()</span>
+<span class="pc" id="L87">            .asLiveData()</span>
+
+<span class="pc" id="L89">    var isLastPage = false</span>
+<span class="pc" id="L90">    var isScrolling = false</span>
+<span class="pc" id="L91">    var presentContract: ResponseData = ResponseData()</span>
+<span class="fc" id="L92">    private val _openFilter = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val openFilter: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L94">        get() = _openFilter</span>
+<span class="fc" id="L95">    private val _openCalender = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val openCalender: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L97">        get() = _openCalender</span>
+
+<span class="fc" id="L99">    private val _checkQuarterGenerated = MutableLiveData&lt;Event&lt;WorkBenefit&gt;&gt;()</span>
+    val checkQuarterGenerated: LiveData&lt;Event&lt;WorkBenefit&gt;&gt;
+<span class="nc" id="L101">        get() = _checkQuarterGenerated</span>
+
+<span class="fc" id="L103">    private val _listWorkGenerated = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val listWorkGenerated: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L105">        get() = _listWorkGenerated</span>
+
+<span class="fc" id="L107">    private val _q1WorkListGenerated = MutableLiveData&lt;Event&lt;WorkBenefit&gt;&gt;()</span>
+    val q1WorkListGenerated: LiveData&lt;Event&lt;WorkBenefit&gt;&gt;
+<span class="nc" id="L109">        get() = _q1WorkListGenerated</span>
+
+<span class="fc" id="L111">    private val _q2WorkListGenerated = MutableLiveData&lt;Event&lt;WorkBenefit&gt;&gt;()</span>
+    val q2WorkListGenerated: LiveData&lt;Event&lt;WorkBenefit&gt;&gt;
+<span class="nc" id="L113">        get() = _q2WorkListGenerated</span>
+
+<span class="fc" id="L115">    private val _q3WorkListGenerated = MutableLiveData&lt;Event&lt;WorkBenefit&gt;&gt;()</span>
+    val q3WorkListGenerated: LiveData&lt;Event&lt;WorkBenefit&gt;&gt;
+<span class="nc" id="L117">        get() = _q3WorkListGenerated</span>
+
+<span class="fc" id="L119">    private val _q4WorkListGenerated = MutableLiveData&lt;Event&lt;WorkBenefit&gt;&gt;()</span>
+    val q4WorkListGenerated: LiveData&lt;Event&lt;WorkBenefit&gt;&gt;
+<span class="nc" id="L121">        get() = _q4WorkListGenerated</span>
+<span class="fc" id="L122">    private val _listGenerated = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val listGenerated: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L124">        get() = _listGenerated</span>
+<span class="fc" id="L125">    private val _listBenefitGenerated = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val listBenefitGenerated: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L127">        get() = _listBenefitGenerated</span>
+<span class="fc" id="L128">    private val _hide = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val hide: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L130">        get() = _hide</span>
+<span class="fc" id="L131">    private val _summaryListGenerated = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val summaryListGenerated: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L133">        get() = _summaryListGenerated</span>
+
+    val eligReasonFetched: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L136">        get() = _eligReasonFetched</span>
+<span class="fc" id="L137">    private val _eligReasonFetched = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+
+<span class="pc" id="L139">    var workHourList: ArrayList&lt;WorkHourV2&gt; = arrayListOf()</span>
+<span class="pc" id="L140">    var workHourListV2: ArrayList&lt;WorkLog&gt; = arrayListOf()</span>
+
+<span class="pc" id="L142">    var workHourListPerYear: List&lt;WorkHourV2&gt; = listOf()</span>
+<span class="pc" id="L143">    var workHourListPerYearV2: List&lt;WorkLog&gt; = listOf()</span>
+<span class="pc" id="L144">    var benefitsPerMonth: ArrayList&lt;ResponseDataMemberBenefitPerMonth&gt; = arrayListOf()</span>
+<span class="pc" id="L145">    var currentYear: Int = DateUtils.getCurrentYear()</span>
+<span class="nc" id="L146">    var selectedYear: Int = 0</span>
+<span class="pc" id="L147">    var currentMonth: Int = DateUtils.getCurrentMonthInt()</span>
+
+<span class="nc" id="L149">    var currentYearValue: Int = 0</span>
+<span class="pc" id="L150">    var yearList: ArrayList&lt;Int&gt; = arrayListOf()</span>
+
+<span class="pc" id="L152">    var currentSelectedMonth: Int = DateUtils.getCurrentMonthInt()</span>
+
+<span class="pc" id="L154">    var _insuraceCard = MutableLiveData&lt;InsuranceDataModel?&gt;(null)</span>
+    val insuranceCard: LiveData&lt;InsuranceDataModel?&gt;
+<span class="fc" id="L156">        get() = _insuraceCard</span>
+
+<span class="fc" id="L158">    private var _barModelLoaded = MutableLiveData&lt;Event&lt;Pair&lt;BarModel, BarModel&gt;&gt;&gt;()</span>
+    val barModelLoaded: LiveData&lt;Event&lt;Pair&lt;BarModel, BarModel&gt;&gt;&gt;
+<span class="nc" id="L160">        get() = _barModelLoaded</span>
+
+<span class="pc" id="L162">    val memberId = preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+
+<span class="fc" id="L164">    private val _stickyViews = MutableLiveData&lt;List&lt;StickyViewHolder&gt;&gt;()</span>
+    private val stickyViews: LiveData&lt;List&lt;StickyViewHolder&gt;&gt;
+<span class="nc" id="L166">        get() = _stickyViews</span>
+
+    fun addStickyView(view: StickyViewHolder) {
+<span class="pc bpc" id="L169" title="4 of 6 branches missed.">        if (_stickyViews.value?.map { it.id }?.contains(view.id) == false) {</span>
+<span class="nc bnc" id="L170" title="All 4 branches missed.">            _stickyViews.value = _stickyViews.value?.plus(view) ?: listOf(view)</span>
+        } else {
+<span class="fc" id="L172">            _stickyViews.value = listOf(view)</span>
+        }
+<span class="fc" id="L174">    }</span>
+
+    fun removeStickyView(view: StickyViewHolder) {
+<span class="nc bnc" id="L177" title="All 4 branches missed.">        _stickyViews.value = _stickyViews.value?.toMutableList()?.apply {</span>
+<span class="nc" id="L178">            view.view.translationY = 0f</span>
+<span class="nc" id="L179">            view.view.z = 0f</span>
+<span class="nc" id="L180">            remove(view)</span>
+<span class="nc" id="L181">        }?.toList()</span>
+<span class="nc" id="L182">    }</span>
+
+    data class StickyViewHolder(
+        val id: Int,
+        val view: View
+    )
+
+<span class="fc" id="L189">    val onStickyScrollChangeListener: View.OnScrollChangeListener =</span>
+<span class="fc" id="L190">        View.OnScrollChangeListener { scrollView, _, scrollY, _, _ -&gt;</span>
+<span class="nc" id="L191">            kotlin.run {</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">                stickyViews.value?.let {</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">                    for (sticky in it) {</span>
+<span class="nc" id="L194">                        val index = it.indexOf(sticky)</span>
+
+<span class="nc" id="L196">                        val viewBound = Rect()</span>
+<span class="nc" id="L197">                        sticky.view.getDrawingRect(viewBound)</span>
+<span class="nc" id="L198">                        (scrollView as ViewGroup).offsetDescendantRectToMyCoords(</span>
+<span class="nc" id="L199">                            sticky.view,</span>
+<span class="nc" id="L200">                            viewBound</span>
+                        )
+
+<span class="nc bnc" id="L203" title="All 2 branches missed.">                        val viewHeightOffset = if (index == 0) {</span>
+<span class="nc" id="L204">                            viewBound.top</span>
+                        } else {
+<span class="nc" id="L206">                            val previousSticky = it[index - 1]</span>
+<span class="nc" id="L207">                            val previousRect = Rect()</span>
+<span class="nc" id="L208">                            previousSticky.view.getDrawingRect(previousRect)</span>
+<span class="nc" id="L209">                            viewBound.top - previousRect.height()</span>
+                        }
+
+<span class="nc bnc" id="L212" title="All 2 branches missed.">                        if (scrollY &gt;= viewHeightOffset) {</span>
+<span class="nc" id="L213">                            sticky.view.translationY = scrollY.toFloat() - viewHeightOffset</span>
+<span class="nc" id="L214">                            sticky.view.z = 100f</span>
+                        } else {
+<span class="nc" id="L216">                            sticky.view.translationY = 0f</span>
+<span class="nc" id="L217">                            sticky.view.z = 0f</span>
+                        }
+                    }
+<span class="nc" id="L220">                }</span>
+<span class="nc" id="L221">            }</span>
+<span class="nc" id="L222">        }</span>
+    var loading: Boolean = false
+<span class="fc" id="L224">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L226">            field = value</span>
+<span class="fc" id="L227">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="fc" id="L228">        }</span>
+
+<span class="fc" id="L230">    var workLoading: Boolean = true</span>
+<span class="fc" id="L231">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L233">            field = value</span>
+<span class="nc" id="L234">            callbacks.notifyCallbacks(this, BR.workLoading, null)</span>
+<span class="nc" id="L235">        }</span>
+
+    var benefitLoading: Boolean = false
+<span class="fc" id="L238">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L240">            field = value</span>
+<span class="fc" id="L241">            callbacks.notifyCallbacks(this, BR.benefitLoading, null)</span>
+<span class="fc" id="L242">        }</span>
+
+<span class="fc" id="L244">    var employerCount: String = &quot;&quot;</span>
+<span class="fc" id="L245">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L247">            field = value</span>
+<span class="nc" id="L248">            callbacks.notifyCallbacks(this, BR.employerCount, null)</span>
+<span class="nc" id="L249">        }</span>
+
+<span class="pc" id="L251">    var contractDetail: ArrayList&lt;ResponseData&gt; = arrayListOf()</span>
+
+    var summaryTitle: Boolean = false
+<span class="nc" id="L254">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L256">            field = value</span>
+<span class="nc" id="L257">            callbacks.notifyCallbacks(this, BR.summaryTitle, null)</span>
+<span class="nc" id="L258">        }</span>
+<span class="pc" id="L259">    var gson = Gson()</span>
+<span class="pc" id="L260">    var benefitsLogos: List&lt;BenefitsLogo&gt; = listOf()</span>
+
+    var titleString: String =
+<span class="fc" id="L263">        DateUtils.digitTOMonthLong(currentSelectedMonth, resources) + &quot; &quot; + currentYear.toString()</span>
+<span class="nc" id="L264">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L266">            field = value</span>
+<span class="nc" id="L267">            callbacks.notifyCallbacks(this, BR.titleString, null)</span>
+<span class="nc" id="L268">        }</span>
+    var totalWork: Double = 0.0
+<span class="nc" id="L270">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L272">            field = value</span>
+<span class="nc" id="L273">            callbacks.notifyCallbacks(this, BR.totalWork, null)</span>
+<span class="nc" id="L274">        }</span>
+<span class="fc" id="L275">    var employerName: String = &quot;&quot;</span>
+<span class="nc" id="L276">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L278">            field = value</span>
+<span class="nc" id="L279">            callbacks.notifyCallbacks(this, BR.employerName, null)</span>
+<span class="nc" id="L280">        }</span>
+
+    var showReason: Boolean = false
+<span class="nc" id="L283">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L285">            field = value</span>
+<span class="nc" id="L286">            callbacks.notifyCallbacks(this, BR.showReason, null)</span>
+<span class="nc" id="L287">        }</span>
+    var totalBanked: Double = 0.0
+<span class="nc" id="L289">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L291">            field = value</span>
+<span class="nc" id="L292">            callbacks.notifyCallbacks(this, BR.totalBanked, null)</span>
+<span class="nc" id="L293">        }</span>
+
+<span class="fc" id="L295">    var workHourSummary: WorkHourSummary = WorkHourSummary()</span>
+<span class="nc" id="L296">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L298">            field = value</span>
+<span class="nc" id="L299">            callbacks.notifyCallbacks(this, BR.workHourSummary, null)</span>
+<span class="nc" id="L300">        }</span>
+
+<span class="fc" id="L302">    var title1MyBenefit: String = &quot;&quot;</span>
+<span class="nc" id="L303">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L305">            field = value</span>
+<span class="nc" id="L306">            callbacks.notifyCallbacks(this, BR.title1MyBenefit, null)</span>
+<span class="nc" id="L307">        }</span>
+
+<span class="fc" id="L309">    var title2MyBenefit: String = &quot;&quot;</span>
+<span class="nc" id="L310">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L312">            field = value</span>
+<span class="nc" id="L313">            callbacks.notifyCallbacks(this, BR.title2MyBenefit, null)</span>
+<span class="nc" id="L314">        }</span>
+    var noData: Boolean = false
+<span class="fc" id="L316">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L318">            field = value</span>
+<span class="nc" id="L319">            callbacks.notifyCallbacks(this, BR.noData, null)</span>
+<span class="nc" id="L320">        }</span>
+    var noLookBack: Boolean = false
+<span class="nc" id="L322">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L324">            field = value</span>
+<span class="nc" id="L325">            callbacks.notifyCallbacks(this, BR.noLookBack, null)</span>
+<span class="nc" id="L326">        }</span>
+    var hideTitle2: Boolean = false
+<span class="nc" id="L328">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L330">            field = value</span>
+<span class="nc" id="L331">            callbacks.notifyCallbacks(this, BR.hideTitle2, null)</span>
+<span class="nc" id="L332">        }</span>
+<span class="fc" id="L333">    var hasHoursBank: Boolean = Constants.hasHoursBank</span>
+<span class="nc" id="L334">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L336">            field = value</span>
+<span class="nc" id="L337">            callbacks.notifyCallbacks(this, BR.hasHoursBank, null)</span>
+<span class="nc" id="L338">        }</span>
+<span class="pc" id="L339">    var currentBenefitState: Int = -1</span>
+<span class="pc" id="L340">    var currentBenefitName: String = &quot;&quot;</span>
+<span class="fc" id="L341">    var benefitStartDate: String = &quot;&quot;</span>
+<span class="nc" id="L342">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L344">            field = value</span>
+<span class="nc" id="L345">            callbacks.notifyCallbacks(this, BR.benefitStartDate, null)</span>
+<span class="nc" id="L346">        }</span>
+<span class="fc" id="L347">    var eligibilityReason: String = &quot;&quot;</span>
+<span class="fc" id="L348">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L350">            field = value</span>
+<span class="fc" id="L351">            callbacks.notifyCallbacks(this, BR.eligibilityReason, null)</span>
+<span class="fc" id="L352">        }</span>
+
+    var eligible: Boolean = false
+<span class="fc" id="L355">        @Bindable get</span>
+        set(value) {
+<span class="fc" id="L357">            field = value</span>
+<span class="fc" id="L358">            callbacks.notifyCallbacks(this, BR.eligible, null)</span>
+<span class="fc" id="L359">        }</span>
+
+    var hideBenefits: Boolean = false
+<span class="fc" id="L362">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L364">            field = value</span>
+<span class="nc" id="L365">            callbacks.notifyCallbacks(this, BR.hideBenefits, null)</span>
+<span class="nc" id="L366">        }</span>
+<span class="fc" id="L367">    var showBanked: Boolean = Constants.hasHoursBank</span>
+<span class="nc" id="L368">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L370">            field = value</span>
+<span class="nc" id="L371">            callbacks.notifyCallbacks(this, BR.showBanked, null)</span>
+<span class="nc" id="L372">        }</span>
+    var showReasonQ1: Boolean = false
+<span class="nc" id="L374">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L376">            field = value</span>
+<span class="nc" id="L377">            callbacks.notifyCallbacks(this, BR.showReasonQ1, null)</span>
+<span class="nc" id="L378">        }</span>
+    var showReasonQ2: Boolean = false
+<span class="nc" id="L380">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L382">            field = value</span>
+<span class="nc" id="L383">            callbacks.notifyCallbacks(this, BR.showReasonQ2, null)</span>
+<span class="nc" id="L384">        }</span>
+    var showReasonQ3: Boolean = false
+<span class="nc" id="L386">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L388">            field = value</span>
+<span class="nc" id="L389">            callbacks.notifyCallbacks(this, BR.showReasonQ3, null)</span>
+<span class="nc" id="L390">        }</span>
+    var showReasonQ4: Boolean = false
+<span class="nc" id="L392">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L394">            field = value</span>
+<span class="nc" id="L395">            callbacks.notifyCallbacks(this, BR.showReasonQ4, null)</span>
+<span class="nc" id="L396">        }</span>
+
+<span class="fc" id="L398">    var reasonQ1: String = &quot;&quot;</span>
+<span class="nc" id="L399">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L401">            field = value</span>
+<span class="nc" id="L402">            callbacks.notifyCallbacks(this, BR.reasonQ1, null)</span>
+<span class="nc" id="L403">        }</span>
+<span class="fc" id="L404">    var reasonQ2: String = &quot;&quot;</span>
+<span class="nc" id="L405">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L407">            field = value</span>
+<span class="nc" id="L408">            callbacks.notifyCallbacks(this, BR.reasonQ2, null)</span>
+<span class="nc" id="L409">        }</span>
+<span class="fc" id="L410">    var reasonQ3: String = &quot;&quot;</span>
+<span class="nc" id="L411">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L413">            field = value</span>
+<span class="nc" id="L414">            callbacks.notifyCallbacks(this, BR.reasonQ3, null)</span>
+<span class="nc" id="L415">        }</span>
+<span class="fc" id="L416">    var reasonQ4: String = &quot;&quot;</span>
+<span class="nc" id="L417">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L419">            field = value</span>
+<span class="nc" id="L420">            callbacks.notifyCallbacks(this, BR.reasonQ4, null)</span>
+<span class="nc" id="L421">        }</span>
+    var janClicked: Boolean = false
+<span class="nc" id="L423">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L425">            field = value</span>
+<span class="nc" id="L426">            callbacks.notifyCallbacks(this, BR.janClicked, null)</span>
+<span class="nc" id="L427">        }</span>
+    var febClicked: Boolean = false
+<span class="nc" id="L429">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L431">            field = value</span>
+<span class="nc" id="L432">            callbacks.notifyCallbacks(this, BR.febClicked, null)</span>
+<span class="nc" id="L433">        }</span>
+    var marClicked: Boolean = false
+<span class="nc" id="L435">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L437">            field = value</span>
+<span class="nc" id="L438">            callbacks.notifyCallbacks(this, BR.marClicked, null)</span>
+<span class="nc" id="L439">        }</span>
+    var aprClicked: Boolean = false
+<span class="nc" id="L441">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L443">            field = value</span>
+<span class="nc" id="L444">            callbacks.notifyCallbacks(this, BR.aprClicked, null)</span>
+<span class="nc" id="L445">        }</span>
+    var mayClicked: Boolean = false
+<span class="nc" id="L447">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L449">            field = value</span>
+<span class="nc" id="L450">            callbacks.notifyCallbacks(this, BR.mayClicked, null)</span>
+<span class="nc" id="L451">        }</span>
+    var junClicked: Boolean = false
+<span class="nc" id="L453">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L455">            field = value</span>
+<span class="nc" id="L456">            callbacks.notifyCallbacks(this, BR.junClicked, null)</span>
+<span class="nc" id="L457">        }</span>
+    var julClicked: Boolean = false
+<span class="nc" id="L459">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L461">            field = value</span>
+<span class="nc" id="L462">            callbacks.notifyCallbacks(this, BR.julClicked, null)</span>
+<span class="nc" id="L463">        }</span>
+    var augClicked: Boolean = false
+<span class="nc" id="L465">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L467">            field = value</span>
+<span class="nc" id="L468">            callbacks.notifyCallbacks(this, BR.augClicked, null)</span>
+<span class="nc" id="L469">        }</span>
+    var sepClicked: Boolean = false
+<span class="nc" id="L471">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L473">            field = value</span>
+<span class="nc" id="L474">            callbacks.notifyCallbacks(this, BR.sepClicked, null)</span>
+<span class="nc" id="L475">        }</span>
+    var octClicked: Boolean = false
+<span class="nc" id="L477">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L479">            field = value</span>
+<span class="nc" id="L480">            callbacks.notifyCallbacks(this, BR.octClicked, null)</span>
+<span class="nc" id="L481">        }</span>
+    var novClicked: Boolean = false
+<span class="nc" id="L483">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L485">            field = value</span>
+<span class="nc" id="L486">            callbacks.notifyCallbacks(this, BR.novClicked, null)</span>
+<span class="nc" id="L487">        }</span>
+    var decClicked: Boolean = false
+<span class="nc" id="L489">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L491">            field = value</span>
+<span class="nc" id="L492">            callbacks.notifyCallbacks(this, BR.decClicked, null)</span>
+<span class="nc" id="L493">        }</span>
+
+    var jan: Boolean = false
+<span class="nc" id="L496">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L498">            field = value</span>
+<span class="nc" id="L499">            callbacks.notifyCallbacks(this, BR.jan, null)</span>
+<span class="nc" id="L500">        }</span>
+    var feb: Boolean = false
+<span class="nc" id="L502">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L504">            field = value</span>
+<span class="nc" id="L505">            callbacks.notifyCallbacks(this, BR.feb, null)</span>
+<span class="nc" id="L506">        }</span>
+    var mar: Boolean = false
+<span class="nc" id="L508">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L510">            field = value</span>
+<span class="nc" id="L511">            callbacks.notifyCallbacks(this, BR.mar, null)</span>
+<span class="nc" id="L512">        }</span>
+    var apr: Boolean = false
+<span class="nc" id="L514">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L516">            field = value</span>
+<span class="nc" id="L517">            callbacks.notifyCallbacks(this, BR.apr, null)</span>
+<span class="nc" id="L518">        }</span>
+    var may: Boolean = false
+<span class="nc" id="L520">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L522">            field = value</span>
+<span class="nc" id="L523">            callbacks.notifyCallbacks(this, BR.may, null)</span>
+<span class="nc" id="L524">        }</span>
+    var jun: Boolean = false
+<span class="nc" id="L526">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L528">            field = value</span>
+<span class="nc" id="L529">            callbacks.notifyCallbacks(this, BR.jun, null)</span>
+<span class="nc" id="L530">        }</span>
+    var jul: Boolean = false
+<span class="nc" id="L532">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L534">            field = value</span>
+<span class="nc" id="L535">            callbacks.notifyCallbacks(this, BR.jul, null)</span>
+<span class="nc" id="L536">        }</span>
+    var aug: Boolean = false
+<span class="nc" id="L538">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L540">            field = value</span>
+<span class="nc" id="L541">            callbacks.notifyCallbacks(this, BR.aug, null)</span>
+<span class="nc" id="L542">        }</span>
+    var sep: Boolean = false
+<span class="nc" id="L544">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L546">            field = value</span>
+<span class="nc" id="L547">            callbacks.notifyCallbacks(this, BR.sep, null)</span>
+<span class="nc" id="L548">        }</span>
+    var oct: Boolean = false
+<span class="nc" id="L550">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L552">            field = value</span>
+<span class="nc" id="L553">            callbacks.notifyCallbacks(this, BR.oct, null)</span>
+<span class="nc" id="L554">        }</span>
+    var nov: Boolean = false
+<span class="nc" id="L556">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L558">            field = value</span>
+<span class="nc" id="L559">            callbacks.notifyCallbacks(this, BR.nov, null)</span>
+<span class="nc" id="L560">        }</span>
+    var dec: Boolean = false
+<span class="nc" id="L562">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L564">            field = value</span>
+<span class="nc" id="L565">            callbacks.notifyCallbacks(this, BR.dec, null)</span>
+<span class="nc" id="L566">        }</span>
+
+    var janElig: Boolean = false
+<span class="nc" id="L569">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L571">            field = value</span>
+<span class="nc" id="L572">            callbacks.notifyCallbacks(this, BR.janElig, null)</span>
+<span class="nc" id="L573">        }</span>
+    var febElig: Boolean = false
+<span class="nc" id="L575">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L577">            field = value</span>
+<span class="nc" id="L578">            callbacks.notifyCallbacks(this, BR.febElig, null)</span>
+<span class="nc" id="L579">        }</span>
+    var marElig: Boolean = false
+<span class="nc" id="L581">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L583">            field = value</span>
+<span class="nc" id="L584">            callbacks.notifyCallbacks(this, BR.marElig, null)</span>
+<span class="nc" id="L585">        }</span>
+    var aprElig: Boolean = false
+<span class="nc" id="L587">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L589">            field = value</span>
+<span class="nc" id="L590">            callbacks.notifyCallbacks(this, BR.aprElig, null)</span>
+<span class="nc" id="L591">        }</span>
+    var mayElig: Boolean = false
+<span class="nc" id="L593">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L595">            field = value</span>
+<span class="nc" id="L596">            callbacks.notifyCallbacks(this, BR.mayElig, null)</span>
+<span class="nc" id="L597">        }</span>
+    var junElig: Boolean = false
+<span class="nc" id="L599">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L601">            field = value</span>
+<span class="nc" id="L602">            callbacks.notifyCallbacks(this, BR.junElig, null)</span>
+<span class="nc" id="L603">        }</span>
+    var julElig: Boolean = false
+<span class="nc" id="L605">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L607">            field = value</span>
+<span class="nc" id="L608">            callbacks.notifyCallbacks(this, BR.julElig, null)</span>
+<span class="nc" id="L609">        }</span>
+    var augElig: Boolean = false
+<span class="nc" id="L611">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L613">            field = value</span>
+<span class="nc" id="L614">            callbacks.notifyCallbacks(this, BR.augElig, null)</span>
+<span class="nc" id="L615">        }</span>
+    var sepElig: Boolean = false
+<span class="nc" id="L617">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L619">            field = value</span>
+<span class="nc" id="L620">            callbacks.notifyCallbacks(this, BR.sepElig, null)</span>
+<span class="nc" id="L621">        }</span>
+    var octElig: Boolean = false
+<span class="nc" id="L623">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L625">            field = value</span>
+<span class="nc" id="L626">            callbacks.notifyCallbacks(this, BR.octElig, null)</span>
+<span class="nc" id="L627">        }</span>
+    var novElig: Boolean = false
+<span class="nc" id="L629">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L631">            field = value</span>
+<span class="nc" id="L632">            callbacks.notifyCallbacks(this, BR.novElig, null)</span>
+<span class="nc" id="L633">        }</span>
+    var decElig: Boolean = false
+<span class="nc" id="L635">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L637">            field = value</span>
+<span class="nc" id="L638">            callbacks.notifyCallbacks(this, BR.decElig, null)</span>
+<span class="nc" id="L639">        }</span>
+
+<span class="fc" id="L641">    var janHour: String = &quot;&quot;</span>
+<span class="nc" id="L642">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L644">            field = value</span>
+<span class="nc" id="L645">            callbacks.notifyCallbacks(this, BR.janHour, null)</span>
+<span class="nc" id="L646">        }</span>
+<span class="fc" id="L647">    var febHour: String = &quot;&quot;</span>
+<span class="nc" id="L648">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L650">            field = value</span>
+<span class="nc" id="L651">            callbacks.notifyCallbacks(this, BR.febHour, null)</span>
+<span class="nc" id="L652">        }</span>
+<span class="fc" id="L653">    var marHour: String = &quot;&quot;</span>
+<span class="nc" id="L654">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L656">            field = value</span>
+<span class="nc" id="L657">            callbacks.notifyCallbacks(this, BR.marHour, null)</span>
+<span class="nc" id="L658">        }</span>
+<span class="fc" id="L659">    var aprHour: String = &quot;&quot;</span>
+<span class="nc" id="L660">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L662">            field = value</span>
+<span class="nc" id="L663">            callbacks.notifyCallbacks(this, BR.aprHour, null)</span>
+<span class="nc" id="L664">        }</span>
+<span class="fc" id="L665">    var mayHour: String = &quot;&quot;</span>
+<span class="nc" id="L666">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L668">            field = value</span>
+<span class="nc" id="L669">            callbacks.notifyCallbacks(this, BR.mayHour, null)</span>
+<span class="nc" id="L670">        }</span>
+<span class="fc" id="L671">    var junHour: String = &quot;&quot;</span>
+<span class="nc" id="L672">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L674">            field = value</span>
+<span class="nc" id="L675">            callbacks.notifyCallbacks(this, BR.junHour, null)</span>
+<span class="nc" id="L676">        }</span>
+<span class="fc" id="L677">    var julHour: String = &quot;&quot;</span>
+<span class="nc" id="L678">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L680">            field = value</span>
+<span class="nc" id="L681">            callbacks.notifyCallbacks(this, BR.julHour, null)</span>
+<span class="nc" id="L682">        }</span>
+<span class="fc" id="L683">    var augHour: String = &quot;&quot;</span>
+<span class="nc" id="L684">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L686">            field = value</span>
+<span class="nc" id="L687">            callbacks.notifyCallbacks(this, BR.augHour, null)</span>
+<span class="nc" id="L688">        }</span>
+<span class="fc" id="L689">    var sepHour: String = &quot;&quot;</span>
+<span class="nc" id="L690">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L692">            field = value</span>
+<span class="nc" id="L693">            callbacks.notifyCallbacks(this, BR.sepHour, null)</span>
+<span class="nc" id="L694">        }</span>
+<span class="fc" id="L695">    var octHour: String = &quot;&quot;</span>
+<span class="nc" id="L696">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L698">            field = value</span>
+<span class="nc" id="L699">            callbacks.notifyCallbacks(this, BR.octHour, null)</span>
+<span class="nc" id="L700">        }</span>
+<span class="fc" id="L701">    var novHour: String = &quot;&quot;</span>
+<span class="nc" id="L702">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L704">            field = value</span>
+<span class="nc" id="L705">            callbacks.notifyCallbacks(this, BR.novHour, null)</span>
+<span class="nc" id="L706">        }</span>
+<span class="fc" id="L707">    var decHour: String = &quot;&quot;</span>
+<span class="nc" id="L708">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L710">            field = value</span>
+<span class="nc" id="L711">            callbacks.notifyCallbacks(this, BR.decHour, null)</span>
+<span class="nc" id="L712">        }</span>
+
+<span class="fc" id="L714">    var janEmployerCount: String = &quot;&quot;</span>
+<span class="nc" id="L715">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L717">            field = value</span>
+<span class="nc" id="L718">            callbacks.notifyCallbacks(this, BR.janEmployerCount, null)</span>
+<span class="nc" id="L719">        }</span>
+<span class="fc" id="L720">    var febEmployerCount: String = &quot;&quot;</span>
+<span class="nc" id="L721">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L723">            field = value</span>
+<span class="nc" id="L724">            callbacks.notifyCallbacks(this, BR.febEmployerCount, null)</span>
+<span class="nc" id="L725">        }</span>
+<span class="fc" id="L726">    var marEmployerCount: String = &quot;&quot;</span>
+<span class="nc" id="L727">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L729">            field = value</span>
+<span class="nc" id="L730">            callbacks.notifyCallbacks(this, BR.marEmployerCount, null)</span>
+<span class="nc" id="L731">        }</span>
+<span class="fc" id="L732">    var aprEmployerCount: String = &quot;&quot;</span>
+<span class="nc" id="L733">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L735">            field = value</span>
+<span class="nc" id="L736">            callbacks.notifyCallbacks(this, BR.aprEmployerCount, null)</span>
+<span class="nc" id="L737">        }</span>
+<span class="fc" id="L738">    var mayEmployerCount: String = &quot;&quot;</span>
+<span class="nc" id="L739">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L741">            field = value</span>
+<span class="nc" id="L742">            callbacks.notifyCallbacks(this, BR.mayEmployerCount, null)</span>
+<span class="nc" id="L743">        }</span>
+<span class="fc" id="L744">    var junEmployerCount: String = &quot;&quot;</span>
+<span class="nc" id="L745">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L747">            field = value</span>
+<span class="nc" id="L748">            callbacks.notifyCallbacks(this, BR.junEmployerCount, null)</span>
+<span class="nc" id="L749">        }</span>
+<span class="fc" id="L750">    var julEmployerCount: String = &quot;&quot;</span>
+<span class="nc" id="L751">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L753">            field = value</span>
+<span class="nc" id="L754">            callbacks.notifyCallbacks(this, BR.julEmployerCount, null)</span>
+<span class="nc" id="L755">        }</span>
+<span class="fc" id="L756">    var augEmployerCount: String = &quot;&quot;</span>
+<span class="nc" id="L757">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L759">            field = value</span>
+<span class="nc" id="L760">            callbacks.notifyCallbacks(this, BR.augEmployerCount, null)</span>
+<span class="nc" id="L761">        }</span>
+<span class="fc" id="L762">    var sepEmployerCount: String = &quot;&quot;</span>
+<span class="nc" id="L763">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L765">            field = value</span>
+<span class="nc" id="L766">            callbacks.notifyCallbacks(this, BR.sepEmployerCount, null)</span>
+<span class="nc" id="L767">        }</span>
+<span class="fc" id="L768">    var octEmployerCount: String = &quot;&quot;</span>
+<span class="nc" id="L769">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L771">            field = value</span>
+<span class="nc" id="L772">            callbacks.notifyCallbacks(this, BR.octEmployerCount, null)</span>
+<span class="nc" id="L773">        }</span>
+<span class="fc" id="L774">    var novEmployerCount: String = &quot;&quot;</span>
+<span class="nc" id="L775">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L777">            field = value</span>
+<span class="nc" id="L778">            callbacks.notifyCallbacks(this, BR.novEmployerCount, null)</span>
+<span class="nc" id="L779">        }</span>
+<span class="fc" id="L780">    var decEmployerCount: String = &quot;&quot;</span>
+<span class="nc" id="L781">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L783">            field = value</span>
+<span class="nc" id="L784">            callbacks.notifyCallbacks(this, BR.decEmployerCount, null)</span>
+<span class="nc" id="L785">        }</span>
+
+<span class="fc" id="L787">    var janEmployerName: String = &quot;&quot;</span>
+<span class="nc" id="L788">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L790">            field = value</span>
+<span class="nc" id="L791">            callbacks.notifyCallbacks(this, BR.janEmployerName, null)</span>
+<span class="nc" id="L792">        }</span>
+<span class="fc" id="L793">    var febEmployerName: String = &quot;&quot;</span>
+<span class="nc" id="L794">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L796">            field = value</span>
+<span class="nc" id="L797">            callbacks.notifyCallbacks(this, BR.febEmployerName, null)</span>
+<span class="nc" id="L798">        }</span>
+<span class="fc" id="L799">    var marEmployerName: String = &quot;&quot;</span>
+<span class="nc" id="L800">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L802">            field = value</span>
+<span class="nc" id="L803">            callbacks.notifyCallbacks(this, BR.marEmployerName, null)</span>
+<span class="nc" id="L804">        }</span>
+<span class="fc" id="L805">    var aprEmployerName: String = &quot;&quot;</span>
+<span class="nc" id="L806">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L808">            field = value</span>
+<span class="nc" id="L809">            callbacks.notifyCallbacks(this, BR.aprEmployerName, null)</span>
+<span class="nc" id="L810">        }</span>
+<span class="fc" id="L811">    var mayEmployerName: String = &quot;&quot;</span>
+<span class="nc" id="L812">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L814">            field = value</span>
+<span class="nc" id="L815">            callbacks.notifyCallbacks(this, BR.mayEmployerName, null)</span>
+<span class="nc" id="L816">        }</span>
+<span class="fc" id="L817">    var junEmployerName: String = &quot;&quot;</span>
+<span class="nc" id="L818">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L820">            field = value</span>
+<span class="nc" id="L821">            callbacks.notifyCallbacks(this, BR.junEmployerName, null)</span>
+<span class="nc" id="L822">        }</span>
+<span class="fc" id="L823">    var julEmployerName: String = &quot;&quot;</span>
+<span class="nc" id="L824">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L826">            field = value</span>
+<span class="nc" id="L827">            callbacks.notifyCallbacks(this, BR.julEmployerName, null)</span>
+<span class="nc" id="L828">        }</span>
+<span class="fc" id="L829">    var augEmployerName: String = &quot;&quot;</span>
+<span class="nc" id="L830">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L832">            field = value</span>
+<span class="nc" id="L833">            callbacks.notifyCallbacks(this, BR.augEmployerName, null)</span>
+<span class="nc" id="L834">        }</span>
+<span class="fc" id="L835">    var sepEmployerName: String = &quot;&quot;</span>
+<span class="nc" id="L836">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L838">            field = value</span>
+<span class="nc" id="L839">            callbacks.notifyCallbacks(this, BR.sepEmployerName, null)</span>
+<span class="nc" id="L840">        }</span>
+<span class="fc" id="L841">    var octEmployerName: String = &quot;&quot;</span>
+<span class="nc" id="L842">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L844">            field = value</span>
+<span class="nc" id="L845">            callbacks.notifyCallbacks(this, BR.octEmployerName, null)</span>
+<span class="nc" id="L846">        }</span>
+<span class="fc" id="L847">    var novEmployerName: String = &quot;&quot;</span>
+<span class="nc" id="L848">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L850">            field = value</span>
+<span class="nc" id="L851">            callbacks.notifyCallbacks(this, BR.novEmployerName, null)</span>
+<span class="nc" id="L852">        }</span>
+<span class="fc" id="L853">    var decEmployerName: String = &quot;&quot;</span>
+<span class="nc" id="L854">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L856">            field = value</span>
+<span class="nc" id="L857">            callbacks.notifyCallbacks(this, BR.decEmployerName, null)</span>
+<span class="nc" id="L858">        }</span>
+
+    var totalWorkedHours: Double? = null
+<span class="nc" id="L861">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L863">            field = value</span>
+<span class="nc" id="L864">            callbacks.notifyCallbacks(this, BR.totalWorkedHours, null)</span>
+<span class="nc" id="L865">        }</span>
+    var totalPremium: Double? = null
+<span class="nc" id="L867">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L869">            field = value</span>
+<span class="nc" id="L870">            callbacks.notifyCallbacks(this, BR.totalPremium, null)</span>
+<span class="nc" id="L871">        }</span>
+
+<span class="fc" id="L873">    var premium: String = &quot;&quot;</span>
+<span class="nc" id="L874">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L876">            field = value</span>
+<span class="nc" id="L877">            callbacks.notifyCallbacks(this, BR.premium, null)</span>
+<span class="nc" id="L878">        }</span>
+<span class="fc" id="L879">    var amountDue: String = &quot;&quot;</span>
+<span class="nc" id="L880">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L882">            field = value</span>
+<span class="nc" id="L883">            callbacks.notifyCallbacks(this, BR.amountDue, null)</span>
+<span class="nc" id="L884">        }</span>
+<span class="fc" id="L885">    var workLabelVisibility = true</span>
+<span class="nc" id="L886">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L888">            field = value</span>
+<span class="nc" id="L889">            callbacks.notifyChange(this, BR.workLabelVisibility)</span>
+<span class="nc" id="L890">        }</span>
+<span class="fc" id="L891">    var benefitLabelVisibility = true</span>
+<span class="nc" id="L892">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L894">            field = value</span>
+<span class="nc" id="L895">            callbacks.notifyChange(this, BR.benefitLabelVisibility)</span>
+<span class="nc" id="L896">        }</span>
+
+    var showHours = false
+<span class="nc" id="L899">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L901">            field = value</span>
+<span class="nc" id="L902">            callbacks.notifyChange(this, BR.showHours)</span>
+<span class="nc" id="L903">        }</span>
+
+    var premiumBased = false
+<span class="nc" id="L906">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L908">            field = value</span>
+<span class="nc" id="L909">            callbacks.notifyChange(this, BR.premiumBased)</span>
+<span class="nc" id="L910">        }</span>
+    var showPremium = false
+<span class="nc" id="L912">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L914">            field = value</span>
+<span class="nc" id="L915">            callbacks.notifyChange(this, BR.showPremium)</span>
+<span class="nc" id="L916">        }</span>
+
+<span class="pc" id="L918">    var employerPrice: List&lt;EmployerHourDTOX&gt;? = listOf()</span>
+<span class="pc" id="L919">    var employer: List&lt;EmployerHourDTOX&gt;? = listOf()</span>
+
+<span class="fc" id="L921">    init {</span>
+<span class="fc" id="L922">        getLogView()</span>
+<span class="fc" id="L923">    }</span>
+
+    private fun changeTitleText(filter: String, value: WorkHourSummary) {
+<span class="nc bnc" id="L926" title="All 6 branches missed.">        when {</span>
+            filter == &quot;REQUESTED_YEAR&quot; -&gt; {
+<span class="nc" id="L928">                titleString = resources.getString(</span>
+<span class="nc" id="L929">                    R.string.currently_viewing_work_hours_for_s_api,</span>
+<span class="nc" id="L930">                    DateUtils.digitTOMonth(1, resources),</span>
+<span class="nc" id="L931">                    value.year.toString()</span>
+                )
+            }
+
+            filter == &quot;LIFETIME&quot; -&gt; {
+<span class="nc" id="L936">                titleString = resources.getString(</span>
+<span class="nc" id="L937">                    R.string.lifetime_starting_form_s_s,</span>
+<span class="nc" id="L938">                    DateUtils.digitTOMonth(value.month, resources),</span>
+<span class="nc" id="L939">                    value.year.toString()</span>
+                )
+<span class="nc bnc" id="L941" title="All 2 branches missed.">                totalWork = workHourList.sumOf { it.hoursWorked }</span>
+            }
+
+            filter == &quot;REQUESTED_YEAR_MONTH&quot; -&gt; {
+<span class="nc" id="L945">                titleString =</span>
+<span class="nc" id="L946">                    DateUtils.digitTOMonthLong(value.month, resources) + &quot; &quot; + value.year.toString()</span>
+            }
+
+            filter == &quot;LAST_REPORTED&quot; -&gt; {
+<span class="nc" id="L950">                titleString = resources.getString(</span>
+<span class="nc" id="L951">                    R.string.last_reported_month_s_s,</span>
+<span class="nc" id="L952">                    DateUtils.digitTOMonth(value.month, resources),</span>
+<span class="nc" id="L953">                    value.year.toString()</span>
+                )
+            }
+
+            filter == &quot;ROLLING_YEAR&quot; -&gt; {
+<span class="nc" id="L958">                titleString = resources.getString(</span>
+<span class="nc" id="L959">                    R.string.rolling_period_from_api,</span>
+<span class="nc" id="L960">                    DateUtils.digitTOMonth(value.month, resources),</span>
+<span class="nc" id="L961">                    value.year.toString()</span>
+                )
+<span class="nc bnc" id="L963" title="All 2 branches missed.">                val dropYear: Int = if (workHourList.size &gt;= Constants.BENEFIT_ROLLING_PERIOD) {</span>
+<span class="nc" id="L964">                    workHourList.size - Constants.BENEFIT_ROLLING_PERIOD</span>
+                } else {
+<span class="nc" id="L966">                    workHourList.size</span>
+                }
+<span class="nc" id="L968">                val year = workHourList.drop(dropYear)</span>
+<span class="nc bnc" id="L969" title="All 4 branches missed.">                if (year.isNotEmpty()) {</span>
+<span class="nc bnc" id="L970" title="All 2 branches missed.">                    totalWork = year.sumOf { it.hoursWorked ?: 0.0 }</span>
+<span class="nc" id="L971">                    totalBanked = year.last().hoursBanked</span>
+                }
+            }
+        }
+<span class="nc" id="L975">    }</span>
+
+    fun loadDataCalender() {
+<span class="fc" id="L978">        var year: Int? = null</span>
+<span class="fc" id="L979">        var month: Int? = null</span>
+<span class="pc bpc" id="L980" title="1 of 2 branches missed.">        month = if (currentSelectedMonth != -1) {</span>
+<span class="fc" id="L981">            currentSelectedMonth</span>
+        } else {
+<span class="nc" id="L983">            null</span>
+        }
+<span class="pc bpc" id="L985" title="1 of 2 branches missed.">        year = if (currentYearValue != 0) {</span>
+<span class="nc" id="L986">            currentYear</span>
+        } else {
+<span class="fc" id="L988">            null</span>
+        }
+<span class="fc" id="L990">        compositeWorkLogDisposable.dispose()</span>
+<span class="fc" id="L991">        compositeWorkLogDisposable = CompositeDisposable()</span>
+<span class="fc" id="L992">        var workLogSingle = benefitWorkRepository.getWorkBenefitV2(</span>
+<span class="fc" id="L993">            preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+        )
+<span class="pc bpc" id="L995" title="1 of 2 branches missed.">        if (Constants.IS_OFFLINE) {</span>
+<span class="nc bnc" id="L996" title="All 2 branches missed.">            if (preferences.contains(&quot;memberID&quot;)) {</span>
+<span class="nc" id="L997">                val workLog = benefitWorkRepository.getWorkLogFromDb(</span>
+<span class="nc" id="L998">                    preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+                )
+<span class="nc bnc" id="L1000" title="All 2 branches missed.">                if (workLog != null) {</span>
+<span class="nc" id="L1001">                    workLogSingle = Single.just(workLog)</span>
+                } else {
+<span class="nc" id="L1003">                    benefitLoading = false</span>
+<span class="nc" id="L1004">                    _enableTab.value = Event(true)</span>
+                }
+            }
+        }
+
+        // get work log V2
+<span class="fc" id="L1010">        compositeWorkLogDisposable.add(</span>
+<span class="fc" id="L1011">            workLogSingle</span>
+<span class="fc" id="L1012">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L1013">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L1014">                .doOnSubscribe {</span>
+<span class="fc" id="L1015">                    benefitLoading = true</span>
+<span class="fc" id="L1016">                    _benefitLoadingComplete.value = false</span>
+<span class="fc" id="L1017">                }</span>
+<span class="pc" id="L1018">                .subscribe({</span>
+<span class="nc bnc" id="L1019" title="All 2 branches missed.">                    if (!Constants.IS_OFFLINE) {</span>
+<span class="nc" id="L1020">                        benefitWorkRepository.insertWorkLog(it, memberId)</span>
+                    }
+<span class="nc" id="L1022">                    workHourListV2 = it.worklogs</span>
+<span class="nc" id="L1023">                    val workHourV2 =</span>
+<span class="nc bnc" id="L1024" title="All 8 branches missed.">                        workHourListV2.find { it.year == &quot;$currentYear&quot; &amp;&amp; it.month == &quot;$currentSelectedMonth&quot; }</span>
+<span class="nc bnc" id="L1025" title="All 2 branches missed.">                    hideBenefits = if (workHourV2 == null) {</span>
+<span class="nc" id="L1026">                        true</span>
+                    } else {
+<span class="nc bnc" id="L1028" title="All 2 branches missed.">                        workHourV2.eligibilityStatus != &quot;ELIGIBLE&quot;</span>
+                    }
+<span class="nc" id="L1030">                    var currentYearItems =</span>
+<span class="nc bnc" id="L1031" title="All 2 branches missed.">                        workHourListV2.filter { item -&gt; item.year.toInt() == DateUtils.getCurrentYear() }</span>
+
+<span class="nc bnc" id="L1033" title="All 6 branches missed.">                    if (!yearList.isNullOrEmpty()) {</span>
+<span class="nc" id="L1034">                        yearList.clear()</span>
+                    }
+<span class="nc bnc" id="L1036" title="All 2 branches missed.">                    for (year in workHourListV2) {</span>
+<span class="nc" id="L1037">                        yearList.add(year.year.toInt())</span>
+                    }
+<span class="nc" id="L1039">                    benefitsLogos = it.benefitsLogos</span>
+<span class="nc" id="L1040">                    var yearListDistinct = yearList.distinct()</span>
+
+<span class="nc bnc" id="L1042" title="All 2 branches missed.">                    var latestYear = yearListDistinct.maxOrNull() ?: DateUtils.getCurrentYear()</span>
+<span class="nc bnc" id="L1043" title="All 2 branches missed.">                    if (currentYear &gt; latestYear) {</span>
+<span class="nc" id="L1044">                        latestYear = currentYear</span>
+                    }
+<span class="nc bnc" id="L1046" title="All 6 branches missed.">                    for (i in (yearListDistinct.firstOrNull() ?: DateUtils.getCurrentYear())..latestYear) {</span>
+<span class="nc bnc" id="L1047" title="All 2 branches missed.">                        if (!yearListDistinct.contains(i)) {</span>
+<span class="nc" id="L1048">                            yearList.add(i)</span>
+<span class="nc bnc" id="L1049" title="All 2 branches missed.">                            for (m in 1..12) {</span>
+<span class="nc" id="L1050">                                workHourListV2.add(</span>
+<span class="nc" id="L1051">                                    WorkLog(</span>
+<span class="nc" id="L1052">                                        year = i.toString(),</span>
+<span class="nc" id="L1053">                                        month = m.toString(),</span>
+<span class="nc" id="L1054">                                        addedItem = true</span>
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    // Full list of 12 months to compare a year's against for any missing
+<span class="nc bnc" id="L1062" title="All 2 branches missed.">                    val fullMonths = List(12) {</span>
+<span class="nc" id="L1063">                        &quot;${it + 1}&quot;</span>
+                    }
+
+<span class="nc" id="L1066">                    yearList.distinct().forEach { year -&gt;</span>
+                        // Get all logs for the year
+<span class="nc" id="L1068">                        val months = workHourListV2.filter { it.year == &quot;$year&quot; }.map { it.month }</span>
+
+<span class="nc bnc" id="L1070" title="All 2 branches missed.">                        if (months != fullMonths) {</span>
+                            // The missing months
+<span class="nc" id="L1072">                            val remaining = fullMonths - months</span>
+<span class="nc" id="L1073">                            remaining.forEach { month -&gt;</span>
+<span class="nc" id="L1074">                                workHourListV2 += WorkLog(</span>
+<span class="nc" id="L1075">                                    year = &quot;$year&quot;,</span>
+<span class="nc" id="L1076">                                    month = month,</span>
+<span class="nc" id="L1077">                                    addedItem = true</span>
+                                )
+<span class="nc" id="L1079">                            }</span>
+                        }
+<span class="nc" id="L1081">                    }</span>
+
+                    // Sort first by year, then by month
+<span class="nc" id="L1084">                    workHourListV2 = ArrayList(</span>
+<span class="nc" id="L1085">                        workHourListV2.sortedWith(</span>
+<span class="nc" id="L1086">                            compareBy({ it.year.toInt() }, { it.month.toInt() })</span>
+                        )
+                    )
+
+<span class="nc" id="L1090">                    yearList.sort()</span>
+<span class="nc" id="L1091">                    yearListDistinct = yearList.distinct()</span>
+<span class="nc" id="L1092">                    _yearListGenerated.value = Event(yearListDistinct)</span>
+
+<span class="nc bnc" id="L1094" title="All 8 branches missed.">                    if (!yearList.isNullOrEmpty() &amp;&amp; currentYearValue == 0) {</span>
+<span class="nc" id="L1095">                        Timber.d(Calendar.getInstance().get(Calendar.YEAR).toString())</span>
+
+<span class="nc" id="L1097">                        Timber.d(&quot;sourceYear:$selectedYear&quot;)</span>
+<span class="nc" id="L1098">                        Timber.d(&quot;hereFirst&quot;)</span>
+
+<span class="nc bnc" id="L1100" title="All 2 branches missed.">                        if (yearList.contains(Calendar.getInstance().get(Calendar.YEAR))) {</span>
+<span class="nc bnc" id="L1101" title="All 2 branches missed.">                            if (selectedYear != 0) {</span>
+<span class="nc" id="L1102">                                loadSheetYear(currentYear)</span>
+                            } else {
+<span class="nc" id="L1104">                                loadSheetYear(Calendar.getInstance().get(Calendar.YEAR))</span>
+                            }
+                        } else {
+<span class="nc" id="L1107">                            Timber.d(&quot;hereLast&quot;)</span>
+<span class="nc" id="L1108">                            loadSheetYear(yearList.last())</span>
+                        }
+                    } else {
+<span class="nc" id="L1111">                        Timber.d(&quot;hereCurr&quot;)</span>
+<span class="nc" id="L1112">                        loadSheetYear(currentYear)</span>
+                    }
+<span class="nc" id="L1114">                    calendarDataLoaded = true</span>
+<span class="nc" id="L1115">                    showCalendarTutorialIfConditionMatched()</span>
+
+<span class="nc" id="L1117">                    _enableTab.value = Event(true)</span>
+<span class="pc" id="L1118">                }, {</span>
+<span class="nc" id="L1119">                    Timber.d(it.toString())</span>
+
+<span class="nc" id="L1121">                    benefitLoading = false</span>
+<span class="nc" id="L1122">                    _enableTab.value = Event(true)</span>
+<span class="nc" id="L1123">                })</span>
+        )
+<span class="fc" id="L1125">    }</span>
+
+    fun getLogView() {
+<span class="fc" id="L1128">        compositeDisposable.add(</span>
+<span class="fc" id="L1129">            analyticsRepository.getLogPageView(</span>
+<span class="fc" id="L1130">                preferences.getString(</span>
+<span class="fc" id="L1131">                    &quot;memberID&quot;,</span>
+<span class="fc" id="L1132">                    &quot;&quot;</span>
+<span class="fc" id="L1133">                ).toString(),</span>
+<span class="fc" id="L1134">                PageType.WORKLOG_SCREEN.pageName</span>
+            )
+<span class="fc" id="L1136">                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L1137">                .doOnSubscribe {</span>
+<span class="pc" id="L1138">                }.subscribe({</span>
+<span class="pc" id="L1139">                }, {</span>
+<span class="nc" id="L1140">                })</span>
+        )
+<span class="fc" id="L1142">    }</span>
+
+    private fun mapWorkSummary() {
+<span class="nc bnc" id="L1145" title="All 4 branches missed.">        val nonNull = workHourSummary.employerHourDTOs?.filter { item -&gt; item.hoursWorked != null }</span>
+<span class="nc bnc" id="L1146" title="All 6 branches missed.">        totalWorkedHours = if (nonNull.isNullOrEmpty()) {</span>
+<span class="nc" id="L1147">            null</span>
+        } else {
+<span class="nc bnc" id="L1149" title="All 4 branches missed.">            nonNull.sumOf { item -&gt; item.hoursWorked ?: 0.0 }</span>
+        }
+
+<span class="nc" id="L1152">        val contractList =</span>
+<span class="nc bnc" id="L1153" title="All 2 branches missed.">            workHourSummary.employerHourDTOs?.flatMap { item -&gt; item.contractBasicInfoDTOList }</span>
+<span class="nc bnc" id="L1154" title="All 4 branches missed.">        val nonNullPremium = contractList?.filter { item -&gt; item.amountReported != null }</span>
+<span class="nc bnc" id="L1155" title="All 6 branches missed.">        totalPremium = if (nonNullPremium.isNullOrEmpty()) {</span>
+<span class="nc" id="L1156">            null</span>
+        } else {
+<span class="nc bnc" id="L1158" title="All 4 branches missed.">            nonNullPremium.sumOf { item -&gt; item.amountReported ?: 0.0 }</span>
+        }
+<span class="nc" id="L1160">        premiumBased = workHourSummary.memberEnrolledInPremiumContract</span>
+
+<span class="nc bnc" id="L1162" title="All 2 branches missed.">        workHourSummary.employerHourDTOs?.let { item -&gt;</span>
+<span class="nc bnc" id="L1163" title="All 4 branches missed.">            employerCount = if (item.isNotEmpty()) {</span>
+<span class="nc" id="L1164">                val employerWithContracts =</span>
+<span class="nc bnc" id="L1165" title="All 2 branches missed.">                    item.filter { item1 -&gt; item1.contractBasicInfoDTOList.isNotEmpty() }</span>
+<span class="nc" id="L1166">                (employerWithContracts.count().minus(1)).toString()</span>
+            } else {
+<span class="nc" id="L1168">                &quot;0&quot;</span>
+            }
+<span class="nc" id="L1170">        }</span>
+<span class="nc bnc" id="L1171" title="All 2 branches missed.">        workHourSummary.employerHourDTOs?.let {</span>
+<span class="nc" id="L1172">            val employerWithContracts =</span>
+<span class="nc bnc" id="L1173" title="All 2 branches missed.">                it.filter { item1 -&gt; item1.contractBasicInfoDTOList.isNotEmpty() }</span>
+<span class="nc bnc" id="L1174" title="All 8 branches missed.">            employerName = if (it.isNotEmpty() &amp;&amp; employerWithContracts.isNotEmpty()) {</span>
+<span class="nc bnc" id="L1175" title="All 2 branches missed.">                it.last().employerName ?: &quot;&quot;</span>
+            } else {
+<span class="nc" id="L1177">                &quot;&quot;</span>
+            }
+<span class="nc" id="L1179">        }</span>
+<span class="nc" id="L1180">        showReason =</span>
+<span class="nc bnc" id="L1181" title="All 12 branches missed.">            workHourSummary.employerHourDTOs.isNullOrEmpty() || totalWorkedHours == null || (totalPremium == null &amp;&amp; workHourSummary.memberEnrolledInPremiumContract)</span>
+<span class="nc bnc" id="L1182" title="All 2 branches missed.">        employer = workHourSummary.employerHourDTOs?.filter { employerHourDTO -&gt;</span>
+<span class="nc bnc" id="L1183" title="All 4 branches missed.">            if (employerHourDTO.contractBasicInfoDTOList.isNotEmpty()) {</span>
+                // Filter out EmployerHourDTO instances where any ContractBasicInfoDTO has a non-null amountExpected and amountReported
+<span class="nc" id="L1185">                employerHourDTO.contractBasicInfoDTOList.all { contractBasicInfoDTO -&gt;</span>
+<span class="nc bnc" id="L1186" title="All 2 branches missed.">                    contractBasicInfoDTO.hoursExpected != null</span>
+                }
+            } else {
+<span class="nc" id="L1189">                false // or any other value you want to return when contractBasicInfoDTOList is empty</span>
+<span class="nc" id="L1190">            }</span>
+<span class="nc" id="L1191">        } ?: emptyList()</span>
+<span class="nc bnc" id="L1192" title="All 2 branches missed.">        employerPrice = workHourSummary.employerHourDTOs?.filter { employerHourDTO -&gt;</span>
+<span class="nc bnc" id="L1193" title="All 4 branches missed.">            if (employerHourDTO.contractBasicInfoDTOList.isNotEmpty()) {</span>
+                // Filter out EmployerHourDTO instances where any ContractBasicInfoDTO has a non-null amountExpected and amountReported
+<span class="nc" id="L1195">                employerHourDTO.contractBasicInfoDTOList.all { contractBasicInfoDTO -&gt;</span>
+<span class="nc bnc" id="L1196" title="All 4 branches missed.">                    contractBasicInfoDTO.amountExpected != null &amp;&amp; contractBasicInfoDTO.amountReported != null</span>
+                }
+            } else {
+<span class="nc" id="L1199">                false // or any other value you want to return when contractBasicInfoDTOList is empty</span>
+<span class="nc" id="L1200">            }</span>
+<span class="nc" id="L1201">        } ?: emptyList()</span>
+<span class="nc bnc" id="L1202" title="All 6 branches missed.">        showHours = !employer.isNullOrEmpty()</span>
+<span class="nc bnc" id="L1203" title="All 6 branches missed.">        showPremium = !employerPrice.isNullOrEmpty()</span>
+<span class="nc" id="L1204">        _summaryListGenerated.value = Event(Unit)</span>
+<span class="nc" id="L1205">    }</span>
+
+    fun openFilter() {
+<span class="fc bfc" id="L1208" title="All 2 branches covered.">        if (!loading) {</span>
+<span class="fc" id="L1209">            _openFilter.value = Event(Unit)</span>
+        }
+<span class="fc" id="L1211">    }</span>
+
+    /**
+     This function will clear the running api call for the last selected month
+     **/
+    fun disposeLastRequestsOnCurrentSelection() {
+<span class="fc" id="L1217">        compositeBenefitDisposable.dispose()</span>
+<span class="fc" id="L1218">        compositeInsuranceDisposable.dispose()</span>
+<span class="fc" id="L1219">        compositeWorkHourDisposable.dispose()</span>
+<span class="fc" id="L1220">        compositeReasonsDisposable.dispose()</span>
+<span class="fc" id="L1221">    }</span>
+
+    fun loadBenefitPerMonthV3() {
+<span class="nc" id="L1224">        compositeBenefitDisposable.dispose()</span>
+<span class="nc bnc" id="L1225" title="All 4 branches missed.">        if (workHourListPerYearV2.isNotEmpty()) {</span>
+<span class="nc" id="L1226">            val currentWorkLog =</span>
+<span class="nc bnc" id="L1227" title="All 8 branches missed.">                workHourListV2.find { w -&gt; w.year.toInt() == currentYear &amp;&amp; w.month.toInt() == currentSelectedMonth }</span>
+<span class="nc bnc" id="L1228" title="All 2 branches missed.">            if (currentWorkLog != null) {</span>
+<span class="nc bnc" id="L1229" title="All 2 branches missed.">                hideBenefits = (currentWorkLog.eligibilityStatus != &quot;ELIGIBLE&quot;)</span>
+<span class="nc bnc" id="L1230" title="All 2 branches missed.">                if (hideBenefits) {</span>
+<span class="nc" id="L1231">                    benefitLoading = false</span>
+<span class="nc" id="L1232">                    _listBenefitGenerated.value = Event(Unit)</span>
+<span class="nc" id="L1233">                    return</span>
+                }
+            } else {
+<span class="nc" id="L1236">                hideBenefits = true</span>
+<span class="nc" id="L1237">                benefitLoading = false</span>
+<span class="nc" id="L1238">                _listBenefitGenerated.value = Event(Unit)</span>
+<span class="nc" id="L1239">                return</span>
+            }
+        }
+<span class="nc" id="L1242">        compositeBenefitDisposable = CompositeDisposable()</span>
+<span class="nc" id="L1243">        compositeBenefitDisposable.add(</span>
+<span class="nc" id="L1244">            benefitWorkRepository.getMemberBenefits(</span>
+<span class="nc" id="L1245">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc" id="L1246">                currentYear,</span>
+<span class="nc" id="L1247">                currentSelectedMonth</span>
+            )
+<span class="nc" id="L1249">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L1250">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L1251">                .doOnSubscribe {</span>
+<span class="nc" id="L1252">                    benefitLoading = true</span>
+<span class="nc" id="L1253">                    _benefitLoadingComplete.value = false</span>
+<span class="nc" id="L1254">                }</span>
+<span class="nc" id="L1255">                .subscribe({ benefit -&gt;</span>
+<span class="nc bnc" id="L1256" title="All 4 branches missed.">                    if (benefit.responseData.isNotEmpty()) {</span>
+<span class="nc" id="L1257">                        benefit.responseData.let {</span>
+<span class="nc" id="L1258">                            loadInsuranceCard(benefit.responseData[0].benefitName!!)</span>
+<span class="nc bnc" id="L1259" title="All 2 branches missed.">                            currentBenefitState = benefit.responseData[0].benefitId ?: -1</span>
+<span class="nc bnc" id="L1260" title="All 2 branches missed.">                            currentBenefitName = benefit.responseData[0].benefitName ?: &quot;&quot;</span>
+<span class="nc" id="L1261">                            val formattedDate =</span>
+<span class="nc" id="L1262">                                DateUtils.getMonthYearFromServerDate(</span>
+<span class="nc" id="L1263">                                    benefit.responseData[0].startDate</span>
+                                )
+<span class="nc bnc" id="L1265" title="All 4 branches missed.">                            if (formattedDate.isNotEmpty()) {</span>
+<span class="nc" id="L1266">                                benefitStartDate =</span>
+<span class="nc" id="L1267">                                    resources.getString(R.string.benefit_start_date, formattedDate)</span>
+                            }
+<span class="nc" id="L1269">                        }</span>
+                    }
+//                    presentContract = contractDetail.find { contract -&gt;
+//                        contract.benefitId == currentBenefitState
+//                    } ?: ResponseData()
+<span class="nc" id="L1274">                    benefitsPerMonth = benefit.responseData</span>
+<span class="nc" id="L1275">                    noData = benefitsPerMonth.isEmpty()</span>
+//                    title1MyBenefit = resources.getString(
+//                        R.string.review_the_following_benefits_for_s,
+//                        DateUtils.digitTOMonthLong(
+//                            currentSelectedMonth,
+//                            resources
+//                        ) + &quot; &quot; + currentYear.toString()
+//                    )
+//                    presentContract.let { item -&gt;
+//                        noLookBack = !item.hasLookBackPeriod
+//                        if (item.requiredAmount == null &amp;&amp; item.requiredHours != null) {
+//                            hideTitle2 =
+//                                presentContract.benefitId == -1 || item.requiredHours == 0.0
+//
+//                            title2MyBenefit = resources.getString(
+//                                R.string.the_medical_benefit_requires_s_hours_of_work_in_s,
+//                                item.benefitName,
+//                                HelperUtils.floor(item.requiredHours ?: 0.0),
+//                                HelperUtils.getFormattedMonthNames(
+//                                    item.lookBackPeriod,
+//                                    item.offsetMonth,
+//                                    currentSelectedMonth,
+//                                    currentYear,
+//                                    resources
+//                                )
+//                            )
+//                        } else {
+//                            hideTitle2 =
+//                                presentContract.benefitId == -1 || item.requiredAmount == 0.0
+//
+//                            title2MyBenefit = resources.getString(
+//                                R.string.premium_text_no_reported,
+//                                item.benefitName,
+//                                String.format(
+//                                    Locale.getDefault(),
+//                                    &quot;%#.2f&quot;,
+//                                    item.requiredAmount ?: 0.0
+//                                ),
+//                                HelperUtils.getFormattedMonthNames(
+//                                    item.lookBackPeriod,
+//                                    item.offsetMonth,
+//                                    currentSelectedMonth,
+//                                    currentYear,
+//                                    resources
+//                                )
+//                            )
+//                        }
+//                    }
+
+<span class="nc" id="L1324">                    loading = false</span>
+<span class="nc" id="L1325">                    benefitLoading = false</span>
+<span class="nc" id="L1326">                    _listBenefitGenerated.value = Event(Unit)</span>
+<span class="nc" id="L1327">                }, {</span>
+<span class="nc" id="L1328">                    Timber.d(it.toString())</span>
+<span class="nc" id="L1329">                    benefitLoading = false</span>
+<span class="nc" id="L1330">                    loading = false</span>
+<span class="nc" id="L1331">                })</span>
+        )
+<span class="nc" id="L1333">    }</span>
+
+    fun clearEligibilityReason() {
+<span class="fc" id="L1336">        eligibilityReason = &quot;&quot;</span>
+<span class="fc" id="L1337">        eligible = false</span>
+<span class="fc" id="L1338">        _eligReasonFetched.value = Event(Unit)</span>
+<span class="fc" id="L1339">    }</span>
+
+    fun loadEligibilityReason() {
+<span class="nc" id="L1342">        compositeReasonsDisposable.dispose()</span>
+<span class="nc" id="L1343">        compositeReasonsDisposable = CompositeDisposable()</span>
+<span class="nc" id="L1344">        compositeReasonsDisposable.add(</span>
+<span class="nc" id="L1345">            benefitWorkRepository.getEligibilityReason(</span>
+<span class="nc" id="L1346">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc" id="L1347">                currentYear,</span>
+<span class="nc" id="L1348">                currentSelectedMonth</span>
+            )
+<span class="nc" id="L1350">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L1351">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L1352">                .subscribe({</span>
+<span class="nc" id="L1353">                    try {</span>
+<span class="nc bnc" id="L1354" title="All 4 branches missed.">                        if (it.responseData.isNotEmpty()) {</span>
+<span class="nc" id="L1355">                            eligibilityReason = it.responseData[0].reason</span>
+<span class="nc" id="L1356">                            eligible = it.responseData[0].eligible</span>
+<span class="nc" id="L1357">                            _eligReasonFetched.value = Event(Unit)</span>
+                        }
+<span class="nc" id="L1359">                    } catch (e: Exception) {</span>
+<span class="nc" id="L1360">                        e.printStackTrace()</span>
+                    }
+<span class="nc" id="L1362">                }, {</span>
+<span class="nc" id="L1363">                    Timber.d(it.toString())</span>
+<span class="nc" id="L1364">                })</span>
+        )
+<span class="nc" id="L1366">    }</span>
+
+    fun currentTitle() {
+<span class="nc bnc" id="L1369" title="All 6 branches missed.">        presentContract = contractDetail.find { contract -&gt;</span>
+<span class="nc bnc" id="L1370" title="All 4 branches missed.">            contract.benefitId == currentBenefitState</span>
+<span class="nc" id="L1371">        } ?: ResponseData()</span>
+
+<span class="nc" id="L1373">        presentContract.let { item -&gt;</span>
+<span class="nc bnc" id="L1374" title="All 2 branches missed.">            noLookBack = !item.hasLookBackPeriod</span>
+<span class="nc bnc" id="L1375" title="All 4 branches missed.">            if (item.requiredAmount == null &amp;&amp; item.requiredHours != null) {</span>
+<span class="nc bnc" id="L1376" title="All 6 branches missed.">                hideTitle2 = presentContract.benefitId == -1 || item.requiredHours == 0.0</span>
+<span class="nc" id="L1377">                title2MyBenefit = resources.getString(</span>
+<span class="nc" id="L1378">                    R.string.the_medical_benefit_requires_s_hours_of_work_in_s,</span>
+<span class="nc" id="L1379">                    item.benefitName,</span>
+<span class="nc bnc" id="L1380" title="All 2 branches missed.">                    HelperUtils.floor(item.requiredHours ?: 0.0),</span>
+<span class="nc" id="L1381">                    HelperUtils.getFormattedMonthNames(</span>
+<span class="nc" id="L1382">                        item.lookBackPeriod,</span>
+<span class="nc" id="L1383">                        item.offsetMonth,</span>
+<span class="nc" id="L1384">                        currentSelectedMonth,</span>
+<span class="nc" id="L1385">                        currentYear,</span>
+<span class="nc" id="L1386">                        resources</span>
+                    )
+                )
+            } else {
+<span class="nc bnc" id="L1390" title="All 6 branches missed.">                hideTitle2 = presentContract.benefitId == -1 || item.requiredAmount == 0.0</span>
+
+<span class="nc" id="L1392">                title2MyBenefit = resources.getString(</span>
+<span class="nc" id="L1393">                    R.string.premium_text_no_reported,</span>
+<span class="nc" id="L1394">                    item.benefitName,</span>
+<span class="nc bnc" id="L1395" title="All 2 branches missed.">                    String.format(Locale.getDefault(), &quot;%#.2f&quot;, item.requiredAmount ?: 0.0),</span>
+<span class="nc" id="L1396">                    HelperUtils.getFormattedMonthNames(</span>
+<span class="nc" id="L1397">                        item.lookBackPeriod,</span>
+<span class="nc" id="L1398">                        item.offsetMonth,</span>
+<span class="nc" id="L1399">                        currentSelectedMonth,</span>
+<span class="nc" id="L1400">                        currentYear,</span>
+<span class="nc" id="L1401">                        resources</span>
+                    )
+                )
+            }
+<span class="nc" id="L1405">        }</span>
+<span class="nc" id="L1406">    }</span>
+
+    fun loadContractDetails() {
+<span class="nc" id="L1409">        compositeDisposable.add(</span>
+<span class="nc" id="L1410">            benefitWorkRepository.getContractDetails(</span>
+<span class="nc" id="L1411">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+            )
+<span class="nc" id="L1413">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L1414">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L1415">                .doOnSubscribe {</span>
+<span class="nc" id="L1416">                    loading = true</span>
+<span class="nc" id="L1417">                }</span>
+<span class="nc" id="L1418">                .subscribe({ contract -&gt;</span>
+<span class="nc" id="L1419">                    Timber.d(contract.toString())</span>
+<span class="nc bnc" id="L1420" title="All 2 branches missed.">                    contract.responseData?.let {</span>
+<span class="nc" id="L1421">                        contractDetail = contract.responseData</span>
+<span class="nc" id="L1422">                        loadBenefit(currentSelectedMonth)</span>
+<span class="nc" id="L1423">                    }</span>
+<span class="nc" id="L1424">                }, {</span>
+<span class="nc" id="L1425">                    Timber.d(it.toString())</span>
+<span class="nc" id="L1426">                    loading = false</span>
+<span class="nc" id="L1427">                })</span>
+        )
+<span class="nc" id="L1429">    }</span>
+
+    fun loadBenefit(currentMonth: Int) {
+<span class="nc" id="L1432">        compositeDeductibleDisposable.dispose()</span>
+<span class="nc" id="L1433">        compositeDeductibleDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L1435">        compositeDeductibleDisposable.add(</span>
+<span class="nc" id="L1436">            benefitWorkRepository.getBarInfo(</span>
+<span class="nc" id="L1437">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc" id="L1438">                false,</span>
+<span class="nc" id="L1439">                currentYear,</span>
+<span class="nc" id="L1440">                currentMonth</span>
+<span class="nc" id="L1441">            ).flatMap { individualBarModel -&gt;</span>
+<span class="nc" id="L1442">                benefitWorkRepository.getBarInfo(</span>
+<span class="nc" id="L1443">                    preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc" id="L1444">                    true,</span>
+<span class="nc" id="L1445">                    currentYear,</span>
+<span class="nc" id="L1446">                    currentMonth</span>
+                )
+<span class="nc" id="L1448">                    .map { familyBarModel -&gt;</span>
+<span class="nc" id="L1449">                        Pair(individualBarModel, familyBarModel)</span>
+<span class="nc" id="L1450">                    }</span>
+            }
+<span class="nc" id="L1452">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L1453">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L1454">                .subscribe({</span>
+<span class="nc" id="L1455">                    _barModelLoaded.value = Event(it)</span>
+<span class="nc" id="L1456">                }, {</span>
+<span class="nc" id="L1457">                    Timber.d(it.toString())</span>
+<span class="nc" id="L1458">                })</span>
+        )
+<span class="nc" id="L1460">    }</span>
+
+    fun workSummary(
+        filter: String
+    ) {
+<span class="nc" id="L1465">        compositeWorkHourDisposable.dispose()</span>
+<span class="nc" id="L1466">        compositeWorkHourDisposable = CompositeDisposable()</span>
+<span class="nc" id="L1467">        compositeWorkHourDisposable.add(</span>
+<span class="nc" id="L1468">            benefitWorkRepository.getWorkSummary(</span>
+<span class="nc" id="L1469">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc" id="L1470">                filter,</span>
+<span class="nc" id="L1471">                currentYear,</span>
+<span class="nc" id="L1472">                currentSelectedMonth</span>
+            )
+<span class="nc" id="L1474">                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L1475">                .doOnSubscribe {</span>
+<span class="nc" id="L1476">                    workLoading = true</span>
+<span class="nc" id="L1477">                }.subscribe({ value -&gt;</span>
+<span class="nc" id="L1478">                    workHourSummary = value</span>
+<span class="nc" id="L1479">                    mapWorkSummary()</span>
+<span class="nc" id="L1480">                    changeTitleText(filter, value)</span>
+//                    loadDataCalender()
+<span class="nc" id="L1482">                    workLoading = false</span>
+<span class="nc" id="L1483">                }, {</span>
+<span class="nc" id="L1484">                    Timber.d(it.toString())</span>
+<span class="nc" id="L1485">                    workLoading = false</span>
+<span class="nc" id="L1486">                })</span>
+        )
+<span class="nc" id="L1488">    }</span>
+
+    private fun loadSheetYear(year: Int) {
+<span class="nc" id="L1491">        val result = workHourListV2</span>
+<span class="nc" id="L1492">        result.let {</span>
+<span class="nc" id="L1493">            workHourListPerYearV2 = it</span>
+<span class="nc" id="L1494">            _loadCalendar.value = true</span>
+<span class="nc" id="L1495">        }</span>
+<span class="nc" id="L1496">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L1499">        callbacks.remove(callback)</span>
+<span class="nc" id="L1500">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="fc" id="L1503">        callbacks.add(callback)</span>
+<span class="fc" id="L1504">    }</span>
+
+    fun openCalender() {
+<span class="pc bpc" id="L1507" title="3 of 6 branches missed.">        if (!loading &amp;&amp; workHourListPerYearV2.isNotEmpty()) {</span>
+<span class="nc" id="L1508">            _openCalender.value = Event(Unit)</span>
+        }
+<span class="fc" id="L1510">    }</span>
+
+    fun getShowDisclaimer(): Boolean {
+<span class="fc" id="L1513">        return preferences.getBoolean(</span>
+<span class="fc" id="L1514">            &quot;doNotShowBenefitDisclaimer_&quot; + preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="fc" id="L1515">            false</span>
+        )
+    }
+
+    fun floor(value: Double?): String {
+<span class="fc" id="L1520">        val df = DecimalFormat(&quot;#.##&quot;)</span>
+<span class="fc" id="L1521">        return df.format(value).toString()</span>
+    }
+
+    override fun onCleared() {
+<span class="fc" id="L1525">        super.onCleared()</span>
+<span class="fc" id="L1526">        compositeDisposable.dispose()</span>
+<span class="fc" id="L1527">        compositeWorkLogDisposable.dispose()</span>
+<span class="fc" id="L1528">        compositeWorkHourDisposable.dispose()</span>
+<span class="fc" id="L1529">        compositeBenefitDisposable.dispose()</span>
+<span class="fc" id="L1530">        compositeInsuranceDisposable.dispose()</span>
+<span class="fc" id="L1531">        compositeReasonsDisposable.dispose()</span>
+<span class="fc" id="L1532">        compositeDeductibleDisposable.dispose()</span>
+<span class="fc" id="L1533">    }</span>
+
+    fun loadInsuranceCard(cardType: String) {
+<span class="nc" id="L1536">        compositeInsuranceDisposable.dispose()</span>
+<span class="nc" id="L1537">        compositeInsuranceDisposable = CompositeDisposable()</span>
+<span class="nc" id="L1538">        compositeInsuranceDisposable.add(</span>
+<span class="nc" id="L1539">            benefitWorkRepository.getInsuranceCard(memberId, cardType)</span>
+<span class="nc" id="L1540">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L1541">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L1542">                .doOnSubscribe {</span>
+<span class="nc" id="L1543">                    benefitLoading = true</span>
+<span class="nc" id="L1544">                    _benefitLoadingComplete.value = false</span>
+<span class="nc" id="L1545">                }</span>
+<span class="nc" id="L1546">                .subscribe({</span>
+<span class="nc" id="L1547">                    benefitLoading = false</span>
+<span class="nc" id="L1548">                    it.selfId = memberId</span>
+<span class="nc" id="L1549">                    benefitWorkRepository.insertInsurance(it)</span>
+<span class="nc" id="L1550">                    _insuraceCard.value = it</span>
+<span class="nc" id="L1551">                    _benefitLoadingComplete.value = true</span>
+<span class="nc" id="L1552">                }, {</span>
+<span class="nc" id="L1553">                    benefitLoading = false</span>
+<span class="nc" id="L1554">                    _benefitLoadingComplete.value = true</span>
+<span class="nc" id="L1555">                })</span>
+        )
+<span class="nc" id="L1557">    }</span>
+
+<span class="pc" id="L1559">    var showingCalendarTutorial: Boolean = false</span>
+<span class="pc" id="L1560">    var showingBenefitsTutorial: Boolean = false</span>
+
+<span class="fc" id="L1562">    private val _calendarTutorialsAdded = MutableLiveData(false)</span>
+    val calendarTutorialsAdded: LiveData&lt;Boolean&gt;
+<span class="fc" id="L1564">        get() = _calendarTutorialsAdded</span>
+
+<span class="fc" id="L1566">    private val _benefitTutorialsAdded = MutableLiveData(false)</span>
+    val benefitTutorialsAdded: LiveData&lt;Boolean&gt;
+<span class="fc" id="L1568">        get() = _benefitTutorialsAdded</span>
+
+<span class="fc" id="L1570">    private val _showCalendarTutorial = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val showCalendarTutorial: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L1572">        get() = _showCalendarTutorial</span>
+
+    private var addedCalendarTutorials = false
+<span class="fc" id="L1575">    private val _showBenefitTutorial = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val showBenefitTutorial: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="fc" id="L1577">        get() = _showBenefitTutorial</span>
+
+    private var addedBenefitTutorial = false
+<span class="nc" id="L1580">    var calendarTutorialShown = false</span>
+<span class="nc" id="L1581">    var benefitsTutorialShown = false</span>
+
+    fun addedCalendarTutorial() {
+<span class="fc" id="L1584">        addedCalendarTutorials = true</span>
+<span class="fc" id="L1585">        updateCalendarTutorialAdditionStatus()</span>
+<span class="fc" id="L1586">    }</span>
+
+    fun addedBenefitTutorial() {
+<span class="fc" id="L1589">        addedBenefitTutorial = true</span>
+<span class="fc" id="L1590">        updateBenefitTutorialAdditionStatus()</span>
+<span class="fc" id="L1591">    }</span>
+
+    private fun updateCalendarTutorialAdditionStatus() {
+<span class="fc" id="L1594">        _calendarTutorialsAdded.value = addedCalendarTutorials</span>
+<span class="fc" id="L1595">    }</span>
+
+    private fun updateBenefitTutorialAdditionStatus() {
+<span class="fc" id="L1598">        _benefitTutorialsAdded.value = addedBenefitTutorial</span>
+<span class="fc" id="L1599">    }</span>
+
+    private fun showCalendarTutorialIfConditionMatched() {
+//        if ((
+//            preferences.getBoolean(Constants.SHOWN_CALENDAR_TUT_FOR_SESSION, false) || preferences.getBoolean(
+//                    memberId + &quot;calendarTutorialShown&quot;,
+//                    false
+//                )
+//            ) &amp;&amp; benefitDisclaimerShown
+//        ) {
+//            showingCalendarTutorial = false
+//            calendarTutorialShown = true
+//            return
+//        }
+<span class="pc bpc" id="L1613" title="1 of 2 branches missed.">        if (!preferences.getBoolean(</span>
+<span class="fc" id="L1614">                Constants.SHOWN_CALENDAR_TUT_FOR_SESSION,</span>
+<span class="fc" id="L1615">                false</span>
+<span class="pc bpc" id="L1616" title="3 of 6 branches missed.">            ) &amp;&amp; !calendarTutorialShown &amp;&amp; benefitDisclaimerShown &amp;&amp; calendarDataLoaded</span>
+        ) {
+<span class="nc" id="L1618">            showingCalendarTutorial = true</span>
+<span class="nc" id="L1619">            showingBenefitsTutorial = false</span>
+<span class="nc" id="L1620">            _showCalendarTutorial.value = Event(Unit)</span>
+<span class="nc" id="L1621">            calendarTutorialShown = true</span>
+<span class="nc" id="L1622">            preferences.edit().putBoolean(Constants.SHOWN_CALENDAR_TUT_FOR_SESSION, true).apply()</span>
+        }
+<span class="fc" id="L1624">    }</span>
+
+    fun showBenefitsTutorialIfConditionMatched() {
+<span class="nc bnc" id="L1627" title="All 2 branches missed.">        if (!preferences.getBoolean(</span>
+<span class="nc" id="L1628">                Constants.SHOWN_BENEFITS_TUT_FOR_SESSION,</span>
+<span class="nc" id="L1629">                false</span>
+<span class="nc bnc" id="L1630" title="All 8 branches missed.">            ) &amp;&amp; !benefitsTutorialShown &amp;&amp; !showingCalendarTutorial &amp;&amp; eligible &amp;&amp; benefitDisclaimerShown</span>
+        ) {
+<span class="nc" id="L1632">            showingCalendarTutorial = false</span>
+<span class="nc" id="L1633">            showingBenefitsTutorial = true</span>
+<span class="nc" id="L1634">            _showBenefitTutorial.value = Event(Unit)</span>
+<span class="nc" id="L1635">            benefitsTutorialShown = true</span>
+<span class="nc" id="L1636">            preferences.edit().putBoolean(Constants.SHOWN_BENEFITS_TUT_FOR_SESSION, true).apply()</span>
+        }
+<span class="nc" id="L1638">    }</span>
+
+    fun dontShowCalendarTutorial() {
+<span class="nc" id="L1641">        preferences.edit().putBoolean(memberId + &quot;calendarTutorialShown&quot;, true).apply()</span>
+<span class="nc" id="L1642">    }</span>
+
+    fun dontShowBenefitTutorial() {
+<span class="nc" id="L1645">        preferences.edit().putBoolean(memberId + &quot;benefitsTutorialShown&quot;, true).apply()</span>
+<span class="nc" id="L1646">    }</span>
+
+    fun resetCalendarTutorial() {
+<span class="fc" id="L1649">        _calendarTutorialsAdded.value = false</span>
+<span class="fc" id="L1650">    }</span>
+
+    fun resetBenefitTutorial() {
+<span class="fc" id="L1653">        _benefitTutorialsAdded.value = false</span>
+<span class="fc" id="L1654">    }</span>
+
+    fun shouldShowCalendarTutorial(): Boolean {
+<span class="nc bnc" id="L1657" title="All 2 branches missed.">        return !preferences.getBoolean(memberId + &quot;calendarTutorialShown&quot;, false)</span>
+    }
+
+    fun shouldShowBenefitsTutorial(): Boolean {
+<span class="nc bnc" id="L1661" title="All 2 branches missed.">        return !preferences.getBoolean(memberId + &quot;benefitsTutorialShown&quot;, false)</span>
+    }
+
+<span class="fc" id="L1664">    private val _benefitLoadingComplete = MutableLiveData&lt;Boolean&gt;(false)</span>
+    val benefitLoadingComplete: LiveData&lt;Boolean&gt;
+<span class="nc" id="L1666">        get() = _benefitLoadingComplete</span>
+
+<span class="pc" id="L1668">    var benefitDisclaimerShown: Boolean = false</span>
+    private var calendarDataLoaded: Boolean = false
+    fun readyToShowCalendarTutorial() {
+<span class="fc" id="L1671">        benefitDisclaimerShown = true</span>
+<span class="pc bpc" id="L1672" title="1 of 2 branches missed.">        if (preferences.getBoolean(</span>
+<span class="fc" id="L1673">                Constants.SHOWN_CALENDAR_TUT_FOR_SESSION,</span>
+<span class="fc" id="L1674">                false</span>
+            )
+        ) {
+<span class="nc" id="L1677">            showBenefitsTutorialIfConditionMatched()</span>
+<span class="nc" id="L1678">            return</span>
+        }
+<span class="fc" id="L1680">        showCalendarTutorialIfConditionMatched()</span>
+<span class="fc" id="L1681">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

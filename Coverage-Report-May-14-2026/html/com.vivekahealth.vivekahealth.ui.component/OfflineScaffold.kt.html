@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OfflineScaffold.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.component</a> &gt; <span class="el_source">OfflineScaffold.kt</span></div><h1>OfflineScaffold.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.component
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+
+/**
+ * Scaffold wrapper that includes offline banner at the bottom
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OfflineScaffold(
+    isOffline: Boolean,
+<span class="nc bnc" id="L16" title="All 10 branches missed.">    modifier: Modifier = Modifier,</span>
+<span class="nc bnc" id="L17" title="All 8 branches missed.">    topBar: @Composable () -&gt; Unit = {},</span>
+<span class="pc bpc" id="L18" title="5 of 8 branches missed.">    bottomBar: @Composable () -&gt; Unit = {},</span>
+<span class="pc bpc" id="L19" title="5 of 8 branches missed.">    snackbarHost: @Composable () -&gt; Unit = {},</span>
+<span class="pc bpc" id="L20" title="5 of 8 branches missed.">    floatingActionButton: @Composable () -&gt; Unit = {},</span>
+<span class="nc bnc" id="L21" title="All 2 branches missed.">    floatingActionButtonPosition: FabPosition = FabPosition.End,</span>
+<span class="nc bnc" id="L22" title="All 2 branches missed.">    containerColor: Color = MaterialTheme.colorScheme.background,</span>
+<span class="nc bnc" id="L23" title="All 2 branches missed.">    contentColor: Color = contentColorFor(containerColor),</span>
+<span class="nc bnc" id="L24" title="All 10 branches missed.">    contentWindowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,</span>
+    content: @Composable (PaddingValues) -&gt; Unit
+<span class="nc bnc" id="L26" title="All 78 branches missed.">) {</span>
+<span class="nc bnc" id="L27" title="All 2 branches missed.">    Scaffold(</span>
+<span class="nc" id="L28">        modifier = modifier,</span>
+<span class="nc" id="L29">        topBar = topBar,</span>
+<span class="nc" id="L30">        bottomBar = {</span>
+<span class="pc bpc" id="L31" title="2 of 6 branches missed.">            Column {</span>
+<span class="fc" id="L32">                bottomBar()</span>
+<span class="fc" id="L33">                OfflineBanner(isOffline = isOffline)</span>
+<span class="fc" id="L34">            }</span>
+<span class="fc" id="L35">        },</span>
+<span class="nc" id="L36">        snackbarHost = snackbarHost,</span>
+<span class="nc" id="L37">        floatingActionButton = floatingActionButton,</span>
+<span class="nc" id="L38">        floatingActionButtonPosition = floatingActionButtonPosition,</span>
+<span class="nc" id="L39">        containerColor = containerColor,</span>
+<span class="nc" id="L40">        contentColor = contentColor,</span>
+<span class="nc" id="L41">        contentWindowInsets = contentWindowInsets,</span>
+<span class="nc" id="L42">        content = content</span>
+    )
+<span class="nc bnc" id="L44" title="All 2 branches missed.">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

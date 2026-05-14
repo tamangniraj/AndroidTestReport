@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MemberInfoV2.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.data.remote.home.v2.memberInfoV2</a> &gt; <span class="el_source">MemberInfoV2.kt</span></div><h1>MemberInfoV2.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.data.remote.home.v2.memberInfoV2
+
+import androidx.recyclerview.widget.DiffUtil
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+
+<span class="pc bpc" id="L6" title="23 of 48 branches missed.">data class MemberInfoV2(</span>
+<span class="pc" id="L7">    val allowChangeAvatar: AllowChangeAvatar? = null,</span>
+<span class="pc" id="L8">    val avatarInReview: Boolean? = null,</span>
+<span class="pc" id="L9">    val birthCertificateFileId: Int? = null,</span>
+<span class="pc" id="L10">    val birthCertificateFileName: String? = null,</span>
+<span class="fc" id="L11">    val birthDate: String? = null,</span>
+<span class="pc" id="L12">    val clientId: Int? = null,</span>
+<span class="pc" id="L13">    val countryCode: String? = null,</span>
+<span class="pc" id="L14">    val dateOfMarriage: String? = null,</span>
+<span class="pc" id="L15">    val demographicUpdatePending: Boolean? = null,</span>
+<span class="fc" id="L16">    val dependents: List&lt;Dependent&gt; = listOf(),</span>
+<span class="pc" id="L17">    val divorceDate: String? = null,</span>
+<span class="pc" id="L18">    val eligibilityStatus: String? = null,</span>
+<span class="fc" id="L19">    val eligible: Boolean? = null,</span>
+<span class="fc" id="L20">    val email: String? = null,</span>
+<span class="pc" id="L21">    val employeeRole: String? = null,</span>
+<span class="pc" id="L22">    val employeeStatus: String? = null,</span>
+<span class="fc" id="L23">    val firstName: String? = null,</span>
+<span class="pc" id="L24">    val fullName: String? = null,</span>
+<span class="pc" id="L25">    val fullNameType2: String? = null,</span>
+<span class="fc" id="L26">    val gender: String? = null,</span>
+<span class="pc" id="L27">    val hasAvatar: Boolean? = null,</span>
+<span class="pc" id="L28">    val hasUnionCard: Boolean? = null,</span>
+<span class="pc" id="L29">    val hideProfileFromHome: Boolean? = null,</span>
+<span class="pc" id="L30">    val hipaaNumber: String? = null,</span>
+<span class="fc" id="L31">    val homeAddress: HomeAddress? = null,</span>
+<span class="pc" id="L32">    val initialLoginComplete: Boolean? = null,</span>
+<span class="pc" id="L33">    val insured: Insured? = null,</span>
+<span class="pc" id="L34">    val isEligible: Boolean? = null,</span>
+<span class="pc" id="L35">    val languagePreference: String? = null,</span>
+<span class="fc" id="L36">    val lastName: String? = null,</span>
+<span class="pc" id="L37">    val links: List&lt;LinkXXX&gt;? = null,</span>
+<span class="fc" id="L38">    val maritalStatus: String? = null,</span>
+<span class="pc" id="L39">    val marriageCertificateFileId: Int? = null,</span>
+<span class="pc" id="L40">    val marriageCertificateFileName: String? = null,</span>
+<span class="pc" id="L41">    val memberAdditionInReview: Boolean? = null,</span>
+<span class="pc" id="L42">    val memberRelationship: String? = null,</span>
+<span class="pc" id="L43">    val middleName: String? = null,</span>
+<span class="fc" id="L44">    val optInEdd: Boolean? = null,</span>
+<span class="pc" id="L45">    val phoneNumber: String? = null,</span>
+<span class="pc" id="L46">    val provideInsurance: Boolean? = null,</span>
+<span class="pc" id="L47">    val registrationType: Int? = null,</span>
+<span class="pc" id="L48">    val relationDesc: String? = null,</span>
+<span class="fc" id="L49">    val selfId: Long? = null,</span>
+<span class="pc" id="L50">    val selfieMandatorySwitch: Boolean? = null,</span>
+<span class="pc" id="L51">    val sharingEnabled: Boolean? = null,</span>
+<span class="pc" id="L52">    val shouldEnroll: Boolean? = null,</span>
+<span class="pc" id="L53">    val skipFacebook: Boolean? = null,</span>
+<span class="pc" id="L54">    val skipTour: Boolean? = null,</span>
+<span class="pc" id="L55">    val spouseFirstName: String? = null,</span>
+<span class="pc" id="L56">    val spouseLastName: String? = null,</span>
+<span class="pc" id="L57">    val ssn: String? = null,</span>
+<span class="pc" id="L58">    val ssnCardFileId: Int? = null,</span>
+<span class="pc" id="L59">    val ssnCardFileName: String? = null,</span>
+<span class="pc" id="L60">    val steerToFullRegistration: Boolean? = null,</span>
+<span class="pc" id="L61">    val suffix: String? = null,</span>
+<span class="pc" id="L62">    val workAddress: WorkAddress? = null</span>
+<span class="fc" id="L63">)</span>
+object MemberDiff : DiffUtil.ItemCallback&lt;MemberInfo&gt;() {
+<span class="nc" id="L65">    override fun areItemsTheSame(oldItem: MemberInfo, newItem: MemberInfo) = oldItem.selfId == newItem.selfId</span>
+<span class="nc" id="L66">    override fun areContentsTheSame(oldItem: MemberInfo, newItem: MemberInfo) = oldItem == newItem</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

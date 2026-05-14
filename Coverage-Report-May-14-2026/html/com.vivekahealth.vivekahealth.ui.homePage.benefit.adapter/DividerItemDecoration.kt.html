@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DividerItemDecoration.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.benefit.adapter</a> &gt; <span class="el_source">DividerItemDecoration.kt</span></div><h1>DividerItemDecoration.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.benefit.adapter
+
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.drawable.Drawable
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.R
+
+<span class="nc" id="L10">class DividerItemDecoration(context: Context) : RecyclerView.ItemDecoration() {</span>
+<span class="nc" id="L11">    private val divider: Drawable? = ContextCompat.getDrawable(context, R.drawable.divider_line)</span>
+
+    override fun onDrawOver(canvas: Canvas, parent: RecyclerView, state: RecyclerView.State) {
+<span class="nc" id="L14">        val dividerLeft = parent.paddingLeft</span>
+<span class="nc" id="L15">        val dividerRight = parent.width - parent.paddingRight</span>
+
+<span class="nc bnc" id="L17" title="All 2 branches missed.">        for (i in 0 until parent.childCount - 1) {</span>
+<span class="nc" id="L18">            val child = parent.getChildAt(i)</span>
+<span class="nc" id="L19">            val params = child.layoutParams as RecyclerView.LayoutParams</span>
+<span class="nc" id="L20">            val dividerTop = child.bottom + params.bottomMargin</span>
+<span class="nc bnc" id="L21" title="All 2 branches missed.">            val dividerBottom = dividerTop + (divider?.intrinsicHeight ?: 0)</span>
+
+<span class="nc bnc" id="L23" title="All 2 branches missed.">            divider?.let {</span>
+<span class="nc" id="L24">                it.setBounds(dividerLeft, dividerTop, dividerRight, dividerBottom)</span>
+<span class="nc" id="L25">                it.draw(canvas)</span>
+<span class="nc" id="L26">            }</span>
+        }
+<span class="nc" id="L28">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

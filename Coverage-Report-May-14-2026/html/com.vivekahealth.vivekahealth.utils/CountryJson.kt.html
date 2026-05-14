@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CountryJson.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.utils</a> &gt; <span class="el_source">CountryJson.kt</span></div><h1>CountryJson.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.utils
+
+import com.vivekahealth.vivekahealth.R
+
+<span class="fc" id="L5">val langWithFlag = listOf(</span>
+<span class="fc" id="L6">    Triple(&quot;Afrikaans&quot;, &quot;af&quot;, &quot;🇿🇦&quot;),</span>
+<span class="fc" id="L7">    Triple(&quot;Albanian&quot;, &quot;sq&quot;, &quot;🇦🇱&quot;),</span>
+<span class="fc" id="L8">    Triple(&quot;Amharic&quot;, &quot;am&quot;, &quot;🇪🇹&quot;),</span>
+<span class="fc" id="L9">    Triple(&quot;Armenian&quot;, &quot;hy&quot;, &quot;🇦🇲&quot;),</span>
+<span class="fc" id="L10">    Triple(&quot;Assamese&quot;, &quot;as&quot;, &quot;🇮🇳&quot;),</span>
+<span class="fc" id="L11">    Triple(&quot;Bangla&quot;, &quot;bn&quot;, &quot;🇧🇩&quot;),</span>
+<span class="fc" id="L12">    Triple(&quot;Bashkir&quot;, &quot;ba&quot;, &quot;🇷🇺&quot;),</span>
+<span class="fc" id="L13">    Triple(&quot;Basque&quot;, &quot;eu&quot;, &quot;🇪🇸&quot;),</span>
+<span class="fc" id="L14">    Triple(&quot;Bosnian (Latin)&quot;, &quot;bs&quot;, &quot;🇧🇦&quot;),</span>
+<span class="fc" id="L15">    Triple(&quot;Bulgarian&quot;, &quot;bg&quot;, &quot;🇧🇬&quot;),</span>
+<span class="fc" id="L16">    Triple(&quot;Burmese&quot;, &quot;my&quot;, &quot;🇲🇲&quot;),</span>
+<span class="fc" id="L17">    Triple(&quot;Catalan&quot;, &quot;ca&quot;, &quot;🇪🇸&quot;),</span>
+<span class="fc" id="L18">    Triple(&quot;Chinese&quot;, &quot;zh&quot;, &quot;🇨🇳&quot;),</span>
+<span class="fc" id="L19">    Triple(&quot;Croatian&quot;, &quot;hr&quot;, &quot;🇭🇷&quot;),</span>
+<span class="fc" id="L20">    Triple(&quot;Czech&quot;, &quot;cs&quot;, &quot;🇨🇿&quot;),</span>
+<span class="fc" id="L21">    Triple(&quot;Danish&quot;, &quot;da&quot;, &quot;🇩🇰&quot;),</span>
+<span class="fc" id="L22">    Triple(&quot;Dutch&quot;, &quot;nl&quot;, &quot;🇳🇱&quot;),</span>
+<span class="fc" id="L23">    Triple(&quot;English&quot;, &quot;en&quot;, &quot;\uD83C\uDDFA\uD83C\uDDF8&quot;),</span>
+<span class="fc" id="L24">    Triple(&quot;Estonian&quot;, &quot;et&quot;, &quot;🇪🇪&quot;),</span>
+<span class="fc" id="L25">    Triple(&quot;Faroese&quot;, &quot;fo&quot;, &quot;🇫🇴&quot;),</span>
+<span class="fc" id="L26">    Triple(&quot;Fijian&quot;, &quot;fj&quot;, &quot;🇫🇯&quot;),</span>
+<span class="fc" id="L27">    Triple(&quot;Filipino&quot;, &quot;fil&quot;, &quot;🇵🇭&quot;),</span>
+<span class="fc" id="L28">    Triple(&quot;Finnish&quot;, &quot;fi&quot;, &quot;🇫🇮&quot;),</span>
+<span class="fc" id="L29">    Triple(&quot;French&quot;, &quot;fr&quot;, &quot;🇫🇷&quot;),</span>
+<span class="fc" id="L30">    Triple(&quot;Galician&quot;, &quot;gl&quot;, &quot;🇪🇸&quot;),</span>
+<span class="fc" id="L31">    Triple(&quot;Georgian&quot;, &quot;ka&quot;, &quot;🇬🇪&quot;),</span>
+<span class="fc" id="L32">    Triple(&quot;German&quot;, &quot;de&quot;, &quot;🇩🇪&quot;),</span>
+<span class="fc" id="L33">    Triple(&quot;Greek&quot;, &quot;el&quot;, &quot;🇬🇷&quot;),</span>
+<span class="fc" id="L34">    Triple(&quot;Gujarati&quot;, &quot;gu&quot;, &quot;🇮🇳&quot;),</span>
+<span class="fc" id="L35">    Triple(&quot;Haitian Creole&quot;, &quot;ht&quot;, &quot;🇭🇹&quot;),</span>
+<span class="fc" id="L36">    Triple(&quot;Hindi&quot;, &quot;hi&quot;, &quot;🇮🇳&quot;),</span>
+<span class="fc" id="L37">    Triple(&quot;Hungarian&quot;, &quot;hu&quot;, &quot;🇭🇺&quot;),</span>
+<span class="fc" id="L38">    Triple(&quot;Icelandic&quot;, &quot;is&quot;, &quot;🇮🇸&quot;),</span>
+<span class="fc" id="L39">    Triple(&quot;Indonesian&quot;, &quot;id&quot;, &quot;🇮🇩&quot;),</span>
+<span class="fc" id="L40">    Triple(&quot;Inuktitut&quot;, &quot;iu&quot;, &quot;🇨🇦&quot;),</span>
+<span class="fc" id="L41">    Triple(&quot;Irish&quot;, &quot;ga&quot;, &quot;🇮🇪&quot;),</span>
+<span class="fc" id="L42">    Triple(&quot;Italian&quot;, &quot;it&quot;, &quot;🇮🇹&quot;),</span>
+<span class="fc" id="L43">    Triple(&quot;Japanese&quot;, &quot;ja&quot;, &quot;🇯🇵&quot;),</span>
+<span class="fc" id="L44">    Triple(&quot;Kannada&quot;, &quot;kn&quot;, &quot;🇮🇳&quot;),</span>
+<span class="fc" id="L45">    Triple(&quot;Kazakh&quot;, &quot;kk&quot;, &quot;🇰🇿&quot;),</span>
+<span class="fc" id="L46">    Triple(&quot;Khmer&quot;, &quot;km&quot;, &quot;🇰🇭&quot;),</span>
+<span class="fc" id="L47">    Triple(&quot;Kiswahili&quot;, &quot;sw&quot;, &quot;🇰🇪&quot;),</span>
+<span class="fc" id="L48">    Triple(&quot;Korean&quot;, &quot;ko&quot;, &quot;🇰🇷&quot;),</span>
+<span class="fc" id="L49">    Triple(&quot;Kyrgyz&quot;, &quot;ky&quot;, &quot;🇰🇬&quot;),</span>
+<span class="fc" id="L50">    Triple(&quot;Latvian&quot;, &quot;lv&quot;, &quot;🇱🇻&quot;),</span>
+<span class="fc" id="L51">    Triple(&quot;Lao&quot;, &quot;lo&quot;, &quot;🇱🇦&quot;),</span>
+<span class="fc" id="L52">    Triple(&quot;Lithuanian&quot;, &quot;lt&quot;, &quot;🇱🇹&quot;),</span>
+<span class="fc" id="L53">    Triple(&quot;Macedonian&quot;, &quot;mk&quot;, &quot;🇲🇰&quot;),</span>
+<span class="fc" id="L54">    Triple(&quot;Malagasy&quot;, &quot;mg&quot;, &quot;🇲🇬&quot;),</span>
+<span class="fc" id="L55">    Triple(&quot;Malay&quot;, &quot;ms&quot;, &quot;🇲🇾&quot;),</span>
+<span class="fc" id="L56">    Triple(&quot;Malayalam&quot;, &quot;ml&quot;, &quot;🇮🇳&quot;),</span>
+<span class="fc" id="L57">    Triple(&quot;Maltese&quot;, &quot;mt&quot;, &quot;🇲🇹&quot;),</span>
+<span class="fc" id="L58">    Triple(&quot;Maori&quot;, &quot;mi&quot;, &quot;🇳🇿&quot;),</span>
+<span class="fc" id="L59">    Triple(&quot;Marathi&quot;, &quot;mr&quot;, &quot;🇮🇳&quot;),</span>
+<span class="fc" id="L60">    Triple(&quot;Mongolian&quot;, &quot;mn&quot;, &quot;🇲🇳&quot;),</span>
+<span class="fc" id="L61">    Triple(&quot;Nepali&quot;, &quot;ne&quot;, &quot;🇳🇵&quot;),</span>
+<span class="fc" id="L62">    Triple(&quot;Norwegian&quot;, &quot;nb&quot;, &quot;🇳🇴&quot;),</span>
+<span class="fc" id="L63">    Triple(&quot;Odia&quot;, &quot;or&quot;, &quot;🇮🇳&quot;),</span>
+<span class="fc" id="L64">    Triple(&quot;Polish&quot;, &quot;pl&quot;, &quot;🇵🇱&quot;),</span>
+<span class="fc" id="L65">    Triple(&quot;Portuguese&quot;, &quot;pt&quot;, &quot;🇵🇹&quot;),</span>
+<span class="fc" id="L66">    Triple(&quot;Punjabi&quot;, &quot;pa&quot;, &quot;🇮🇳&quot;),</span>
+<span class="fc" id="L67">    Triple(&quot;Romanian&quot;, &quot;ro&quot;, &quot;🇷🇴&quot;),</span>
+<span class="fc" id="L68">    Triple(&quot;Russian&quot;, &quot;ru&quot;, &quot;🇷🇺&quot;),</span>
+<span class="fc" id="L69">    Triple(&quot;Samoan&quot;, &quot;sm&quot;, &quot;🇼🇸&quot;),</span>
+<span class="fc" id="L70">    Triple(&quot;Serbian&quot;, &quot;sr&quot;, &quot;🇷🇸&quot;),</span>
+<span class="fc" id="L71">    Triple(&quot;Slovak&quot;, &quot;sk&quot;, &quot;🇸🇰&quot;),</span>
+<span class="fc" id="L72">    Triple(&quot;Slovenian&quot;, &quot;sl&quot;, &quot;🇸🇮&quot;),</span>
+<span class="fc" id="L73">    Triple(&quot;Somali&quot;, &quot;so&quot;, &quot;🇸🇴&quot;),</span>
+<span class="fc" id="L74">    Triple(&quot;Spanish&quot;, &quot;es&quot;, &quot;🇪🇸&quot;),</span>
+<span class="fc" id="L75">    Triple(&quot;Swahili&quot;, &quot;sw&quot;, &quot;🇹🇿&quot;),</span>
+<span class="fc" id="L76">    Triple(&quot;Swedish&quot;, &quot;sv&quot;, &quot;🇸🇪&quot;),</span>
+<span class="fc" id="L77">    Triple(&quot;Tatar&quot;, &quot;tt&quot;, &quot;🇷🇺&quot;),</span>
+<span class="fc" id="L78">    Triple(&quot;Tahitian&quot;, &quot;ty&quot;, &quot;🇵🇫&quot;),</span>
+<span class="fc" id="L79">    Triple(&quot;Tamil&quot;, &quot;ta&quot;, &quot;🇮🇳&quot;),</span>
+<span class="fc" id="L80">    Triple(&quot;Telugu&quot;, &quot;te&quot;, &quot;🇮🇳&quot;),</span>
+<span class="fc" id="L81">    Triple(&quot;Tigrinya&quot;, &quot;ti&quot;, &quot;🇪🇷&quot;),</span>
+<span class="fc" id="L82">    Triple(&quot;Turkmen&quot;, &quot;tk&quot;, &quot;🇹🇲&quot;),</span>
+<span class="fc" id="L83">    Triple(&quot;Thai&quot;, &quot;th&quot;, &quot;🇹🇭&quot;),</span>
+<span class="fc" id="L84">    Triple(&quot;Tongan&quot;, &quot;to&quot;, &quot;🇹🇴&quot;),</span>
+<span class="fc" id="L85">    Triple(&quot;Turkish&quot;, &quot;tr&quot;, &quot;🇹🇷&quot;),</span>
+<span class="fc" id="L86">    Triple(&quot;Ukrainian&quot;, &quot;uk&quot;, &quot;🇺🇦&quot;),</span>
+<span class="fc" id="L87">    Triple(&quot;Upper Sorbian&quot;, &quot;hsb&quot;, &quot;🇩🇪&quot;),</span>
+<span class="fc" id="L88">    Triple(&quot;Uzbek&quot;, &quot;uz&quot;, &quot;🇺🇿&quot;),</span>
+<span class="fc" id="L89">    Triple(&quot;Vietnamese&quot;, &quot;vi&quot;, &quot;🇻🇳&quot;),</span>
+<span class="fc" id="L90">    Triple(&quot;Welsh&quot;, &quot;cy&quot;, &quot;🏴&quot;),</span>
+<span class="fc" id="L91">    Triple(&quot;Zulu&quot;, &quot;zu&quot;, &quot;🇿🇦&quot;)</span>
+)
+
+<span class="pc" id="L94">val langIdCodePairs = listOf(</span>
+<span class="fc" id="L95">    Pair(R.string.afrikaan, &quot;af&quot;),</span>
+<span class="fc" id="L96">    Pair(R.string.albanian, &quot;sq&quot;),</span>
+<span class="fc" id="L97">    Pair(R.string.amharic, &quot;am&quot;),</span>
+<span class="fc" id="L98">    Pair(R.string.armenian, &quot;hy&quot;),</span>
+<span class="fc" id="L99">    Pair(R.string.assamese, &quot;as&quot;),</span>
+<span class="fc" id="L100">    Pair(R.string.bangla, &quot;bn&quot;),</span>
+<span class="fc" id="L101">    Pair(R.string.bashkir, &quot;ba&quot;),</span>
+<span class="fc" id="L102">    Pair(R.string.basque, &quot;eu&quot;),</span>
+<span class="fc" id="L103">    Pair(R.string.bosnian, &quot;bs&quot;),</span>
+<span class="fc" id="L104">    Pair(R.string.bulgerian, &quot;bg&quot;),</span>
+<span class="fc" id="L105">    Pair(R.string.burmese, &quot;my&quot;),</span>
+<span class="fc" id="L106">    Pair(R.string.catalan, &quot;ca&quot;),</span>
+<span class="fc" id="L107">    Pair(R.string.chinese, &quot;zh&quot;),</span>
+<span class="fc" id="L108">    Pair(R.string.croatian, &quot;hr&quot;),</span>
+<span class="fc" id="L109">    Pair(R.string.czech, &quot;cs&quot;),</span>
+<span class="fc" id="L110">    Pair(R.string.danish, &quot;da&quot;),</span>
+<span class="fc" id="L111">    Pair(R.string.dutch, &quot;nl&quot;),</span>
+<span class="fc" id="L112">    Pair(R.string.english, &quot;en&quot;),</span>
+<span class="fc" id="L113">    Pair(R.string.estonian, &quot;et&quot;),</span>
+<span class="fc" id="L114">    Pair(R.string.farose, &quot;fo&quot;),</span>
+<span class="fc" id="L115">    Pair(R.string.fijian, &quot;fj&quot;),</span>
+<span class="fc" id="L116">    Pair(R.string.filipino, &quot;fil&quot;),</span>
+<span class="fc" id="L117">    Pair(R.string.finnish, &quot;fi&quot;),</span>
+<span class="fc" id="L118">    Pair(R.string.french, &quot;fr&quot;),</span>
+<span class="fc" id="L119">    Pair(R.string.galician, &quot;gl&quot;),</span>
+<span class="fc" id="L120">    Pair(R.string.georgian, &quot;ka&quot;),</span>
+<span class="fc" id="L121">    Pair(R.string.german, &quot;de&quot;),</span>
+<span class="fc" id="L122">    Pair(R.string.greek, &quot;el&quot;),</span>
+<span class="fc" id="L123">    Pair(R.string.gujrati, &quot;gu&quot;),</span>
+<span class="fc" id="L124">    Pair(R.string.haitian_creole, &quot;ht&quot;),</span>
+<span class="fc" id="L125">    Pair(R.string.hindi, &quot;hi&quot;),</span>
+<span class="fc" id="L126">    Pair(R.string.hungarian, &quot;hu&quot;),</span>
+<span class="fc" id="L127">    Pair(R.string.icelandic, &quot;is&quot;),</span>
+<span class="fc" id="L128">    Pair(R.string.indonesian, &quot;in&quot;),</span>
+<span class="fc" id="L129">    Pair(R.string.inuktitut, &quot;iu&quot;),</span>
+<span class="fc" id="L130">    Pair(R.string.irish, &quot;ga&quot;),</span>
+<span class="fc" id="L131">    Pair(R.string.italian, &quot;it&quot;),</span>
+<span class="fc" id="L132">    Pair(R.string.japanese, &quot;ja&quot;),</span>
+<span class="fc" id="L133">    Pair(R.string.kannada, &quot;kn&quot;),</span>
+<span class="fc" id="L134">    Pair(R.string.kazakh, &quot;kk&quot;),</span>
+<span class="fc" id="L135">    Pair(R.string.khmer, &quot;km&quot;),</span>
+<span class="fc" id="L136">    Pair(R.string.korean, &quot;ko&quot;),</span>
+<span class="fc" id="L137">    Pair(R.string.kyrgyz, &quot;ky&quot;),</span>
+<span class="fc" id="L138">    Pair(R.string.lao, &quot;lo&quot;),</span>
+<span class="fc" id="L139">    Pair(R.string.latvian, &quot;lv&quot;),</span>
+<span class="fc" id="L140">    Pair(R.string.lithuanian, &quot;lt&quot;),</span>
+<span class="fc" id="L141">    Pair(R.string.macedonian, &quot;mk&quot;),</span>
+<span class="fc" id="L142">    Pair(R.string.malagasy, &quot;mg&quot;),</span>
+<span class="fc" id="L143">    Pair(R.string.malay, &quot;ms&quot;),</span>
+<span class="fc" id="L144">    Pair(R.string.malayalam, &quot;ml&quot;),</span>
+<span class="fc" id="L145">    Pair(R.string.maltese, &quot;mt&quot;),</span>
+<span class="fc" id="L146">    Pair(R.string.maori, &quot;mi&quot;),</span>
+<span class="fc" id="L147">    Pair(R.string.marathi, &quot;mr&quot;),</span>
+<span class="fc" id="L148">    Pair(R.string.nepali, &quot;ne&quot;),</span>
+<span class="fc" id="L149">    Pair(R.string.norwegian, &quot;nb&quot;),</span>
+<span class="fc" id="L150">    Pair(R.string.odia, &quot;or&quot;),</span>
+<span class="fc" id="L151">    Pair(R.string.polish, &quot;pl&quot;),</span>
+<span class="fc" id="L152">    Pair(R.string.portuguese, &quot;pt&quot;),</span>
+<span class="fc" id="L153">    Pair(R.string.punjabi, &quot;pa&quot;),</span>
+<span class="fc" id="L154">    Pair(R.string.romanian, &quot;ro&quot;),</span>
+<span class="fc" id="L155">    Pair(R.string.russian, &quot;ru&quot;),</span>
+<span class="fc" id="L156">    Pair(R.string.samoan, &quot;sm&quot;),</span>
+<span class="fc" id="L157">    Pair(R.string.serbian, &quot;sr&quot;),</span>
+<span class="fc" id="L158">    Pair(R.string.slovak, &quot;sk&quot;),</span>
+<span class="fc" id="L159">    Pair(R.string.slovenian, &quot;sl&quot;),</span>
+<span class="fc" id="L160">    Pair(R.string.somali, &quot;so&quot;),</span>
+<span class="fc" id="L161">    Pair(R.string.spanish, &quot;es&quot;),</span>
+<span class="fc" id="L162">    Pair(R.string.swahili, &quot;sw&quot;),</span>
+<span class="fc" id="L163">    Pair(R.string.swedish, &quot;sv&quot;),</span>
+<span class="fc" id="L164">    Pair(R.string.tahitian, &quot;ty&quot;),</span>
+<span class="fc" id="L165">    Pair(R.string.tamil, &quot;ta&quot;),</span>
+<span class="fc" id="L166">    Pair(R.string.tatar, &quot;tt&quot;),</span>
+<span class="fc" id="L167">    Pair(R.string.telugu, &quot;te&quot;),</span>
+<span class="fc" id="L168">    Pair(R.string.thai, &quot;th&quot;),</span>
+<span class="fc" id="L169">    Pair(R.string.tigrinya, &quot;ti&quot;),</span>
+<span class="fc" id="L170">    Pair(R.string.tongan, &quot;to&quot;),</span>
+<span class="fc" id="L171">    Pair(R.string.turkish, &quot;tr&quot;),</span>
+<span class="fc" id="L172">    Pair(R.string.uppersorbian, &quot;hsb&quot;),</span>
+<span class="fc" id="L173">    Pair(R.string.ukrainian, &quot;uk&quot;),</span>
+<span class="fc" id="L174">    Pair(R.string.uzbek, &quot;uz&quot;),</span>
+<span class="fc" id="L175">    Pair(R.string.vietnamese, &quot;vi&quot;),</span>
+<span class="fc" id="L176">    Pair(R.string.welsh, &quot;cy&quot;),</span>
+<span class="fc" id="L177">    Pair(R.string.zulu, &quot;zu&quot;)</span>
+)
+
+fun getLanguageTextAndFlag(langCode: String): Pair&lt;Int, String&gt; {
+<span class="pc bpc" id="L181" title="2 of 4 branches missed.">    return if (langCode.isEmpty()) {</span>
+<span class="nc" id="L182">        Pair(getLanguageTextByCode(&quot;en&quot;), getFlagByCode(&quot;en&quot;))</span>
+    } else {
+<span class="fc" id="L184">        Pair(getLanguageTextByCode(langCode), getFlagByCode(langCode))</span>
+    }
+}
+
+fun getLanguageTextByCode(langCode: String): Int {
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">    return langIdCodePairs.firstOrNull { it.second.equals(langCode, ignoreCase = true) }?.first ?: R.string.english</span>
+}
+
+fun getFlagByCode(langCode: String): String {
+<span class="pc bpc" id="L193" title="1 of 4 branches missed.">    return langWithFlag.firstOrNull { it.second.equals(langCode, ignoreCase = true) }?.third ?: &quot;&quot;</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

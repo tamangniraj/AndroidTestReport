@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RequiredDocuments.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.enroll.fragments.uploadDocuments</a> &gt; <span class="el_source">RequiredDocuments.kt</span></div><h1>RequiredDocuments.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.enroll.fragments.uploadDocuments
+
+import android.Manifest
+import android.app.Activity
+import android.content.ContentValues.TAG
+import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.os.Bundle
+import android.provider.MediaStore
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.webkit.MimeTypeMap
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
+import com.canhub.cropper.CropImage
+import com.canhub.cropper.CropImageContract
+import com.canhub.cropper.CropImageContractOptions
+import com.canhub.cropper.CropImageOptions
+import com.canhub.cropper.CropImageView
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.remote.enroll.Person
+import com.vivekahealth.vivekahealth.databinding.FragmentEnrollmentRequiredDocumentsBinding
+import com.vivekahealth.vivekahealth.di.Injectable
+import com.vivekahealth.vivekahealth.ui.BaseFragment
+import com.vivekahealth.vivekahealth.ui.enroll.EnrollActivity
+import com.vivekahealth.vivekahealth.ui.enroll.NextClickListener
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.uploadDocuments.adapter.DocAdapter
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.uploadDocuments.uploadUI.UploadDocCallback
+import com.vivekahealth.vivekahealth.ui.enroll.fragments.uploadDocuments.uploadUI.UploadDocumentFragment
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.pickerBottomSheet.PickerButtonListener
+import com.vivekahealth.vivekahealth.ui.homePage.accountsDetails.pickerBottomSheet.PickerSheetFragment
+import com.vivekahealth.vivekahealth.utils.EventObserver
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import com.vivekahealth.vivekahealth.utils.remote.Status
+import timber.log.Timber
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.IOException
+import java.io.InputStream
+import javax.inject.Inject
+
+<span class="nc" id="L55">class RequiredDocuments : BaseFragment(), Injectable, NextClickListener, DocClickedListener {</span>
+
+    companion object {
+<span class="nc" id="L58">        fun newInstance() = RequiredDocuments()</span>
+    }
+
+<span class="nc" id="L61">    val adapter = DocAdapter(</span>
+<span class="nc" id="L62">        onClick = {</span>
+<span class="nc" id="L63">            viewModel.currentItem = it</span>
+<span class="nc" id="L64">            viewModel.currentPerson = it.person!!</span>
+<span class="nc" id="L65">            viewModel.currentDoc = it.docName!!.FileName</span>
+<span class="nc" id="L66">            showPicker()</span>
+<span class="nc" id="L67">        }</span>
+    )
+    private lateinit var binding: FragmentEnrollmentRequiredDocumentsBinding
+    private lateinit var cropImageLauncher: ActivityResultLauncher&lt;CropImageContractOptions&gt;
+
+<span class="nc" id="L72">    @Inject</span>
+<span class="nc" id="L73">    lateinit var viewModelFactory: ViewModelProvider.Factory</span>
+
+    private lateinit var viewModel: RequiredDocumentsViewModel
+
+    private var uriForFile: Uri? = null
+    private lateinit var requestCameraPermissionLauncher: ActivityResultLauncher&lt;String&gt;
+    private lateinit var cameraLauncher: ActivityResultLauncher&lt;Intent&gt;
+    private lateinit var galleryLauncher: ActivityResultLauncher&lt;Intent&gt;
+
+    fun showPicker() {
+<span class="nc" id="L83">        val dialog: BottomSheetDialogFragment = PickerSheetFragment.newInstance()</span>
+<span class="nc" id="L84">        val bundle = Bundle()</span>
+<span class="nc" id="L85">        bundle.putBoolean(&quot;home&quot;, true)</span>
+<span class="nc" id="L86">        dialog.arguments = bundle</span>
+<span class="nc" id="L87">        (dialog as PickerSheetFragment).setCallback(object : PickerButtonListener {</span>
+            override fun onCamera() {
+<span class="nc" id="L89">                requestCameraPermission()</span>
+<span class="nc" id="L90">                dialog.dismiss()</span>
+<span class="nc" id="L91">            }</span>
+
+            override fun onLibrary() {
+<span class="nc" id="L94">                val intent = Intent(Intent.ACTION_PICK).apply {</span>
+<span class="nc" id="L95">                    type = &quot;image/*&quot;</span>
+<span class="nc" id="L96">                }</span>
+<span class="nc" id="L97">                galleryLauncher.launch(intent)</span>
+<span class="nc" id="L98">                dialog.dismiss()</span>
+<span class="nc" id="L99">            }</span>
+
+            override fun onFileLibrary() {
+<span class="nc" id="L102">            }</span>
+
+            override fun onRemoveDependent() {
+<span class="nc" id="L105">            }</span>
+
+            override fun onRemove() {
+<span class="nc" id="L108">            }</span>
+
+            override fun onClose() {
+<span class="nc" id="L111">                dialog.dismiss()</span>
+<span class="nc" id="L112">            }</span>
+        })
+
+<span class="nc" id="L115">        dialog.show(childFragmentManager, &quot;tag&quot;)</span>
+<span class="nc" id="L116">    }</span>
+
+    fun requestCameraPermission() {
+<span class="nc" id="L119">        when {</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">            ContextCompat.checkSelfPermission(</span>
+<span class="nc" id="L121">                requireContext(),</span>
+<span class="nc" id="L122">                Manifest.permission.CAMERA</span>
+            ) == PackageManager.PERMISSION_GRANTED -&gt; {
+<span class="nc" id="L124">                launchCamera()</span>
+            }
+
+<span class="nc bnc" id="L127" title="All 2 branches missed.">            shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -&gt; {</span>
+                // This case means user previously denied the permission
+                // So here we can display an explanation to the user
+                // That why exactly we need this permission
+<span class="nc" id="L131">                Timber.tag(TAG).d(&quot;requestCameraPermission - Camera Permission NOT Granted&quot;)</span>
+<span class="nc" id="L132">                requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)</span>
+            }
+
+            else -&gt; {
+<span class="nc" id="L136">                requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)</span>
+            }
+        }
+<span class="nc" id="L139">    }</span>
+
+    private fun launchCamera() {
+<span class="nc" id="L142">        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)</span>
+<span class="nc" id="L143">        try {</span>
+<span class="nc" id="L144">            val imageFile = HelperUtils.createImageFile(requireActivity())</span>
+<span class="nc" id="L145">            uriForFile = FileProvider.getUriForFile(</span>
+<span class="nc" id="L146">                requireActivity(),</span>
+<span class="nc" id="L147">                requireContext().packageName + &quot;.provider&quot;,</span>
+<span class="nc" id="L148">                imageFile</span>
+            )
+<span class="nc" id="L150">            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, uriForFile)</span>
+<span class="nc" id="L151">            takePictureIntent.putExtra(</span>
+<span class="nc" id="L152">                MediaStore.EXTRA_SCREEN_ORIENTATION,</span>
+<span class="nc" id="L153">                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT</span>
+            )
+<span class="nc" id="L155">            cameraLauncher.launch(takePictureIntent)</span>
+<span class="nc" id="L156">        } catch (e: IOException) {</span>
+            // display error state to the user
+<span class="nc" id="L158">            e.printStackTrace()</span>
+        }
+<span class="nc" id="L160">    }</span>
+
+    private fun startCrop(uri: Uri) {
+<span class="nc" id="L163">        cropImageLauncher.launch(</span>
+<span class="nc" id="L164">            CropImageContractOptions(</span>
+<span class="nc" id="L165">                uri = uri,</span>
+<span class="nc" id="L166">                cropImageOptions = CropImageOptions(</span>
+<span class="nc" id="L167">                    guidelines = CropImageView.Guidelines.ON,</span>
+<span class="nc" id="L168">                    imageSourceIncludeCamera = false</span>
+                )
+            )
+        )
+<span class="nc" id="L172">    }</span>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+<span class="nc" id="L175">        super.onCreate(savedInstanceState)</span>
+
+<span class="nc" id="L177">        requestCameraPermissionLauncher = registerForActivityResult(</span>
+<span class="nc" id="L178">            ActivityResultContracts.RequestPermission()</span>
+        ) { isGranted -&gt;
+<span class="nc bnc" id="L180" title="All 2 branches missed.">            if (isGranted) {</span>
+<span class="nc" id="L181">                launchCamera()</span>
+            }
+<span class="nc" id="L183">        }</span>
+
+<span class="nc" id="L185">        cameraLauncher = registerForActivityResult(</span>
+<span class="nc" id="L186">            ActivityResultContracts.StartActivityForResult()</span>
+        ) { result -&gt;
+<span class="nc bnc" id="L188" title="All 2 branches missed.">            if (result.resultCode == Activity.RESULT_OK) {</span>
+                // Launch crop activity with the captured image
+<span class="nc bnc" id="L190" title="All 2 branches missed.">                uriForFile?.let { uri -&gt;</span>
+<span class="nc" id="L191">                    startCrop(uri)</span>
+<span class="nc" id="L192">                }</span>
+            }
+<span class="nc" id="L194">        }</span>
+
+<span class="nc" id="L196">        galleryLauncher = registerForActivityResult(</span>
+<span class="nc" id="L197">            ActivityResultContracts.StartActivityForResult()</span>
+        ) { result -&gt;
+<span class="nc bnc" id="L199" title="All 2 branches missed.">            if (result.resultCode == Activity.RESULT_OK) {</span>
+<span class="nc bnc" id="L200" title="All 4 branches missed.">                result.data?.data?.let { uri -&gt;</span>
+<span class="nc" id="L201">                    startCrop(uri)</span>
+<span class="nc" id="L202">                }</span>
+            }
+<span class="nc" id="L204">        }</span>
+
+<span class="nc" id="L206">        cropImageLauncher = registerForActivityResult(CropImageContract()) { result -&gt;</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">            if (result.isSuccessful) {</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">                result.uriContent?.let { croppedUri -&gt;</span>
+<span class="nc" id="L209">                    openUpload(croppedUri)</span>
+<span class="nc" id="L210">                }</span>
+<span class="nc bnc" id="L211" title="All 2 branches missed.">            } else if (result !is CropImage.CancelledResult) {</span>
+<span class="nc" id="L212">                val exception = result.error</span>
+<span class="nc bnc" id="L213" title="All 2 branches missed.">                exception?.let {</span>
+<span class="nc" id="L214">                    android.widget.Toast.makeText(</span>
+<span class="nc" id="L215">                        requireContext(),</span>
+<span class="nc" id="L216">                        &quot;Crop failed: ${it.message}&quot;,</span>
+<span class="nc" id="L217">                        android.widget.Toast.LENGTH_SHORT</span>
+<span class="nc" id="L218">                    ).show()</span>
+<span class="nc" id="L219">                }</span>
+            }
+<span class="nc" id="L221">        }</span>
+<span class="nc" id="L222">    }</span>
+
+    override fun onResume() {
+<span class="nc bnc" id="L225" title="All 2 branches missed.">        if (viewModel.docList.isEmpty()) {</span>
+<span class="nc" id="L226">            viewModel.getEnrollFromShared()</span>
+        }
+<span class="nc" id="L228">        super.onResume()</span>
+<span class="nc" id="L229">    }</span>
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+<span class="nc" id="L236">        binding = FragmentEnrollmentRequiredDocumentsBinding.inflate(inflater, container, false)</span>
+<span class="nc" id="L237">        return binding.root</span>
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+<span class="nc" id="L241">        super.onActivityCreated(savedInstanceState)</span>
+
+<span class="nc" id="L243">        viewModel = ViewModelProvider(this, viewModelFactory).get(</span>
+<span class="nc" id="L244">            RequiredDocumentsViewModel::class.java</span>
+<span class="nc" id="L245">        ).apply {</span>
+<span class="nc" id="L246">            nextClickListener = this@RequiredDocuments</span>
+<span class="nc" id="L247">        }</span>
+
+<span class="nc" id="L249">        binding.viewModel = viewModel</span>
+
+<span class="nc" id="L251">        val animator: RecyclerView.ItemAnimator? = binding.docRecyclerView.itemAnimator</span>
+<span class="nc bnc" id="L252" title="All 2 branches missed.">        if (animator is SimpleItemAnimator) {</span>
+<span class="nc" id="L253">            (animator as SimpleItemAnimator).supportsChangeAnimations = false</span>
+        }
+<span class="nc" id="L255">        (activity as EnrollActivity).focusRight()</span>
+
+<span class="nc" id="L257">        binding.nextEnable = false</span>
+
+<span class="nc" id="L259">        binding.docRecyclerView.adapter = adapter</span>
+
+<span class="nc" id="L261">        (activity as EnrollActivity).changeState(5)</span>
+
+<span class="nc" id="L263">        viewModel.dataRetrieved.observe(</span>
+<span class="nc" id="L264">            viewLifecycleOwner,</span>
+<span class="nc" id="L265">            EventObserver { list -&gt;</span>
+
+<span class="nc" id="L267">                viewModel.createDocList()</span>
+<span class="nc" id="L268">            }</span>
+        )
+
+<span class="nc" id="L271">        viewModel.navigateToBack.observe(</span>
+<span class="nc" id="L272">            viewLifecycleOwner,</span>
+<span class="nc" id="L273">            EventObserver {</span>
+<span class="nc" id="L274">                (activity as EnrollActivity).changeState(4)</span>
+<span class="nc" id="L275">                (activity as EnrollActivity).focusLeft()</span>
+
+<span class="nc" id="L277">                findNavController().navigateUp()</span>
+<span class="nc" id="L278">            }</span>
+        )
+
+<span class="nc" id="L281">        viewModel.navigateToNext.observe(</span>
+<span class="nc" id="L282">            viewLifecycleOwner,</span>
+<span class="nc" id="L283">            EventObserver {</span>
+<span class="nc" id="L284">                viewModel.docList.clear()</span>
+<span class="nc" id="L285">                findNavController().navigate(</span>
+<span class="nc" id="L286">                    R.id.action_requiredDocumentFragment_to_legalAffirmation</span>
+                )
+<span class="nc" id="L288">            }</span>
+        )
+<span class="nc" id="L290">        viewModel.navigateToUpload.observe(viewLifecycleOwner) {</span>
+<span class="nc bnc" id="L291" title="All 3 branches missed.">            when (it.status) {</span>
+                Status.LOADING -&gt; {
+<span class="nc" id="L293">                    (activity as EnrollActivity).showLoading(getString(R.string.uploading_document))</span>
+                }
+
+                Status.SUCCESS -&gt; {
+<span class="nc bnc" id="L297" title="All 4 branches missed.">                    viewModel.setDocumentName(it.data?.id.toString(), it.data?.fileName.toString())</span>
+
+<span class="nc" id="L299">                    (activity as EnrollActivity).dismissLoading()</span>
+                }
+
+                Status.ERROR -&gt; {
+<span class="nc" id="L303">                    (activity as EnrollActivity).dismissLoading()</span>
+
+                    // Timber.d(it.error)
+                }
+            }
+<span class="nc" id="L308">        }</span>
+
+<span class="nc" id="L310">        viewModel.listCreated.observe(</span>
+<span class="nc" id="L311">            viewLifecycleOwner,</span>
+<span class="nc" id="L312">            EventObserver { list -&gt;</span>
+
+<span class="nc" id="L314">                adapter.submitList(list)</span>
+<span class="nc bnc" id="L315" title="All 2 branches missed.">                if (list.indexOf(viewModel.currentItem) != -1) {</span>
+<span class="nc" id="L316">                    adapter.notifyItemChanged(list.indexOf(viewModel.currentItem))</span>
+                } else {
+<span class="nc" id="L318">                    adapter.notifyItemRangeChanged(0, list.size - 1)</span>
+                }
+<span class="nc" id="L320">                binding.nextEnable = viewModel.checkIfAllComplete()</span>
+<span class="nc" id="L321">            }</span>
+        )
+        // TODO: Use the ViewModel
+<span class="nc" id="L324">    }</span>
+
+    override fun onRecyclerViewItemClick(view: View, item: Person, position: Int, docName: String) {
+<span class="nc" id="L327">        viewModel.currentPerson = item</span>
+<span class="nc" id="L328">        viewModel.currentDoc = docName</span>
+<span class="nc" id="L329">        showPicker()</span>
+<span class="nc" id="L330">    }</span>
+
+    private fun photoPicker() {
+<span class="nc" id="L333">        cropImageLauncher.launch(</span>
+<span class="nc" id="L334">            CropImageContractOptions(</span>
+<span class="nc" id="L335">                uri = null,</span>
+<span class="nc" id="L336">                cropImageOptions = CropImageOptions(</span>
+<span class="nc" id="L337">                    guidelines = CropImageView.Guidelines.ON,</span>
+<span class="nc" id="L338">                    imageSourceIncludeCamera = false</span>
+                )
+            )
+        )
+<span class="nc" id="L342">    }</span>
+
+    fun openUpload(item: Uri?) {
+<span class="nc" id="L345">        val stream = ByteArrayOutputStream()</span>
+
+<span class="nc bnc" id="L347" title="All 2 branches missed.">        val file = File(item?.path.toString())</span>
+<span class="nc" id="L348">        val fileExt = MimeTypeMap.getFileExtensionFromUrl(file.toString())</span>
+
+<span class="nc bnc" id="L350" title="All 2 branches missed.">        val originalFileName = File(item?.path.toString()).name</span>
+
+<span class="nc bnc" id="L352" title="All 6 branches missed.">        val imageStream: InputStream? = item?.let { activity?.contentResolver?.openInputStream(it) }</span>
+
+//        var docBitmap = BitmapFactory.decodeFile(item?.path)
+<span class="nc" id="L355">        val docBitmap = BitmapFactory.decodeStream(imageStream)</span>
+
+<span class="nc" id="L357">        docBitmap.compress(Bitmap.CompressFormat.JPEG, 50, stream)</span>
+<span class="nc" id="L358">        val byteArray = stream.toByteArray()</span>
+<span class="nc" id="L359">        val dialog: DialogFragment = UploadDocumentFragment.newInstance()</span>
+<span class="nc" id="L360">        val bundle = Bundle()</span>
+<span class="nc" id="L361">        viewModel.filePart = HelperUtils.buildImageBodyPart(</span>
+<span class="nc" id="L362">            originalFileName,</span>
+<span class="nc" id="L363">            docBitmap,</span>
+<span class="nc" id="L364">            requireContext()</span>
+        )
+<span class="nc" id="L366">        bundle.putByteArray(&quot;BitMap&quot;, byteArray)</span>
+
+<span class="nc bnc" id="L368" title="All 4 branches missed.">        viewModel.currentItem?.docName?.TranslatedName?.let {</span>
+<span class="nc" id="L369">            var text = getString(it)</span>
+<span class="nc" id="L370">            Timber.d(&quot;Put: $text&quot;)</span>
+<span class="nc" id="L371">            bundle.putString(&quot;DocumentName&quot;, getString(it))</span>
+<span class="nc" id="L372">        } ?: run {</span>
+<span class="nc" id="L373">            bundle.putString(&quot;DocumentName&quot;, viewModel.currentDoc)</span>
+<span class="nc" id="L374">        }</span>
+
+<span class="nc" id="L376">        bundle.putString(</span>
+<span class="nc" id="L377">            &quot;PersonName&quot;,</span>
+<span class="nc" id="L378">            viewModel.currentPerson.firstName + &quot; &quot; + viewModel.currentPerson.lastName</span>
+        )
+<span class="nc" id="L380">        dialog.arguments = bundle</span>
+<span class="nc" id="L381">        (dialog as UploadDocumentFragment).setCallback(object : UploadDocCallback {</span>
+            override fun onActionClick() {
+<span class="nc" id="L383">                showPicker()</span>
+<span class="nc" id="L384">                dialog.dismiss()</span>
+<span class="nc" id="L385">            }</span>
+
+            override fun onUploadClick() {
+<span class="nc" id="L388">                viewModel.uploadPicture(file, viewModel.currentItem)</span>
+<span class="nc" id="L389">                dialog.dismiss()</span>
+<span class="nc" id="L390">            }</span>
+        })
+
+<span class="nc" id="L393">        dialog.show(childFragmentManager, &quot;tag&quot;)</span>
+<span class="nc" id="L394">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

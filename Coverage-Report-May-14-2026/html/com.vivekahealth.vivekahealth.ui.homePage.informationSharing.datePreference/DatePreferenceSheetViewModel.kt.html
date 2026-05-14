@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatePreferenceSheetViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.informationSharing.datePreference</a> &gt; <span class="el_source">DatePreferenceSheetViewModel.kt</span></div><h1>DatePreferenceSheetViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.informationSharing.datePreference
+
+import android.content.SharedPreferences
+import android.content.res.Resources
+import android.text.Editable
+import android.text.TextWatcher
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.data.local.home.PreferenceData
+import com.vivekahealth.vivekahealth.data.local.home.QuickItem
+import com.vivekahealth.vivekahealth.utils.DateUtils
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.disposables.CompositeDisposable
+import javax.inject.Inject
+
+<span class="nc" id="L22">class DatePreferenceSheetViewModel @Inject constructor(</span>
+<span class="nc" id="L23">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L24">    private val resources: Resources</span>
+) :
+<span class="nc" id="L26">    ViewModel(),</span>
+    Observable {
+<span class="nc" id="L28">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L30">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L32">    var filter: String = &quot;REQUESTED_YEAR&quot;</span>
+
+<span class="nc" id="L34">    private val _navigateToSubmit = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToSubmit: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L36">        get() = _navigateToSubmit</span>
+
+<span class="nc" id="L38">    private val _navigateToClose = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToClose: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L40">        get() = _navigateToClose</span>
+
+<span class="nc" id="L42">    val current: String = DateUtils.getCurrentYear().toString()</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L45">        callbacks.add(callback)</span>
+<span class="nc" id="L46">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L49">        callbacks.remove(callback)</span>
+<span class="nc" id="L50">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L53">        super.onCleared()</span>
+<span class="nc" id="L54">        compositeDisposable.dispose()</span>
+<span class="nc" id="L55">    }</span>
+
+    /**
+     * new field
+     */
+
+<span class="nc" id="L61">    var tempSelectionMap = HashMap&lt;Int, List&lt;QuickItem&gt;?&gt;()</span>
+
+<span class="nc" id="L63">    var errorMessage: String = &quot;&quot;</span>
+
+    var showError: Boolean = false
+<span class="nc" id="L66">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L68">            field = value</span>
+<span class="nc" id="L69">            callbacks.notifyCallbacks(this, BR.showError, null)</span>
+<span class="nc" id="L70">        }</span>
+
+    fun apply() {
+<span class="nc" id="L73">        _navigateToApply.value = Event(</span>
+<span class="nc" id="L74">            PreferenceData(</span>
+<span class="nc bnc" id="L75" title="All 4 branches missed.">                startDateComplete.value?.peekContent()?.replace(&quot; &quot;, &quot;&quot;),</span>
+<span class="nc bnc" id="L76" title="All 4 branches missed.">                endDateComplete.value?.peekContent()?.replace(&quot; &quot;, &quot;&quot;),</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">                diagnois = tempSelectionMap[0]?.let { ArrayList(it) },</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                prescreption = tempSelectionMap[1]?.let { ArrayList(it) }</span>
+
+            )
+        )
+<span class="nc" id="L82">    }</span>
+    fun close() {
+<span class="nc" id="L84">        _navigateToClose.value = Event(Unit)</span>
+<span class="nc" id="L85">    }</span>
+
+<span class="nc" id="L87">    private val _navigateToApply = MutableLiveData&lt;Event&lt;PreferenceData&gt;&gt;()</span>
+    val navigateToApply: LiveData&lt;Event&lt;PreferenceData&gt;&gt;
+<span class="nc" id="L89">        get() = _navigateToApply</span>
+
+<span class="nc" id="L91">    private val _startDateComplete = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val startDateComplete: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L93">        get() = _startDateComplete</span>
+
+<span class="nc" id="L95">    private val _endDateComplete = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val endDateComplete: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L97">        get() = _endDateComplete</span>
+
+<span class="nc" id="L99">    val combineStartEndDate = MediatorLiveData&lt;Pair&lt;String?, String?&gt;&gt;()</span>
+
+<span class="nc" id="L101">    init {</span>
+<span class="nc" id="L102">        combineStartEndDate.addSource(startDateComplete) { startDate -&gt;</span>
+<span class="nc" id="L103">            val endDate = endDateComplete.value</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">            combineStartEndDate.value = Pair(startDate.peekContent(), endDate?.peekContent())</span>
+<span class="nc" id="L105">        }</span>
+<span class="nc" id="L106">        combineStartEndDate.addSource(endDateComplete) { endDate -&gt;</span>
+<span class="nc" id="L107">            val startDate = startDateComplete.value</span>
+<span class="nc bnc" id="L108" title="All 4 branches missed.">            combineStartEndDate.value = Pair(startDate?.peekContent(), endDate?.peekContent())</span>
+<span class="nc" id="L109">        }</span>
+<span class="nc" id="L110">    }</span>
+
+<span class="nc" id="L112">    @get:Bindable</span>
+<span class="nc" id="L113">    val startDateTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L116">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L118">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L120">            _startDateComplete.value = Event(s.toString())</span>
+<span class="nc" id="L121">        }</span>
+    }
+
+    fun previousStartDate(date: String) {
+<span class="nc" id="L125">        _startDateComplete.value = Event(date)</span>
+<span class="nc" id="L126">    }</span>
+
+    fun previousEndDate(date: String) {
+<span class="nc" id="L129">        _endDateComplete.value = Event(date)</span>
+<span class="nc" id="L130">    }</span>
+
+<span class="nc" id="L132">    @get:Bindable</span>
+<span class="nc" id="L133">    val endDateTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L136">        }</span>
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L138">        }</span>
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L140">            _endDateComplete.value = Event(s.toString())</span>
+<span class="nc" id="L141">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

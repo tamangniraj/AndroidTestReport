@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AllLogsViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.all</a> &gt; <span class="el_source">AllLogsViewModel.kt</span></div><h1>AllLogsViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.all
+
+import android.content.SharedPreferences
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.data.remote.home.medicalLogs.MedicalLogsAll
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.LoadParams
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.MedicalLogAllDataSaver
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.MedicalLogsFragment.Companion.PAGE_SIZE
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.MedicalLogsSortingUtils
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.ParameterizedDebouncer
+import com.vivekahealth.vivekahealth.ui.homePage.medicalLogs.repository.MedicalLogsRepository
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
+import timber.log.Timber
+
+<span class="nc" id="L27">class AllLogsViewModel @Inject constructor(</span>
+<span class="nc" id="L28">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L29">    private val medicalLogsRepository: MedicalLogsRepository,</span>
+<span class="nc" id="L30">    private val homeRepository: HomeRepository</span>
+<span class="nc" id="L31">) : ViewModel(), Observable {</span>
+<span class="nc" id="L32">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L34">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+
+<span class="nc" id="L36">    private val _navigateToSort = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToSort: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L38">        get() = _navigateToSort</span>
+<span class="nc" id="L39">    var sort = &quot;desc&quot;</span>
+
+<span class="nc" id="L41">    var currentMemberId: String = preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+
+<span class="nc" id="L43">    var selectedMemberId: String = &quot;&quot;</span>
+
+<span class="nc" id="L45">    var title: String = &quot;&quot;</span>
+<span class="nc" id="L46">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L48">            field = value</span>
+<span class="nc" id="L49">            callbacks.notifyCallbacks(this, BR.title, null)</span>
+<span class="nc" id="L50">        }</span>
+<span class="nc" id="L51">    private val _navigateToFilter = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToFilter: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L53">        get() = _navigateToFilter</span>
+
+    var data: Boolean = false
+<span class="nc" id="L56">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L58">            field = value</span>
+<span class="nc" id="L59">            callbacks.notifyCallbacks(this, BR.data, null)</span>
+<span class="nc" id="L60">        }</span>
+<span class="nc" id="L61">    var reason: String = &quot;&quot;</span>
+<span class="nc" id="L62">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L64">            field = value</span>
+<span class="nc" id="L65">            callbacks.notifyCallbacks(this, BR.reason, null)</span>
+<span class="nc" id="L66">        }</span>
+<span class="nc" id="L67">    var labSize: Int = 0</span>
+<span class="nc" id="L68">    var presSize: Int = 0</span>
+
+<span class="nc" id="L70">    var type: String = &quot;all&quot;</span>
+<span class="nc" id="L71">    private val _processedLogs = MutableLiveData&lt;List&lt;Any&gt;&gt;()</span>
+<span class="nc" id="L72">    val processedLogs: LiveData&lt;List&lt;Any&gt;&gt; = _processedLogs</span>
+
+<span class="nc" id="L74">    var currentPage = 1</span>
+<span class="nc" id="L75">    private val pageSize = PAGE_SIZE</span>
+<span class="nc" id="L76">    var hasMorePages = false</span>
+<span class="nc" id="L77">    var isLoadedFirstPage = false</span>
+
+<span class="nc" id="L79">    private val _uiState = MutableLiveData&lt;MedicalLogsUiState&gt;()</span>
+<span class="nc" id="L80">    val uiState: LiveData&lt;MedicalLogsUiState&gt; = _uiState</span>
+
+<span class="nc" id="L82">    var selectedMember = &quot;&quot;</span>
+
+<span class="nc" id="L84">    var shouldAppendAllData: Boolean = false</span>
+<span class="nc" id="L85">    val dataSaver = MedicalLogAllDataSaver()</span>
+
+    fun onMemberIdChanged(newMemberId: String) {
+<span class="nc" id="L88">        sort = &quot;desc&quot; // Reset sort order to default</span>
+<span class="nc" id="L89">        selectedMemberId = newMemberId</span>
+<span class="nc" id="L90">        loadDataWithDebounce(newMemberId, isRefresh = true)</span>
+<span class="nc" id="L91">    }</span>
+
+<span class="nc" id="L93">    private val loadDebouncer = ParameterizedDebouncer&lt;LoadParams&gt;()</span>
+
+<span class="nc" id="L95">    fun loadDataWithDebounce(sharedId: String, isRefresh: Boolean = false) {</span>
+<span class="nc" id="L96">        loadDebouncer.debounce(LoadParams(sharedId, isRefresh)) { params -&gt;</span>
+<span class="nc" id="L97">            loadMedicalLogs(params.sharedIds, params.isRefresh)</span>
+<span class="nc" id="L98">        }</span>
+<span class="nc" id="L99">    }</span>
+
+<span class="nc" id="L101">    private fun loadMedicalLogs(selected: String, isRefresh: Boolean = false) {</span>
+<span class="nc bnc" id="L102" title="All 8 branches missed.">        selectedMember = if (selected.isNullOrBlank() || selected.equals(&quot;null&quot;, true)) {</span>
+<span class="nc" id="L103">            currentMemberId</span>
+        } else {
+<span class="nc" id="L105">            selected</span>
+        }
+        // do not call api for the member id whose id is negative
+        if (
+<span class="nc bnc" id="L109" title="All 6 branches missed.">            selectedMember.isNotEmpty() &amp;&amp; selectedMember.toLong() &lt; 0</span>
+        ) {
+<span class="nc" id="L111">            return</span>
+        }
+
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (isRefresh) {</span>
+<span class="nc" id="L115">            currentPage = 1</span>
+<span class="nc" id="L116">            _processedLogs.value = emptyList()</span>
+<span class="nc" id="L117">            compositeDisposable.clear()</span>
+<span class="nc" id="L118">            data = false</span>
+        }
+
+<span class="nc" id="L121">        compositeDisposable.add(</span>
+<span class="nc" id="L122">            medicalLogsRepository.getMedicalLogs(</span>
+<span class="nc" id="L123">                currentMemberId,</span>
+<span class="nc" id="L124">                type,</span>
+<span class="nc" id="L125">                selectedMember,</span>
+<span class="nc" id="L126">                sort,</span>
+<span class="nc" id="L127">                &quot;&quot;,</span>
+<span class="nc" id="L128">                pageSize,</span>
+<span class="nc" id="L129">                currentPage</span>
+            )
+<span class="nc" id="L131">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L132">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L133">                .doOnSubscribe {</span>
+<span class="nc" id="L134">                    _uiState.value = MedicalLogsUiState.LoadingMore</span>
+<span class="nc" id="L135">                }</span>
+<span class="nc" id="L136">                .subscribe({</span>
+<span class="nc" id="L137">                    isLoadedFirstPage = true</span>
+
+<span class="nc bnc" id="L139" title="All 2 branches missed.">                    if (currentPage == 1) {</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">                        it?.let {</span>
+<span class="nc bnc" id="L141" title="All 16 branches missed.">                            data = it.claimsList.isNullOrEmpty() and it.diagnosisList.isNullOrEmpty() and it.labInfoList.isNullOrEmpty() and it.prescriptionList.isNullOrEmpty()</span>
+<span class="nc" id="L142">                        }</span>
+                    }
+
+<span class="nc" id="L145">                    handleSuccessResponse(it)</span>
+<span class="nc" id="L146">                }, {</span>
+<span class="nc" id="L147">                    Timber.d(it.toString())</span>
+<span class="nc" id="L148">                    _uiState.value = MedicalLogsUiState.Error(</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">                        it.message ?: &quot;Unknown error occurred&quot;</span>
+                    )
+<span class="nc" id="L151">                })</span>
+        )
+<span class="nc" id="L153">    }</span>
+
+    private fun handleSuccessResponse(response: MedicalLogsAll) {
+        // Update pagination info
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        response.paging?.let { paging -&gt;</span>
+<span class="nc" id="L158">            hasMorePages = paging.hasNextPage</span>
+<span class="nc" id="L159">            currentPage = paging.currentPage</span>
+<span class="nc" id="L160">        }</span>
+
+        // Check if data is empty
+<span class="nc" id="L163">        val isEmpty = isDataEmpty(response)</span>
+
+<span class="nc bnc" id="L165" title="All 2 branches missed.">        if (isEmpty) {</span>
+<span class="nc" id="L166">            _uiState.value = MedicalLogsUiState.Empty</span>
+        } else {
+<span class="nc" id="L168">            _uiState.value = MedicalLogsUiState.Success(response)</span>
+<span class="nc" id="L169">            val processedData = dataSaver.saveData(response, shouldAppendAllData)</span>
+<span class="nc" id="L170">            _processedLogs.value = MedicalLogsSortingUtils.sortAllMedicalLogs(</span>
+<span class="nc" id="L171">                processedData,</span>
+<span class="nc" id="L172">                sort</span>
+            )
+        }
+<span class="nc" id="L175">    }</span>
+
+    private fun isDataEmpty(data: MedicalLogsAll): Boolean {
+<span class="nc bnc" id="L178" title="All 6 branches missed.">        return data.claimsList.isNullOrEmpty() &amp;&amp;</span>
+<span class="nc bnc" id="L179" title="All 6 branches missed.">            data.diagnosisList.isNullOrEmpty() &amp;&amp;</span>
+<span class="nc bnc" id="L180" title="All 6 branches missed.">            data.labInfoList.isNullOrEmpty() &amp;&amp;</span>
+<span class="nc bnc" id="L181" title="All 6 branches missed.">            data.prescriptionList.isNullOrEmpty()</span>
+    }
+
+    fun hasMorePages(): Boolean {
+<span class="nc" id="L185">        return hasMorePages</span>
+    }
+
+    fun loadNextPage() {
+<span class="nc bnc" id="L189" title="All 6 branches missed.">        if (_uiState.value !is MedicalLogsUiState.LoadingMore &amp;&amp; _uiState.value !is MedicalLogsUiState.Loading &amp;&amp; hasMorePages) {</span>
+<span class="nc" id="L190">            currentPage++</span>
+<span class="nc" id="L191">            loadMedicalLogs(selectedMemberId)</span>
+        }
+<span class="nc" id="L193">    }</span>
+
+    fun sort() {
+<span class="nc" id="L196">        _navigateToSort.value = Event(Unit)</span>
+<span class="nc" id="L197">    }</span>
+    fun filter() {
+<span class="nc" id="L199">        _navigateToFilter.value = Event(Unit)</span>
+<span class="nc" id="L200">    }</span>
+    override fun onCleared() {
+<span class="nc" id="L202">        super.onCleared()</span>
+<span class="nc" id="L203">        compositeDisposable.dispose()</span>
+<span class="nc" id="L204">    }</span>
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L206">        callbacks.remove(callback)</span>
+<span class="nc" id="L207">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L210">        callbacks.add(callback)</span>
+<span class="nc" id="L211">    }</span>
+
+<span class="nc" id="L213">    private val _tutorialsAdded = MutableLiveData(false)</span>
+    val tutorialsAdded: LiveData&lt;Boolean&gt;
+<span class="nc" id="L215">        get() = _tutorialsAdded</span>
+
+<span class="nc" id="L217">    private val _showTutorial = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val showTutorial: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L219">        get() = _showTutorial</span>
+
+<span class="nc" id="L221">    var tutorialShown = false</span>
+    private var addedMedicalLogTutorial = false
+
+    fun addMedicalLogTutorials() {
+<span class="nc" id="L225">        addedMedicalLogTutorial = true</span>
+<span class="nc" id="L226">        updateTutorialAdditionStatus()</span>
+<span class="nc" id="L227">    }</span>
+
+    private fun updateTutorialAdditionStatus() {
+<span class="nc" id="L230">        _tutorialsAdded.value = addedMedicalLogTutorial</span>
+<span class="nc" id="L231">    }</span>
+
+    fun showTutorialIfConditionMatched() {
+<span class="nc bnc" id="L234" title="All 2 branches missed.">        if (!preferences.getBoolean(</span>
+<span class="nc" id="L235">                Constants.SHOWN_MEDICAL_TUT_FOR_SESSION,</span>
+<span class="nc" id="L236">                false</span>
+<span class="nc bnc" id="L237" title="All 4 branches missed.">            ) &amp;&amp; !tutorialShown &amp;&amp; isLoadedFirstPage</span>
+        ) {
+<span class="nc" id="L239">            _showTutorial.value = Event(Unit)</span>
+<span class="nc" id="L240">            tutorialShown = true</span>
+<span class="nc" id="L241">            preferences.edit().putBoolean(Constants.SHOWN_MEDICAL_TUT_FOR_SESSION, true).apply()</span>
+        }
+<span class="nc" id="L243">    }</span>
+
+    fun dontShowTutorial() {
+<span class="nc" id="L246">        preferences.edit().putBoolean(currentMemberId + &quot;medicalLogTutorialShown&quot;, true).apply()</span>
+<span class="nc" id="L247">    }</span>
+
+    fun resetTutorial() {
+<span class="nc" id="L250">        _tutorialsAdded.value = false</span>
+<span class="nc" id="L251">    }</span>
+
+    fun shouldShowTutorial(): Boolean {
+<span class="nc bnc" id="L254" title="All 2 branches missed.">        return !preferences.getBoolean(currentMemberId + &quot;medicalLogTutorialShown&quot;, false)</span>
+    }
+}
+
+// UI State sealed class for better state management
+sealed class MedicalLogsUiState {
+<span class="nc" id="L260">    object Loading : MedicalLogsUiState()</span>
+<span class="nc" id="L261">    object LoadingMore : MedicalLogsUiState()</span>
+<span class="nc" id="L262">    object Empty : MedicalLogsUiState()</span>
+<span class="nc" id="L263">    data class Success(val data: MedicalLogsAll) : MedicalLogsUiState()</span>
+<span class="nc" id="L264">    data class Error(val message: String) : MedicalLogsUiState()</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

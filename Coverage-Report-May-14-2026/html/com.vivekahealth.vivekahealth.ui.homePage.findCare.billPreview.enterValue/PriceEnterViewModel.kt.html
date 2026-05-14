@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PriceEnterViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findCare.billPreview.enterValue</a> &gt; <span class="el_source">PriceEnterViewModel.kt</span></div><h1>PriceEnterViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findCare.billPreview.enterValue
+
+import android.content.SharedPreferences
+import android.content.res.Resources
+import android.text.Editable
+import android.text.TextWatcher
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.vivekahealth.vivekahealth.R
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.FindCareFilterModel
+import com.vivekahealth.vivekahealth.ui.enroll.repository.EnrollRepository
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.FeeSchedule
+import com.vivekahealth.vivekahealth.ui.homePage.findcareSearch.repository.FindCareSearchRepository
+import com.vivekahealth.vivekahealth.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
+
+<span class="nc" id="L25">class PriceEnterViewModel @Inject constructor(</span>
+<span class="nc" id="L26">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L27">    private val enrollRepository: EnrollRepository,</span>
+<span class="nc" id="L28">    private val findCareSearchRepository: FindCareSearchRepository,</span>
+<span class="nc" id="L29">    private val resources: Resources</span>
+<span class="nc" id="L30">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L32">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L34">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="nc" id="L35">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L37">        get() = _navigateToBack</span>
+<span class="nc" id="L38">    private val _navigateToAck = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToAck: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L40">        get() = _navigateToAck</span>
+<span class="nc" id="L41">    private val _navigateToOk = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToOK: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L43">        get() = _navigateToOk</span>
+    var loading: Boolean = false
+<span class="nc" id="L45">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L47">            field = value</span>
+<span class="nc" id="L48">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="nc" id="L49">        }</span>
+    var minPrice: Double? = null
+<span class="nc" id="L51">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L53">            field = value</span>
+<span class="nc" id="L54">            callbacks.notifyCallbacks(this, BR.minPrice, null)</span>
+<span class="nc" id="L55">        }</span>
+    var maxPrice: Double? = null
+<span class="nc" id="L57">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L59">            field = value</span>
+<span class="nc" id="L60">            callbacks.notifyCallbacks(this, BR.maxPrice, null)</span>
+<span class="nc" id="L61">        }</span>
+<span class="nc" id="L62">    var filterOption: FindCareFilterModel = FindCareFilterModel()</span>
+
+    fun onNextClicked() {
+<span class="nc" id="L65">        _navigateToOk.value = Event(Unit)</span>
+<span class="nc" id="L66">    }</span>
+<span class="nc" id="L67">    var price: String = &quot;&quot;</span>
+<span class="nc" id="L68">    private val _nameChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val nameChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L70">        get() = _nameChanged</span>
+    var item: FeeSchedule? = null
+<span class="nc" id="L72">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L74">            field = value</span>
+<span class="nc" id="L75">            callbacks.notifyCallbacks(this, BR.item, null)</span>
+<span class="nc" id="L76">        }</span>
+<span class="nc" id="L77">    var tele: String = &quot;&quot;</span>
+<span class="nc" id="L78">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L80">            field = value</span>
+<span class="nc" id="L81">            callbacks.notifyCallbacks(this, BR.tele, null)</span>
+<span class="nc" id="L82">        }</span>
+    var errorMessage: String =
+<span class="nc" id="L84">        resources.getString(R.string.you_must_enter_a_price_for_this_procedure_to_be_considered)</span>
+<span class="nc" id="L85">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L87">            field = value</span>
+<span class="nc" id="L88">            callbacks.notifyCallbacks(this, BR.errorMessage, null)</span>
+<span class="nc" id="L89">        }</span>
+
+<span class="nc" id="L91">    private val _showPrice = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val showPrice: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L93">        get() = _showPrice</span>
+<span class="nc" id="L94">    var showError: Boolean = true</span>
+<span class="nc" id="L95">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L97">            field = value</span>
+<span class="nc" id="L98">            callbacks.notifyCallbacks(this, BR.showError, null)</span>
+<span class="nc" id="L99">        }</span>
+
+<span class="nc" id="L101">    @get:Bindable</span>
+<span class="nc" id="L102">    val nameTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L105">        }</span>
+
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L108">        }</span>
+
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L111">            price = s.toString()</span>
+<span class="nc" id="L112">            _nameChanged.value = Event(s.toString())</span>
+<span class="nc" id="L113">        }</span>
+    }
+    fun onBackClicked() {
+<span class="nc" id="L116">        _navigateToBack.value = Event(Unit)</span>
+<span class="nc" id="L117">    }</span>
+
+    fun getSpecialityList() {
+<span class="nc" id="L120">        compositeDisposable.add(</span>
+<span class="nc" id="L121">            findCareSearchRepository.getProcedureList(</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">                item?.codeValue!!,</span>
+<span class="nc" id="L123">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">                filterOption.current?.latitude.toString(),</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                filterOption.current?.longitude.toString(),</span>
+<span class="nc" id="L126">                filterOption.providerType.toString(),</span>
+<span class="nc" id="L127">                filterOption.radius.toString(),</span>
+<span class="nc" id="L128">                searchScope = &quot;procedures&quot;</span>
+            )
+<span class="nc" id="L130">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L131">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L132">                .doOnSubscribe {</span>
+<span class="nc" id="L133">                    loading = true</span>
+<span class="nc" id="L134">                }</span>
+<span class="nc" id="L135">                .subscribe({ it -&gt;</span>
+
+<span class="nc" id="L137">                    loading = false</span>
+
+<span class="nc bnc" id="L139" title="All 6 branches missed.">                    val item = it.procedures.find { it.code == item?.codeValue }</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">                    minPrice = item?.minPrice</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">                    maxPrice = item?.maxPrice</span>
+<span class="nc" id="L142">                    _showPrice.value = Event(Unit)</span>
+<span class="nc" id="L143">                }, {</span>
+<span class="nc" id="L144">                    loading = false</span>
+<span class="nc" id="L145">                })</span>
+        )
+<span class="nc" id="L147">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L150">        callbacks.add(callback)</span>
+<span class="nc" id="L151">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L154">        callbacks.remove(callback)</span>
+<span class="nc" id="L155">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L158">        super.onCleared()</span>
+<span class="nc" id="L159">        compositeDisposable.dispose()</span>
+<span class="nc" id="L160">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

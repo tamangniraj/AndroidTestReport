@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HeadShotRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.headshots</a> &gt; <span class="el_source">HeadShotRepository.kt</span></div><h1>HeadShotRepository.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.headshots
+
+import com.vivekahealth.vivekahealth.data.local.home.ClientDetailsDao
+import com.vivekahealth.vivekahealth.data.local.home.MemberInfoDao
+import com.vivekahealth.vivekahealth.data.remote.home.AppInstallUpdate
+import com.vivekahealth.vivekahealth.data.remote.home.ClientDetailResponse
+import com.vivekahealth.vivekahealth.data.remote.home.MemberInfo
+import com.vivekahealth.vivekahealth.data.remote.home.SwitcherResponse
+import com.vivekahealth.vivekahealth.data.remote.register.DataResponse
+import com.vivekahealth.vivekahealth.ui.homePage.repository.HomeRepository
+import io.reactivex.Single
+import jakarta.inject.Inject
+import kotlinx.coroutines.flow.Flow
+
+<span class="fc" id="L15">class HeadShotRepository @Inject constructor(</span>
+<span class="fc" id="L16">    private val memberInfoDao: MemberInfoDao,</span>
+<span class="fc" id="L17">    private val clientDetailsDao: ClientDetailsDao,</span>
+<span class="fc" id="L18">    private val homeRepository: HomeRepository</span>
+) {
+
+    fun getMemberInfoFlow(memberId: String): Flow&lt;MemberInfo?&gt; {
+<span class="fc" id="L22">        return memberInfoDao.getMemberInfoFlow(memberId)</span>
+    }
+
+    fun getClientDetailFlow(memberId: String): Flow&lt;ClientDetailResponse?&gt; {
+<span class="fc" id="L26">        return clientDetailsDao.getClientDetailLiveData(memberId)</span>
+    }
+
+    fun sendAppInstallUpdateData(
+        installInfo: AppInstallUpdate,
+        memberId: String
+    ): Single&lt;DataResponse&gt; {
+<span class="fc" id="L33">        return homeRepository.sendAppInstallUpdateData(installInfo, memberId)</span>
+    }
+
+    fun getSwitcher(memberId: String): Single&lt;SwitcherResponse&gt; {
+<span class="fc" id="L37">        return homeRepository.getSwitcher(memberId)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

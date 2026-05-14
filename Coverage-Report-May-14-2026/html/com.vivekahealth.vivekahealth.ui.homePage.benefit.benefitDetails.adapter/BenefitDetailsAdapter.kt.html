@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BenefitDetailsAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.benefit.benefitDetails.adapter</a> &gt; <span class="el_source">BenefitDetailsAdapter.kt</span></div><h1>BenefitDetailsAdapter.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.benefit.benefitDetails.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.data.remote.home.MemberBenefitDto
+import com.vivekahealth.vivekahealth.databinding.SingleRowBubbleBenefitDetailsBinding
+import timber.log.Timber
+
+class BenefitDetailsAdapter(private var onClick: (MemberBenefitDto) -&gt; Unit) : ListAdapter&lt;MemberBenefitDto, RecyclerView.ViewHolder&gt;(
+    BenefitBubbleDiffCallback()
+) {
+
+    var selectedPosition: Int = 0
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return MemberViewHolder(
+            SingleRowBubbleBenefitDetailsBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            ),
+            onClick,
+            selectedPosition
+        )
+    }
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val member = getItem(position)
+
+//        (holder as MemberViewHolder).bind(member)
+
+        (holder as MemberViewHolder).binding.setClickListener {
+            notifyItemChanged(selectedPosition)
+//
+//            selectedPosition = position
+//
+//            holder.binding.clicked = selectedPosition == position
+
+            Timber.d(itemCount.toString())
+            onClick(member)
+            selectedPosition = position
+//            if(position != itemCount-1) {
+//                onClick(member)
+//            }
+//
+//            if (position != itemCount - 1) {
+//                selectedPosition = position
+//            }
+            notifyItemChanged(position)
+        }
+
+        holder.binding.member = member
+//        holder.binding.hasImage = member.hasAvatar.toBooleanStrict()
+
+        holder.binding.clicked = member.isSelected
+//                selectedPosition == position
+
+        holder.binding.hasImage = member.selfieAvailable
+
+        holder.binding.isAdd = false
+    }
+
+    class MemberViewHolder(
+        val binding: SingleRowBubbleBenefitDetailsBinding,
+        private val onClick: (MemberBenefitDto) -&gt; Unit,
+        private var selectedPosition: Int
+    ) : RecyclerView.ViewHolder(binding.root)
+}
+
+<span class="nc" id="L76">private class BenefitBubbleDiffCallback : DiffUtil.ItemCallback&lt;MemberBenefitDto&gt;() {</span>
+
+    override fun areItemsTheSame(oldItem: MemberBenefitDto, newItem: MemberBenefitDto): Boolean {
+<span class="nc" id="L79">        return oldItem == newItem</span>
+    }
+
+    override fun areContentsTheSame(oldItem: MemberBenefitDto, newItem: MemberBenefitDto): Boolean {
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        return oldItem.isSelected == newItem.isSelected</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

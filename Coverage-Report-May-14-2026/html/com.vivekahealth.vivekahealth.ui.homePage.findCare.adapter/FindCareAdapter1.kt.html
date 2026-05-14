@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FindCareAdapter1.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.homePage.findCare.adapter</a> &gt; <span class="el_source">FindCareAdapter1.kt</span></div><h1>FindCareAdapter1.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.homePage.findCare.adapter
+
+import android.graphics.Color
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import com.vivekahealth.vivekahealth.databinding.MydoctorcardBinding
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.DoctorResponseNew
+import com.vivekahealth.vivekahealth.data.remote.home.findCare.doctorModelsNew.Value
+import java.math.RoundingMode
+import java.text.DecimalFormat
+
+<span class="nc" id="L13">class FindCareAdapter1(</span>
+<span class="nc" id="L14">    private var onClick:</span>
+        (Value) -&gt; Unit,
+<span class="nc" id="L16">    var listMain: List&lt;DoctorResponseNew&gt; = ArrayList(),</span>
+<span class="nc" id="L17">    var listLength: ArrayList&lt;Any&gt;,</span>
+<span class="nc" id="L18">    var click: List&lt;Value&gt; = ArrayList(),</span>
+<span class="nc" id="L19">    var dial_click: listnerclick</span>
+<span class="nc" id="L20">) :</span>
+<span class="nc" id="L21">    RecyclerView.Adapter&lt;RecyclerView.ViewHolder&gt;() {</span>
+
+<span class="nc" id="L23">    var selectedPosition: Int = 0</span>
+
+    private inner class ViewHeaderViewHolder(
+        val binding: MydoctorcardBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(position: Int) {
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+<span class="nc" id="L33">        return ViewHeaderViewHolder(</span>
+<span class="nc" id="L34">            MydoctorcardBinding.inflate(</span>
+<span class="nc" id="L35">                LayoutInflater.from(parent.context),</span>
+<span class="nc" id="L36">                parent,</span>
+<span class="nc" id="L37">                false</span>
+            )
+        )
+    }
+
+/*
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return MemberViewHolder(
+            MydoctorcardBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            ),onClick,selectedPosition
+        )
+    }
+*/
+    override fun getItemId(position: Int): Long {
+<span class="nc" id="L54">        return position.toLong()</span>
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        // val member = getItem(position)
+
+<span class="nc" id="L60">        (holder as ViewHeaderViewHolder).binding.cardView.setOnClickListener {</span>
+<span class="nc" id="L61">            onClick(click[position])</span>
+<span class="nc" id="L62">        }</span>
+
+<span class="nc" id="L64">        (holder as ViewHeaderViewHolder).binding.doctorName.setText(</span>
+<span class="nc" id="L65">            listMain[position].values[position].displayName</span>
+        )
+<span class="nc" id="L67">        (holder as ViewHeaderViewHolder).binding.mobileNo.setText(</span>
+<span class="nc" id="L68">            listMain[position].values[position].telephone</span>
+        )
+<span class="nc" id="L70">        (holder as ViewHeaderViewHolder).binding.type.setText(</span>
+<span class="nc" id="L71">            listMain[position].values[position].primaryTaxonomy</span>
+        )
+
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (listMain[position].values[position].providerNetwork.equals(&quot;IN_NETWORK_PROVIDER&quot;)) {</span>
+<span class="nc" id="L75">            (holder as ViewHeaderViewHolder).binding.networkinOrOut.setText(&quot;In Network&quot;)</span>
+<span class="nc" id="L76">            (holder as ViewHeaderViewHolder).binding.networkinOrOut.setTextColor(</span>
+<span class="nc" id="L77">                Color.parseColor(&quot;#00d671&quot;)</span>
+            )
+        } else {
+<span class="nc" id="L80">            (holder as ViewHeaderViewHolder).binding.networkinOrOut.setText(&quot;Out of Network&quot;)</span>
+<span class="nc" id="L81">            (holder as ViewHeaderViewHolder).binding.networkinOrOut.setTextColor(</span>
+<span class="nc" id="L82">                Color.parseColor(&quot;#DC0C2B&quot;)</span>
+            )
+        }
+
+<span class="nc" id="L86">        try {</span>
+<span class="nc" id="L87">            val df = DecimalFormat(&quot;#.##&quot;)</span>
+<span class="nc" id="L88">            df.roundingMode = RoundingMode.FLOOR</span>
+
+<span class="nc" id="L90">            (holder as ViewHeaderViewHolder).binding.miles.setText(</span>
+<span class="nc" id="L91">                df.format(listMain[position].values[position].distance).toString() + &quot; miles&quot;</span>
+            )
+<span class="nc" id="L93">            (holder as ViewHeaderViewHolder).binding.rating.setText(</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">                listMain[position].values[position].nsa?.composite!!.symbolQuantity</span>
+            )
+<span class="nc" id="L96">        } catch (e: Exception) {</span>
+        }
+<span class="nc" id="L98">        (holder as ViewHeaderViewHolder).binding.call.setOnClickListener {</span>
+<span class="nc" id="L99">            dial_click.clickdata(listMain[position].values[position].telephone!!)</span>
+<span class="nc" id="L100">        }</span>
+<span class="nc" id="L101">    }</span>
+    fun roundOffDecimal(number: Double): Double? {
+<span class="nc" id="L103">        val df = DecimalFormat(&quot;#.##&quot;)</span>
+<span class="nc" id="L104">        df.roundingMode = RoundingMode.FLOOR</span>
+<span class="nc" id="L105">        return df.format(number).toDouble()</span>
+    }
+    class MemberViewHolder(
+        val binding: MydoctorcardBinding,
+        private val onClick: (
+            Value
+        ) -&gt; Unit,
+        private var selectedPosition: Int
+    ) : RecyclerView.ViewHolder(binding.root)
+
+    override fun getItemCount(): Int {
+<span class="nc" id="L116">        return listLength.size</span>
+    }
+
+    interface listnerclick {
+        fun clickdata(phone_no: String)
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

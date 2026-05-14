@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoginViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.vivekahealth.vivekahealth.ui.login.login</a> &gt; <span class="el_source">LoginViewModel.kt</span></div><h1>LoginViewModel.kt</h1><pre class="source lang-java linenums">package com.vivekahealth.vivekahealth.ui.login.login
+
+import android.content.SharedPreferences
+import android.text.Editable
+import android.text.TextWatcher
+import androidx.databinding.Bindable
+import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
+import androidx.databinding.library.baseAdapters.BR
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.gson.Gson
+import com.vivekahealth.vivekahealth.data.remote.enroll.EnrollMember
+import com.vivekahealth.vivekahealth.data.remote.login.AuthToken
+import com.vivekahealth.vivekahealth.data.remote.login.ErrorResponse
+import com.vivekahealth.vivekahealth.data.remote.register.RegisterUser
+import com.vivekahealth.vivekahealth.ui.login.repository.LoginRepository
+import com.vivekahealth.vivekahealth.utils.Constants
+import com.vivekahealth.vivekahealth.utils.Event
+import com.vivekahealth.vivekahealth.utils.HelperFingerAuth
+import com.vivekahealth.vivekahealth.utils.HelperUtils
+import com.vivekahealth.vivekahealth.utils.remote.APILoginResponse
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
+import org.apache.commons.lang3.StringUtils
+import retrofit2.Response
+
+<span class="nc" id="L33">class LoginViewModel @Inject constructor(</span>
+<span class="nc" id="L34">    private val preferences: SharedPreferences,</span>
+<span class="nc" id="L35">    private val loginRepository: LoginRepository</span>
+<span class="nc" id="L36">) : ViewModel(), Observable {</span>
+
+<span class="nc" id="L38">    var gson = Gson()</span>
+<span class="nc" id="L39">    var user = RegisterUser()</span>
+<span class="nc" id="L40">    var enroll = EnrollMember()</span>
+
+<span class="nc" id="L42">    var encode: String = preferences.getString(</span>
+<span class="nc" id="L43">        Constants.KEY_PASSWORD,</span>
+<span class="nc" id="L44">        &quot;Re-register&quot;</span>
+<span class="nc" id="L45">    ).toString()</span>
+
+<span class="nc" id="L47">    var savedUserNameEncoded: String = preferences.getString(</span>
+<span class="nc" id="L48">        Constants.encodedEmail,</span>
+<span class="nc" id="L49">        &quot;&quot;</span>
+<span class="nc" id="L50">    ).toString()</span>
+<span class="nc" id="L51">    var savedPasswordEncoded: String = preferences.getString(</span>
+<span class="nc" id="L52">        Constants.encodedPassword,</span>
+<span class="nc" id="L53">        &quot;&quot;</span>
+<span class="nc" id="L54">    ).toString()</span>
+<span class="nc" id="L55">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+
+<span class="nc" id="L57">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+//    var isBiometricEnabled:Boolean = preferences.getBoolean(preferences.getString(&quot;memberID&quot;,&quot;&quot;)+Constants.biometricPref,false)
+
+<span class="nc" id="L60">    private val _emailChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val emailChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L62">        get() = _emailChanged</span>
+<span class="nc" id="L63">    private val _passwordChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val passwordChanged: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L65">        get() = _passwordChanged</span>
+
+<span class="nc" id="L67">    private val _logInSuccess = MutableLiveData&lt;APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;&gt;()</span>
+    val logInSuccess: LiveData&lt;APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;&gt;
+<span class="nc" id="L69">        get() = _logInSuccess</span>
+
+<span class="nc" id="L71">    private val _alternativeApp = MutableLiveData&lt;Event&lt;ErrorResponse&gt;&gt;()</span>
+    val alternativeApp: LiveData&lt;Event&lt;ErrorResponse&gt;&gt;
+<span class="nc" id="L73">        get() = _alternativeApp</span>
+
+<span class="nc" id="L75">    private val _logInFail = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+    val logInFail: LiveData&lt;Event&lt;String&gt;&gt;
+<span class="nc" id="L77">        get() = _logInFail</span>
+
+<span class="nc" id="L79">    private val _signUp = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val signUp: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L81">        get() = _signUp</span>
+<span class="nc" id="L82">    private val _loginClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val loginClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L84">        get() = _loginClicked</span>
+
+<span class="nc" id="L86">    private val _fingerPrintLogin = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val fingerPrintLogin: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L88">        get() = _fingerPrintLogin</span>
+<span class="nc" id="L89">    private val _registrationPopUp = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val registrationPopUp: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L91">        get() = _registrationPopUp</span>
+<span class="nc" id="L92">    private val _enrollPopUp = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val enrollPopUp: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L94">        get() = _enrollPopUp</span>
+
+<span class="nc" id="L96">    private val _navigateToFingerPrint = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+    val navigateToFingerPrint: LiveData&lt;Event&lt;Unit&gt;&gt;
+<span class="nc" id="L98">        get() = _navigateToFingerPrint</span>
+<span class="nc" id="L99">    var email: String = &quot;&quot;</span>
+
+<span class="nc" id="L101">    private val _isAppUpdateAvailable = MutableLiveData&lt;Boolean&gt;()</span>
+<span class="nc" id="L102">    val getAppUpdateAvailable: LiveData&lt;Boolean&gt; get() = _isAppUpdateAvailable</span>
+//        @Bindable get
+//        set(value) {
+//            field = value
+//            callbacks.notifyCallbacks(this, BR.email, null)
+//        }
+
+<span class="nc" id="L109">    var biometricEnabled: MutableLiveData&lt;Boolean&gt; = MutableLiveData(</span>
+<span class="nc" id="L110">        preferences.getBoolean(</span>
+<span class="nc" id="L111">            preferences.getString(&quot;memberID&quot;, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,</span>
+<span class="nc" id="L112">            false</span>
+        )
+    )
+<span class="nc" id="L115">        @Bindable get</span>
+        set(value) {
+<span class="nc" id="L117">            field = value</span>
+<span class="nc" id="L118">            callbacks.notifyCallbacks(this, BR.biometricEnabled, null)</span>
+<span class="nc" id="L119">        }</span>
+<span class="nc" id="L120">    var password: String = &quot;&quot;</span>
+
+    fun setBiometric() {
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (biometricEnabled.value == true) {</span>
+<span class="nc" id="L124">            biometricEnabled.value = false</span>
+<span class="nc" id="L125">            preferences.edit()</span>
+<span class="nc" id="L126">                .putBoolean(</span>
+<span class="nc" id="L127">                    preferences.getString(&quot;memberID&quot;, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,</span>
+<span class="nc" id="L128">                    false</span>
+                )
+<span class="nc" id="L130">                .apply()</span>
+        } else {
+<span class="nc" id="L132">            biometricEnabled.value = true</span>
+<span class="nc" id="L133">            preferences.edit()</span>
+<span class="nc" id="L134">                .putBoolean(</span>
+<span class="nc" id="L135">                    preferences.getString(&quot;memberID&quot;, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,</span>
+<span class="nc" id="L136">                    true</span>
+                )
+<span class="nc" id="L138">                .apply()</span>
+        }
+<span class="nc" id="L140">    }</span>
+
+<span class="nc" id="L142">    @get:Bindable</span>
+<span class="nc" id="L143">    val emailTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L146">        }</span>
+
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L149">        }</span>
+
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L152">            _emailChanged.value = Event(s.toString().trim())</span>
+<span class="nc" id="L153">        }</span>
+    }
+
+<span class="nc" id="L156">    @get:Bindable</span>
+<span class="nc" id="L157">    val passwordTextWatcher = object : TextWatcher {</span>
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            // Do nothing.
+<span class="nc" id="L160">        }</span>
+
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+<span class="nc" id="L163">        }</span>
+
+        override fun afterTextChanged(s: Editable) {
+<span class="nc" id="L166">            _passwordChanged.value = Event(s.toString())</span>
+<span class="nc" id="L167">        }</span>
+    }
+
+<span class="nc" id="L170">    private var _emailEmpty = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+    val emailEmpty: LiveData&lt;Event&lt;Boolean&gt;&gt;
+<span class="nc" id="L172">        get() = _emailEmpty</span>
+
+    fun fingerPrintLogin() {
+<span class="nc" id="L175">        _fingerPrintLogin.value = Event(Unit)</span>
+<span class="nc" id="L176">    }</span>
+
+    fun sample(): Boolean {
+<span class="nc bnc" id="L179" title="All 2 branches missed.">        val value = biometricEnabled.value ?: true</span>
+<span class="nc" id="L180">        return value</span>
+    }
+
+    fun onCreateClicked() {
+<span class="nc" id="L184">        val regEdit = preferences.edit()</span>
+
+<span class="nc" id="L186">        var prevReg = preferences.getString(Constants.Registration, &quot;&quot;)</span>
+<span class="nc" id="L187">        regEdit.putString(Constants.RegistrationPrev, prevReg)</span>
+<span class="nc" id="L188">        regEdit.putString(Constants.Registration, &quot;&quot;)</span>
+<span class="nc" id="L189">        var prevEnroll = preferences.getString(Constants.enroll, &quot;&quot;)</span>
+<span class="nc" id="L190">        regEdit.putString(Constants.enrollPrev, prevEnroll)</span>
+<span class="nc" id="L191">        regEdit.putString(Constants.enroll, &quot;&quot;)</span>
+
+<span class="nc" id="L193">        var marriageStatus = preferences.getString(Constants.maritalStatus, &quot;&quot;)</span>
+<span class="nc" id="L194">        preferences.edit().putString(Constants.maritalStatusTemp, marriageStatus).apply()</span>
+<span class="nc" id="L195">        preferences.edit().putString(Constants.maritalStatus, &quot;&quot;).apply()</span>
+
+<span class="nc" id="L197">        var coverage = preferences.getString(Constants.ContinueCoverage, &quot;&quot;)</span>
+<span class="nc" id="L198">        regEdit.putBoolean(Constants.continueRegistrationStarted, false)</span>
+
+<span class="nc" id="L200">        regEdit.putString(Constants.ContinueCoverageTemp, coverage)</span>
+<span class="nc" id="L201">        regEdit.remove(Constants.ContinueCoverage)</span>
+
+<span class="nc" id="L203">        regEdit.apply()</span>
+
+<span class="nc" id="L205">        _signUp.value = Event(Unit)</span>
+<span class="nc" id="L206">    }</span>
+
+    fun fingerPrint() {
+<span class="nc" id="L209">        _navigateToFingerPrint.value = Event(Unit)</span>
+<span class="nc" id="L210">    }</span>
+
+    fun removeConfData() {
+<span class="nc bnc" id="L213" title="All 6 branches missed.">        if (!preferences.getString(Constants.Registration, &quot;&quot;).isNullOrBlank()) {</span>
+<span class="nc" id="L214">            user = gson.fromJson(</span>
+<span class="nc" id="L215">                preferences.getString(Constants.Registration, &quot;&quot;),</span>
+<span class="nc" id="L216">                RegisterUser::class.java</span>
+            )
+
+<span class="nc" id="L219">            user.ssn = &quot;&quot;</span>
+<span class="nc" id="L220">            user.dob = &quot;&quot;</span>
+
+<span class="nc" id="L222">            val regString = gson.toJson(user)</span>
+<span class="nc" id="L223">            val regEdit = preferences.edit()</span>
+<span class="nc" id="L224">            regEdit.putString(Constants.Registration, regString)</span>
+<span class="nc" id="L225">            regEdit.apply()</span>
+        }
+<span class="nc bnc" id="L227" title="All 6 branches missed.">        if (!preferences.getString(Constants.enroll, &quot;&quot;).isNullOrBlank()) {</span>
+<span class="nc" id="L228">            enroll = gson.fromJson(</span>
+<span class="nc" id="L229">                preferences.getString(Constants.enroll, &quot;&quot;),</span>
+<span class="nc" id="L230">                EnrollMember::class.java</span>
+            )
+
+<span class="nc" id="L233">            enroll.spouse!!.ssn = &quot;&quot;</span>
+<span class="nc" id="L234">            enroll.spouse!!.dateOfBirth = &quot;&quot;</span>
+
+<span class="nc bnc" id="L236" title="All 2 branches missed.">            for (child in enroll.children.indices) {</span>
+<span class="nc" id="L237">                enroll.children[child].ssn = &quot;&quot;</span>
+<span class="nc" id="L238">                enroll.children[child].dateOfBirth = &quot;&quot;</span>
+            }
+
+<span class="nc" id="L241">            val enrollString = gson.toJson(enroll)</span>
+
+<span class="nc" id="L243">            val editEnroll = preferences.edit()</span>
+
+<span class="nc" id="L245">            editEnroll.putString(Constants.enroll, enrollString)</span>
+<span class="nc" id="L246">            editEnroll.apply()</span>
+        }
+<span class="nc" id="L248">    }</span>
+
+    fun getFcmToken() {
+<span class="nc" id="L251">        FirebaseMessaging.getInstance().token.addOnCompleteListener(</span>
+            OnCompleteListener { task -&gt;
+<span class="nc bnc" id="L253" title="All 2 branches missed.">                if (!task.isSuccessful) {</span>
+<span class="nc" id="L254">                    return@OnCompleteListener</span>
+                }
+
+                // Get new FCM registration token
+<span class="nc" id="L258">                val token = task.result</span>
+<span class="nc" id="L259">                preferences.edit().putString(&quot;FCM_TOKEN&quot;, token).apply()</span>
+
+                // Log and toast
+<span class="nc" id="L262">            }</span>
+        )
+<span class="nc" id="L264">    }</span>
+
+    fun incompleteContinue() {
+<span class="nc" id="L267">        user = gson.fromJson(</span>
+<span class="nc" id="L268">            preferences.getString(Constants.Registration, &quot;&quot;),</span>
+<span class="nc" id="L269">            RegisterUser::class.java</span>
+        )
+<span class="nc" id="L271">        enroll =</span>
+<span class="nc" id="L272">            gson.fromJson(preferences.getString(Constants.enroll, &quot;&quot;), EnrollMember::class.java)</span>
+<span class="nc" id="L273">    }</span>
+
+    fun reloadPrevData() {
+<span class="nc" id="L276">        if (preferences.getString(Constants.Registration, &quot;&quot;)</span>
+<span class="nc bnc" id="L277" title="All 8 branches missed.">            .isNullOrBlank() &amp;&amp; !preferences.getString(Constants.RegistrationPrev, &quot;&quot;)</span>
+<span class="nc bnc" id="L278" title="All 4 branches missed.">                .isNullOrBlank()</span>
+        ) {
+<span class="nc" id="L280">            val regEdit = preferences.edit()</span>
+
+<span class="nc" id="L282">            var prevReg = preferences.getString(Constants.RegistrationPrev, &quot;&quot;)</span>
+<span class="nc" id="L283">            var coverage = preferences.getString(Constants.ContinueCoverageTemp, &quot;&quot;)</span>
+<span class="nc" id="L284">            var prevEnroll = preferences.getString(Constants.enrollPrev, &quot;&quot;)</span>
+<span class="nc" id="L285">            var marriageStatus = preferences.getString(Constants.maritalStatusTemp, &quot;&quot;)</span>
+
+<span class="nc" id="L287">            regEdit.putString(Constants.maritalStatus, marriageStatus)</span>
+<span class="nc" id="L288">            regEdit.putString(Constants.Registration, prevReg)</span>
+
+<span class="nc" id="L290">            regEdit.putString(Constants.ContinueCoverage, coverage)</span>
+
+<span class="nc" id="L292">            regEdit.putBoolean(Constants.continueRegistrationStarted, true)</span>
+
+<span class="nc" id="L294">            regEdit.putString(Constants.enroll, prevEnroll)</span>
+<span class="nc" id="L295">            regEdit.apply()</span>
+<span class="nc" id="L296">            removeEnrollPrev()</span>
+<span class="nc" id="L297">            removeRegPrev()</span>
+        }
+<span class="nc" id="L299">        removeConfData()</span>
+<span class="nc" id="L300">    }</span>
+
+    fun removeEnrollData() {
+<span class="nc" id="L303">        preferences.edit().remove(Constants.enroll).apply()</span>
+<span class="nc" id="L304">    }</span>
+
+    fun loginClicked() {
+<span class="nc" id="L307">        _loginClicked.value = Event(Unit)</span>
+<span class="nc" id="L308">    }</span>
+
+    fun login() {
+<span class="nc" id="L311">        compositeDisposable.add(</span>
+
+<span class="nc" id="L313">            loginRepository.getLogin(userName = email, password = password, &quot;&quot;, false)</span>
+<span class="nc" id="L314">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L315">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L316">                .doOnSubscribe {</span>
+<span class="nc" id="L317">                    _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().loading()</span>
+<span class="nc" id="L318">                }</span>
+<span class="nc" id="L319">                .subscribe({</span>
+<span class="nc bnc" id="L320" title="All 10 branches missed.">                    if (it.isSuccessful || it.raw().code == 200 || it.raw().code == 400 || it.raw().code == 401 || it.raw().code == 404) {</span>
+<span class="nc" id="L321">                        _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(it)</span>
+<span class="nc bnc" id="L322" title="All 2 branches missed.">                    } else if (it.raw().code == 403) {</span>
+<span class="nc" id="L323">                        try {</span>
+<span class="nc" id="L324">                            val errorResponse: ErrorResponse? = gson.fromJson(</span>
+<span class="nc bnc" id="L325" title="All 2 branches missed.">                                it.errorBody()?.string(),</span>
+<span class="nc" id="L326">                                ErrorResponse::class.java</span>
+                            )
+<span class="nc bnc" id="L328" title="All 2 branches missed.">                            errorResponse?.let {</span>
+<span class="nc" id="L329">                                _alternativeApp.value = Event(errorResponse)</span>
+<span class="nc" id="L330">                            }</span>
+<span class="nc" id="L331">                        } catch (e: Exception) {</span>
+<span class="nc" id="L332">                            _logInFail.value = Event(&quot;Something went wrong, Please try again.&quot;)</span>
+                        }
+                    } else {
+<span class="nc" id="L335">                        _logInFail.value = Event(it.raw().code.toString())</span>
+                    }
+<span class="nc" id="L337">                }, {</span>
+<span class="nc" id="L338">                    _logInFail.value = Event(it.message.toString())</span>
+<span class="nc" id="L339">                })</span>
+        )
+<span class="nc" id="L341">    }</span>
+
+    fun magicLogin(magicTempUUID: String) {
+<span class="nc" id="L344">        preferences.edit().putString(Constants.MAGIC_TEMP_TOKEN, magicTempUUID).apply()</span>
+<span class="nc" id="L345">        compositeDisposable.add(</span>
+<span class="nc" id="L346">            loginRepository.getMagicLogin(magicTempUUID)</span>
+<span class="nc" id="L347">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L348">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L349">                .doOnSubscribe {</span>
+<span class="nc" id="L350">                    preferences.edit().putBoolean(Constants.IS_MAGIC_LOGIN, true).apply()</span>
+<span class="nc" id="L351">                    _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().loading()</span>
+<span class="nc" id="L352">                }</span>
+<span class="nc" id="L353">                .subscribe({</span>
+<span class="nc" id="L354">                    _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(it)</span>
+<span class="nc" id="L355">                }, {</span>
+<span class="nc" id="L356">                    _logInFail.value = Event(it.message.toString())</span>
+<span class="nc" id="L357">                })</span>
+        )
+<span class="nc" id="L359">    }</span>
+
+    fun showReg() {
+<span class="nc" id="L362">        _registrationPopUp.value = Event(Unit)</span>
+<span class="nc" id="L363">    }</span>
+
+    fun showEnroll() {
+<span class="nc" id="L366">        _enrollPopUp.value = Event(Unit)</span>
+<span class="nc" id="L367">    }</span>
+
+    fun enrollIncomplete(): Boolean {
+<span class="nc bnc" id="L370" title="All 2 branches missed.">        return !StringUtils.equals(preferences.getString(Constants.enroll, &quot;&quot;), &quot;&quot;)</span>
+    }
+
+    fun registrationIncomplete(): Boolean {
+<span class="nc bnc" id="L374" title="All 2 branches missed.">        if (!StringUtils.equals(preferences.getString(Constants.register, &quot;&quot;), &quot;&quot;)) {</span>
+<span class="nc" id="L375">            user = gson.fromJson(</span>
+<span class="nc" id="L376">                preferences.getString(Constants.register, &quot;&quot;),</span>
+<span class="nc" id="L377">                RegisterUser::class.java</span>
+            )
+        }
+<span class="nc bnc" id="L380" title="All 6 branches missed.">        return user.email!!.equals(email, true) &amp;&amp; user.firstName!!.isNotBlank()</span>
+    }
+
+    fun removeRegPrev() {
+<span class="nc" id="L384">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L385">        regEdit.putString(Constants.RegistrationPrev, &quot;&quot;)</span>
+<span class="nc" id="L386">        regEdit.apply()</span>
+<span class="nc" id="L387">    }</span>
+
+    fun removeEnrollPrev() {
+<span class="nc" id="L390">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L391">        regEdit.putString(Constants.enrollPrev, &quot;&quot;)</span>
+<span class="nc" id="L392">        regEdit.apply()</span>
+<span class="nc" id="L393">    }</span>
+
+    fun removeReg() {
+<span class="nc" id="L396">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L397">        regEdit.putString(Constants.Registration, &quot;&quot;)</span>
+<span class="nc" id="L398">        regEdit.apply()</span>
+<span class="nc" id="L399">    }</span>
+
+    fun removeEnroll() {
+<span class="nc" id="L402">        val regEdit = preferences.edit()</span>
+<span class="nc" id="L403">        regEdit.putString(Constants.enroll, &quot;&quot;)</span>
+<span class="nc" id="L404">        regEdit.apply()</span>
+<span class="nc" id="L405">    }</span>
+
+    fun allowBiometric(): Boolean {
+<span class="nc bnc" id="L408" title="All 4 branches missed.">        return preferences.contains(Constants.KEY_PASSWORD) &amp;&amp; preferences.getBoolean(</span>
+<span class="nc" id="L409">            preferences.getString(&quot;memberID&quot;, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,</span>
+<span class="nc" id="L410">            false</span>
+        )
+    }
+
+    fun saveTokens(data: AuthToken) {
+<span class="nc" id="L415">        preferences.edit().putString(Constants.ACCESS_TOKEN, data.access_token).apply()</span>
+<span class="nc" id="L416">        preferences.edit().putString(Constants.TOKEN_TYPE, data.token_type).apply()</span>
+<span class="nc" id="L417">        preferences.edit().putString(Constants.EXPIRES_IN, data.expires_in).apply()</span>
+<span class="nc" id="L418">        preferences.edit().putString(Constants.SCOPE, data.scope).apply()</span>
+<span class="nc" id="L419">    }</span>
+
+    fun forgotPassClicked() {
+<span class="nc bnc" id="L422" title="All 2 branches missed.">        _emailEmpty.value = Event(email.isEmpty())</span>
+<span class="nc" id="L423">    }</span>
+
+    fun savePassword() {
+<span class="nc" id="L426">        preferences.edit().remove(Constants.INACTIVITY_TIME_STAMP).apply()</span>
+<span class="nc" id="L427">        val encoded = HelperFingerAuth.encryptString(password)</span>
+<span class="nc" id="L428">        preferences.edit().putString(</span>
+<span class="nc" id="L429">            Constants.KEY_PASSWORD,</span>
+<span class="nc" id="L430">            encoded</span>
+<span class="nc" id="L431">        ).apply()</span>
+//        val encodedEmail = HelperFingerAuth.encryptString(email)
+<span class="nc bnc" id="L433" title="All 2 branches missed.">        if (preferences.getString(Constants.emailLogin, &quot;&quot;).equals(email, true)) {</span>
+<span class="nc" id="L434">            preferences.edit().putString(</span>
+<span class="nc" id="L435">                Constants.emailLogin,</span>
+<span class="nc" id="L436">                email</span>
+<span class="nc" id="L437">            ).apply()</span>
+        } else {
+<span class="nc" id="L439">            preferences.edit().putBoolean(</span>
+<span class="nc" id="L440">                Constants.BIO_PERMISSION_REQUESTED,</span>
+<span class="nc" id="L441">                false</span>
+<span class="nc" id="L442">            ).apply()</span>
+<span class="nc" id="L443">            preferences.edit().putString(</span>
+<span class="nc" id="L444">                Constants.emailLogin,</span>
+<span class="nc" id="L445">                email</span>
+<span class="nc" id="L446">            ).apply()</span>
+        }
+<span class="nc" id="L448">    }</span>
+
+    fun saveForOffline(password: String, userName: String) {
+<span class="nc" id="L451">        val encodedPassword = HelperUtils.encrypt(password)</span>
+<span class="nc" id="L452">        val encodedEmail = HelperUtils.encrypt(userName)</span>
+<span class="nc" id="L453">        preferences.edit().putString(Constants.encodedPassword, encodedPassword).apply()</span>
+<span class="nc" id="L454">        preferences.edit().putString(Constants.encodedEmail, encodedEmail).apply()</span>
+<span class="nc" id="L455">    }</span>
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L458">        callbacks.remove(callback)</span>
+<span class="nc" id="L459">    }</span>
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+<span class="nc" id="L462">        callbacks.add(callback)</span>
+<span class="nc" id="L463">    }</span>
+
+    override fun onCleared() {
+<span class="nc" id="L466">        super.onCleared()</span>
+<span class="nc" id="L467">        compositeDisposable.dispose()</span>
+<span class="nc" id="L468">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
