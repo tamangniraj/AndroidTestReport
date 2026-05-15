@@ -20,152 +20,150 @@ object ActivityUtils {
 <span class="nc" id="L20">    var materialDialog: MaterialDialog? = null</span>
 
     fun isEmailValid(email: String?): Boolean {
-<span class="nc" id="L23">        var isValid = false</span>
-<span class="nc" id="L24">        val expression = &quot;^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$&quot;</span>
-<span class="nc" id="L25">        val pattern = Pattern.compile(expression, Pattern.CASE_INSENSITIVE)</span>
-<span class="nc" id="L26">        val matcher = pattern.matcher(email)</span>
-<span class="nc" id="L27">        isValid = matcher.matches()</span>
-<span class="nc" id="L28">        return isValid</span>
+<span class="fc bfc" id="L23" title="All 2 branches covered.">        if (email == null) return false</span>
+<span class="fc" id="L24">        val expression = &quot;^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$&quot;</span>
+<span class="fc" id="L25">        val pattern = Pattern.compile(expression, Pattern.CASE_INSENSITIVE)</span>
+<span class="fc" id="L26">        return pattern.matcher(email).matches()</span>
     }
 
     fun extractToken(url: String): String? {
-<span class="nc" id="L32">        val uri = Uri.parse(url)</span>
-<span class="nc" id="L33">        return uri.getQueryParameter(&quot;token&quot;)</span>
+<span class="fc" id="L30">        val uri = Uri.parse(url)</span>
+<span class="fc" id="L31">        return uri.getQueryParameter(&quot;token&quot;)</span>
     }
-<span class="nc" id="L35">    fun checkSsnValidity(ssn: String, allowTin: Boolean = true): Boolean {</span>
-<span class="nc" id="L36">        val cleaned = ssn.replace(&quot;-&quot;, &quot;&quot;)</span>
-<span class="nc" id="L37">        return checkSsnValidityWithOutDash(cleaned, allowTin)</span>
+<span class="fc" id="L33">    fun checkSsnValidity(ssn: String, allowTin: Boolean = true): Boolean {</span>
+<span class="fc" id="L34">        val cleaned = ssn.replace(&quot;-&quot;, &quot;&quot;)</span>
+<span class="fc" id="L35">        return checkSsnValidityWithOutDash(cleaned, allowTin)</span>
     }
 
-<span class="nc" id="L40">    fun checkSsnValidityWithOutDash(ssn: String, allowTin: Boolean = true): Boolean {</span>
-<span class="nc bnc" id="L41" title="All 2 branches missed.">        val regex = if (allowTin) Constants.SSN_REGEX_WITH_TIN else Constants.SSN_REGEX</span>
-<span class="nc" id="L42">        return ssn.matches(Regex(regex))</span>
+<span class="fc" id="L38">    fun checkSsnValidityWithOutDash(ssn: String, allowTin: Boolean = true): Boolean {</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        val regex = if (allowTin) Constants.SSN_REGEX_WITH_TIN else Constants.SSN_REGEX</span>
+<span class="fc" id="L40">        return ssn.matches(Regex(regex))</span>
     }
 
     fun hasPersonWithSSN(ssnToCheck: String, children: ArrayList&lt;Person&gt;): Boolean {
-<span class="nc" id="L46">        return children.any { it.ssn == ssnToCheck }</span>
+<span class="nc" id="L44">        return children.any { it.ssn == ssnToCheck }</span>
     }
     fun clearPersonSSN(ssnToCheck: String, children: ArrayList&lt;Person&gt;): ArrayList&lt;Person&gt; {
-<span class="nc bnc" id="L49" title="All 6 branches missed.">        children.find { it.ssn == ssnToCheck }?.let {</span>
-<span class="nc" id="L50">            it.ssn = &quot;&quot;</span>
-<span class="nc" id="L51">        }</span>
-<span class="nc" id="L52">        return children</span>
+<span class="nc bnc" id="L47" title="All 6 branches missed.">        children.find { it.ssn == ssnToCheck }?.let {</span>
+<span class="nc" id="L48">            it.ssn = &quot;&quot;</span>
+<span class="nc" id="L49">        }</span>
+<span class="nc" id="L50">        return children</span>
     }
     fun checkSnnLengthNot4(ssn: String?): Boolean {
-<span class="nc bnc" id="L55" title="All 2 branches missed.">        return StringUtils.length(ssn) != 4</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        return StringUtils.length(ssn) != 4</span>
     }
     fun checkSnnLengthNot9(ssn: String?): Boolean {
-<span class="nc bnc" id="L58" title="All 2 branches missed.">        return StringUtils.length(ssn) != 9</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        return StringUtils.length(ssn) != 9</span>
     }
 
     @Throws(IOException::class)
     fun createImageFile(context: Context): File? {
         // Create an image file name
-<span class="nc" id="L64">        val timeStamp =</span>
-<span class="nc" id="L65">            SimpleDateFormat(&quot;yyyyMMdd_HHmmss&quot;, Locale.getDefault())</span>
-<span class="nc" id="L66">                .format(Date())</span>
-<span class="nc" id="L67">        val imageFileName = &quot;JPEG_&quot; + timeStamp + &quot;_&quot;</span>
-<span class="nc" id="L68">        val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)</span>
-<span class="nc" id="L69">        return File.createTempFile(</span>
-<span class="nc" id="L70">            imageFileName, /* prefix */</span>
-<span class="nc" id="L71">            &quot;.jpg&quot;, /* suffix */</span>
-<span class="nc" id="L72">            storageDir /* directory */</span>
+<span class="fc" id="L62">        val timeStamp =</span>
+<span class="fc" id="L63">            SimpleDateFormat(&quot;yyyyMMdd_HHmmss&quot;, Locale.getDefault())</span>
+<span class="fc" id="L64">                .format(Date())</span>
+<span class="fc" id="L65">        val imageFileName = &quot;JPEG_&quot; + timeStamp + &quot;_&quot;</span>
+<span class="fc" id="L66">        val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)</span>
+<span class="fc" id="L67">        return File.createTempFile(</span>
+<span class="fc" id="L68">            imageFileName, /* prefix */</span>
+<span class="fc" id="L69">            &quot;.jpg&quot;, /* suffix */</span>
+<span class="fc" id="L70">            storageDir /* directory */</span>
         )
     }
 
     fun getCurrentDate(): Date {
-<span class="fc" id="L77">        return Calendar.getInstance().time</span>
+<span class="fc" id="L75">        return Calendar.getInstance().time</span>
     }
 
     fun convertDateToFormat(date: Date, format: String): String {
-<span class="nc" id="L81">        return SimpleDateFormat(format, Locale.ENGLISH).format(date)</span>
+<span class="nc" id="L79">        return SimpleDateFormat(format, Locale.ENGLISH).format(date)</span>
     }
     fun getCurrentLocalTime(): String? {
-<span class="nc" id="L84">        val df = SimpleDateFormat(&quot;MM-dd-yyyy &quot;, Locale.ENGLISH)</span>
-<span class="nc" id="L85">        df.timeZone = TimeZone.getTimeZone(&quot;UTC&quot;)</span>
-<span class="nc" id="L86">        val date = Date()</span>
+<span class="nc" id="L82">        val df = SimpleDateFormat(&quot;MM-dd-yyyy &quot;, Locale.ENGLISH)</span>
+<span class="nc" id="L83">        df.timeZone = TimeZone.getTimeZone(&quot;UTC&quot;)</span>
+<span class="nc" id="L84">        val date = Date()</span>
         //        df.setTimeZone(TimeZone.getDefault());
-<span class="nc" id="L88">        return df.format(date)</span>
+<span class="nc" id="L86">        return df.format(date)</span>
     }
 
     fun isThisDateValid(dateToValidate: String?, dateFromat: String): Boolean {
-<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (dateToValidate == null) {</span>
-<span class="nc" id="L93">            return false</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (dateToValidate == null) {</span>
+<span class="nc" id="L91">            return false</span>
         }
-<span class="nc" id="L95">        val splitToValidate = dateToValidate.split(&quot;-&quot;.toRegex()).toTypedArray()</span>
-<span class="nc" id="L96">        val splitFormat = dateFromat.split(&quot;-&quot;.toRegex()).toTypedArray()</span>
-<span class="nc bnc" id="L97" title="All 2 branches missed.">        for (i in splitFormat.indices) {</span>
-<span class="nc bnc" id="L98" title="All 4 branches missed.">            if (splitFormat[i].contentEquals(&quot;yyyy&quot;) &amp;&amp; splitToValidate[i].length != splitFormat[i].length) {</span>
-<span class="nc" id="L99">                return false</span>
+<span class="nc" id="L93">        val splitToValidate = dateToValidate.split(&quot;-&quot;.toRegex()).toTypedArray()</span>
+<span class="nc" id="L94">        val splitFormat = dateFromat.split(&quot;-&quot;.toRegex()).toTypedArray()</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        for (i in splitFormat.indices) {</span>
+<span class="nc bnc" id="L96" title="All 4 branches missed.">            if (splitFormat[i].contentEquals(&quot;yyyy&quot;) &amp;&amp; splitToValidate[i].length != splitFormat[i].length) {</span>
+<span class="nc" id="L97">                return false</span>
             }
         }
-<span class="nc" id="L102">        @SuppressLint(&quot;SimpleDateFormat&quot;)</span>
-<span class="nc" id="L103">        val sdf = SimpleDateFormat(dateFromat)</span>
-<span class="nc" id="L104">        sdf.isLenient = false</span>
-<span class="nc" id="L105">        try {</span>
-<span class="nc" id="L106">            val date = sdf.parse(dateToValidate)</span>
-<span class="nc" id="L107">            println(date)</span>
-<span class="nc" id="L108">        } catch (e: ParseException) {</span>
-<span class="nc" id="L109">            e.printStackTrace()</span>
-<span class="nc" id="L110">            return false</span>
+<span class="nc" id="L100">        @SuppressLint(&quot;SimpleDateFormat&quot;)</span>
+<span class="nc" id="L101">        val sdf = SimpleDateFormat(dateFromat)</span>
+<span class="nc" id="L102">        sdf.isLenient = false</span>
+<span class="nc" id="L103">        try {</span>
+<span class="nc" id="L104">            val date = sdf.parse(dateToValidate)</span>
+<span class="nc" id="L105">            println(date)</span>
+<span class="nc" id="L106">        } catch (e: ParseException) {</span>
+<span class="nc" id="L107">            e.printStackTrace()</span>
+<span class="nc" id="L108">            return false</span>
         }
-<span class="nc" id="L112">        return true</span>
+<span class="nc" id="L110">        return true</span>
     }
 
     fun cleanUpEmail(email: String): String {
-<span class="nc bnc" id="L116" title="All 4 branches missed.">        if (email.isEmpty()) {</span>
-<span class="nc" id="L117">            return email</span>
+<span class="fc bfc" id="L114" title="All 4 branches covered.">        if (email.isEmpty()) {</span>
+<span class="fc" id="L115">            return email</span>
         }
-<span class="nc" id="L119">        var cleanEmail = email</span>
-<span class="nc bnc" id="L120" title="All 2 branches missed.">        cleanEmail = cleanEmail.trim { it &lt;= ' ' }.replace(&quot;\\s+&quot;.toRegex(), &quot;&quot;)</span>
-<span class="nc" id="L121">        val atIndex = cleanEmail.indexOf(&quot;@&quot;)</span>
-<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (atIndex != -1) {</span>
-<span class="nc" id="L123">            val nameSpaceString = cleanEmail.substring(atIndex)</span>
-<span class="nc" id="L124">            val cleanNameSpace = nameSpaceString.replace(&quot;\\.{2,}&quot;.toRegex(), &quot;.&quot;)</span>
-<span class="nc" id="L125">            cleanEmail = cleanEmail.replace(nameSpaceString, cleanNameSpace)</span>
+<span class="fc" id="L117">        var cleanEmail = email</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        cleanEmail = cleanEmail.trim { it &lt;= ' ' }.replace(&quot;\\s+&quot;.toRegex(), &quot;&quot;)</span>
+<span class="fc" id="L119">        val atIndex = cleanEmail.indexOf(&quot;@&quot;)</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (atIndex != -1) {</span>
+<span class="fc" id="L121">            val nameSpaceString = cleanEmail.substring(atIndex)</span>
+<span class="fc" id="L122">            val cleanNameSpace = nameSpaceString.replace(&quot;\\.{2,}&quot;.toRegex(), &quot;.&quot;)</span>
+<span class="fc" id="L123">            cleanEmail = cleanEmail.replace(nameSpaceString, cleanNameSpace)</span>
         }
-<span class="nc" id="L127">        return cleanEmail</span>
+<span class="fc" id="L125">        return cleanEmail</span>
     }
 
     fun isDateValidWithInCenturies(dateToValidate: String, dateFormat: String): Boolean {
-<span class="nc" id="L131">        val sdfrmt = SimpleDateFormat(dateFormat)</span>
-<span class="nc" id="L132">        sdfrmt.isLenient = false</span>
+<span class="nc" id="L129">        val sdfrmt = SimpleDateFormat(dateFormat)</span>
+<span class="nc" id="L130">        sdfrmt.isLenient = false</span>
 
-<span class="nc" id="L134">        try {</span>
-<span class="nc" id="L135">            val javaDate = sdfrmt.parse(dateToValidate)</span>
-<span class="nc" id="L136">        } /* Date format is invalid */ catch (e: ParseException) {</span>
-<span class="nc" id="L137">            return false</span>
+<span class="nc" id="L132">        try {</span>
+<span class="nc" id="L133">            val javaDate = sdfrmt.parse(dateToValidate)</span>
+<span class="nc" id="L134">        } /* Date format is invalid */ catch (e: ParseException) {</span>
+<span class="nc" id="L135">            return false</span>
         }
         /* Return true if date format is valid */
         /* Return true if date format is valid */
 
-<span class="nc" id="L142">        return DateUtils.isDateWithinValidRange(dateToValidate)</span>
+<span class="nc" id="L140">        return DateUtils.isDateWithinValidRange(dateToValidate)</span>
     }
 
     fun isDateValid(dateToValidate: String, dateFormat: String): Boolean {
-<span class="nc" id="L146">        val sdfrmt = SimpleDateFormat(dateFormat)</span>
-<span class="nc" id="L147">        sdfrmt.isLenient = false</span>
+<span class="nc" id="L144">        val sdfrmt = SimpleDateFormat(dateFormat)</span>
+<span class="nc" id="L145">        sdfrmt.isLenient = false</span>
 
-<span class="nc" id="L149">        try {</span>
-<span class="nc" id="L150">            val javaDate = sdfrmt.parse(dateToValidate)</span>
-<span class="nc" id="L151">        } /* Date format is invalid */ catch (e: ParseException) {</span>
-<span class="nc" id="L152">            return false</span>
+<span class="nc" id="L147">        try {</span>
+<span class="nc" id="L148">            val javaDate = sdfrmt.parse(dateToValidate)</span>
+<span class="nc" id="L149">        } /* Date format is invalid */ catch (e: ParseException) {</span>
+<span class="nc" id="L150">            return false</span>
         }
         /* Return true if date format is valid */
         /* Return true if date format is valid */
 
-<span class="nc" id="L157">        return DateUtils.isNotPast(dateToValidate)</span>
+<span class="nc" id="L155">        return DateUtils.isNotPast(dateToValidate)</span>
     }
 
     @Throws(ParseException::class)
     fun convertDate(date: String?): String? {
-<span class="nc" id="L162">        val inputPattern = &quot;MM/dd/yyyy&quot;</span>
-<span class="nc" id="L163">        val outputPattern = &quot;yyyy-MM-dd&quot;</span>
-<span class="nc" id="L164">        val inputFormat = SimpleDateFormat(inputPattern, Locale.US)</span>
-<span class="nc" id="L165">        val outputFormat = SimpleDateFormat(outputPattern, Locale.US)</span>
-<span class="nc" id="L166">        val pre_formatted = inputFormat.parse(date)</span>
+<span class="fc" id="L160">        val inputPattern = &quot;MM/dd/yyyy&quot;</span>
+<span class="fc" id="L161">        val outputPattern = &quot;yyyy-MM-dd&quot;</span>
+<span class="fc" id="L162">        val inputFormat = SimpleDateFormat(inputPattern, Locale.US)</span>
+<span class="fc" id="L163">        val outputFormat = SimpleDateFormat(outputPattern, Locale.US)</span>
+<span class="fc" id="L164">        val pre_formatted = inputFormat.parse(date)</span>
         //            String post_formatted = outputFormat.format(pre_formatted);
-<span class="nc" id="L168">        return outputFormat.format(pre_formatted)</span>
+<span class="fc" id="L166">        return outputFormat.format(pre_formatted)</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

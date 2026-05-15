@@ -15,31 +15,31 @@ import com.vivekahealth.vivekahealth.utils.Constants
 import com.vivekahealth.vivekahealth.utils.Event
 import javax.inject.Inject
 
-<span class="nc" id="L18">class GuestAccountDetailsViewModel @Inject constructor(</span>
-<span class="nc" id="L19">    private val preferences: SharedPreferences,</span>
-<span class="nc" id="L20">    private val guestHomeRepository: GuestHomeRepository</span>
-<span class="nc" id="L21">) : ViewModel(), Observable {</span>
-<span class="nc" id="L22">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="fc" id="L18">class GuestAccountDetailsViewModel @Inject constructor(</span>
+<span class="fc" id="L19">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L20">    private val guestHomeRepository: GuestHomeRepository</span>
+<span class="fc" id="L21">) : ViewModel(), Observable {</span>
+<span class="pc" id="L22">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
 
-<span class="nc" id="L24">    private val _navigateToChangeEmail = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L24">    private val _navigateToChangeEmail = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val navigateToChangeEmail: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L26">        get() = _navigateToChangeEmail</span>
-<span class="nc" id="L27">    private val _navigateToChangePhone = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L26">        get() = _navigateToChangeEmail</span>
+<span class="fc" id="L27">    private val _navigateToChangePhone = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val navigateToChangePhone: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L29">        get() = _navigateToChangePhone</span>
+<span class="fc" id="L29">        get() = _navigateToChangePhone</span>
 
-<span class="nc" id="L31">    val guestInfoFromDb: LiveData&lt;GuestUserInfo&gt; = guestHomeRepository.getGuestInfoFromDb(</span>
-<span class="nc bnc" id="L32" title="All 2 branches missed.">        preferences.getString(Constants.MEMBER_ID, &quot;&quot;) ?: &quot;&quot;</span>
-<span class="nc" id="L33">    ).asLiveData()</span>
+<span class="pc" id="L31">    val guestInfoFromDb: LiveData&lt;GuestUserInfo&gt; = guestHomeRepository.getGuestInfoFromDb(</span>
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">        preferences.getString(Constants.MEMBER_ID, &quot;&quot;) ?: &quot;&quot;</span>
+<span class="fc" id="L33">    ).asLiveData()</span>
 
-<span class="nc" id="L35">    var email: String = &quot;&quot;</span>
+<span class="fc" id="L35">    var email: String = &quot;&quot;</span>
 <span class="nc" id="L36">        @Bindable get</span>
         set(value) {
 <span class="nc" id="L38">            field = value</span>
 <span class="nc" id="L39">            callbacks.notifyCallbacks(this, BR.email, null)</span>
 <span class="nc" id="L40">        }</span>
 
-<span class="nc" id="L42">    var phoneNumber: String = &quot;&quot;</span>
+<span class="fc" id="L42">    var phoneNumber: String = &quot;&quot;</span>
 <span class="nc" id="L43">        @Bindable get</span>
         set(value) {
 <span class="nc" id="L45">            field = value</span>
@@ -47,12 +47,12 @@ import javax.inject.Inject
 <span class="nc" id="L47">        }</span>
 
     fun phoneChange() {
-<span class="nc" id="L50">        _navigateToChangePhone.value = Event(Unit)</span>
-<span class="nc" id="L51">    }</span>
+<span class="fc" id="L50">        _navigateToChangePhone.value = Event(Unit)</span>
+<span class="fc" id="L51">    }</span>
 
     fun emailChange() {
-<span class="nc" id="L54">        _navigateToChangeEmail.value = Event(Unit)</span>
-<span class="nc" id="L55">    }</span>
+<span class="fc" id="L54">        _navigateToChangeEmail.value = Event(Unit)</span>
+<span class="fc" id="L55">    }</span>
     override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
 <span class="nc" id="L57">        callbacks.add(callback)</span>
 <span class="nc" id="L58">    }</span>

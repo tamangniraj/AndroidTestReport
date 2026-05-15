@@ -110,7 +110,7 @@ object MedicalLogsSortingUtils {
 <span class="fc bfc" id="L110" title="All 2 branches covered.">                isPrescriptionsOnly -&gt; getPrescriptionDateGroupKey(item.data, sortBy)</span>
 <span class="fc" id="L111">                else -&gt; getAllDateGroupKey(item.data, item.data.getLogViewType())</span>
 <span class="fc" id="L112">            }</span>
-<span class="pc bpc" id="L113" title="1 of 2 branches missed.">        }.filterKeys { it != null }</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        }.filterKeys { it != null }</span>
 
 <span class="fc" id="L115">        val sortedGroups = when {</span>
 <span class="fc bfc" id="L116" title="All 4 branches covered.">            isPrescriptionsOnly &amp;&amp; sortBy.equals(&quot;drugName&quot;) -&gt; {</span>
@@ -291,9 +291,9 @@ object MedicalLogsSortingUtils {
 <span class="fc" id="L291">                    )</span>
 <span class="fc" id="L292">                }</span>
             }
-<span class="nc" id="L294">        } catch (e: Exception) {</span>
-<span class="nc" id="L295">            Timber.e(&quot;Error extracting CLAIMS date group key: ${e.message}&quot;)</span>
-<span class="pc" id="L296">            null</span>
+<span class="fc" id="L294">        } catch (e: Exception) {</span>
+<span class="fc" id="L295">            Timber.e(&quot;Error extracting CLAIMS date group key: ${e.message}&quot;)</span>
+<span class="fc" id="L296">            null</span>
         }
     }
 

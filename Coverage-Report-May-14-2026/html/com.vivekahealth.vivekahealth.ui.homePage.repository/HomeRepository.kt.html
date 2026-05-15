@@ -160,7 +160,7 @@ import javax.inject.Singleton
 <span class="nc" id="L160">        dao.delete(memberInfo)</span>
 <span class="nc" id="L161">    }</span>
 
-<span class="fc" id="L163">    fun getLogout(): Single&lt;DataResponse&gt; = homeService.getHomeApi().getLogout()</span>
+<span class="nc" id="L163">    fun getLogout(): Single&lt;DataResponse&gt; = homeService.getHomeApi().getLogout()</span>
 
     fun getMenu(memberId: String, menuType: String): Single&lt;CustomMenuResponse&gt; =
 <span class="nc" id="L166">        homeService.getHomeApi().getMenuContent(</span>

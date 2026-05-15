@@ -26,32 +26,32 @@ import org.apache.commons.lang3.StringUtils
 import retrofit2.HttpException
 import javax.inject.Inject
 
-<span class="nc" id="L29">class MedicalLogsViewModel @Inject constructor(</span>
-<span class="nc" id="L30">    private val preferences: SharedPreferences,</span>
-<span class="nc" id="L31">    private val medicalLogsRepository: MedicalLogsRepository,</span>
-<span class="nc" id="L32">    private val homeRepository: HomeRepository,</span>
-<span class="nc" id="L33">    private val resources: Resources</span>
-<span class="nc" id="L34">) : ViewModel(), Observable {</span>
+<span class="fc" id="L29">class MedicalLogsViewModel @Inject constructor(</span>
+<span class="fc" id="L30">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L31">    private val medicalLogsRepository: MedicalLogsRepository,</span>
+<span class="fc" id="L32">    private val homeRepository: HomeRepository,</span>
+<span class="fc" id="L33">    private val resources: Resources</span>
+<span class="fc" id="L34">) : ViewModel(), Observable {</span>
 
-<span class="nc" id="L36">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="fc" id="L36">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
 <span class="nc" id="L37">    var configDb =</span>
-<span class="nc" id="L38">        homeRepository.getClientDetail(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
-<span class="nc" id="L39">            .asLiveData()</span>
-<span class="nc" id="L40">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
-<span class="nc" id="L41">    var eligibleBubbleMemberList: ArrayList&lt;MemberInfo&gt; = ArrayList()</span>
+<span class="fc" id="L38">        homeRepository.getClientDetail(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString())</span>
+<span class="pc" id="L39">            .asLiveData()</span>
+<span class="fc" id="L40">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="pc" id="L41">    var eligibleBubbleMemberList: ArrayList&lt;MemberInfo&gt; = ArrayList()</span>
 
-<span class="nc" id="L43">    var currentCacheTime = System.currentTimeMillis().toString()</span>
+<span class="pc" id="L43">    var currentCacheTime = System.currentTimeMillis().toString()</span>
 
-<span class="nc" id="L45">    var memberInfo = MemberInfo()</span>
+<span class="pc" id="L45">    var memberInfo = MemberInfo()</span>
 
-<span class="nc" id="L47">    var currentMember = MemberInfo()</span>
+<span class="fc" id="L47">    var currentMember = MemberInfo()</span>
 <span class="nc" id="L48">        @Bindable get</span>
         set(value) {
 <span class="nc" id="L50">            field = value</span>
 <span class="nc" id="L51">            callbacks.notifyCallbacks(this, BR.currentMember, null)</span>
 <span class="nc" id="L52">        }</span>
-<span class="nc" id="L53">    var bubbleMemberList: ArrayList&lt;MemberInfo&gt; = ArrayList()</span>
-<span class="nc" id="L54">    var currentMissing = listOf&lt;String&gt;()</span>
+<span class="pc" id="L53">    var bubbleMemberList: ArrayList&lt;MemberInfo&gt; = ArrayList()</span>
+<span class="pc" id="L54">    var currentMissing = listOf&lt;String&gt;()</span>
 
     var noSelfie: Boolean = false
 <span class="nc" id="L57">        @Bindable get</span>
@@ -59,36 +59,36 @@ import javax.inject.Inject
 <span class="nc" id="L59">            field = value</span>
 <span class="nc" id="L60">            callbacks.notifyCallbacks(this, BR.noSelfie, null)</span>
 <span class="nc" id="L61">        }</span>
-<span class="nc" id="L62">    private val _serverError = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+<span class="fc" id="L62">    private val _serverError = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
     val serverError: LiveData&lt;Event&lt;String&gt;&gt;
 <span class="nc" id="L64">        get() = _serverError</span>
 
-<span class="nc" id="L66">    var currentPage = resources.getString(R.string.all)</span>
+<span class="pc" id="L66">    var currentPage = resources.getString(R.string.all)</span>
 
-<span class="nc" id="L68">    private val _bubbleListGenerated = MutableLiveData&lt;Event&lt;List&lt;MemberInfo&gt;&gt;&gt;()</span>
+<span class="fc" id="L68">    private val _bubbleListGenerated = MutableLiveData&lt;Event&lt;List&lt;MemberInfo&gt;&gt;&gt;()</span>
     val bubbleListGenerated: LiveData&lt;Event&lt;List&lt;MemberInfo&gt;&gt;&gt;
-<span class="nc" id="L70">        get() = _bubbleListGenerated</span>
-<span class="nc" id="L71">    private val _showPicker = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L70">        get() = _bubbleListGenerated</span>
+<span class="fc" id="L71">    private val _showPicker = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val showPicker: LiveData&lt;Event&lt;Unit&gt;&gt;
 <span class="nc" id="L73">        get() = _showPicker</span>
-<span class="nc" id="L74">    var type: String = &quot;1,3,4,6,7&quot;</span>
+<span class="pc" id="L74">    var type: String = &quot;1,3,4,6,7&quot;</span>
     var loading: Boolean = false
-<span class="nc" id="L76">        @Bindable get</span>
+<span class="fc" id="L76">        @Bindable get</span>
         set(value) {
-<span class="nc" id="L78">            field = value</span>
-<span class="nc" id="L79">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
-<span class="nc" id="L80">        }</span>
-<span class="nc" id="L81">    var VALUES = arrayListOf&lt;String&gt;()</span>
-<span class="nc" id="L82">    val VALUESTYPE = arrayListOf(&quot;1,3,4,6,7&quot;, &quot;3,4&quot;, &quot;1&quot;, &quot;6&quot;, &quot;3,4,6&quot;)</span>
+<span class="fc" id="L78">            field = value</span>
+<span class="fc" id="L79">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="fc" id="L80">        }</span>
+<span class="pc" id="L81">    var VALUES = arrayListOf&lt;String&gt;()</span>
+<span class="pc" id="L82">    val VALUESTYPE = arrayListOf(&quot;1,3,4,6,7&quot;, &quot;3,4&quot;, &quot;1&quot;, &quot;6&quot;, &quot;3,4,6&quot;)</span>
 
-<span class="nc" id="L84">    var listForHomeBubbleAdapter: List&lt;MemberInfo&gt; = listOf()</span>
+<span class="pc" id="L84">    var listForHomeBubbleAdapter: List&lt;MemberInfo&gt; = listOf()</span>
 
 <span class="nc" id="L86">    var memberInfoDb =</span>
-<span class="nc" id="L87">        homeRepository.getMemberSid(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()).asLiveData()</span>
+<span class="pc" id="L87">        homeRepository.getMemberSid(preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()).asLiveData()</span>
 
-<span class="nc" id="L89">    var memberListArray: ArrayList&lt;MemberInfo&gt; = ArrayList()</span>
+<span class="pc" id="L89">    var memberListArray: ArrayList&lt;MemberInfo&gt; = ArrayList()</span>
 
-<span class="nc" id="L91">    var reason: String = &quot;&quot;</span>
+<span class="fc" id="L91">    var reason: String = &quot;&quot;</span>
 <span class="nc" id="L92">        @Bindable get</span>
         set(value) {
 <span class="nc" id="L94">            field = value</span>
@@ -128,25 +128,25 @@ import javax.inject.Inject
 <span class="nc" id="L128">    }</span>
 
     var displayNew: Boolean = false
-<span class="nc" id="L131">        @Bindable get</span>
+<span class="fc" id="L131">        @Bindable get</span>
         set(value) {
-<span class="nc" id="L133">            field = value</span>
-<span class="nc" id="L134">            callbacks.notifyCallbacks(this, BR.displayNew, null)</span>
-<span class="nc" id="L135">        }</span>
+<span class="fc" id="L133">            field = value</span>
+<span class="fc" id="L134">            callbacks.notifyCallbacks(this, BR.displayNew, null)</span>
+<span class="fc" id="L135">        }</span>
 
     fun checkNewAvailable() {
         // Get the current member ID
-<span class="nc bnc" id="L139" title="All 2 branches missed.">        val memberId = preferences.getString(&quot;memberID&quot;, &quot;&quot;) ?: &quot;&quot;</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        val memberId = preferences.getString(&quot;memberID&quot;, &quot;&quot;) ?: &quot;&quot;</span>
 
         // Create a unique key for this user
-<span class="nc" id="L142">        val userSpecificKey = &quot;${memberId}_$PREF_IMMUNIZATION_TAB_CLICKED&quot;</span>
+<span class="fc" id="L142">        val userSpecificKey = &quot;${memberId}_$PREF_IMMUNIZATION_TAB_CLICKED&quot;</span>
 
         // Check if this user has clicked the immunization tab before
-<span class="nc" id="L145">        val hasClickedImmunizationTab = preferences.getBoolean(userSpecificKey, false)</span>
+<span class="fc" id="L145">        val hasClickedImmunizationTab = preferences.getBoolean(userSpecificKey, false)</span>
 
         // Display &quot;NEW&quot; indicator only if this user hasn't clicked the immunization tab yet
-<span class="nc bnc" id="L148" title="All 2 branches missed.">        displayNew = !hasClickedImmunizationTab</span>
-<span class="nc" id="L149">    }</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        displayNew = !hasClickedImmunizationTab</span>
+<span class="fc" id="L149">    }</span>
 
     /**
      * Hide the &quot;NEW&quot; indicator when the user clicks the immunization tab.
@@ -225,32 +225,32 @@ import javax.inject.Inject
 <span class="nc" id="L225">    }</span>
 
     fun getMemberList(type: String) {
-<span class="nc" id="L228">        compositeDisposable.add(</span>
-<span class="nc" id="L229">            medicalLogsRepository.getMemberList(</span>
-<span class="nc" id="L230">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
-<span class="nc" id="L231">                type</span>
-<span class="nc" id="L232">            ).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).doOnSubscribe {</span>
-<span class="nc" id="L233">                loading = true</span>
-<span class="nc" id="L234">            }.subscribe({ it -&gt;</span>
+<span class="fc" id="L228">        compositeDisposable.add(</span>
+<span class="fc" id="L229">            medicalLogsRepository.getMemberList(</span>
+<span class="fc" id="L230">                preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString(),</span>
+<span class="fc" id="L231">                type</span>
+<span class="fc" id="L232">            ).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).doOnSubscribe {</span>
+<span class="fc" id="L233">                loading = true</span>
+<span class="fc" id="L234">            }.subscribe({ it -&gt;</span>
 
-<span class="nc bnc" id="L236" title="All 2 branches missed.">                memberListArray = it.valueArrayList ?: arrayListOf()</span>
+<span class="pc bpc" id="L236" title="1 of 2 branches missed.">                memberListArray = it.valueArrayList ?: arrayListOf()</span>
 
-<span class="nc bnc" id="L238" title="All 8 branches missed.">                if (currentMember.selfId.isNotBlank() &amp;&amp; bubbleMemberList.isNotEmpty()) {</span>
+<span class="pc bpc" id="L238" title="6 of 8 branches missed.">                if (currentMember.selfId.isNotBlank() &amp;&amp; bubbleMemberList.isNotEmpty()) {</span>
 <span class="nc" id="L239">                    checkAccess(currentMember, false)</span>
                 }
-<span class="nc" id="L241">                loading = false</span>
-<span class="nc" id="L242">            }, {</span>
-<span class="nc bnc" id="L243" title="All 2 branches missed.">                if (it is HttpException) {</span>
+<span class="fc" id="L241">                loading = false</span>
+<span class="fc" id="L242">            }, {</span>
+<span class="pc bpc" id="L243" title="1 of 2 branches missed.">                if (it is HttpException) {</span>
 <span class="nc" id="L244">                    _serverError.value = Event(</span>
 <span class="nc" id="L245">                        NetworkMessage.getErrorMessage(</span>
 <span class="nc bnc" id="L246" title="All 2 branches missed.">                            it.response()?.errorBody()</span>
                         )
                     )
                 }
-<span class="nc" id="L250">                loading = false</span>
-<span class="nc" id="L251">            })</span>
+<span class="fc" id="L250">                loading = false</span>
+<span class="fc" id="L251">            })</span>
         )
-<span class="nc" id="L253">    }</span>
+<span class="fc" id="L253">    }</span>
 
     override fun onCleared() {
 <span class="nc" id="L256">        super.onCleared()</span>
@@ -267,28 +267,28 @@ import javax.inject.Inject
 
     /* MARK: this method retrives list of users from database and show user in bubble */
     fun getMemberFromDatabaseAndList() {
-<span class="nc" id="L270">        bubbleMemberList.clear()</span>
-<span class="nc bnc" id="L271" title="All 4 branches missed.">        memberInfo.insured?.let { it1 -&gt;</span>
+<span class="fc" id="L270">        bubbleMemberList.clear()</span>
+<span class="pc bpc" id="L271" title="3 of 4 branches missed.">        memberInfo.insured?.let { it1 -&gt;</span>
 <span class="nc" id="L272">            bubbleMemberList.add(it1)</span>
 <span class="nc" id="L273">            bubbleMemberList.add(memberInfo)</span>
 
 <span class="nc" id="L275">            bubbleMemberList[0].apply { }</span>
-<span class="nc" id="L276">        } ?: run {</span>
-<span class="nc" id="L277">            bubbleMemberList.add(0, memberInfo)</span>
-<span class="nc" id="L278">            bubbleMemberList[0].apply {</span>
-<span class="nc" id="L279">                isSelected = true</span>
-<span class="nc" id="L280">            }</span>
+<span class="fc" id="L276">        } ?: run {</span>
+<span class="fc" id="L277">            bubbleMemberList.add(0, memberInfo)</span>
+<span class="fc" id="L278">            bubbleMemberList[0].apply {</span>
+<span class="fc" id="L279">                isSelected = true</span>
+<span class="fc" id="L280">            }</span>
         }
 
-<span class="nc bnc" id="L283" title="All 2 branches missed.">        memberInfo.dependentsArrayList?.sortByDescending {</span>
+<span class="pc bpc" id="L283" title="1 of 2 branches missed.">        memberInfo.dependentsArrayList?.sortByDescending {</span>
             DateUtils.stringServerDateToDate(
                 it.birthDate.toString()
             )
         }
-<span class="nc bnc" id="L288" title="All 2 branches missed.">        memberInfo.dependentsArrayList?.reverse()</span>
-<span class="nc bnc" id="L289" title="All 2 branches missed.">        memberInfo.dependentsArrayList?.let { it1 -&gt;</span>
+<span class="pc bpc" id="L288" title="1 of 2 branches missed.">        memberInfo.dependentsArrayList?.reverse()</span>
+<span class="pc bpc" id="L289" title="1 of 2 branches missed.">        memberInfo.dependentsArrayList?.let { it1 -&gt;</span>
 
-<span class="nc bnc" id="L291" title="All 2 branches missed.">            for (member in it1) {</span>
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">            for (member in it1) {</span>
 <span class="nc bnc" id="L292" title="All 2 branches missed.">                if (StringUtils.equalsIgnoreCase(member.memberRelationship, &quot;Spouse&quot;)) {</span>
 <span class="nc" id="L293">                    bubbleMemberList.add(1, member)</span>
                 } else {
@@ -296,28 +296,28 @@ import javax.inject.Inject
                 }
             }
 
-<span class="nc" id="L299">            var grouped = bubbleMemberList.groupBy { it.memberRelationship }</span>
-<span class="nc" id="L300">            grouped.forEach {</span>
-<span class="nc" id="L301">                it.value.sortedByDescending {</span>
+<span class="fc" id="L299">            var grouped = bubbleMemberList.groupBy { it.memberRelationship }</span>
+<span class="fc" id="L300">            grouped.forEach {</span>
+<span class="fc" id="L301">                it.value.sortedByDescending {</span>
                     DateUtils.stringServerDateToDate(
                         it.birthDate.toString()
                     )
                 }
-<span class="nc" id="L306">                it.value.reversed()</span>
-<span class="nc" id="L307">            }</span>
+<span class="fc" id="L306">                it.value.reversed()</span>
+<span class="fc" id="L307">            }</span>
 
-<span class="nc" id="L309">            bubbleMemberList.clear()</span>
+<span class="fc" id="L309">            bubbleMemberList.clear()</span>
 
-<span class="nc" id="L311">            grouped.forEach {</span>
-<span class="nc bnc" id="L312" title="All 2 branches missed.">                if (it.key.equals(&quot;Insured&quot;, true)) {</span>
+<span class="fc" id="L311">            grouped.forEach {</span>
+<span class="pc bpc" id="L312" title="1 of 2 branches missed.">                if (it.key.equals(&quot;Insured&quot;, true)) {</span>
 <span class="nc" id="L313">                    bubbleMemberList.add(0, it.value[0])</span>
-<span class="nc bnc" id="L314" title="All 2 branches missed.">                } else if (it.key.equals(&quot;Spouse&quot;, true)) {</span>
+<span class="pc bpc" id="L314" title="1 of 2 branches missed.">                } else if (it.key.equals(&quot;Spouse&quot;, true)) {</span>
 <span class="nc bnc" id="L315" title="All 2 branches missed.">                    if (grouped.containsKey(&quot;Insured&quot;)) {</span>
 <span class="nc" id="L316">                        bubbleMemberList.add(1, it.value[0])</span>
                     } else {
 <span class="nc" id="L318">                        bubbleMemberList.add(0, it.value[0])</span>
                     }
-<span class="nc bnc" id="L320" title="All 2 branches missed.">                } else if (it.key.equals(&quot;Child&quot;, true)) {</span>
+<span class="pc bpc" id="L320" title="1 of 2 branches missed.">                } else if (it.key.equals(&quot;Child&quot;, true)) {</span>
 <span class="nc" id="L321">                    val dateGroup = it.value.groupBy { date -&gt;</span>
 <span class="nc" id="L322">                        DateUtils.stringServerDateToDate(</span>
 <span class="nc" id="L323">                            date.birthDate.toString()</span>
@@ -329,37 +329,37 @@ import javax.inject.Inject
 <span class="nc" id="L329">                        bubbleMemberList.addAll(sorted)</span>
 <span class="nc" id="L330">                    }</span>
                 }
-<span class="nc" id="L332">            }</span>
+<span class="fc" id="L332">            }</span>
 
-<span class="nc" id="L334">            val tempOthers: ArrayList&lt;MemberInfo&gt; = arrayListOf()</span>
-<span class="nc" id="L335">            grouped.forEach {</span>
-<span class="nc bnc" id="L336" title="All 4 branches missed.">                if (!it.key.equals(&quot;Insured&quot;, true) &amp;&amp; !it.key.equals(</span>
-<span class="nc" id="L337">                        &quot;Spouse&quot;,</span>
-<span class="nc" id="L338">                        true</span>
-<span class="nc bnc" id="L339" title="All 2 branches missed.">                    ) &amp;&amp; !it.key.equals(&quot;Child&quot;, true)</span>
+<span class="fc" id="L334">            val tempOthers: ArrayList&lt;MemberInfo&gt; = arrayListOf()</span>
+<span class="fc" id="L335">            grouped.forEach {</span>
+<span class="pc bpc" id="L336" title="2 of 4 branches missed.">                if (!it.key.equals(&quot;Insured&quot;, true) &amp;&amp; !it.key.equals(</span>
+<span class="fc" id="L337">                        &quot;Spouse&quot;,</span>
+<span class="fc" id="L338">                        true</span>
+<span class="pc bpc" id="L339" title="1 of 2 branches missed.">                    ) &amp;&amp; !it.key.equals(&quot;Child&quot;, true)</span>
                 ) {
-<span class="nc" id="L341">                    tempOthers.addAll(it.value)</span>
+<span class="fc" id="L341">                    tempOthers.addAll(it.value)</span>
                 }
-<span class="nc" id="L343">            }</span>
+<span class="fc" id="L343">            }</span>
 
-<span class="nc" id="L345">            val dateGroup = tempOthers.groupBy { date -&gt;</span>
-<span class="nc" id="L346">                DateUtils.stringServerDateToDate(</span>
-<span class="nc" id="L347">                    date.birthDate.toString()</span>
-<span class="nc" id="L348">                )</span>
+<span class="fc" id="L345">            val dateGroup = tempOthers.groupBy { date -&gt;</span>
+<span class="fc" id="L346">                DateUtils.stringServerDateToDate(</span>
+<span class="fc" id="L347">                    date.birthDate.toString()</span>
+<span class="fc" id="L348">                )</span>
             }
-<span class="nc" id="L350">            dateGroup.forEach { item -&gt;</span>
-<span class="nc" id="L351">                val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }</span>
-<span class="nc" id="L352">                bubbleMemberList.addAll(sorted)</span>
-<span class="nc" id="L353">            }</span>
-<span class="nc" id="L354">        }</span>
+<span class="fc" id="L350">            dateGroup.forEach { item -&gt;</span>
+<span class="fc" id="L351">                val sorted = item.value.sortedBy { item1 -&gt; item1.firstName }</span>
+<span class="fc" id="L352">                bubbleMemberList.addAll(sorted)</span>
+<span class="fc" id="L353">            }</span>
+<span class="fc" id="L354">        }</span>
 
-<span class="nc" id="L356">        eligibleBubbleMemberList.clear()</span>
+<span class="fc" id="L356">        eligibleBubbleMemberList.clear()</span>
 
-<span class="nc bnc" id="L358" title="All 2 branches missed.">        for (item in bubbleMemberList) {</span>
-<span class="nc" id="L359">            item.isSelected = item.selfId == memberInfo.selfId</span>
+<span class="fc bfc" id="L358" title="All 2 branches covered.">        for (item in bubbleMemberList) {</span>
+<span class="fc" id="L359">            item.isSelected = item.selfId == memberInfo.selfId</span>
         }
-<span class="nc" id="L361">        memberInfo.isInsured =</span>
-<span class="nc bnc" id="L362" title="All 4 branches missed.">            memberInfo.insured == null || memberInfo.relationDesc.equals(&quot;spouse&quot;, true)</span>
+<span class="fc" id="L361">        memberInfo.isInsured =</span>
+<span class="pc bpc" id="L362" title="3 of 4 branches missed.">            memberInfo.insured == null || memberInfo.relationDesc.equals(&quot;spouse&quot;, true)</span>
 //        bubbleMemberList.add(
 //            MemberInfo(
 //                isInsured = memberInfo.insured == null || memberInfo.relationDesc.equals(
@@ -367,9 +367,9 @@ import javax.inject.Inject
 //                )
 //            )
 //        )
-<span class="nc" id="L370">        listForHomeBubbleAdapter = bubbleMemberList.toList()</span>
-<span class="nc" id="L371">        _bubbleListGenerated.value = Event(listForHomeBubbleAdapter)</span>
-<span class="nc" id="L372">    }</span>
+<span class="fc" id="L370">        listForHomeBubbleAdapter = bubbleMemberList.toList()</span>
+<span class="fc" id="L371">        _bubbleListGenerated.value = Event(listForHomeBubbleAdapter)</span>
+<span class="fc" id="L372">    }</span>
 
     fun getMem() {
 <span class="nc bnc" id="L375" title="All 2 branches missed.">        viewModelScope.launch {</span>
@@ -391,7 +391,7 @@ import javax.inject.Inject
 <span class="nc" id="L391">            &quot;&quot;</span>
         }
     }
-<span class="nc" id="L394">    private val _hasAccess = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+<span class="fc" id="L394">    private val _hasAccess = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
     val hasAccess: LiveData&lt;Event&lt;Boolean&gt;&gt;
 <span class="nc" id="L396">        get() = _hasAccess</span>
 }

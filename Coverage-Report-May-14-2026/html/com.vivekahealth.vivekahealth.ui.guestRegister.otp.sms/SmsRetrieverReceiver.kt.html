@@ -14,15 +14,15 @@ import timber.log.Timber
  * BroadcastReceiver that handles SMS messages retrieved by Google's SMS Retriever API.
  * Extracts OTP from the SMS and re-broadcasts it locally for the fragment to consume.
  */
-<span class="nc" id="L17">class SmsRetrieverReceiver : BroadcastReceiver() {</span>
+<span class="fc" id="L17">class SmsRetrieverReceiver : BroadcastReceiver() {</span>
 
     override fun onReceive(context: Context?, intent: Intent?) {
-<span class="nc bnc" id="L20" title="All 4 branches missed.">        if (intent?.action == SmsRetriever.SMS_RETRIEVED_ACTION) {</span>
-<span class="nc" id="L21">            val extras = intent.extras</span>
-<span class="nc bnc" id="L22" title="All 4 branches missed.">            val status = extras?.get(SmsRetriever.EXTRA_STATUS) as? Status</span>
+<span class="pc bpc" id="L20" title="2 of 4 branches missed.">        if (intent?.action == SmsRetriever.SMS_RETRIEVED_ACTION) {</span>
+<span class="fc" id="L21">            val extras = intent.extras</span>
+<span class="pc bpc" id="L22" title="2 of 4 branches missed.">            val status = extras?.get(SmsRetriever.EXTRA_STATUS) as? Status</span>
 
-<span class="nc bnc" id="L24" title="All 2 branches missed.">            when (status?.statusCode) {</span>
-<span class="nc bnc" id="L25" title="All 4 branches missed.">                CommonStatusCodes.SUCCESS -&gt; {</span>
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">            when (status?.statusCode) {</span>
+<span class="pc bpc" id="L25" title="2 of 4 branches missed.">                CommonStatusCodes.SUCCESS -&gt; {</span>
                     // Get the SMS message
 <span class="nc" id="L27">                    val message = extras.getString(SmsRetriever.EXTRA_SMS_MESSAGE)</span>
 <span class="nc" id="L28">                    Timber.d(&quot;SMS received: $message&quot;)</span>
@@ -38,8 +38,8 @@ import timber.log.Timber
                     }
                 }
 
-<span class="nc bnc" id="L41" title="All 4 branches missed.">                CommonStatusCodes.TIMEOUT -&gt; {</span>
-<span class="nc" id="L42">                    Timber.d(&quot;SMS Retriever timeout - waiting for SMS exceeded 5 minutes&quot;)</span>
+<span class="pc bpc" id="L41" title="2 of 4 branches missed.">                CommonStatusCodes.TIMEOUT -&gt; {</span>
+<span class="fc" id="L42">                    Timber.d(&quot;SMS Retriever timeout - waiting for SMS exceeded 5 minutes&quot;)</span>
                 }
 
                 else -&gt; {
@@ -47,7 +47,7 @@ import timber.log.Timber
                 }
             }
         }
-<span class="nc" id="L50">    }</span>
+<span class="fc" id="L50">    }</span>
 
     /**
      * Broadcasts the extracted OTP locally for the fragment to receive.

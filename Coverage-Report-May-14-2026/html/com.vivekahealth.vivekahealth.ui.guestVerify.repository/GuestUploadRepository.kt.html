@@ -73,9 +73,9 @@ import javax.inject.Singleton
 <span class="nc" id="L73">    )</span>
 
     fun verify(sessionId: String): Single&lt;Response&lt;UploadResponse&gt;&gt; =
-<span class="nc" id="L76">        guestUploadService.getGuestHomeApi().verify(</span>
-<span class="nc" id="L77">            sessionId</span>
-<span class="nc" id="L78">        )</span>
+<span class="fc" id="L76">        guestUploadService.getGuestHomeApi().verify(</span>
+<span class="fc" id="L77">            sessionId</span>
+<span class="fc" id="L78">        )</span>
 
 <span class="nc" id="L80">    fun identify(</span>
         sessionId: String,
@@ -86,14 +86,14 @@ import javax.inject.Singleton
 <span class="nc" id="L86">    )</span>
 
     fun additionalRequirements(sessionId: String): Single&lt;Response&lt;AdditionalRequirementResponse&gt;&gt; =
-<span class="nc" id="L89">        guestUploadService.getGuestHomeApi().additionalRequirements(</span>
-<span class="nc" id="L90">            sessionId</span>
-<span class="nc" id="L91">        )</span>
+<span class="fc" id="L89">        guestUploadService.getGuestHomeApi().additionalRequirements(</span>
+<span class="fc" id="L90">            sessionId</span>
+<span class="fc" id="L91">        )</span>
 
     fun processDocument(sessionId: String): Single&lt;Response&lt;UploadResponse&gt;&gt; =
-<span class="nc" id="L94">        guestUploadService.getGuestHomeApi().processDocument(</span>
-<span class="nc" id="L95">            sessionId</span>
-<span class="nc" id="L96">        )</span>
+<span class="fc" id="L94">        guestUploadService.getGuestHomeApi().processDocument(</span>
+<span class="fc" id="L95">            sessionId</span>
+<span class="fc" id="L96">        )</span>
 
     fun validateRegisteredEmail(
         sessionId: String,
@@ -107,9 +107,9 @@ import javax.inject.Singleton
     fun logFailedDocumentAttempt(
         sessionId: String,
         documentType: Int
-<span class="nc" id="L110">    ): Single&lt;Response&lt;IdentifyErrorResponse&gt;&gt; = guestUploadService.getGuestHomeApi().logFailedAttempt(</span>
-<span class="nc" id="L111">        sessionId,</span>
-<span class="nc" id="L112">        documentType</span>
-<span class="nc" id="L113">    )</span>
+<span class="fc" id="L110">    ): Single&lt;Response&lt;IdentifyErrorResponse&gt;&gt; = guestUploadService.getGuestHomeApi().logFailedAttempt(</span>
+<span class="fc" id="L111">        sessionId,</span>
+<span class="fc" id="L112">        documentType</span>
+<span class="fc" id="L113">    )</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

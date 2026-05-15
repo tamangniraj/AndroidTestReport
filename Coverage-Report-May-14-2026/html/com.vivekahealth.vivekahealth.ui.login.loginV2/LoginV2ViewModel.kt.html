@@ -67,7 +67,7 @@ import javax.inject.Inject
 
 <span class="fc" id="L68">    private val _navigateToNextPage = MutableLiveData&lt;Event&lt;APIResponseV2&lt;DataResponse&gt;&gt;&gt;()</span>
     val navigateToNextPage: LiveData&lt;Event&lt;APIResponseV2&lt;DataResponse&gt;&gt;&gt;
-<span class="nc" id="L70">        get() = _navigateToNextPage</span>
+<span class="fc" id="L70">        get() = _navigateToNextPage</span>
 
 <span class="fc" id="L72">    private val _isLoading = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
     val isLoading: LiveData&lt;Event&lt;Boolean&gt;&gt;
@@ -75,11 +75,11 @@ import javax.inject.Inject
 
 <span class="fc" id="L76">    private val _logInSuccess = MutableLiveData&lt;APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;&gt;()</span>
     val logInSuccess: LiveData&lt;APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;&gt;
-<span class="nc" id="L78">        get() = _logInSuccess</span>
+<span class="fc" id="L78">        get() = _logInSuccess</span>
 
 <span class="fc" id="L80">    private val _logInFail = MutableLiveData&lt;ErrorResponse&gt;()</span>
     val logInFail: LiveData&lt;ErrorResponse&gt;
-<span class="nc" id="L82">        get() = _logInFail</span>
+<span class="fc" id="L82">        get() = _logInFail</span>
 
 <span class="pc" id="L84">    var isPasswordSaved: MutableLiveData&lt;Boolean&gt; = MutableLiveData()</span>
 
@@ -112,7 +112,7 @@ import javax.inject.Inject
 <span class="fc" id="L112">        &quot;&quot;</span>
 <span class="pc" id="L113">    ).toString()</span>
 
-<span class="nc" id="L115">    var isBiometricLogin: Boolean = false</span>
+<span class="pc" id="L115">    var isBiometricLogin: Boolean = false</span>
 
     // for data binding
 <span class="pc" id="L118">    var email: String = &quot;&quot;</span>
@@ -179,26 +179,26 @@ import javax.inject.Inject
 <span class="fc" id="L179">    }</span>
 
     fun checkUsername(username: String) {
-<span class="nc" id="L182">        clearPreviousEnrollment()</span>
-<span class="nc bnc" id="L183" title="All 2 branches missed.">        viewModelScope.launch {</span>
-<span class="nc" id="L184">            loginRepository.getGuestToken()</span>
-<span class="nc" id="L185">                .subscribeOn(Schedulers.io())</span>
-<span class="nc" id="L186">                .observeOn(AndroidSchedulers.mainThread())</span>
-<span class="nc" id="L187">                .doOnSubscribe {</span>
-<span class="nc" id="L188">                    _isLoading.value = Event(true)</span>
-<span class="nc" id="L189">                }</span>
-<span class="nc" id="L190">                .flatMap { response -&gt;</span>
+<span class="fc" id="L182">        clearPreviousEnrollment()</span>
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">        viewModelScope.launch {</span>
+<span class="fc" id="L184">            loginRepository.getGuestToken()</span>
+<span class="fc" id="L185">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L186">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L187">                .doOnSubscribe {</span>
+<span class="fc" id="L188">                    _isLoading.value = Event(true)</span>
+<span class="fc" id="L189">                }</span>
+<span class="fc" id="L190">                .flatMap { response -&gt;</span>
                     response.body()?.let {
-<span class="nc" id="L192">                        saveTokens(it)</span>
-<span class="nc" id="L193">                        val apisHeader: String = &quot;${it.token_type} ${it.access_token}&quot;</span>
-<span class="nc" id="L194">                        return@flatMap emailRepository.verifyEmailV2(username.trim(), apisHeader)</span>
-<span class="nc" id="L195">                            .subscribeOn(</span>
-<span class="nc" id="L196">                                Schedulers.io()</span>
+<span class="fc" id="L192">                        saveTokens(it)</span>
+<span class="fc" id="L193">                        val apisHeader: String = &quot;${it.token_type} ${it.access_token}&quot;</span>
+<span class="pc" id="L194">                        return@flatMap emailRepository.verifyEmailV2(username.trim(), apisHeader)</span>
+<span class="fc" id="L195">                            .subscribeOn(</span>
+<span class="fc" id="L196">                                Schedulers.io()</span>
                             )
-<span class="nc" id="L198">                            .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L198">                            .observeOn(AndroidSchedulers.mainThread())</span>
                     }
 
-<span class="nc bnc" id="L201" title="All 4 branches missed.">                    response.errorBody()?.let {</span>
+<span class="pc bpc" id="L201" title="3 of 4 branches missed.">                    response.errorBody()?.let {</span>
 <span class="nc" id="L202">                        try {</span>
 <span class="nc" id="L203">                            val errorResponse: DataResponse = gson.fromJson(</span>
 <span class="nc" id="L204">                                it.string(),</span>
@@ -212,23 +212,23 @@ import javax.inject.Inject
 <span class="nc" id="L212">                            return@flatMap Single.error(Throwable(APOLOGY_MESSAGE))</span>
                         }
 <span class="nc" id="L214">                    }</span>
-<span class="nc" id="L215">                }.subscribe({</span>
-<span class="nc" id="L216">                    Timber.d(&quot;ErrorCode: ${it.code()} ${it.raw().code}&quot;)</span>
+<span class="fc" id="L215">                }.subscribe({</span>
+<span class="fc" id="L216">                    Timber.d(&quot;ErrorCode: ${it.code()} ${it.raw().code}&quot;)</span>
 
-<span class="nc bnc" id="L218" title="All 2 branches missed.">                    if (it.isSuccessful) {</span>
-<span class="nc bnc" id="L219" title="All 2 branches missed.">                        it.body()?.let {</span>
-<span class="nc bnc" id="L220" title="All 2 branches missed.">                            if (it.code == &quot;200&quot;) {</span>
-<span class="nc" id="L221">                                saveEmail()</span>
-<span class="nc bnc" id="L222" title="All 2 branches missed.">                                saveRegistrationId(it.otherDetails?.sessionId)</span>
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">                    if (it.isSuccessful) {</span>
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">                        it.body()?.let {</span>
+<span class="pc bpc" id="L220" title="1 of 2 branches missed.">                            if (it.code == &quot;200&quot;) {</span>
+<span class="fc" id="L221">                                saveEmail()</span>
+<span class="pc bpc" id="L222" title="1 of 2 branches missed.">                                saveRegistrationId(it.otherDetails?.sessionId)</span>
 
-<span class="nc" id="L224">                                _navigateToNextPage.value = Event(</span>
-<span class="nc" id="L225">                                    APIResponseV2&lt;DataResponse&gt;().success(it)</span>
+<span class="fc" id="L224">                                _navigateToNextPage.value = Event(</span>
+<span class="fc" id="L225">                                    APIResponseV2&lt;DataResponse&gt;().success(it)</span>
                                 )
 
-<span class="nc" id="L228">                                _shouldGoToLogin.value = Event(</span>
-<span class="nc bnc" id="L229" title="All 4 branches missed.">                                    it.reason?.compareTo(</span>
-<span class="nc" id="L230">                                        &quot;REGISTERED_AND_VERIFIED&quot;,</span>
-<span class="nc" id="L231">                                        true</span>
+<span class="fc" id="L228">                                _shouldGoToLogin.value = Event(</span>
+<span class="pc bpc" id="L229" title="2 of 4 branches missed.">                                    it.reason?.compareTo(</span>
+<span class="fc" id="L230">                                        &quot;REGISTERED_AND_VERIFIED&quot;,</span>
+<span class="fc" id="L231">                                        true</span>
                                     ) == 0
                                 )
                             } else {
@@ -268,7 +268,7 @@ import javax.inject.Inject
                                     )
                                 }
                             }
-<span class="nc" id="L271">                        }</span>
+<span class="fc" id="L271">                        }</span>
                     } else {
 <span class="nc" id="L273">                        try {</span>
 <span class="nc" id="L274">                            val errorResponse: DataResponse = gson.fromJson(</span>
@@ -309,12 +309,12 @@ import javax.inject.Inject
                             )
                         }
                     }
-<span class="nc bnc" id="L312" title="All 8 branches missed.">                    if (!isBiometricLogin || shouldGoToLogin.value?.peekContent() == false) {</span>
-<span class="nc" id="L313">                        _isLoading.value = Event(false)</span>
+<span class="pc bpc" id="L312" title="7 of 8 branches missed.">                    if (!isBiometricLogin || shouldGoToLogin.value?.peekContent() == false) {</span>
+<span class="fc" id="L313">                        _isLoading.value = Event(false)</span>
                     }
-<span class="nc" id="L315">                    email = username</span>
-<span class="nc" id="L316">                }, {</span>
-<span class="nc bnc" id="L317" title="All 4 branches missed.">                    if (&quot;Unable to resolve host&quot; in it.message.toString() || &quot;Unable to establish &quot; in it.message.toString()) {</span>
+<span class="fc" id="L315">                    email = username</span>
+<span class="fc" id="L316">                }, {</span>
+<span class="pc bpc" id="L317" title="2 of 4 branches missed.">                    if (&quot;Unable to resolve host&quot; in it.message.toString() || &quot;Unable to establish &quot; in it.message.toString()) {</span>
 <span class="nc" id="L318">                        saveEmail()</span>
 <span class="nc" id="L319">                        val decryptedEmail = HelperUtils.decrypt(savedUserNameEncoded)</span>
 <span class="nc bnc" id="L320" title="All 2 branches missed.">                        if (email == decryptedEmail) {</span>
@@ -323,10 +323,10 @@ import javax.inject.Inject
                         }
                     }
 
-<span class="nc" id="L326">                    try {</span>
-<span class="nc" id="L327">                        _navigateToNextPage.value = Event(</span>
-<span class="nc" id="L328">                            APIResponseV2&lt;DataResponse&gt;().error(</span>
-<span class="nc" id="L329">                                it.message.toString()</span>
+<span class="fc" id="L326">                    try {</span>
+<span class="fc" id="L327">                        _navigateToNextPage.value = Event(</span>
+<span class="fc" id="L328">                            APIResponseV2&lt;DataResponse&gt;().error(</span>
+<span class="fc" id="L329">                                it.message.toString()</span>
                             )
                         )
 <span class="nc" id="L332">                    } catch (exception: Exception) {</span>
@@ -335,36 +335,36 @@ import javax.inject.Inject
                         )
                     }
 
-<span class="nc" id="L338">                    _isLoading.value = Event(false)</span>
-<span class="nc" id="L339">                })</span>
-<span class="nc" id="L340">        }</span>
-<span class="nc" id="L341">    }</span>
+<span class="fc" id="L338">                    _isLoading.value = Event(false)</span>
+<span class="fc" id="L339">                })</span>
+<span class="fc" id="L340">        }</span>
+<span class="fc" id="L341">    }</span>
 
-<span class="nc" id="L343">    fun login(username: String, password: String, isBiometricLogin: Boolean = false) {</span>
-<span class="nc" id="L344">        fromMagicLogin = false</span>
-<span class="nc" id="L345">        compositeDisposable.add(</span>
-<span class="nc" id="L346">            loginRepository.getLogin(username, password, &quot;&quot;, isBiometricLogin)</span>
-<span class="nc" id="L347">                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())</span>
-<span class="nc" id="L348">                .doOnSubscribe {</span>
-<span class="nc" id="L349">                    _isLoading.value = Event(true)</span>
-<span class="nc" id="L350">                }</span>
-<span class="nc" id="L351">                .subscribe({</span>
-<span class="nc" id="L352">                    encourageVerification()</span>
-<span class="nc bnc" id="L353" title="All 2 branches missed.">                    if (it.isSuccessful) {</span>
-<span class="nc bnc" id="L354" title="All 2 branches missed.">                        it.body()?.let {</span>
-<span class="nc" id="L355">                            saveTokens(it)</span>
-<span class="nc" id="L356">                        }</span>
+<span class="fc" id="L343">    fun login(username: String, password: String, isBiometricLogin: Boolean = false) {</span>
+<span class="fc" id="L344">        fromMagicLogin = false</span>
+<span class="fc" id="L345">        compositeDisposable.add(</span>
+<span class="fc" id="L346">            loginRepository.getLogin(username, password, &quot;&quot;, isBiometricLogin)</span>
+<span class="fc" id="L347">                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L348">                .doOnSubscribe {</span>
+<span class="fc" id="L349">                    _isLoading.value = Event(true)</span>
+<span class="fc" id="L350">                }</span>
+<span class="fc" id="L351">                .subscribe({</span>
+<span class="fc" id="L352">                    encourageVerification()</span>
+<span class="pc bpc" id="L353" title="1 of 2 branches missed.">                    if (it.isSuccessful) {</span>
+<span class="pc bpc" id="L354" title="1 of 2 branches missed.">                        it.body()?.let {</span>
+<span class="fc" id="L355">                            saveTokens(it)</span>
+<span class="fc" id="L356">                        }</span>
 
-<span class="nc" id="L358">                        preferences.edit().putBoolean(Constants.IS_MAGIC_LOGIN, false).apply()</span>
+<span class="fc" id="L358">                        preferences.edit().putBoolean(Constants.IS_MAGIC_LOGIN, false).apply()</span>
 
-<span class="nc" id="L360">                        saveForOffline(username, password)</span>
+<span class="fc" id="L360">                        saveForOffline(username, password)</span>
 
-<span class="nc" id="L362">                        getMemberId(it)</span>
+<span class="fc" id="L362">                        getMemberId(it)</span>
                         // Set email verified to true if logged in successfully
-<span class="nc" id="L364">                        val key = &quot;$username${Constants.EMAIL_VERIFIED}&quot;</span>
-<span class="nc" id="L365">                        preferences.edit {</span>
-<span class="nc" id="L366">                            putBoolean(key, true)</span>
-<span class="nc" id="L367">                        }</span>
+<span class="fc" id="L364">                        val key = &quot;$username${Constants.EMAIL_VERIFIED}&quot;</span>
+<span class="fc" id="L365">                        preferences.edit {</span>
+<span class="fc" id="L366">                            putBoolean(key, true)</span>
+<span class="fc" id="L367">                        }</span>
                     } else {
 <span class="nc" id="L369">                        _isLoading.value = Event(false)</span>
 
@@ -403,32 +403,32 @@ import javax.inject.Inject
                             )
                         }
                     }
-<span class="nc" id="L406">                }, {</span>
-<span class="nc" id="L407">                    _isLoading.value = Event(false)</span>
-<span class="nc bnc" id="L408" title="All 2 branches missed.">                    it.message?.let { errMsg -&gt;</span>
-<span class="nc" id="L409">                        val errRes = ErrorResponse()</span>
-<span class="nc" id="L410">                        errRes.error_description = errMsg</span>
-<span class="nc" id="L411">                        _logInFail.value = errRes</span>
-<span class="nc" id="L412">                    }</span>
-<span class="nc" id="L413">                })</span>
+<span class="fc" id="L406">                }, {</span>
+<span class="fc" id="L407">                    _isLoading.value = Event(false)</span>
+<span class="pc bpc" id="L408" title="1 of 2 branches missed.">                    it.message?.let { errMsg -&gt;</span>
+<span class="fc" id="L409">                        val errRes = ErrorResponse()</span>
+<span class="fc" id="L410">                        errRes.error_description = errMsg</span>
+<span class="fc" id="L411">                        _logInFail.value = errRes</span>
+<span class="fc" id="L412">                    }</span>
+<span class="fc" id="L413">                })</span>
         )
-<span class="nc" id="L415">    }</span>
+<span class="fc" id="L415">    }</span>
 
     fun postLanguage(memberId: String, languageCode: String, response: Response&lt;AuthToken&gt;) {
-<span class="nc bnc" id="L418" title="All 6 branches missed.">        if (response.body()?.isGuest == true) {</span>
-<span class="nc" id="L419">            compositeDisposable.add(</span>
-<span class="nc" id="L420">                guestHomeRepository.setLanguagePreference(languageCode)</span>
-<span class="nc" id="L421">                    .subscribeOn(Schedulers.io())</span>
-<span class="nc" id="L422">                    .observeOn(AndroidSchedulers.mainThread())</span>
-<span class="nc" id="L423">                    .doOnSubscribe {</span>
-<span class="nc" id="L424">                    }</span>
-<span class="nc" id="L425">                    .subscribe({</span>
-<span class="nc" id="L426">                        languageToPush = null</span>
-<span class="nc" id="L427">                        _isLoading.value = Event(false)</span>
-<span class="nc" id="L428">                        _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(</span>
-<span class="nc" id="L429">                            response</span>
+<span class="pc bpc" id="L418" title="1 of 6 branches missed.">        if (response.body()?.isGuest == true) {</span>
+<span class="fc" id="L419">            compositeDisposable.add(</span>
+<span class="fc" id="L420">                guestHomeRepository.setLanguagePreference(languageCode)</span>
+<span class="fc" id="L421">                    .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L422">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L423">                    .doOnSubscribe {</span>
+<span class="fc" id="L424">                    }</span>
+<span class="fc" id="L425">                    .subscribe({</span>
+<span class="fc" id="L426">                        languageToPush = null</span>
+<span class="fc" id="L427">                        _isLoading.value = Event(false)</span>
+<span class="fc" id="L428">                        _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(</span>
+<span class="fc" id="L429">                            response</span>
                         )
-<span class="nc" id="L431">                    }, {</span>
+<span class="pc" id="L431">                    }, {</span>
 <span class="nc" id="L432">                        _isLoading.value = Event(false)</span>
 <span class="nc" id="L433">                        _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(</span>
 <span class="nc" id="L434">                            response</span>
@@ -436,22 +436,22 @@ import javax.inject.Inject
 <span class="nc" id="L436">                    })</span>
             )
         } else {
-<span class="nc" id="L439">            compositeDisposable.add(</span>
-<span class="nc" id="L440">                homeRepository.updateUserDetails(</span>
-<span class="nc" id="L441">                    memberId,</span>
-<span class="nc" id="L442">                    UpdateDetails(languagePreference = languageCode)</span>
+<span class="fc" id="L439">            compositeDisposable.add(</span>
+<span class="fc" id="L440">                homeRepository.updateUserDetails(</span>
+<span class="fc" id="L441">                    memberId,</span>
+<span class="fc" id="L442">                    UpdateDetails(languagePreference = languageCode)</span>
                 )
-<span class="nc" id="L444">                    .subscribeOn(Schedulers.io())</span>
-<span class="nc" id="L445">                    .observeOn(AndroidSchedulers.mainThread())</span>
-<span class="nc" id="L446">                    .doOnSubscribe {</span>
-<span class="nc" id="L447">                    }</span>
-<span class="nc" id="L448">                    .subscribe({</span>
-<span class="nc" id="L449">                        languageToPush = null</span>
-<span class="nc" id="L450">                        _isLoading.value = Event(false)</span>
-<span class="nc" id="L451">                        _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(</span>
-<span class="nc" id="L452">                            response</span>
+<span class="fc" id="L444">                    .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L445">                    .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L446">                    .doOnSubscribe {</span>
+<span class="fc" id="L447">                    }</span>
+<span class="fc" id="L448">                    .subscribe({</span>
+<span class="fc" id="L449">                        languageToPush = null</span>
+<span class="fc" id="L450">                        _isLoading.value = Event(false)</span>
+<span class="fc" id="L451">                        _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(</span>
+<span class="fc" id="L452">                            response</span>
                         )
-<span class="nc" id="L454">                    }, {</span>
+<span class="pc" id="L454">                    }, {</span>
 <span class="nc" id="L455">                        _isLoading.value = Event(false)</span>
 <span class="nc" id="L456">                        _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(</span>
 <span class="nc" id="L457">                            response</span>
@@ -459,34 +459,34 @@ import javax.inject.Inject
 <span class="nc" id="L459">                    })</span>
             )
         }
-<span class="nc" id="L462">    }</span>
+<span class="fc" id="L462">    }</span>
 
 <span class="nc" id="L464">    var languageToPush: String? = null</span>
 
     fun getGuestMemberId(response: Response&lt;AuthToken&gt;) {
-<span class="nc" id="L467">        compositeDisposable.add(</span>
-<span class="nc" id="L468">            guestHomeRepository.getGuestInfo()</span>
-<span class="nc" id="L469">                .subscribeOn(Schedulers.io())</span>
-<span class="nc" id="L470">                .observeOn(AndroidSchedulers.mainThread())</span>
-<span class="nc" id="L471">                .doOnSubscribe {</span>
-<span class="nc" id="L472">                    _isLoading.value = Event(true)</span>
-<span class="nc" id="L473">                }</span>
-<span class="nc" id="L474">                .subscribe({</span>
-<span class="nc" id="L475">                    fetchedMemberId = it.id</span>
+<span class="fc" id="L467">        compositeDisposable.add(</span>
+<span class="fc" id="L468">            guestHomeRepository.getGuestInfo()</span>
+<span class="fc" id="L469">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L470">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L471">                .doOnSubscribe {</span>
+<span class="fc" id="L472">                    _isLoading.value = Event(true)</span>
+<span class="fc" id="L473">                }</span>
+<span class="fc" id="L474">                .subscribe({</span>
+<span class="fc" id="L475">                    fetchedMemberId = it.id</span>
 //                    if (languageToPush != it.languagePreference) {
 //                        postLanguage(it.id, languageToPush ?: &quot;&quot;, response)
 //                    } else {
-<span class="nc" id="L479">                    _isLoading.value = Event(false)</span>
+<span class="fc" id="L479">                    _isLoading.value = Event(false)</span>
 
-<span class="nc" id="L481">                    handleGuestLogin(it)</span>
-<span class="nc bnc" id="L482" title="All 2 branches missed.">                    if (!isBiometricLogin) {</span>
-<span class="nc" id="L483">                        saveForOffline(email, password)</span>
+<span class="fc" id="L481">                    handleGuestLogin(it)</span>
+<span class="pc bpc" id="L482" title="1 of 2 branches missed.">                    if (!isBiometricLogin) {</span>
+<span class="fc" id="L483">                        saveForOffline(email, password)</span>
                     }
 
 //                    }
 
-<span class="nc" id="L488">                    _isLoading.value = Event(false)</span>
-<span class="nc" id="L489">                }, {</span>
+<span class="fc" id="L488">                    _isLoading.value = Event(false)</span>
+<span class="pc" id="L489">                }, {</span>
 <span class="nc" id="L490">                    _isLoading.value = Event(false)</span>
 <span class="nc" id="L491">                    _logInFail.value = ErrorResponse(</span>
 <span class="nc" id="L492">                        android = &quot;&quot;,</span>
@@ -497,84 +497,84 @@ import javax.inject.Inject
 <span class="nc" id="L497">                })</span>
 
         )
-<span class="nc" id="L500">    }</span>
+<span class="fc" id="L500">    }</span>
 
     fun getMemberId(response: Response&lt;AuthToken&gt;) {
-<span class="nc bnc" id="L503" title="All 6 branches missed.">        if (response.body()?.isGuest == true) {</span>
-<span class="nc" id="L504">            getGuestMemberId(response)</span>
+<span class="pc bpc" id="L503" title="1 of 6 branches missed.">        if (response.body()?.isGuest == true) {</span>
+<span class="fc" id="L504">            getGuestMemberId(response)</span>
         } else {
-<span class="nc" id="L506">            getMemberFullId(response)</span>
+<span class="fc" id="L506">            getMemberFullId(response)</span>
         }
-<span class="nc" id="L508">    }</span>
+<span class="fc" id="L508">    }</span>
 
-<span class="nc" id="L510">    var fetchedMemberId: String ? = null</span>
+<span class="pc" id="L510">    var fetchedMemberId: String ? = null</span>
 
     fun getMemberFullId(response: Response&lt;AuthToken&gt;) {
-<span class="nc" id="L513">        compositeDisposable.add(</span>
-<span class="nc" id="L514">            homeRepository.getMember()</span>
-<span class="nc" id="L515">                .subscribeOn(Schedulers.io())</span>
-<span class="nc" id="L516">                .observeOn(AndroidSchedulers.mainThread())</span>
-<span class="nc" id="L517">                .doOnDispose {</span>
+<span class="fc" id="L513">        compositeDisposable.add(</span>
+<span class="fc" id="L514">            homeRepository.getMember()</span>
+<span class="fc" id="L515">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L516">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L517">                .doOnDispose {</span>
 <span class="nc" id="L518">                    Timber.d(&quot;here&quot;)</span>
-<span class="nc" id="L519">                }.doOnSubscribe {</span>
-<span class="nc" id="L520">                    _isLoading.value = Event(true)</span>
-<span class="nc" id="L521">                }.doOnError {</span>
-<span class="nc" id="L522">                    _isLoading.value = Event(false)</span>
-<span class="nc" id="L523">                }.subscribe({</span>
-<span class="nc bnc" id="L524" title="All 2 branches missed.">                    it.email?.let { email -&gt;</span>
+<span class="pc" id="L519">                }.doOnSubscribe {</span>
+<span class="fc" id="L520">                    _isLoading.value = Event(true)</span>
+<span class="fc" id="L521">                }.doOnError {</span>
+<span class="fc" id="L522">                    _isLoading.value = Event(false)</span>
+<span class="fc" id="L523">                }.subscribe({</span>
+<span class="pc bpc" id="L524" title="1 of 2 branches missed.">                    it.email?.let { email -&gt;</span>
 <span class="nc" id="L525">                        preferences.edit().putString(Constants.USER_EMAIL, email).commit()</span>
 <span class="nc" id="L526">                        preferences.edit().putBoolean(</span>
 <span class="nc" id="L527">                            email + Constants.BIO_PERMISSION_REQUESTED,</span>
 <span class="nc" id="L528">                            biometricEnabled.value == true</span>
 <span class="nc" id="L529">                        ).commit()</span>
                     }
-<span class="nc bnc" id="L531" title="All 2 branches missed.">                    it.selfId?.let { sid -&gt;</span>
+<span class="pc bpc" id="L531" title="1 of 2 branches missed.">                    it.selfId?.let { sid -&gt;</span>
 
-<span class="nc" id="L533">                        fetchedMemberId = sid</span>
+<span class="fc" id="L533">                        fetchedMemberId = sid</span>
 
-<span class="nc" id="L535">                        preferences.edit().putString(&quot;memberID&quot;, it.selfId)</span>
-<span class="nc" id="L536">                            .apply()</span>
+<span class="fc" id="L535">                        preferences.edit().putString(&quot;memberID&quot;, it.selfId)</span>
+<span class="fc" id="L536">                            .apply()</span>
 
-<span class="nc" id="L538">                        var languageInServer = it.languagePreference</span>
+<span class="fc" id="L538">                        var languageInServer = it.languagePreference</span>
 
-<span class="nc" id="L540">                        var updatedMemberInfo = it</span>
+<span class="fc" id="L540">                        var updatedMemberInfo = it</span>
 
-<span class="nc bnc" id="L542" title="All 4 branches missed.">                        if (languageToPush != null &amp;&amp; languageToPush != languageInServer) {</span>
+<span class="pc bpc" id="L542" title="3 of 4 branches missed.">                        if (languageToPush != null &amp;&amp; languageToPush != languageInServer) {</span>
 <span class="nc" id="L543">                            updatedMemberInfo = it.copy(languagePreference = languageToPush)</span>
                         }
 
-<span class="nc" id="L546">                        Constants.CURRENT_LANGUAGE = updatedMemberInfo.languagePreference</span>
+<span class="fc" id="L546">                        Constants.CURRENT_LANGUAGE = updatedMemberInfo.languagePreference</span>
 
-<span class="nc" id="L548">                        homeRepository.insertMember(updatedMemberInfo)</span>
+<span class="fc" id="L548">                        homeRepository.insertMember(updatedMemberInfo)</span>
 
-<span class="nc bnc" id="L550" title="All 4 branches missed.">                        if (languageToPush != null &amp;&amp; languageToPush != languageInServer) {</span>
+<span class="pc bpc" id="L550" title="3 of 4 branches missed.">                        if (languageToPush != null &amp;&amp; languageToPush != languageInServer) {</span>
 <span class="nc bnc" id="L551" title="All 2 branches missed.">                            postLanguage(it.selfId, languageToPush ?: &quot;&quot;, response)</span>
                         } else {
-<span class="nc" id="L553">                            _isLoading.value = Event(false)</span>
-<span class="nc" id="L554">                            _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(</span>
-<span class="nc" id="L555">                                response</span>
+<span class="fc" id="L553">                            _isLoading.value = Event(false)</span>
+<span class="fc" id="L554">                            _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(</span>
+<span class="fc" id="L555">                                response</span>
                             )
                         }
-<span class="nc" id="L558">                    }</span>
-<span class="nc" id="L559">                }, {</span>
-<span class="nc" id="L560">                    _isLoading.value = Event(false)</span>
-<span class="nc" id="L561">                    _logInFail.value = ErrorResponse(</span>
-<span class="nc" id="L562">                        android = &quot;&quot;,</span>
-<span class="nc" id="L563">                        alternativeAppAvailable = &quot;false&quot;,</span>
-<span class="nc bnc" id="L564" title="All 2 branches missed.">                        error_description = it.message ?: APOLOGY_MESSAGE,</span>
-<span class="nc" id="L565">                        appName = &quot;&quot;</span>
+<span class="fc" id="L558">                    }</span>
+<span class="fc" id="L559">                }, {</span>
+<span class="fc" id="L560">                    _isLoading.value = Event(false)</span>
+<span class="fc" id="L561">                    _logInFail.value = ErrorResponse(</span>
+<span class="fc" id="L562">                        android = &quot;&quot;,</span>
+<span class="fc" id="L563">                        alternativeAppAvailable = &quot;false&quot;,</span>
+<span class="pc bpc" id="L564" title="1 of 2 branches missed.">                        error_description = it.message ?: APOLOGY_MESSAGE,</span>
+<span class="fc" id="L565">                        appName = &quot;&quot;</span>
                     )
-<span class="nc" id="L567">                })</span>
+<span class="fc" id="L567">                })</span>
         )
-<span class="nc" id="L569">    }</span>
+<span class="fc" id="L569">    }</span>
 
     fun saveEnableBiometricOnLogin(value: Boolean?) {
-<span class="nc bnc" id="L572" title="All 2 branches missed.">        value?.let {</span>
-<span class="nc" id="L573">            val pref = preferences.edit()</span>
-<span class="nc" id="L574">            pref.putBoolean(Constants.SET_BIO_METRIC_ON_LOGIN, it)</span>
-<span class="nc" id="L575">            pref.apply()</span>
-<span class="nc" id="L576">        }</span>
-<span class="nc" id="L577">    }</span>
+<span class="fc bfc" id="L572" title="All 2 branches covered.">        value?.let {</span>
+<span class="fc" id="L573">            val pref = preferences.edit()</span>
+<span class="fc" id="L574">            pref.putBoolean(Constants.SET_BIO_METRIC_ON_LOGIN, it)</span>
+<span class="fc" id="L575">            pref.apply()</span>
+<span class="fc" id="L576">        }</span>
+<span class="fc" id="L577">    }</span>
 
     fun saveRegistrationId(id: String?) {
 <span class="fc bfc" id="L580" title="All 2 branches covered.">        id?.let {</span>
@@ -587,12 +587,12 @@ import javax.inject.Inject
 <span class="fc" id="L587">    }</span>
 
     fun saveEmail() {
-<span class="nc" id="L590">        user.email = email</span>
-<span class="nc" id="L591">        val regString = gson.toJson(user)</span>
-<span class="nc" id="L592">        val regEdit = preferences.edit()</span>
-<span class="nc" id="L593">        regEdit.putString(Constants.register, regString)</span>
-<span class="nc" id="L594">        regEdit.apply()</span>
-<span class="nc" id="L595">    }</span>
+<span class="fc" id="L590">        user.email = email</span>
+<span class="fc" id="L591">        val regString = gson.toJson(user)</span>
+<span class="fc" id="L592">        val regEdit = preferences.edit()</span>
+<span class="fc" id="L593">        regEdit.putString(Constants.register, regString)</span>
+<span class="fc" id="L594">        regEdit.apply()</span>
+<span class="fc" id="L595">    }</span>
 
     fun saveTokens(data: AuthToken) {
 <span class="fc" id="L598">        preferences.edit().putBoolean(Constants.IS_GUEST, data.isGuest).apply()</span>
@@ -618,29 +618,29 @@ import javax.inject.Inject
 <span class="nc" id="L618">    }</span>
 
     fun clear() {
-<span class="nc" id="L621">        _logInFail.value = ErrorResponse()</span>
-<span class="nc" id="L622">        _navigateToNextPage.value = Event(APIResponseV2&lt;DataResponse&gt;().clear())</span>
-<span class="nc" id="L623">    }</span>
+<span class="fc" id="L621">        _logInFail.value = ErrorResponse()</span>
+<span class="fc" id="L622">        _navigateToNextPage.value = Event(APIResponseV2&lt;DataResponse&gt;().clear())</span>
+<span class="fc" id="L623">    }</span>
 
-<span class="nc" id="L625">    var fromMagicLogin = false</span>
+<span class="pc" id="L625">    var fromMagicLogin = false</span>
     fun magicLogin(magicTempUUID: String) {
-<span class="nc" id="L627">        preferences.edit().putString(Constants.MAGIC_TEMP_TOKEN, magicTempUUID).apply()</span>
-<span class="nc" id="L628">        compositeDisposable.add(</span>
-<span class="nc" id="L629">            loginRepository.getMagicLogin(magicTempUUID)</span>
-<span class="nc" id="L630">                .subscribeOn(Schedulers.io())</span>
-<span class="nc" id="L631">                .observeOn(AndroidSchedulers.mainThread())</span>
-<span class="nc" id="L632">                .doOnSubscribe {</span>
-<span class="nc" id="L633">                    _isLoading.value = Event(true)</span>
-<span class="nc" id="L634">                }</span>
-<span class="nc" id="L635">                .subscribe({</span>
-<span class="nc" id="L636">                    _isLoading.value = Event(false)</span>
-<span class="nc bnc" id="L637" title="All 2 branches missed.">                    if (it.isSuccessful) {</span>
-<span class="nc bnc" id="L638" title="All 2 branches missed.">                        it.body()?.let {</span>
-<span class="nc" id="L639">                            saveTokens(it)</span>
-<span class="nc" id="L640">                        }</span>
-<span class="nc" id="L641">                        preferences.edit().putBoolean(Constants.IS_MAGIC_LOGIN, true).apply()</span>
-<span class="nc" id="L642">                        fromMagicLogin = true</span>
-<span class="nc" id="L643">                        getMemberId(it)</span>
+<span class="fc" id="L627">        preferences.edit().putString(Constants.MAGIC_TEMP_TOKEN, magicTempUUID).apply()</span>
+<span class="fc" id="L628">        compositeDisposable.add(</span>
+<span class="fc" id="L629">            loginRepository.getMagicLogin(magicTempUUID)</span>
+<span class="fc" id="L630">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L631">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L632">                .doOnSubscribe {</span>
+<span class="fc" id="L633">                    _isLoading.value = Event(true)</span>
+<span class="fc" id="L634">                }</span>
+<span class="fc" id="L635">                .subscribe({</span>
+<span class="fc" id="L636">                    _isLoading.value = Event(false)</span>
+<span class="pc bpc" id="L637" title="1 of 2 branches missed.">                    if (it.isSuccessful) {</span>
+<span class="pc bpc" id="L638" title="1 of 2 branches missed.">                        it.body()?.let {</span>
+<span class="fc" id="L639">                            saveTokens(it)</span>
+<span class="fc" id="L640">                        }</span>
+<span class="fc" id="L641">                        preferences.edit().putBoolean(Constants.IS_MAGIC_LOGIN, true).apply()</span>
+<span class="fc" id="L642">                        fromMagicLogin = true</span>
+<span class="fc" id="L643">                        getMemberId(it)</span>
                     } else {
 <span class="nc" id="L645">                        val gson = Gson()</span>
 <span class="nc" id="L646">                        val type = object : TypeToken&lt;ErrorResponse&gt;() {}.type</span>
@@ -652,16 +652,16 @@ import javax.inject.Inject
 <span class="nc" id="L652">                            _logInFail.value = err</span>
 <span class="nc" id="L653">                        }</span>
                     }
-<span class="nc" id="L655">                }, {</span>
-<span class="nc" id="L656">                    _isLoading.value = Event(false)</span>
-<span class="nc bnc" id="L657" title="All 2 branches missed.">                    it.message?.let { errMsg -&gt;</span>
-<span class="nc" id="L658">                        val errRes = ErrorResponse()</span>
-<span class="nc" id="L659">                        errRes.error_description = errMsg</span>
-<span class="nc" id="L660">                        _logInFail.value = errRes</span>
-<span class="nc" id="L661">                    }</span>
-<span class="nc" id="L662">                })</span>
+<span class="fc" id="L655">                }, {</span>
+<span class="fc" id="L656">                    _isLoading.value = Event(false)</span>
+<span class="pc bpc" id="L657" title="1 of 2 branches missed.">                    it.message?.let { errMsg -&gt;</span>
+<span class="fc" id="L658">                        val errRes = ErrorResponse()</span>
+<span class="fc" id="L659">                        errRes.error_description = errMsg</span>
+<span class="fc" id="L660">                        _logInFail.value = errRes</span>
+<span class="fc" id="L661">                    }</span>
+<span class="fc" id="L662">                })</span>
         )
-<span class="nc" id="L664">    }</span>
+<span class="fc" id="L664">    }</span>
 
     fun fingerPrint() {
 <span class="fc" id="L667">        _navigateToFingerPrint.value = Event(Unit)</span>
@@ -706,99 +706,71 @@ import javax.inject.Inject
 <span class="fc bfc" id="L706" title="All 4 branches covered.">        return preferences.contains(Constants.encodedPassword) &amp;&amp; hasRequested</span>
     }
 
-//    fun savePassword() {
-//        preferences.edit().remove(Constants.INACTIVITY_TIME_STAMP).apply()
-//
-//        if (password.isNotEmpty()) {
-//            val encoded = HelperUtils.encrypt(password)
-//            preferences.edit().putString(
-//                Constants.encodedPassword,
-//                encoded
-//            ).apply()
-//            val encodedEmail = HelperUtils.encrypt(email)
-//            if (preferences.getString(Constants.encodedEmail, &quot;&quot;).equals(encodedEmail, true)) {
-//                preferences.edit().putString(
-//                    Constants.encodedEmail,
-//                    encodedEmail
-//                ).apply()
-//            } else {
-//                preferences.edit().putBoolean(
-//                    Constants.biometricPref,
-//                    false
-//                ).apply()
-//                preferences.edit().putString(
-//                    Constants.encodedEmail,
-//                    encodedEmail
-//                ).apply()
-//            }
-//        }
-//    }
-
     fun encourageVerification() {
         // change this to guest id
-<span class="fc" id="L739">        preferences.edit().putBoolean(</span>
-<span class="fc" id="L740">            Constants.VERIFY_IDENTITY_POPUP_SHOWN,</span>
-<span class="fc" id="L741">            false</span>
-<span class="fc" id="L742">        ).apply()</span>
-<span class="fc" id="L743">    }</span>
+<span class="fc" id="L711">        preferences.edit().putBoolean(</span>
+<span class="fc" id="L712">            Constants.VERIFY_IDENTITY_POPUP_SHOWN,</span>
+<span class="fc" id="L713">            false</span>
+<span class="fc" id="L714">        ).apply()</span>
+<span class="fc" id="L715">    }</span>
 
     fun saveForOffline(email: String, password: String) {
-<span class="nc" id="L746">        val encodedEmail = HelperUtils.encrypt(email)</span>
-<span class="nc" id="L747">        val encodedPassword = HelperUtils.encrypt(password)</span>
-<span class="nc" id="L748">        preferences.edit().putString(Constants.encodedEmail, encodedEmail).apply()</span>
-<span class="nc" id="L749">        preferences.edit().putString(Constants.encodedPassword, encodedPassword).apply()</span>
-<span class="nc" id="L750">    }</span>
+<span class="fc" id="L718">        val encodedEmail = HelperUtils.encrypt(email)</span>
+<span class="fc" id="L719">        val encodedPassword = HelperUtils.encrypt(password)</span>
+<span class="fc" id="L720">        preferences.edit().putString(Constants.encodedEmail, encodedEmail).apply()</span>
+<span class="fc" id="L721">        preferences.edit().putString(Constants.encodedPassword, encodedPassword).apply()</span>
+<span class="fc" id="L722">    }</span>
 
     fun updateEmail(it: String) {
-<span class="fc" id="L753">        _emailChanged.value = Event(it.trim())</span>
-<span class="fc" id="L754">    }</span>
+<span class="fc" id="L725">        _emailChanged.value = Event(it.trim())</span>
+<span class="fc" id="L726">    }</span>
 
     // GUEST LOGIN RELATED
-<span class="pc" id="L757">    var documentType: DocumentType = DocumentType.DL_FRONT</span>
-<span class="pc" id="L758">    var sessionId: String? = null</span>
-<span class="pc" id="L759">    var guestEmail: String? = null</span>
-<span class="pc" id="L760">    var pendingSsnIdentification: Boolean = false</span>
+<span class="pc" id="L729">    var documentType: DocumentType = DocumentType.DL_FRONT</span>
+<span class="pc" id="L730">    var sessionId: String? = null</span>
+<span class="pc" id="L731">    var guestEmail: String? = null</span>
+<span class="pc" id="L732">    var pendingSsnIdentification: Boolean = false</span>
 
-<span class="fc" id="L762">    private val _showVerifyIdentity = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L734">    private val _showVerifyIdentity = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val showVerifyIdentity: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="fc" id="L764">        get() = _showVerifyIdentity</span>
+<span class="fc" id="L736">        get() = _showVerifyIdentity</span>
 
-<span class="fc" id="L766">    private val _showRequestInCustomerSupport = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L738">    private val _showRequestInCustomerSupport = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val showRequestInCustomerSupport: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="fc" id="L768">        get() = _showRequestInCustomerSupport</span>
+<span class="fc" id="L740">        get() = _showRequestInCustomerSupport</span>
 
-<span class="fc" id="L770">    private val _showPendingVerification = MutableLiveData&lt;Event&lt;GuestUserInfo&gt;&gt;()</span>
+<span class="fc" id="L742">    private val _showPendingVerification = MutableLiveData&lt;Event&lt;GuestUserInfo&gt;&gt;()</span>
     val showPendingVerification: LiveData&lt;Event&lt;GuestUserInfo&gt;&gt;
-<span class="fc" id="L772">        get() = _showPendingVerification</span>
+<span class="fc" id="L744">        get() = _showPendingVerification</span>
 
     fun handleGuestLogin(guestUserInfo: GuestUserInfo) {
-<span class="fc" id="L775">        preferences.edit().putString(&quot;memberID&quot;, guestUserInfo.id)</span>
-<span class="fc" id="L776">            .apply()</span>
-<span class="fc" id="L777">        preferences.edit().putString(Constants.USER_EMAIL, guestUserInfo.email).commit()</span>
+<span class="fc" id="L747">        preferences.edit().putString(&quot;memberID&quot;, guestUserInfo.id)</span>
+<span class="fc" id="L748">            .apply()</span>
+<span class="fc" id="L749">        preferences.edit().putString(Constants.USER_EMAIL, guestUserInfo.email).commit()</span>
 
-<span class="fc" id="L779">        guestEmail = guestUserInfo.email</span>
+<span class="fc" id="L751">        guestEmail = guestUserInfo.email</span>
 
-<span class="fc bfc" id="L781" title="All 2 branches covered.">        if (guestUserInfo.isOpenEnrollment == true) {</span>
-<span class="fc" id="L782">            _showPendingVerification.value = Event(guestUserInfo)</span>
+<span class="fc bfc" id="L753" title="All 2 branches covered.">        if (guestUserInfo.isOpenEnrollment == true) {</span>
+<span class="fc" id="L754">            _showPendingVerification.value = Event(guestUserInfo)</span>
         } else {
-<span class="fc" id="L784">            pendingSsnIdentification = guestUserInfo.pendingIdentityVerification</span>
-<span class="fc bfc" id="L785" title="All 2 branches covered.">            if (pendingSsnIdentification) {</span>
-<span class="fc" id="L786">                sessionId = guestUserInfo.identificationSessionId</span>
-<span class="fc" id="L787">                _showPendingVerification.value = Event(guestUserInfo)</span>
+<span class="fc" id="L756">            pendingSsnIdentification = guestUserInfo.pendingIdentityVerification</span>
+<span class="fc bfc" id="L757" title="All 2 branches covered.">            if (pendingSsnIdentification) {</span>
+<span class="fc" id="L758">                sessionId = guestUserInfo.identificationSessionId</span>
+<span class="fc" id="L759">                _showPendingVerification.value = Event(guestUserInfo)</span>
             } else {
-<span class="fc bfc" id="L789" title="All 2 branches covered.">                if (!guestUserInfo.requestInCustomerSupport) {</span>
-<span class="fc" id="L790">                    _showVerifyIdentity.value = Event(Unit)</span>
+<span class="fc bfc" id="L761" title="All 2 branches covered.">                if (!guestUserInfo.requestInCustomerSupport) {</span>
+<span class="fc" id="L762">                    _showVerifyIdentity.value = Event(Unit)</span>
                 } else {
-<span class="fc" id="L792">                    _showRequestInCustomerSupport.value = Event(Unit)</span>
+<span class="fc" id="L764">                    _showRequestInCustomerSupport.value = Event(Unit)</span>
                 }
             }
         }
-<span class="fc" id="L796">    }</span>
+<span class="fc" id="L768">    }</span>
 
     fun clearLogin() {
-<span class="pc bpc" id="L799" title="1 of 2 branches missed.">        viewModelScope.launch {</span>
-<span class="fc" id="L800">            _shouldGoToLogin.value = Event(false)</span>
-<span class="fc" id="L801">        }</span>
-<span class="fc" id="L802">    }</span>
+<span class="pc bpc" id="L771" title="1 of 2 branches missed.">        viewModelScope.launch {</span>
+<span class="fc" id="L772">            _shouldGoToLogin.value = Event(false)</span>
+<span class="fc" id="L773">        }</span>
+<span class="fc" id="L774">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

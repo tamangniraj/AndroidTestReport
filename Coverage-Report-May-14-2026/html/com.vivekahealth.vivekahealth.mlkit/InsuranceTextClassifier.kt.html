@@ -32,7 +32,7 @@ import java.nio.channels.FileChannel
 <span class="nc" id="L32">        val json = context.assets.open(&quot;insurance_other/tokenizer_config.json&quot;)</span>
 <span class="nc bnc" id="L33" title="All 2 branches missed.">            .bufferedReader().use { it.readText() }</span>
 
-<span class="nc" id="L35">        val type = object : TypeToken&lt;Map&lt;String, Any&gt;&gt;() {}.type</span>
+<span class="pc" id="L35">        val type = object : TypeToken&lt;Map&lt;String, Any&gt;&gt;() {}.type</span>
 <span class="nc" id="L36">        val config: Map&lt;String, Any&gt; = Gson().fromJson(json, type)</span>
 
         // Gson parses word_index values as Double → cast to Int

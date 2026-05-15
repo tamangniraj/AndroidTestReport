@@ -7,21 +7,21 @@ import com.vivekahealth.vivekahealth.data.remote.home.medicalLogs.MedicalLogsAll
     private var savedData: MedicalLogsAll? = null
 
     fun saveData(newData: MedicalLogsAll, shouldAppend: Boolean): MedicalLogsAll {
-<span class="nc bnc" id="L10" title="All 4 branches missed.">        return if (shouldAppend &amp;&amp; savedData != null) {</span>
+<span class="pc bpc" id="L10" title="3 of 4 branches missed.">        return if (shouldAppend &amp;&amp; savedData != null) {</span>
 <span class="nc" id="L11">            val combined = appendData(savedData!!, newData)</span>
 <span class="nc" id="L12">            savedData = combined</span>
 <span class="nc" id="L13">            combined</span>
         } else {
-<span class="nc" id="L15">            savedData = newData</span>
-<span class="nc" id="L16">            newData</span>
+<span class="fc" id="L15">            savedData = newData</span>
+<span class="fc" id="L16">            newData</span>
         }
     }
 
 <span class="nc" id="L20">    fun getSavedData(): MedicalLogsAll? = savedData</span>
 
     fun clearSavedData() {
-<span class="nc" id="L23">        savedData = null</span>
-<span class="nc" id="L24">    }</span>
+<span class="fc" id="L23">        savedData = null</span>
+<span class="fc" id="L24">    }</span>
 
     fun hasSavedData(): Boolean {
 <span class="nc bnc" id="L27" title="All 4 branches missed.">        return savedData?.let { !isDataEmpty(it) } ?: false</span>

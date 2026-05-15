@@ -18,10 +18,10 @@ import com.vivekahealth.vivekahealth.databinding.EobSuccessBinding
 import com.vivekahealth.vivekahealth.databinding.NotificationRequestBinding
 import com.vivekahealth.vivekahealth.databinding.PriceNotEnteredBinding
 
-<span class="fc" id="L21">class DialogUtils(</span>
-<span class="pc" id="L22">    val context: Context,</span>
+<span class="nc" id="L21">class DialogUtils(</span>
+<span class="nc" id="L22">    val context: Context,</span>
 
-<span class="pc" id="L24">    val listener: DialogListener</span>
+<span class="nc" id="L24">    val listener: DialogListener</span>
 ) {
 
 <span class="nc" id="L27">    var materialDialog: MaterialDialog? = null</span>
@@ -180,25 +180,25 @@ import com.vivekahealth.vivekahealth.databinding.PriceNotEnteredBinding
         neutralBtn: String,
         negativeBtn: String
     ) {
-<span class="fc" id="L183">        MaterialDialog.Builder(context).title(title)</span>
-<span class="fc" id="L184">            .content(content).cancelable(false)</span>
-<span class="fc" id="L185">            .positiveText(positiveBtn)</span>
-<span class="fc" id="L186">            .neutralText(neutralBtn)</span>
-<span class="fc" id="L187">            .negativeText(negativeBtn)</span>
-<span class="fc" id="L188">            .onPositive { dialog, which -&gt;</span>
+<span class="nc" id="L183">        MaterialDialog.Builder(context).title(title)</span>
+<span class="nc" id="L184">            .content(content).cancelable(false)</span>
+<span class="nc" id="L185">            .positiveText(positiveBtn)</span>
+<span class="nc" id="L186">            .neutralText(neutralBtn)</span>
+<span class="nc" id="L187">            .negativeText(negativeBtn)</span>
+<span class="nc" id="L188">            .onPositive { dialog, which -&gt;</span>
 
-<span class="fc" id="L190">                listener.onPositiveClicked()</span>
-<span class="fc" id="L191">                dialog.dismiss()</span>
-<span class="fc" id="L192">            }.onNeutral { dialog, which -&gt;</span>
+<span class="nc" id="L190">                listener.onPositiveClicked()</span>
+<span class="nc" id="L191">                dialog.dismiss()</span>
+<span class="nc" id="L192">            }.onNeutral { dialog, which -&gt;</span>
 <span class="nc" id="L193">                listener.onNeutralClicked()</span>
 <span class="nc" id="L194">                dialog.dismiss()</span>
-<span class="pc" id="L195">            }.onNegative { dialog, which -&gt;</span>
+<span class="nc" id="L195">            }.onNegative { dialog, which -&gt;</span>
 
 <span class="nc" id="L197">                listener.onNegativeClicked()</span>
 <span class="nc" id="L198">                dialog.dismiss()</span>
 <span class="nc" id="L199">            }</span>
-<span class="fc" id="L200">            .show()</span>
-<span class="fc" id="L201">    }</span>
+<span class="nc" id="L200">            .show()</span>
+<span class="nc" id="L201">    }</span>
 
     fun dialogWithCustomTextView(
         title: String,

@@ -84,11 +84,11 @@ const val shouldHideDetectionInfo = true
 
 <span class="nc" id="L85">    init {</span>
 <span class="nc" id="L86">        fpsTimer.scheduleAtFixedRate(</span>
-<span class="nc" id="L87">            object : TimerTask() {</span>
+<span class="pc" id="L87">            object : TimerTask() {</span>
                 override fun run() {
-<span class="nc" id="L89">                    framesPerSecond = frameProcessedInOneSecondInterval</span>
-<span class="nc" id="L90">                    frameProcessedInOneSecondInterval = 0</span>
-<span class="nc" id="L91">                }</span>
+<span class="fc" id="L89">                    framesPerSecond = frameProcessedInOneSecondInterval</span>
+<span class="fc" id="L90">                    frameProcessedInOneSecondInterval = 0</span>
+<span class="fc" id="L91">                }</span>
             },
 <span class="nc" id="L93">            0,</span>
 <span class="nc" id="L94">            1000</span>

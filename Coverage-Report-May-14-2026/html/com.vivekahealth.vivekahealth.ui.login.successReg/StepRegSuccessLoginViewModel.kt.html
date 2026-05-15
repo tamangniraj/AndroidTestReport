@@ -26,56 +26,56 @@ import javax.inject.Inject
 import kotlinx.coroutines.Job
 import org.apache.commons.lang3.StringUtils
 
-<span class="nc" id="L29">class StepRegSuccessLoginViewModel @Inject constructor(</span>
-<span class="nc" id="L30">    private val preferences: SharedPreferences,</span>
-<span class="nc" id="L31">    private val emailRepository: EmailRepository,</span>
-<span class="nc" id="L32">    private val registerRepository: RegisterRepository</span>
-<span class="nc" id="L33">) : ViewModel(), Observable {</span>
+<span class="fc" id="L29">class StepRegSuccessLoginViewModel @Inject constructor(</span>
+<span class="fc" id="L30">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L31">    private val emailRepository: EmailRepository,</span>
+<span class="fc" id="L32">    private val registerRepository: RegisterRepository</span>
+<span class="fc" id="L33">) : ViewModel(), Observable {</span>
 
-<span class="nc" id="L35">    var gson = Gson()</span>
-<span class="nc" id="L36">    var user = RegisterUser()</span>
+<span class="pc" id="L35">    var gson = Gson()</span>
+<span class="pc" id="L36">    var user = RegisterUser()</span>
     private lateinit var job: Job
-<span class="nc" id="L38">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="fc" id="L38">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
 
-<span class="nc" id="L40">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L40">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
 
-<span class="nc" id="L42">    private val _emailChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+<span class="fc" id="L42">    private val _emailChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
 
     val emailChanged: LiveData&lt;Event&lt;String&gt;&gt;
 <span class="nc" id="L45">        get() = _emailChanged</span>
 
-<span class="nc" id="L47">    private val _changeEnable = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L47">    private val _changeEnable = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val changeEnable: LiveData&lt;Event&lt;Unit&gt;&gt;
 <span class="nc" id="L49">        get() = _changeEnable</span>
-<span class="nc" id="L50">    private val _navigateToLogin = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L50">    private val _navigateToLogin = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val navigateToLogin: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L52">        get() = _navigateToLogin</span>
+<span class="fc" id="L52">        get() = _navigateToLogin</span>
 
-<span class="nc" id="L54">    private val _navigateToReRegister = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+<span class="fc" id="L54">    private val _navigateToReRegister = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
     val navigateToReRegister: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
-<span class="nc" id="L56">        get() = _navigateToReRegister</span>
+<span class="fc" id="L56">        get() = _navigateToReRegister</span>
 
-<span class="nc" id="L58">    private val _navigateToResend = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+<span class="fc" id="L58">    private val _navigateToResend = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
     val navigateToResend: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
-<span class="nc" id="L60">        get() = _navigateToResend</span>
+<span class="fc" id="L60">        get() = _navigateToResend</span>
 
-<span class="nc" id="L62">    private val _navigateToSuccess = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+<span class="fc" id="L62">    private val _navigateToSuccess = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
     val navigateToSuccess: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
 <span class="nc" id="L64">        get() = _navigateToSuccess</span>
-<span class="nc" id="L65">    var email: String = &quot;&quot;</span>
+<span class="fc" id="L65">    var email: String = &quot;&quot;</span>
 <span class="nc" id="L66">        @Bindable get</span>
         set(value) {
-<span class="nc" id="L68">            field = value</span>
-<span class="nc" id="L69">            callbacks.notifyCallbacks(this, BR.email, null)</span>
-<span class="nc" id="L70">        }</span>
+<span class="fc" id="L68">            field = value</span>
+<span class="fc" id="L69">            callbacks.notifyCallbacks(this, BR.email, null)</span>
+<span class="fc" id="L70">        }</span>
 
-<span class="nc" id="L72">    var originalEmail = &quot;&quot;</span>
+<span class="pc" id="L72">    var originalEmail = &quot;&quot;</span>
 <span class="nc" id="L73">    var firstTextChange: Boolean = false</span>
 
 <span class="nc" id="L75">    var count = 0</span>
 
 <span class="nc" id="L77">    @get:Bindable</span>
-<span class="nc" id="L78">    val emailTextWatcher = object : TextWatcher {</span>
+<span class="fc" id="L78">    val emailTextWatcher = object : TextWatcher {</span>
         override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
             // Do nothing.
 <span class="nc" id="L81">        }</span>
@@ -93,14 +93,14 @@ import org.apache.commons.lang3.StringUtils
 <span class="nc" id="L93">    var Done = false</span>
 <span class="nc" id="L94">    var cancel = false</span>
     fun checkEmail() {
-<span class="nc" id="L96">        compositeDisposable.add(</span>
-<span class="nc" id="L97">            emailRepository.verifyEmail(email)</span>
-<span class="nc" id="L98">                .subscribeOn(Schedulers.io())</span>
-<span class="nc" id="L99">                .observeOn(AndroidSchedulers.mainThread())</span>
-<span class="nc" id="L100">                .doOnSubscribe {</span>
-<span class="nc" id="L101">                    _navigateToReRegister.value = APIResponse&lt;DataResponse&gt;().loading()</span>
-<span class="nc" id="L102">                }</span>
-<span class="nc" id="L103">                .subscribe({</span>
+<span class="fc" id="L96">        compositeDisposable.add(</span>
+<span class="fc" id="L97">            emailRepository.verifyEmail(email)</span>
+<span class="fc" id="L98">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L99">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L100">                .doOnSubscribe {</span>
+<span class="fc" id="L101">                    _navigateToReRegister.value = APIResponse&lt;DataResponse&gt;().loading()</span>
+<span class="fc" id="L102">                }</span>
+<span class="fc" id="L103">                .subscribe({</span>
 //                            val gson = Gson()
 //                            val regEdit = preferences.edit();
 //
@@ -114,33 +114,33 @@ import org.apache.commons.lang3.StringUtils
 //                            regEdit.putString(Constants.Registration, userString)
 //                            regEdit.apply()
 
-<span class="nc" id="L117">                    saveEmail()</span>
-<span class="nc" id="L118">                    _navigateToReRegister.value = APIResponse&lt;DataResponse&gt;().success(it)</span>
-<span class="nc" id="L119">                }, {</span>
-<span class="nc" id="L120">                    _navigateToReRegister.value = APIResponse&lt;DataResponse&gt;().error(</span>
-<span class="nc" id="L121">                        it.localizedMessage!!</span>
+<span class="fc" id="L117">                    saveEmail()</span>
+<span class="fc" id="L118">                    _navigateToReRegister.value = APIResponse&lt;DataResponse&gt;().success(it)</span>
+<span class="fc" id="L119">                }, {</span>
+<span class="fc" id="L120">                    _navigateToReRegister.value = APIResponse&lt;DataResponse&gt;().error(</span>
+<span class="fc" id="L121">                        it.localizedMessage!!</span>
                     )
-<span class="nc" id="L123">                })</span>
+<span class="fc" id="L123">                })</span>
         )
-<span class="nc" id="L125">    }</span>
+<span class="fc" id="L125">    }</span>
 
     fun reSend() {
-<span class="nc" id="L128">        compositeDisposable.add(</span>
-<span class="nc" id="L129">            registerRepository.reSendEmail(email)</span>
-<span class="nc" id="L130">                .subscribeOn(Schedulers.io())</span>
-<span class="nc" id="L131">                .observeOn(AndroidSchedulers.mainThread())</span>
-<span class="nc" id="L132">                .doOnSubscribe {</span>
-<span class="nc" id="L133">                    _navigateToResend.value = APIResponse&lt;DataResponse&gt;().loading()</span>
-<span class="nc" id="L134">                }</span>
-<span class="nc" id="L135">                .subscribe({</span>
-<span class="nc" id="L136">                    _navigateToResend.value = APIResponse&lt;DataResponse&gt;().success(it)</span>
-<span class="nc" id="L137">                }, {</span>
-<span class="nc" id="L138">                    _navigateToResend.value = APIResponse&lt;DataResponse&gt;().error(</span>
-<span class="nc" id="L139">                        it.localizedMessage!!</span>
+<span class="fc" id="L128">        compositeDisposable.add(</span>
+<span class="fc" id="L129">            registerRepository.reSendEmail(email)</span>
+<span class="fc" id="L130">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L131">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L132">                .doOnSubscribe {</span>
+<span class="fc" id="L133">                    _navigateToResend.value = APIResponse&lt;DataResponse&gt;().loading()</span>
+<span class="fc" id="L134">                }</span>
+<span class="fc" id="L135">                .subscribe({</span>
+<span class="fc" id="L136">                    _navigateToResend.value = APIResponse&lt;DataResponse&gt;().success(it)</span>
+<span class="fc" id="L137">                }, {</span>
+<span class="fc" id="L138">                    _navigateToResend.value = APIResponse&lt;DataResponse&gt;().error(</span>
+<span class="fc" id="L139">                        it.localizedMessage!!</span>
                     )
-<span class="nc" id="L141">                })</span>
+<span class="fc" id="L141">                })</span>
         )
-<span class="nc" id="L143">    }</span>
+<span class="fc" id="L143">    }</span>
 
     fun reRegister() {
 <span class="nc" id="L146">        compositeDisposable.add(</span>
@@ -181,21 +181,21 @@ import org.apache.commons.lang3.StringUtils
         )
 <span class="nc" id="L182">    }</span>
     fun saveEmail() {
-<span class="nc" id="L184">        user.email = email</span>
-<span class="nc" id="L185">        val regString = gson.toJson(user)</span>
-<span class="nc" id="L186">        val regEdit = preferences.edit()</span>
-<span class="nc" id="L187">        regEdit.putString(Constants.Registration, regString)</span>
-<span class="nc" id="L188">        regEdit.apply()</span>
-<span class="nc" id="L189">    }</span>
+<span class="fc" id="L184">        user.email = email</span>
+<span class="fc" id="L185">        val regString = gson.toJson(user)</span>
+<span class="fc" id="L186">        val regEdit = preferences.edit()</span>
+<span class="fc" id="L187">        regEdit.putString(Constants.Registration, regString)</span>
+<span class="fc" id="L188">        regEdit.apply()</span>
+<span class="fc" id="L189">    }</span>
     fun onBackClicked() {
 <span class="nc" id="L191">    }</span>
 
     fun removeReg() {
-<span class="nc" id="L194">        val regString = gson.toJson(user)</span>
-<span class="nc" id="L195">        val regEdit = preferences.edit()</span>
-<span class="nc" id="L196">        regEdit.putString(Constants.Registration, &quot;&quot;)</span>
-<span class="nc" id="L197">        regEdit.apply()</span>
-<span class="nc" id="L198">    }</span>
+<span class="fc" id="L194">        val regString = gson.toJson(user)</span>
+<span class="fc" id="L195">        val regEdit = preferences.edit()</span>
+<span class="fc" id="L196">        regEdit.putString(Constants.Registration, &quot;&quot;)</span>
+<span class="fc" id="L197">        regEdit.apply()</span>
+<span class="fc" id="L198">    }</span>
     fun resendEmail() {
 <span class="nc" id="L200">        reSend()</span>
 //        user.resendVerification = &quot;true&quot;
@@ -204,10 +204,10 @@ import org.apache.commons.lang3.StringUtils
 <span class="nc" id="L204">    }</span>
 
     fun onOkClicked() {
-<span class="nc" id="L207">        removeReg()</span>
+<span class="fc" id="L207">        removeReg()</span>
 
-<span class="nc" id="L209">        _navigateToLogin.value = Event(Unit)</span>
-<span class="nc" id="L210">    }</span>
+<span class="fc" id="L209">        _navigateToLogin.value = Event(Unit)</span>
+<span class="fc" id="L210">    }</span>
 
     fun onUpdateClicked() {
 <span class="nc bnc" id="L213" title="All 2 branches missed.">        if (Done) {</span>

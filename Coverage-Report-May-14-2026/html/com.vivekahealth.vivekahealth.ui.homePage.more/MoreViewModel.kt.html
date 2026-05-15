@@ -338,21 +338,21 @@ import kotlinx.coroutines.launch
 <span class="nc" id="L338">    }</span>
 
     fun logOutCall() {
-<span class="fc" id="L341">        compositeDisposable.add(</span>
-<span class="fc" id="L342">            homeRepository.getLogout()</span>
-<span class="fc" id="L343">                .subscribeOn(Schedulers.io())</span>
-<span class="fc" id="L344">                .observeOn(AndroidSchedulers.mainThread())</span>
-<span class="fc" id="L345">                .doOnSubscribe</span>
-<span class="fc" id="L346">                {</span>
-<span class="fc" id="L347">                }</span>
-<span class="fc" id="L348">                .subscribe(</span>
-<span class="pc" id="L349">                    {</span>
+<span class="nc" id="L341">        compositeDisposable.add(</span>
+<span class="nc" id="L342">            homeRepository.getLogout()</span>
+<span class="nc" id="L343">                .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L344">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L345">                .doOnSubscribe</span>
+<span class="nc" id="L346">                {</span>
+<span class="nc" id="L347">                }</span>
+<span class="nc" id="L348">                .subscribe(</span>
+<span class="nc" id="L349">                    {</span>
 <span class="nc" id="L350">                    },</span>
-<span class="fc" id="L351">                    {</span>
-<span class="fc" id="L352">                    }</span>
+<span class="nc" id="L351">                    {</span>
+<span class="nc" id="L352">                    }</span>
                 )
         )
-<span class="fc" id="L355">    }</span>
+<span class="nc" id="L355">    }</span>
 
     fun createList(
         afrikan: String,
@@ -686,8 +686,8 @@ import kotlinx.coroutines.launch
 <span class="nc" id="L686">    }</span>
 
     fun logOut() {
-<span class="fc" id="L689">        _navigateToLogOut.value = Event(Unit)</span>
-<span class="fc" id="L690">    }</span>
+<span class="nc" id="L689">        _navigateToLogOut.value = Event(Unit)</span>
+<span class="nc" id="L690">    }</span>
 
     fun appUpdateCheck() {
 <span class="nc" id="L693">        _checkAppUpdate.value = Event(Unit)</span>

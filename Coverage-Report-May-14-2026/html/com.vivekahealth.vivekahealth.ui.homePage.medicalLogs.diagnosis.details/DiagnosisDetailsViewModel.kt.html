@@ -20,22 +20,22 @@ import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
 import timber.log.Timber
 
-<span class="nc" id="L23">class DiagnosisDetailsViewModel @Inject constructor(</span>
-<span class="nc" id="L24">    private val preferences: SharedPreferences,</span>
-<span class="nc" id="L25">    private val medicalLogsRepository: MedicalLogsRepository,</span>
-<span class="nc" id="L26">    private val homeRepository: HomeRepository</span>
-<span class="nc" id="L27">) : ViewModel(), Observable {</span>
-<span class="nc" id="L28">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="fc" id="L23">class DiagnosisDetailsViewModel @Inject constructor(</span>
+<span class="fc" id="L24">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L25">    private val medicalLogsRepository: MedicalLogsRepository,</span>
+<span class="fc" id="L26">    private val homeRepository: HomeRepository</span>
+<span class="fc" id="L27">) : ViewModel(), Observable {</span>
+<span class="fc" id="L28">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
 
-<span class="nc" id="L30">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L30">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
 
-<span class="nc" id="L32">    private val _logsListGenerated = MutableLiveData&lt;Event&lt;List&lt;DiagnosisHistoryQuickView&gt;&gt;&gt;()</span>
+<span class="fc" id="L32">    private val _logsListGenerated = MutableLiveData&lt;Event&lt;List&lt;DiagnosisHistoryQuickView&gt;&gt;&gt;()</span>
     val logsListGenerated: LiveData&lt;Event&lt;List&lt;DiagnosisHistoryQuickView&gt;&gt;&gt;
-<span class="nc" id="L34">        get() = _logsListGenerated</span>
+<span class="fc" id="L34">        get() = _logsListGenerated</span>
 
-<span class="nc" id="L36">    private val _viewEob = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L36">    private val _viewEob = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val viewEob: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L38">        get() = _viewEob</span>
+<span class="fc" id="L38">        get() = _viewEob</span>
 
     var claimsDetail: ClaimsDetailItem? = null
 <span class="nc" id="L41">        @Bindable get</span>
@@ -43,60 +43,60 @@ import timber.log.Timber
 <span class="nc" id="L43">            field = value</span>
 <span class="nc" id="L44">            callbacks.notifyCallbacks(this, BR.claimsDetail, null)</span>
 <span class="nc" id="L45">        }</span>
-<span class="nc" id="L46">    var memberID: String = &quot;&quot;</span>
-<span class="nc" id="L47">    var claimsNumber: String = &quot;&quot;</span>
-<span class="nc" id="L48">    var diagnosis: DiagnosisHistoryQuickView? = null</span>
+<span class="pc" id="L46">    var memberID: String = &quot;&quot;</span>
+<span class="pc" id="L47">    var claimsNumber: String = &quot;&quot;</span>
+<span class="fc" id="L48">    var diagnosis: DiagnosisHistoryQuickView? = null</span>
 
-<span class="nc" id="L50">    var earliestDos: String = &quot;&quot;</span>
+<span class="pc" id="L50">    var earliestDos: String = &quot;&quot;</span>
 <span class="nc" id="L51">    var frequency: Int = 0</span>
-<span class="nc" id="L52">    val code: String = &quot;&quot;</span>
-<span class="nc" id="L53">    var mostRecentDos: String = &quot;&quot;</span>
+<span class="pc" id="L52">    val code: String = &quot;&quot;</span>
+<span class="pc" id="L53">    var mostRecentDos: String = &quot;&quot;</span>
 <span class="nc" id="L54">    var viewType: Int = 0</span>
-<span class="nc" id="L55">    var diagnosisDate: String = &quot;&quot;</span>
+<span class="pc" id="L55">    var diagnosisDate: String = &quot;&quot;</span>
 
-<span class="nc" id="L57">    var serviceDate: String = &quot;&quot;</span>
-<span class="nc" id="L58">    var description: String = &quot;&quot;</span>
-<span class="nc" id="L59">    var actionDate: String = &quot;&quot;</span>
-<span class="nc" id="L60">    var status: String = &quot;&quot;</span>
-<span class="nc" id="L61">    var gson = Gson()</span>
+<span class="pc" id="L57">    var serviceDate: String = &quot;&quot;</span>
+<span class="pc" id="L58">    var description: String = &quot;&quot;</span>
+<span class="pc" id="L59">    var actionDate: String = &quot;&quot;</span>
+<span class="pc" id="L60">    var status: String = &quot;&quot;</span>
+<span class="pc" id="L61">    var gson = Gson()</span>
     var loading: Boolean = false
 <span class="nc" id="L63">        @Bindable get</span>
         set(value) {
-<span class="nc" id="L65">            field = value</span>
-<span class="nc" id="L66">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
-<span class="nc" id="L67">        }</span>
+<span class="fc" id="L65">            field = value</span>
+<span class="fc" id="L66">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
+<span class="fc" id="L67">        }</span>
 
     fun diagnosisStringToObject(item: String) {
-<span class="nc bnc" id="L70" title="All 4 branches missed.">        if (item.isNotEmpty()) {</span>
-<span class="nc" id="L71">            diagnosis = gson.fromJson(item, DiagnosisHistoryQuickView::class.java)</span>
+<span class="pc bpc" id="L70" title="2 of 4 branches missed.">        if (item.isNotEmpty()) {</span>
+<span class="fc" id="L71">            diagnosis = gson.fromJson(item, DiagnosisHistoryQuickView::class.java)</span>
         }
-<span class="nc" id="L73">    }</span>
+<span class="fc" id="L73">    }</span>
     fun getList() {
-<span class="nc" id="L75">        compositeDisposable.add(</span>
+<span class="fc" id="L75">        compositeDisposable.add(</span>
 
-<span class="nc" id="L77">            medicalLogsRepository.getDiagnosisDetails(memberID, diagnosis!!.icd10Code.codeString())</span>
-<span class="nc" id="L78">                .subscribeOn(Schedulers.io())</span>
-<span class="nc" id="L79">                .observeOn(AndroidSchedulers.mainThread())</span>
-<span class="nc" id="L80">                .doOnSubscribe {</span>
-<span class="nc" id="L81">                    loading = true</span>
-<span class="nc" id="L82">                }</span>
-<span class="nc" id="L83">                .subscribe({</span>
-<span class="nc" id="L84">                    Timber.d(it.toString())</span>
+<span class="fc" id="L77">            medicalLogsRepository.getDiagnosisDetails(memberID, diagnosis!!.icd10Code.codeString())</span>
+<span class="fc" id="L78">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L79">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L80">                .doOnSubscribe {</span>
+<span class="fc" id="L81">                    loading = true</span>
+<span class="fc" id="L82">                }</span>
+<span class="fc" id="L83">                .subscribe({</span>
+<span class="fc" id="L84">                    Timber.d(it.toString())</span>
 
-<span class="nc" id="L86">                    loading = false</span>
+<span class="fc" id="L86">                    loading = false</span>
 
-<span class="nc" id="L88">                    _logsListGenerated.value = Event(it.values)</span>
-<span class="nc" id="L89">                }, {</span>
-<span class="nc" id="L90">                    Timber.d(it.toString())</span>
+<span class="fc" id="L88">                    _logsListGenerated.value = Event(it.values)</span>
+<span class="fc" id="L89">                }, {</span>
+<span class="fc" id="L90">                    Timber.d(it.toString())</span>
 
-<span class="nc" id="L92">                    loading = false</span>
-<span class="nc" id="L93">                })</span>
+<span class="fc" id="L92">                    loading = false</span>
+<span class="fc" id="L93">                })</span>
         )
-<span class="nc" id="L95">    }</span>
+<span class="fc" id="L95">    }</span>
 
     fun viewEob() {
-<span class="nc" id="L98">        _viewEob.value = Event(Unit)</span>
-<span class="nc" id="L99">    }</span>
+<span class="fc" id="L98">        _viewEob.value = Event(Unit)</span>
+<span class="fc" id="L99">    }</span>
     override fun onCleared() {
 <span class="nc" id="L101">        super.onCleared()</span>
 <span class="nc" id="L102">        compositeDisposable.dispose()</span>

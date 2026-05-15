@@ -29,25 +29,25 @@ import java.util.ArrayList
 import javax.inject.Inject
 import timber.log.Timber
 
-<span class="nc" id="L32">class DiagnosisViewModel @Inject constructor(</span>
-<span class="nc" id="L33">    private val preferences: SharedPreferences,</span>
-<span class="nc" id="L34">    private val medicalLogsRepository: MedicalLogsRepository,</span>
-<span class="nc" id="L35">    private val homeRepository: HomeRepository</span>
-<span class="nc" id="L36">) : ViewModel(), Observable {</span>
-<span class="nc" id="L37">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="fc" id="L32">class DiagnosisViewModel @Inject constructor(</span>
+<span class="fc" id="L33">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L34">    private val medicalLogsRepository: MedicalLogsRepository,</span>
+<span class="fc" id="L35">    private val homeRepository: HomeRepository</span>
+<span class="fc" id="L36">) : ViewModel(), Observable {</span>
+<span class="fc" id="L37">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
 
-<span class="nc" id="L39">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L39">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
 
-<span class="nc" id="L41">    private val _navigateToSort = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L41">    private val _navigateToSort = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val navigateToSort: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L43">        get() = _navigateToSort</span>
-<span class="nc" id="L44">    var sort = &quot;&quot;</span>
-<span class="nc" id="L45">    var currentSortOrder = &quot;recentlyAdded&quot;</span>
+<span class="fc" id="L43">        get() = _navigateToSort</span>
+<span class="pc" id="L44">    var sort = &quot;&quot;</span>
+<span class="pc" id="L45">    var currentSortOrder = &quot;recentlyAdded&quot;</span>
 
-<span class="nc" id="L47">    var sortby = &quot;recentlyAdded&quot;</span>
-<span class="nc" id="L48">    var sortAction = &quot;desc&quot;</span>
+<span class="pc" id="L47">    var sortby = &quot;recentlyAdded&quot;</span>
+<span class="pc" id="L48">    var sortAction = &quot;desc&quot;</span>
 
-<span class="nc" id="L50">    var gson = Gson()</span>
+<span class="pc" id="L50">    var gson = Gson()</span>
 
 <span class="nc" id="L52">    var inStore: Boolean = false</span>
 <span class="nc" id="L53">    var mailOrder: Boolean = false</span>
@@ -57,33 +57,33 @@ import timber.log.Timber
 <span class="nc" id="L57">            field = value</span>
 <span class="nc" id="L58">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
 <span class="nc" id="L59">        }</span>
-<span class="nc" id="L60">    var title: String = &quot;&quot;</span>
+<span class="fc" id="L60">    var title: String = &quot;&quot;</span>
 <span class="nc" id="L61">        @Bindable get</span>
         set(value) {
 <span class="nc" id="L63">            field = value</span>
 <span class="nc" id="L64">            callbacks.notifyCallbacks(this, BR.title, null)</span>
 <span class="nc" id="L65">        }</span>
 
-<span class="nc" id="L67">    final var memberID = preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
-<span class="nc" id="L68">    var currentMemberId: String = memberID</span>
+<span class="pc" id="L67">    final var memberID = preferences.getString(&quot;memberID&quot;, &quot;&quot;).toString()</span>
+<span class="pc" id="L68">    var currentMemberId: String = memberID</span>
 
-<span class="nc" id="L70">    private val _navigateToFilter = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L70">    private val _navigateToFilter = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val navigateToFilter: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L72">        get() = _navigateToFilter</span>
+<span class="fc" id="L72">        get() = _navigateToFilter</span>
 
     var data: Boolean = false
 <span class="nc" id="L75">        @Bindable get</span>
         set(value) {
-<span class="nc" id="L77">            field = value</span>
-<span class="nc" id="L78">            callbacks.notifyCallbacks(this, BR.data, null)</span>
-<span class="nc" id="L79">        }</span>
-<span class="nc" id="L80">    var furthestDate: String = &quot;&quot;</span>
+<span class="fc" id="L77">            field = value</span>
+<span class="fc" id="L78">            callbacks.notifyCallbacks(this, BR.data, null)</span>
+<span class="fc" id="L79">        }</span>
+<span class="fc" id="L80">    var furthestDate: String = &quot;&quot;</span>
 <span class="nc" id="L81">        @Bindable get</span>
         set(value) {
 <span class="nc" id="L83">            field = value</span>
 <span class="nc" id="L84">            callbacks.notifyCallbacks(this, BR.furthestDate, null)</span>
 <span class="nc" id="L85">        }</span>
-<span class="nc" id="L86">    var reason: String = &quot;&quot;</span>
+<span class="fc" id="L86">    var reason: String = &quot;&quot;</span>
 <span class="nc" id="L87">        @Bindable get</span>
         set(value) {
 <span class="nc" id="L89">            field = value</span>
@@ -91,9 +91,9 @@ import timber.log.Timber
 <span class="nc" id="L91">        }</span>
 <span class="nc" id="L92">    var labSize: Int = 0</span>
 
-<span class="nc" id="L94">    var tempListFlat: ArrayList&lt;Any&gt; = arrayListOf()</span>
+<span class="pc" id="L94">    var tempListFlat: ArrayList&lt;Any&gt; = arrayListOf()</span>
 
-<span class="nc" id="L96">    var range: String = &quot;&quot;</span>
+<span class="fc" id="L96">    var range: String = &quot;&quot;</span>
 <span class="nc" id="L97">        @Bindable get</span>
         set(value) {
 <span class="nc" id="L99">            field = value</span>
@@ -101,12 +101,12 @@ import timber.log.Timber
 <span class="nc" id="L101">            callbacks.notifyCallbacks(this, BR.range, null)</span>
 <span class="nc" id="L102">        }</span>
 
-<span class="nc" id="L104">    var sharedIds = currentMemberId</span>
+<span class="pc" id="L104">    var sharedIds = currentMemberId</span>
 
 <span class="nc" id="L106">    var filterList: List&lt;AvailPrescriptionFiltersItem&gt;? = null</span>
 
-<span class="nc" id="L108">    init {</span>
-<span class="nc" id="L109">    }</span>
+<span class="fc" id="L108">    init {</span>
+<span class="fc" id="L109">    }</span>
 
 <span class="nc" id="L111">    var maxValue: Float? = null</span>
 <span class="nc" id="L112">    var minValue: Float? = null</span>
@@ -114,24 +114,24 @@ import timber.log.Timber
 <span class="nc" id="L114">    var minRange: Float? = null</span>
 <span class="nc" id="L115">    var maxRange: Float? = null</span>
 
-<span class="nc" id="L117">    var type: String = &quot;diagnosis&quot;</span>
-<span class="nc" id="L118">    private val _processedLogs = MutableLiveData&lt;List&lt;Any&gt;&gt;()</span>
-<span class="nc" id="L119">    val processedLogs: LiveData&lt;List&lt;Any&gt;&gt; = _processedLogs</span>
+<span class="pc" id="L117">    var type: String = &quot;diagnosis&quot;</span>
+<span class="fc" id="L118">    private val _processedLogs = MutableLiveData&lt;List&lt;Any&gt;&gt;()</span>
+<span class="pc" id="L119">    val processedLogs: LiveData&lt;List&lt;Any&gt;&gt; = _processedLogs</span>
 
-<span class="nc" id="L121">    var currentPage = 1</span>
-<span class="nc" id="L122">    private val pageSize = PAGE_SIZE</span>
+<span class="pc" id="L121">    var currentPage = 1</span>
+<span class="fc" id="L122">    private val pageSize = PAGE_SIZE</span>
 <span class="nc" id="L123">    var hasMorePages = false</span>
 <span class="nc" id="L124">    var isLoadedFirstPage = false</span>
 
-<span class="nc" id="L126">    private val _uiState = MutableLiveData&lt;MedicalLogsUiState&gt;()</span>
-<span class="nc" id="L127">    val uiState: LiveData&lt;MedicalLogsUiState&gt; = _uiState</span>
+<span class="fc" id="L126">    private val _uiState = MutableLiveData&lt;MedicalLogsUiState&gt;()</span>
+<span class="fc" id="L127">    val uiState: LiveData&lt;MedicalLogsUiState&gt; = _uiState</span>
 
-<span class="nc" id="L129">    var selectedMember = &quot;&quot;</span>
+<span class="pc" id="L129">    var selectedMember = &quot;&quot;</span>
 
 <span class="nc" id="L131">    var shouldAppendAllData: Boolean = false</span>
-<span class="nc" id="L132">    val dataSaver = MedicalLogAllDataSaver()</span>
+<span class="pc" id="L132">    val dataSaver = MedicalLogAllDataSaver()</span>
 
-<span class="nc" id="L134">    var lastMemberId: String = &quot;&quot;</span>
+<span class="pc" id="L134">    var lastMemberId: String = &quot;&quot;</span>
 
     fun onMemberIdChanged(newMemberId: String) {
 <span class="nc bnc" id="L137" title="All 2 branches missed.">        if (lastMemberId == newMemberId) {</span>
@@ -151,60 +151,60 @@ import timber.log.Timber
 <span class="nc" id="L151">        loadDataWithDebounce(sharedIds, isRefresh = true)</span>
 <span class="nc" id="L152">    }</span>
 
-<span class="nc" id="L154">    private val loadDebouncer = ParameterizedDebouncer&lt;LoadParams&gt;()</span>
+<span class="fc" id="L154">    private val loadDebouncer = ParameterizedDebouncer&lt;LoadParams&gt;()</span>
 
 <span class="nc" id="L156">    fun loadDataWithDebounce(sharedId: String, isRefresh: Boolean = false) {</span>
-<span class="nc" id="L157">        loadDebouncer.debounce(LoadParams(sharedId, isRefresh)) { params -&gt;</span>
-<span class="nc" id="L158">            loadMedicalLogs(params.sharedIds, params.isRefresh)</span>
-<span class="nc" id="L159">        }</span>
-<span class="nc" id="L160">    }</span>
+<span class="fc" id="L157">        loadDebouncer.debounce(LoadParams(sharedId, isRefresh)) { params -&gt;</span>
+<span class="fc" id="L158">            loadMedicalLogs(params.sharedIds, params.isRefresh)</span>
+<span class="fc" id="L159">        }</span>
+<span class="fc" id="L160">    }</span>
 
 <span class="nc" id="L162">    private fun loadMedicalLogs(selected: String, isRefresh: Boolean = false) {</span>
-<span class="nc bnc" id="L163" title="All 8 branches missed.">        selectedMember = if (selected.isNullOrBlank() || selected.equals(&quot;null&quot;, true)) {</span>
+<span class="pc bpc" id="L163" title="4 of 8 branches missed.">        selectedMember = if (selected.isNullOrBlank() || selected.equals(&quot;null&quot;, true)) {</span>
 <span class="nc" id="L164">            currentMemberId</span>
         } else {
-<span class="nc" id="L166">            selected</span>
+<span class="fc" id="L166">            selected</span>
         }
         // do not call api for the member id whose id is negative
-<span class="nc bnc" id="L169" title="All 6 branches missed.">        if (selectedMember.isNotEmpty() &amp;&amp; selectedMember.toLong() &lt; 0) {</span>
+<span class="pc bpc" id="L169" title="3 of 6 branches missed.">        if (selectedMember.isNotEmpty() &amp;&amp; selectedMember.toLong() &lt; 0) {</span>
 <span class="nc" id="L170">            return</span>
         }
 
-<span class="nc bnc" id="L173" title="All 2 branches missed.">        if (isRefresh) {</span>
-<span class="nc" id="L174">            currentPage = 1</span>
-<span class="nc" id="L175">            minValue = null</span>
-<span class="nc" id="L176">            maxValue = null</span>
-<span class="nc" id="L177">            dataSaver.clearSavedData()</span>
-<span class="nc" id="L178">            _processedLogs.value = emptyList()</span>
-<span class="nc" id="L179">            compositeDisposable.clear()</span>
-<span class="nc" id="L180">            data = false</span>
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">        if (isRefresh) {</span>
+<span class="fc" id="L174">            currentPage = 1</span>
+<span class="fc" id="L175">            minValue = null</span>
+<span class="fc" id="L176">            maxValue = null</span>
+<span class="fc" id="L177">            dataSaver.clearSavedData()</span>
+<span class="fc" id="L178">            _processedLogs.value = emptyList()</span>
+<span class="fc" id="L179">            compositeDisposable.clear()</span>
+<span class="fc" id="L180">            data = false</span>
         }
 
-<span class="nc" id="L183">        compositeDisposable.clear()</span>
+<span class="fc" id="L183">        compositeDisposable.clear()</span>
 
-<span class="nc" id="L185">        compositeDisposable.add(</span>
-<span class="nc" id="L186">            medicalLogsRepository.getDiagnosisMedicalLogs(</span>
-<span class="nc" id="L187">                currentMemberId,</span>
-<span class="nc" id="L188">                type,</span>
-<span class="nc" id="L189">                selectedMember,</span>
-<span class="nc" id="L190">                sortAction,</span>
-<span class="nc" id="L191">                sortby,</span>
-<span class="nc" id="L192">                range,</span>
-<span class="nc" id="L193">                pageSize,</span>
-<span class="nc" id="L194">                currentPage</span>
+<span class="fc" id="L185">        compositeDisposable.add(</span>
+<span class="fc" id="L186">            medicalLogsRepository.getDiagnosisMedicalLogs(</span>
+<span class="fc" id="L187">                currentMemberId,</span>
+<span class="fc" id="L188">                type,</span>
+<span class="fc" id="L189">                selectedMember,</span>
+<span class="fc" id="L190">                sortAction,</span>
+<span class="fc" id="L191">                sortby,</span>
+<span class="fc" id="L192">                range,</span>
+<span class="fc" id="L193">                pageSize,</span>
+<span class="fc" id="L194">                currentPage</span>
             )
-<span class="nc" id="L196">                .subscribeOn(Schedulers.io())</span>
-<span class="nc" id="L197">                .observeOn(AndroidSchedulers.mainThread())</span>
-<span class="nc" id="L198">                .doOnSubscribe {</span>
-<span class="nc" id="L199">                    _uiState.value = MedicalLogsUiState.LoadingMore</span>
-<span class="nc" id="L200">                }</span>
-<span class="nc" id="L201">                .subscribe({</span>
-<span class="nc" id="L202">                    isLoadedFirstPage = true</span>
+<span class="fc" id="L196">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L197">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L198">                .doOnSubscribe {</span>
+<span class="fc" id="L199">                    _uiState.value = MedicalLogsUiState.LoadingMore</span>
+<span class="fc" id="L200">                }</span>
+<span class="fc" id="L201">                .subscribe({</span>
+<span class="fc" id="L202">                    isLoadedFirstPage = true</span>
 
-<span class="nc bnc" id="L204" title="All 2 branches missed.">                    if (currentPage == 1) {</span>
-<span class="nc bnc" id="L205" title="All 4 branches missed.">                        data = it.diagnosisList.isNullOrEmpty()</span>
+<span class="pc bpc" id="L204" title="1 of 2 branches missed.">                    if (currentPage == 1) {</span>
+<span class="pc bpc" id="L205" title="1 of 4 branches missed.">                        data = it.diagnosisList.isNullOrEmpty()</span>
 
-<span class="nc bnc" id="L207" title="All 2 branches missed.">                        it.medicalLogMetaData?.let {</span>
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">                        it.medicalLogMetaData?.let {</span>
                                 meta -&gt;
 <span class="nc bnc" id="L209" title="All 2 branches missed.">                            maxValue = meta.maximumFrequency?.toFloat() ?: 0f</span>
 <span class="nc bnc" id="L210" title="All 2 branches missed.">                            minValue = meta.minimumFrequency?.toFloat() ?: 10f</span>
@@ -217,15 +217,15 @@ import timber.log.Timber
                         }
                     }
 
-<span class="nc" id="L220">                    handleSuccessResponse(it)</span>
-<span class="nc" id="L221">                }, {</span>
-<span class="nc" id="L222">                    Timber.d(it.toString())</span>
-<span class="nc" id="L223">                    _uiState.value = MedicalLogsUiState.Error(</span>
-<span class="nc bnc" id="L224" title="All 2 branches missed.">                        it.message ?: &quot;Unknown error occurred&quot;</span>
+<span class="fc" id="L220">                    handleSuccessResponse(it)</span>
+<span class="fc" id="L221">                }, {</span>
+<span class="fc" id="L222">                    Timber.d(it.toString())</span>
+<span class="fc" id="L223">                    _uiState.value = MedicalLogsUiState.Error(</span>
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">                        it.message ?: &quot;Unknown error occurred&quot;</span>
                     )
-<span class="nc" id="L226">                })</span>
+<span class="fc" id="L226">                })</span>
         )
-<span class="nc" id="L228">    }</span>
+<span class="fc" id="L228">    }</span>
 
     fun loadNextPage() {
 <span class="nc bnc" id="L231" title="All 6 branches missed.">        if (_uiState.value !is MedicalLogsUiState.LoadingMore &amp;&amp; _uiState.value !is MedicalLogsUiState.Loading &amp;&amp; hasMorePages) {</span>
@@ -240,32 +240,32 @@ import timber.log.Timber
 
     private fun handleSuccessResponse(response: MedicalLogsAll) {
         // Update pagination info
-<span class="nc bnc" id="L243" title="All 2 branches missed.">        response.paging?.let { paging -&gt;</span>
+<span class="pc bpc" id="L243" title="1 of 2 branches missed.">        response.paging?.let { paging -&gt;</span>
 <span class="nc" id="L244">            hasMorePages = paging.hasNextPage</span>
 <span class="nc" id="L245">            currentPage = paging.currentPage</span>
 <span class="nc" id="L246">        }</span>
 
-<span class="nc" id="L248">        val isEmpty = isDataEmpty(response)</span>
+<span class="fc" id="L248">        val isEmpty = isDataEmpty(response)</span>
 
-<span class="nc bnc" id="L250" title="All 2 branches missed.">        if (isEmpty) {</span>
-<span class="nc" id="L251">            _uiState.value = MedicalLogsUiState.Empty</span>
+<span class="fc bfc" id="L250" title="All 2 branches covered.">        if (isEmpty) {</span>
+<span class="fc" id="L251">            _uiState.value = MedicalLogsUiState.Empty</span>
         } else {
-<span class="nc" id="L253">            val processedData = dataSaver.saveData(response, shouldAppendAllData)</span>
-<span class="nc" id="L254">            _processedLogs.value = MedicalLogsSortingUtils.sortDiagnosisOnly(processedData)</span>
-<span class="nc" id="L255">            _uiState.value = MedicalLogsUiState.Success(response)</span>
+<span class="fc" id="L253">            val processedData = dataSaver.saveData(response, shouldAppendAllData)</span>
+<span class="fc" id="L254">            _processedLogs.value = MedicalLogsSortingUtils.sortDiagnosisOnly(processedData)</span>
+<span class="fc" id="L255">            _uiState.value = MedicalLogsUiState.Success(response)</span>
         }
-<span class="nc" id="L257">    }</span>
+<span class="fc" id="L257">    }</span>
 
     private fun isDataEmpty(data: MedicalLogsAll): Boolean {
-<span class="nc bnc" id="L260" title="All 4 branches missed.">        return data.diagnosisList.isNullOrEmpty()</span>
+<span class="pc bpc" id="L260" title="1 of 4 branches missed.">        return data.diagnosisList.isNullOrEmpty()</span>
     }
 
     fun sort() {
-<span class="nc" id="L264">        _navigateToSort.value = Event(Unit)</span>
-<span class="nc" id="L265">    }</span>
+<span class="fc" id="L264">        _navigateToSort.value = Event(Unit)</span>
+<span class="fc" id="L265">    }</span>
     fun filter() {
-<span class="nc" id="L267">        _navigateToFilter.value = Event(Unit)</span>
-<span class="nc" id="L268">    }</span>
+<span class="fc" id="L267">        _navigateToFilter.value = Event(Unit)</span>
+<span class="fc" id="L268">    }</span>
     override fun onCleared() {
 <span class="nc" id="L270">        super.onCleared()</span>
 <span class="nc" id="L271">        compositeDisposable.dispose()</span>
@@ -278,11 +278,11 @@ import timber.log.Timber
 <span class="nc" id="L278">        callbacks.add(callback)</span>
 <span class="nc" id="L279">    }</span>
 
-<span class="nc" id="L281">    private val _tutorialsAdded = MutableLiveData(false)</span>
+<span class="fc" id="L281">    private val _tutorialsAdded = MutableLiveData(false)</span>
     val tutorialsAdded: LiveData&lt;Boolean&gt;
 <span class="nc" id="L283">        get() = _tutorialsAdded</span>
 
-<span class="nc" id="L285">    private val _showTutorial = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L285">    private val _showTutorial = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val showTutorial: LiveData&lt;Event&lt;Unit&gt;&gt;
 <span class="nc" id="L287">        get() = _showTutorial</span>
 

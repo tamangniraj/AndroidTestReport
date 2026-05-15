@@ -151,7 +151,7 @@ object DateUtils {
     }
 
     fun stringServerDateToDate(StrDate: String?): Date {
-<span class="pc bpc" id="L154" title="1 of 8 branches missed.">        if (!StrDate.isNullOrBlank() &amp;&amp; !StrDate.equals(&quot;null&quot;, true)) {</span>
+<span class="fc bfc" id="L154" title="All 8 branches covered.">        if (!StrDate.isNullOrBlank() &amp;&amp; !StrDate.equals(&quot;null&quot;, true)) {</span>
 <span class="fc" id="L155">            val dateFormat = SimpleDateFormat(&quot;yyyy-MM-dd&quot;, Locale.US)</span>
 <span class="fc" id="L156">            return dateFormat.parse(StrDate)!!</span>
         } else {
@@ -307,11 +307,11 @@ object DateUtils {
         }
     }
     fun getCurrentLocalTime(): String? {
-<span class="nc" id="L310">        val df = SimpleDateFormat(&quot;MM-dd-yyyy hh:mm:ss:SSS aa&quot;, Locale.ENGLISH)</span>
-<span class="nc" id="L311">        df.timeZone = TimeZone.getTimeZone(&quot;UTC&quot;)</span>
-<span class="nc" id="L312">        val date = Date()</span>
+<span class="fc" id="L310">        val df = SimpleDateFormat(&quot;MM-dd-yyyy hh:mm:ss:SSS aa&quot;, Locale.ENGLISH)</span>
+<span class="fc" id="L311">        df.timeZone = TimeZone.getTimeZone(&quot;UTC&quot;)</span>
+<span class="fc" id="L312">        val date = Date()</span>
         //        df.setTimeZone(TimeZone.getDefault());
-<span class="nc" id="L314">        return df.format(date)</span>
+<span class="fc" id="L314">        return df.format(date)</span>
     }
 
     fun getCurrentDate(): String? {
@@ -652,8 +652,8 @@ object DateUtils {
 <span class="fc" id="L652">        var pre_formatted: Date? = null</span>
 <span class="fc" id="L653">        try {</span>
 <span class="fc" id="L654">            pre_formatted = inputFormat.parse(dateSlashed)</span>
-<span class="nc" id="L655">        } catch (e: ParseException) {</span>
-<span class="nc" id="L656">            e.printStackTrace()</span>
+<span class="fc" id="L655">        } catch (e: ParseException) {</span>
+<span class="fc" id="L656">            e.printStackTrace()</span>
         }
 
 <span class="fc" id="L659">        Timber.d(outputFormat.format(pre_formatted).toString())</span>

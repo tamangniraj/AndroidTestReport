@@ -258,9 +258,9 @@ import timber.log.Timber
 // UI State sealed class for better state management
 sealed class MedicalLogsUiState {
 <span class="nc" id="L260">    object Loading : MedicalLogsUiState()</span>
-<span class="nc" id="L261">    object LoadingMore : MedicalLogsUiState()</span>
-<span class="nc" id="L262">    object Empty : MedicalLogsUiState()</span>
-<span class="nc" id="L263">    data class Success(val data: MedicalLogsAll) : MedicalLogsUiState()</span>
-<span class="nc" id="L264">    data class Error(val message: String) : MedicalLogsUiState()</span>
+<span class="fc" id="L261">    object LoadingMore : MedicalLogsUiState()</span>
+<span class="fc" id="L262">    object Empty : MedicalLogsUiState()</span>
+<span class="pc" id="L263">    data class Success(val data: MedicalLogsAll) : MedicalLogsUiState()</span>
+<span class="pc" id="L264">    data class Error(val message: String) : MedicalLogsUiState()</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

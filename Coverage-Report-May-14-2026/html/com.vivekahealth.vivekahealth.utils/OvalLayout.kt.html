@@ -9,10 +9,10 @@ import android.widget.FrameLayout
 class OvalLayout : FrameLayout {
 <span class="nc" id="L10">    constructor(context: Context?) : super(context!!)</span>
 
-<span class="nc" id="L12">    constructor(context: Context?, attrs: AttributeSet?) : super(</span>
-<span class="nc" id="L13">        context!!,</span>
-<span class="nc" id="L14">        attrs</span>
-<span class="nc" id="L15">    )</span>
+<span class="fc" id="L12">    constructor(context: Context?, attrs: AttributeSet?) : super(</span>
+<span class="fc" id="L13">        context!!,</span>
+<span class="fc" id="L14">        attrs</span>
+<span class="fc" id="L15">    )</span>
 
 <span class="nc" id="L17">    constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) : super(</span>
 <span class="nc" id="L18">        context!!,</span>
@@ -21,15 +21,15 @@ class OvalLayout : FrameLayout {
 <span class="nc" id="L21">    )</span>
 
     override fun dispatchDraw(canvas: Canvas) {
-<span class="nc" id="L24">        val clipPath = Path()</span>
-<span class="nc" id="L25">        val width = width</span>
-<span class="nc" id="L26">        val height = height</span>
+<span class="fc" id="L24">        val clipPath = Path()</span>
+<span class="fc" id="L25">        val width = width</span>
+<span class="fc" id="L26">        val height = height</span>
 
         // Create an oval path
-<span class="nc" id="L29">        clipPath.addOval(0f, 0f, width.toFloat(), height.toFloat(), Path.Direction.CW)</span>
-<span class="nc" id="L30">        canvas.clipPath(clipPath) // Clip the canvas to the oval</span>
+<span class="fc" id="L29">        clipPath.addOval(0f, 0f, width.toFloat(), height.toFloat(), Path.Direction.CW)</span>
+<span class="fc" id="L30">        canvas.clipPath(clipPath) // Clip the canvas to the oval</span>
 
-<span class="nc" id="L32">        super.dispatchDraw(canvas) // Draw children inside the clipped area</span>
-<span class="nc" id="L33">    }</span>
+<span class="fc" id="L32">        super.dispatchDraw(canvas) // Draw children inside the clipped area</span>
+<span class="fc" id="L33">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

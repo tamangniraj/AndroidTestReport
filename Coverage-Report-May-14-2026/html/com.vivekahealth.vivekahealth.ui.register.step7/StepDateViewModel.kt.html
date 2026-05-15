@@ -27,59 +27,59 @@ import kotlinx.coroutines.Job
 import org.apache.commons.lang3.StringUtils
 import timber.log.Timber
 
-<span class="nc" id="L30">class StepDateViewModel @Inject constructor(</span>
-<span class="nc" id="L31">    private val preferences: SharedPreferences,</span>
-<span class="nc" id="L32">    private val registerRepository: RegisterRepository</span>
-<span class="nc" id="L33">) : ViewModel(), Observable {</span>
+<span class="fc" id="L30">class StepDateViewModel @Inject constructor(</span>
+<span class="fc" id="L31">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L32">    private val registerRepository: RegisterRepository</span>
+<span class="fc" id="L33">) : ViewModel(), Observable {</span>
 
-<span class="nc" id="L35">    var gson = Gson()</span>
-<span class="nc" id="L36">    var user = RegisterUser()</span>
-<span class="nc" id="L37">    var deviceId: String? = &quot;&quot;</span>
-<span class="nc" id="L38">    var deviceInfo: String? = &quot;&quot;</span>
-<span class="nc" id="L39">    var fcmId: String? = &quot;&quot;</span>
+<span class="pc" id="L35">    var gson = Gson()</span>
+<span class="pc" id="L36">    var user = RegisterUser()</span>
+<span class="pc" id="L37">    var deviceId: String? = &quot;&quot;</span>
+<span class="pc" id="L38">    var deviceInfo: String? = &quot;&quot;</span>
+<span class="pc" id="L39">    var fcmId: String? = &quot;&quot;</span>
     private lateinit var job: Job
-<span class="nc" id="L41">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="pc" id="L41">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
 
-<span class="nc" id="L43">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
-<span class="nc" id="L44">    private val _memberChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+<span class="fc" id="L43">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L44">    private val _memberChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
     val memberChanged: LiveData&lt;Event&lt;String&gt;&gt;
 <span class="nc" id="L46">        get() = _memberChanged</span>
-<span class="nc" id="L47">    private val _showInfo = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L47">    private val _showInfo = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val showInfo: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L49">        get() = _showInfo</span>
+<span class="fc" id="L49">        get() = _showInfo</span>
 
-<span class="nc" id="L51">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L51">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L53">        get() = _navigateToBack</span>
-<span class="nc" id="L54">    private val _navigateToSuccess = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+<span class="fc" id="L53">        get() = _navigateToBack</span>
+<span class="fc" id="L54">    private val _navigateToSuccess = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
     val navigateToSuccess: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
-<span class="nc" id="L56">        get() = _navigateToSuccess</span>
-<span class="nc" id="L57">    private val _dateComplete = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+<span class="fc" id="L56">        get() = _navigateToSuccess</span>
+<span class="fc" id="L57">    private val _dateComplete = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
     val dateComplete: LiveData&lt;Event&lt;String&gt;&gt;
 <span class="nc" id="L59">        get() = _dateComplete</span>
 
-<span class="nc" id="L61">    private val _datePrev = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+<span class="fc" id="L61">    private val _datePrev = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
     val datePrev: LiveData&lt;Event&lt;String&gt;&gt;
 <span class="nc" id="L63">        get() = _datePrev</span>
 
-<span class="nc" id="L65">    private val _currentEvent = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+<span class="fc" id="L65">    private val _currentEvent = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
     val currentEvent: LiveData&lt;Event&lt;String&gt;&gt;
 <span class="nc" id="L67">        get() = _currentEvent</span>
-<span class="nc" id="L68">    private val _selEvent = MutableLiveData&lt;Event&lt;Int&gt;&gt;()</span>
+<span class="fc" id="L68">    private val _selEvent = MutableLiveData&lt;Event&lt;Int&gt;&gt;()</span>
     val selEvent: LiveData&lt;Event&lt;Int&gt;&gt;
 <span class="nc" id="L70">        get() = _selEvent</span>
 
-<span class="nc" id="L72">    private val _navigateToIdentity = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L72">    private val _navigateToIdentity = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val navigateToIdentity: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L74">        get() = _navigateToIdentity</span>
+<span class="fc" id="L74">        get() = _navigateToIdentity</span>
 
-<span class="nc" id="L76">    private val _openWheel = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L76">    private val _openWheel = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val openWheel: LiveData&lt;Event&lt;Unit&gt;&gt;
 <span class="nc" id="L78">        get() = _openWheel</span>
 
-<span class="nc" id="L80">    var date: String = &quot;&quot;</span>
+<span class="pc" id="L80">    var date: String = &quot;&quot;</span>
 
-<span class="nc" id="L82">    var errorMessage: String = &quot;&quot;</span>
+<span class="pc" id="L82">    var errorMessage: String = &quot;&quot;</span>
 
     var showError: Boolean = false
 <span class="nc" id="L85">        @Bindable get</span>
@@ -87,19 +87,19 @@ import timber.log.Timber
 <span class="nc" id="L87">            field = value</span>
 <span class="nc" id="L88">            callbacks.notifyCallbacks(this, BR.showError, null)</span>
 <span class="nc" id="L89">        }</span>
-<span class="nc" id="L90">    var memberId: String = &quot;&quot;</span>
+<span class="fc" id="L90">    var memberId: String = &quot;&quot;</span>
 <span class="nc" id="L91">        @Bindable get</span>
         set(value) {
 <span class="nc" id="L93">            field = value</span>
 <span class="nc" id="L94">            callbacks.notifyCallbacks(this, BR.memberId, null)</span>
 <span class="nc" id="L95">        }</span>
 
-<span class="nc" id="L97">    private val _navigateToVerifySSN = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+<span class="fc" id="L97">    private val _navigateToVerifySSN = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
     val navigateToVerifySSN: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
 <span class="nc" id="L99">        get() = _navigateToVerifySSN</span>
 
 <span class="nc" id="L101">    @get:Bindable</span>
-<span class="nc" id="L102">    val memberTextWatcher = object : TextWatcher {</span>
+<span class="fc" id="L102">    val memberTextWatcher = object : TextWatcher {</span>
         override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
             // Do nothing.
 <span class="nc" id="L105">        }</span>
@@ -110,26 +110,26 @@ import timber.log.Timber
 <span class="nc" id="L110">        }</span>
     }
 
-<span class="nc" id="L113">    var ssnOrMember: Boolean = true</span>
-<span class="nc" id="L114">    var firstName: String = &quot;&quot;</span>
-<span class="nc" id="L115">    var lastName: String = &quot;&quot;</span>
-<span class="nc" id="L116">    var email: String = &quot;&quot;</span>
-<span class="nc" id="L117">    var password: String = &quot;&quot;</span>
-<span class="nc" id="L118">    var passwordConfirm: String = &quot;&quot;</span>
-<span class="nc" id="L119">    var gender: String = &quot;&quot;</span>
-<span class="nc" id="L120">    var mobile: String = &quot;&quot;</span>
-<span class="nc" id="L121">    var usernameType: String = &quot;&quot;</span>
-<span class="nc" id="L122">    var countryCode: String = &quot;&quot;</span>
-<span class="nc" id="L123">    var electronicDocuments: String = &quot;&quot;</span>
-<span class="nc" id="L124">    var overrideOldRegistration: String = &quot;&quot;</span>
-<span class="nc" id="L125">    var resendVerification: String = &quot;&quot;</span>
-<span class="nc" id="L126">    var tempUUID: String = &quot;&quot;</span>
-<span class="nc" id="L127">    private var current = &quot;&quot;</span>
-<span class="nc" id="L128">    private val ddmmyyyy = &quot;DDMMYYYY&quot;</span>
-<span class="nc" id="L129">    private val cal: Calendar = Calendar.getInstance()</span>
+<span class="pc" id="L113">    var ssnOrMember: Boolean = true</span>
+<span class="pc" id="L114">    var firstName: String = &quot;&quot;</span>
+<span class="pc" id="L115">    var lastName: String = &quot;&quot;</span>
+<span class="pc" id="L116">    var email: String = &quot;&quot;</span>
+<span class="pc" id="L117">    var password: String = &quot;&quot;</span>
+<span class="pc" id="L118">    var passwordConfirm: String = &quot;&quot;</span>
+<span class="pc" id="L119">    var gender: String = &quot;&quot;</span>
+<span class="pc" id="L120">    var mobile: String = &quot;&quot;</span>
+<span class="pc" id="L121">    var usernameType: String = &quot;&quot;</span>
+<span class="pc" id="L122">    var countryCode: String = &quot;&quot;</span>
+<span class="pc" id="L123">    var electronicDocuments: String = &quot;&quot;</span>
+<span class="pc" id="L124">    var overrideOldRegistration: String = &quot;&quot;</span>
+<span class="pc" id="L125">    var resendVerification: String = &quot;&quot;</span>
+<span class="pc" id="L126">    var tempUUID: String = &quot;&quot;</span>
+<span class="fc" id="L127">    private var current = &quot;&quot;</span>
+<span class="fc" id="L128">    private val ddmmyyyy = &quot;DDMMYYYY&quot;</span>
+<span class="fc" id="L129">    private val cal: Calendar = Calendar.getInstance()</span>
 
 <span class="nc" id="L131">    @get:Bindable</span>
-<span class="nc" id="L132">    val dateTextWatcher = object : TextWatcher {</span>
+<span class="fc" id="L132">    val dateTextWatcher = object : TextWatcher {</span>
         override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
             // Do nothing.
 <span class="nc" id="L135">        }</span>
@@ -195,36 +195,36 @@ import timber.log.Timber
 <span class="nc" id="L195">        _openWheel.value = Event(Unit)</span>
 <span class="nc" id="L196">    }</span>
     fun onPrevClicked() {
-<span class="nc" id="L198">        _navigateToBack.value = Event(Unit)</span>
-<span class="nc" id="L199">    }</span>
+<span class="fc" id="L198">        _navigateToBack.value = Event(Unit)</span>
+<span class="fc" id="L199">    }</span>
     fun showInfo() {
-<span class="nc" id="L201">        _showInfo.value = Event(Unit)</span>
-<span class="nc" id="L202">    }</span>
+<span class="fc" id="L201">        _showInfo.value = Event(Unit)</span>
+<span class="fc" id="L202">    }</span>
     fun registrationAPI(overRide: Boolean) {
-<span class="nc" id="L204">        saveReg()</span>
+<span class="fc" id="L204">        saveReg()</span>
 
-<span class="nc" id="L206">        Timber.d(user.toString())</span>
-<span class="nc" id="L207">        user.overrideOldRegistration = overRide.toString()</span>
-<span class="nc" id="L208">        user.registrationType = &quot;3&quot;</span>
-<span class="nc" id="L209">        compositeDisposable.add(</span>
-<span class="nc" id="L210">            registerRepository.registerUser(user)</span>
-<span class="nc" id="L211">                .subscribeOn(Schedulers.io())</span>
-<span class="nc" id="L212">                .observeOn(AndroidSchedulers.mainThread())</span>
-<span class="nc" id="L213">                .doOnSubscribe {</span>
-<span class="nc" id="L214">                    _navigateToSuccess.value = APIResponse&lt;DataResponse&gt;().loading()</span>
-<span class="nc" id="L215">                }</span>
-<span class="nc" id="L216">                .subscribe({</span>
-<span class="nc" id="L217">                    saveReg()</span>
-<span class="nc" id="L218">                    _navigateToSuccess.value = APIResponse&lt;DataResponse&gt;().success(it)</span>
-<span class="nc" id="L219">                }, {</span>
-<span class="nc" id="L220">                    _navigateToSuccess.value =</span>
-<span class="nc" id="L221">                        APIResponse&lt;DataResponse&gt;().error(it.toString())</span>
+<span class="fc" id="L206">        Timber.d(user.toString())</span>
+<span class="fc" id="L207">        user.overrideOldRegistration = overRide.toString()</span>
+<span class="fc" id="L208">        user.registrationType = &quot;3&quot;</span>
+<span class="fc" id="L209">        compositeDisposable.add(</span>
+<span class="fc" id="L210">            registerRepository.registerUser(user)</span>
+<span class="fc" id="L211">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L212">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L213">                .doOnSubscribe {</span>
+<span class="fc" id="L214">                    _navigateToSuccess.value = APIResponse&lt;DataResponse&gt;().loading()</span>
+<span class="fc" id="L215">                }</span>
+<span class="fc" id="L216">                .subscribe({</span>
+<span class="fc" id="L217">                    saveReg()</span>
+<span class="fc" id="L218">                    _navigateToSuccess.value = APIResponse&lt;DataResponse&gt;().success(it)</span>
+<span class="fc" id="L219">                }, {</span>
+<span class="fc" id="L220">                    _navigateToSuccess.value =</span>
+<span class="fc" id="L221">                        APIResponse&lt;DataResponse&gt;().error(it.toString())</span>
 
 //                            _showError.value =
 //                                    APIResponse&lt;SuccessResponse&gt;().error(it.toString())
-<span class="nc" id="L225">                })</span>
+<span class="fc" id="L225">                })</span>
         )
-<span class="nc" id="L227">    }</span>
+<span class="fc" id="L227">    }</span>
     fun verifySsn(ssnLast4: String) {
 <span class="nc" id="L229">        user.ssn = ssnLast4</span>
 <span class="nc" id="L230">        Timber.d(user.toString())</span>
@@ -264,22 +264,22 @@ import timber.log.Timber
 <span class="nc" id="L264">    }</span>
 
     fun saveReg() {
-<span class="nc" id="L267">        user.hipaaNumber = memberId</span>
+<span class="fc" id="L267">        user.hipaaNumber = memberId</span>
 
-<span class="nc" id="L269">        val regString = gson.toJson(user)</span>
-<span class="nc" id="L270">        val regEdit = preferences.edit()</span>
-<span class="nc" id="L271">        regEdit.putString(Constants.register, regString)</span>
-<span class="nc" id="L272">        regEdit.apply()</span>
-<span class="nc" id="L273">    }</span>
+<span class="fc" id="L269">        val regString = gson.toJson(user)</span>
+<span class="fc" id="L270">        val regEdit = preferences.edit()</span>
+<span class="fc" id="L271">        regEdit.putString(Constants.register, regString)</span>
+<span class="fc" id="L272">        regEdit.apply()</span>
+<span class="fc" id="L273">    }</span>
     fun saveDate() {
-<span class="nc" id="L275">        user.dob = date</span>
-<span class="nc" id="L276">        user.hipaaNumber = memberId</span>
+<span class="fc" id="L275">        user.dob = date</span>
+<span class="fc" id="L276">        user.hipaaNumber = memberId</span>
 
-<span class="nc" id="L278">        val regString = gson.toJson(user)</span>
-<span class="nc" id="L279">        val regEdit = preferences.edit()</span>
-<span class="nc" id="L280">        regEdit.putString(Constants.Registration, regString)</span>
-<span class="nc" id="L281">        regEdit.apply()</span>
-<span class="nc" id="L282">    }</span>
+<span class="fc" id="L278">        val regString = gson.toJson(user)</span>
+<span class="fc" id="L279">        val regEdit = preferences.edit()</span>
+<span class="fc" id="L280">        regEdit.putString(Constants.Registration, regString)</span>
+<span class="fc" id="L281">        regEdit.apply()</span>
+<span class="fc" id="L282">    }</span>
     fun saveDateFull() {
 <span class="nc" id="L284">        user.dob = date</span>
 <span class="nc" id="L285">        user.hipaaNumber = &quot;&quot;</span>
@@ -313,9 +313,9 @@ import timber.log.Timber
 //        regEdit.putString(Constants.Registration, userString)
 //        regEdit.apply()
 
-<span class="nc" id="L316">        saveDate()</span>
-<span class="nc" id="L317">        _navigateToIdentity.value = Event(Unit)</span>
-<span class="nc" id="L318">    }</span>
+<span class="fc" id="L316">        saveDate()</span>
+<span class="fc" id="L317">        _navigateToIdentity.value = Event(Unit)</span>
+<span class="fc" id="L318">    }</span>
     override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
 <span class="nc" id="L320">        callbacks.add(callback)</span>
 <span class="nc" id="L321">    }</span>

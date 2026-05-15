@@ -8,60 +8,60 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.vivekahealth.vivekahealth.R
 
-<span class="nc" id="L11">class SecondaryButton @JvmOverloads constructor(</span>
+<span class="fc" id="L11">class SecondaryButton @JvmOverloads constructor(</span>
     context: Context,
 <span class="nc" id="L13">    attrs: AttributeSet? = null,</span>
-<span class="nc" id="L14">    defStyleAttr: Int = 0</span>
-<span class="nc" id="L15">) : LinearLayout(context, attrs, defStyleAttr) {</span>
+<span class="fc" id="L14">    defStyleAttr: Int = 0</span>
+<span class="pc" id="L15">) : LinearLayout(context, attrs, defStyleAttr) {</span>
 
     private val iconView: ImageView
     private val textView: TextView
 
-<span class="nc" id="L20">    init {</span>
-<span class="nc" id="L21">        LayoutInflater.from(context).inflate(R.layout.custom_secondary_button, this, true)</span>
+<span class="fc" id="L20">    init {</span>
+<span class="fc" id="L21">        LayoutInflater.from(context).inflate(R.layout.custom_secondary_button, this, true)</span>
 
-<span class="nc" id="L23">        iconView = findViewById(R.id.iv_button_icon)</span>
-<span class="nc" id="L24">        textView = findViewById(R.id.tv_button_text)</span>
+<span class="fc" id="L23">        iconView = findViewById(R.id.iv_button_icon)</span>
+<span class="fc" id="L24">        textView = findViewById(R.id.tv_button_text)</span>
 
         // Handle custom attributes
-<span class="nc bnc" id="L27" title="All 2 branches missed.">        attrs?.let {</span>
-<span class="nc" id="L28">            val typedArray = context.obtainStyledAttributes(it, R.styleable.SecondaryButton)</span>
+<span class="pc bpc" id="L27" title="1 of 2 branches missed.">        attrs?.let {</span>
+<span class="fc" id="L28">            val typedArray = context.obtainStyledAttributes(it, R.styleable.SecondaryButton)</span>
 
-<span class="nc" id="L30">            val text = typedArray.getString(R.styleable.SecondaryButton_buttonText)</span>
-<span class="nc" id="L31">            val iconRes = typedArray.getResourceId(</span>
-<span class="nc" id="L32">                R.styleable.SecondaryButton_buttonIcon,</span>
-<span class="nc" id="L33">                R.drawable.ic_sms</span>
+<span class="fc" id="L30">            val text = typedArray.getString(R.styleable.SecondaryButton_buttonText)</span>
+<span class="fc" id="L31">            val iconRes = typedArray.getResourceId(</span>
+<span class="fc" id="L32">                R.styleable.SecondaryButton_buttonIcon,</span>
+<span class="fc" id="L33">                R.drawable.ic_sms</span>
             )
-<span class="nc" id="L35">            val enabled = typedArray.getBoolean(R.styleable.SecondaryButton_buttonEnabled, true)</span>
+<span class="fc" id="L35">            val enabled = typedArray.getBoolean(R.styleable.SecondaryButton_buttonEnabled, true)</span>
 
-<span class="nc bnc" id="L37" title="All 2 branches missed.">            setText(text ?: &quot;&quot;)</span>
-<span class="nc" id="L38">            setIcon(iconRes)</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">            setText(text ?: &quot;&quot;)</span>
+<span class="fc" id="L38">            setIcon(iconRes)</span>
 
-<span class="nc" id="L40">            setEnabled(enabled)</span>
+<span class="fc" id="L40">            setEnabled(enabled)</span>
 
-<span class="nc" id="L42">            typedArray.recycle()</span>
-<span class="nc" id="L43">        }</span>
-<span class="nc" id="L44">    }</span>
+<span class="fc" id="L42">            typedArray.recycle()</span>
+<span class="fc" id="L43">        }</span>
+<span class="fc" id="L44">    }</span>
 
     fun setText(text: String) {
-<span class="nc" id="L47">        textView.text = text</span>
-<span class="nc" id="L48">    }</span>
+<span class="fc" id="L47">        textView.text = text</span>
+<span class="fc" id="L48">    }</span>
 
     fun setIcon(iconRes: Int) {
-<span class="nc" id="L51">        iconView.setImageResource(iconRes)</span>
-<span class="nc" id="L52">    }</span>
+<span class="fc" id="L51">        iconView.setImageResource(iconRes)</span>
+<span class="fc" id="L52">    }</span>
 
     override fun setEnabled(enabled: Boolean) {
-<span class="nc" id="L55">        super.setEnabled(enabled)</span>
-<span class="nc" id="L56">        iconView.isEnabled = enabled</span>
-<span class="nc" id="L57">        textView.isEnabled = enabled</span>
+<span class="fc" id="L55">        super.setEnabled(enabled)</span>
+<span class="fc" id="L56">        iconView.isEnabled = enabled</span>
+<span class="fc" id="L57">        textView.isEnabled = enabled</span>
 
         // Control clickable and focusable based on enabled state
-<span class="nc" id="L60">        isClickable = enabled</span>
-<span class="nc" id="L61">        isFocusable = enabled</span>
+<span class="fc" id="L60">        isClickable = enabled</span>
+<span class="fc" id="L61">        isFocusable = enabled</span>
 
-<span class="nc bnc" id="L63" title="All 2 branches missed.">        alpha = if (enabled) 1.0f else 0.6f</span>
-<span class="nc" id="L64">    }</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        alpha = if (enabled) 1.0f else 0.6f</span>
+<span class="fc" id="L64">    }</span>
 
     override fun performClick(): Boolean {
         // Only perform click if button is enabled

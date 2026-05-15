@@ -147,7 +147,7 @@ import javax.inject.Inject
 <span class="nc" id="L147">                            timber.log.Timber.e(error, &quot;Background upload failed&quot;)</span>
 <span class="nc" id="L148">                        })</span>
                 )
-<span class="pc bpc" id="L150" title="3 of 4 branches missed.">            } else if (documentType == DocumentType.SSN || documentType == DocumentType.SSN_ONLY) {</span>
+<span class="pc bpc" id="L150" title="1 of 4 branches missed.">            } else if (documentType == DocumentType.SSN || documentType == DocumentType.SSN_ONLY) {</span>
 <span class="fc" id="L151">                compositeDisposable.add(</span>
 <span class="fc" id="L152">                    uploadRepository.uploadDoc(token, filePart, documentType)</span>
 <span class="fc" id="L153">                        .subscribeOn(Schedulers.io())</span>
@@ -869,13 +869,13 @@ fun DriverLicense?.toUploadDetailsSendParams(
     )
 }
 
-<span class="nc" id="L872">data class UploadStep(</span>
-<span class="nc" id="L873">    val documentType: DocumentType? = null,</span>
-<span class="nc" id="L874">    val uploadResponse: DocumentUploadResponse? = null,</span>
-<span class="nc" id="L875">    val processDocumentResponse: UploadResponse? = null,</span>
-<span class="nc" id="L876">    val qrUploadResult: UploadResponse? = null,</span>
-<span class="nc" id="L877">    val additionalRequirementResponse: AdditionalRequirementResponse? = null,</span>
-<span class="nc" id="L878">    val verifyResponse: UploadResponse? = null,</span>
-<span class="nc" id="L879">    val error: String? = null</span>
-<span class="nc" id="L880">)</span>
+<span class="fc" id="L872">data class UploadStep(</span>
+<span class="pc" id="L873">    val documentType: DocumentType? = null,</span>
+<span class="pc" id="L874">    val uploadResponse: DocumentUploadResponse? = null,</span>
+<span class="pc" id="L875">    val processDocumentResponse: UploadResponse? = null,</span>
+<span class="pc" id="L876">    val qrUploadResult: UploadResponse? = null,</span>
+<span class="pc" id="L877">    val additionalRequirementResponse: AdditionalRequirementResponse? = null,</span>
+<span class="pc" id="L878">    val verifyResponse: UploadResponse? = null,</span>
+<span class="fc" id="L879">    val error: String? = null</span>
+<span class="fc" id="L880">)</span>
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -8,11 +8,11 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 
 enum class LoadingState {
-<span class="nc" id="L11">    UPLOAD,</span>
-<span class="nc" id="L12">    VERIFY,</span>
-<span class="nc" id="L13">    IDENTIFY,</span>
-<span class="nc" id="L14">    PROCESS,</span>
-<span class="nc" id="L15">    RESET</span>
+<span class="fc" id="L11">    UPLOAD,</span>
+<span class="fc" id="L12">    VERIFY,</span>
+<span class="fc" id="L13">    IDENTIFY,</span>
+<span class="fc" id="L14">    PROCESS,</span>
+<span class="fc" id="L15">    RESET</span>
 <span class="nc" id="L16">}</span>
 
 sealed class UploadState {
@@ -28,12 +28,12 @@ sealed class UploadState {
 <span class="nc" id="L28">    data class ResetSuccess(val email: String, val msg: String) : UploadState()</span>
 <span class="nc" id="L29">    data class ResetError(val msg: String) : UploadState()</span>
 
-<span class="nc" id="L31">    data class Loading(val state: LoadingState) : UploadState()</span>
-<span class="nc" id="L32">    data class Success(</span>
-<span class="nc" id="L33">        val qrResult: Any? = null,</span>
-<span class="nc" id="L34">        val imageResult: DocumentUploadResponse? = null,</span>
-<span class="nc" id="L35">        val additionalRequirement: AdditionalRequirementResponse? = null</span>
-<span class="nc" id="L36">    ) : UploadState() // Replace `String` with your data type</span>
+<span class="pc" id="L31">    data class Loading(val state: LoadingState) : UploadState()</span>
+<span class="fc" id="L32">    data class Success(</span>
+<span class="pc" id="L33">        val qrResult: Any? = null,</span>
+<span class="pc" id="L34">        val imageResult: DocumentUploadResponse? = null,</span>
+<span class="pc" id="L35">        val additionalRequirement: AdditionalRequirementResponse? = null</span>
+<span class="fc" id="L36">    ) : UploadState() // Replace `String` with your data type</span>
 
 <span class="nc" id="L38">    data class SuccessScan(val data: Any? = null) : UploadState()</span>
 <span class="nc" id="L39">    data class FailedScan(val msg: String) : UploadState()</span>
@@ -68,6 +68,6 @@ sealed class UploadState {
         }
     }
 
-<span class="nc" id="L71">    object Idle : UploadState() // Optional, for the initial state</span>
+<span class="fc" id="L71">    object Idle : UploadState() // Optional, for the initial state</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

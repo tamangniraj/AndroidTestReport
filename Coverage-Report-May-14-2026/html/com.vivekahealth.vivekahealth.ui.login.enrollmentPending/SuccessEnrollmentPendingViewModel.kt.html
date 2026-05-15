@@ -13,29 +13,29 @@ import com.vivekahealth.vivekahealth.utils.Event
 import io.reactivex.disposables.CompositeDisposable
 import javax.inject.Inject
 
-<span class="nc" id="L16">class SuccessEnrollmentPendingViewModel @Inject constructor(</span>
-<span class="nc" id="L17">    private val preferences: SharedPreferences,</span>
-<span class="nc" id="L18">    private val enrollRepository: EnrollRepository</span>
-<span class="nc" id="L19">) : ViewModel(), Observable {</span>
+<span class="fc" id="L16">class SuccessEnrollmentPendingViewModel @Inject constructor(</span>
+<span class="fc" id="L17">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L18">    private val enrollRepository: EnrollRepository</span>
+<span class="fc" id="L19">) : ViewModel(), Observable {</span>
 
 <span class="nc" id="L21">    internal lateinit var nextClickListener: NextClickListener</span>
 
-<span class="nc" id="L23">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="pc" id="L23">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
 
-<span class="nc" id="L25">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L25">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
 
-<span class="nc" id="L27">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L27">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L29">        get() = _navigateToBack</span>
-<span class="nc" id="L30">    private val _navigateToOk = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L29">        get() = _navigateToBack</span>
+<span class="fc" id="L30">    private val _navigateToOk = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val navigateToOK: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L32">        get() = _navigateToOk</span>
+<span class="fc" id="L32">        get() = _navigateToOk</span>
 
     fun onBackClicked() {
 //        removeReg()
 
-<span class="nc" id="L37">        _navigateToBack.value = Event(Unit)</span>
-<span class="nc" id="L38">    }</span>
+<span class="fc" id="L37">        _navigateToBack.value = Event(Unit)</span>
+<span class="fc" id="L38">    }</span>
 
     fun removeReg() {
 <span class="nc" id="L41">        val regEdit = preferences.edit()</span>
@@ -44,8 +44,8 @@ import javax.inject.Inject
 <span class="nc" id="L44">    }</span>
     fun onOkClicked() {
 //        removeReg()
-<span class="nc" id="L47">        _navigateToOk.value = Event(Unit)</span>
-<span class="nc" id="L48">    }</span>
+<span class="fc" id="L47">        _navigateToOk.value = Event(Unit)</span>
+<span class="fc" id="L48">    }</span>
 
     override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
 <span class="nc" id="L51">        callbacks.add(callback)</span>

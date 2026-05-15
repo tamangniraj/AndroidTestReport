@@ -4,21 +4,21 @@
     private var lastParams: T? = null
     private var lastExecutionTime = 0L
 
-<span class="nc" id="L7">    fun debounce(params: T, delayMs: Long = 500L, action: (T) -&gt; Unit) {</span>
-<span class="nc" id="L8">        val currentTime = System.currentTimeMillis()</span>
-<span class="nc bnc" id="L9" title="All 4 branches missed.">        if (lastParams != params || currentTime - lastExecutionTime &gt;= delayMs) {</span>
-<span class="nc" id="L10">            lastParams = params</span>
-<span class="nc" id="L11">            lastExecutionTime = currentTime</span>
-<span class="nc" id="L12">            action(params)</span>
+<span class="fc" id="L7">    fun debounce(params: T, delayMs: Long = 500L, action: (T) -&gt; Unit) {</span>
+<span class="fc" id="L8">        val currentTime = System.currentTimeMillis()</span>
+<span class="pc bpc" id="L9" title="3 of 4 branches missed.">        if (lastParams != params || currentTime - lastExecutionTime &gt;= delayMs) {</span>
+<span class="fc" id="L10">            lastParams = params</span>
+<span class="fc" id="L11">            lastExecutionTime = currentTime</span>
+<span class="fc" id="L12">            action(params)</span>
         }
-<span class="nc" id="L14">    }</span>
+<span class="fc" id="L14">    }</span>
 }
 
 // Extension for parameterized debouncing
 <span class="nc" id="L18">fun &lt;T, P&gt; T.debouncedWith(): ParameterizedDebouncer&lt;P&gt; = ParameterizedDebouncer()</span>
 
-<span class="nc" id="L20">data class LoadParams(</span>
-<span class="nc" id="L21">    val sharedIds: String,</span>
-<span class="nc" id="L22">    val isRefresh: Boolean</span>
+<span class="fc" id="L20">data class LoadParams(</span>
+<span class="fc" id="L21">    val sharedIds: String,</span>
+<span class="fc" id="L22">    val isRefresh: Boolean</span>
 )
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

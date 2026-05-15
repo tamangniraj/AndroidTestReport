@@ -18,8 +18,8 @@ import javax.inject.Inject
 
 <span class="pc" id="L19">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
 <span class="fc" id="L20">    private val _isAppUpdateAvailable = MutableLiveData&lt;Boolean&gt;()</span>
-<span class="nc" id="L21">    val getAppUpdateAvailable: LiveData&lt;Boolean&gt; get() = _isAppUpdateAvailable</span>
-<span class="nc" id="L22">    var update: Boolean = false</span>
+<span class="fc" id="L21">    val getAppUpdateAvailable: LiveData&lt;Boolean&gt; get() = _isAppUpdateAvailable</span>
+<span class="pc" id="L22">    var update: Boolean = false</span>
 
 <span class="fc" id="L24">    init {</span>
         // reset device prompt flag

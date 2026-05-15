@@ -20,46 +20,46 @@ import javax.inject.Inject
 import kotlinx.coroutines.Job
 import org.apache.commons.lang3.StringUtils
 
-<span class="nc" id="L23">class ContinueRegistrationViewModel @Inject constructor(</span>
-<span class="nc" id="L24">    private val preferences: SharedPreferences,</span>
-<span class="nc" id="L25">    private val enrollRepository: EnrollRepository</span>
-<span class="nc" id="L26">) : ViewModel(), Observable {</span>
+<span class="fc" id="L23">class ContinueRegistrationViewModel @Inject constructor(</span>
+<span class="fc" id="L24">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L25">    private val enrollRepository: EnrollRepository</span>
+<span class="fc" id="L26">) : ViewModel(), Observable {</span>
 
-<span class="nc" id="L28">    var gson = Gson()</span>
-<span class="nc" id="L29">    var user = RegisterUser()</span>
+<span class="pc" id="L28">    var gson = Gson()</span>
+<span class="pc" id="L29">    var user = RegisterUser()</span>
 
     private lateinit var job: Job
 
 <span class="nc" id="L33">    internal lateinit var nextClickListener: NextClickListener</span>
 
-<span class="nc" id="L35">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="pc" id="L35">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
 
-<span class="nc" id="L37">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L37">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
 
-<span class="nc" id="L39">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L39">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L41">        get() = _navigateToBack</span>
-<span class="nc" id="L42">    private val _navigateToOk = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L41">        get() = _navigateToBack</span>
+<span class="fc" id="L42">    private val _navigateToOk = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val navigateToOK: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L44">        get() = _navigateToOk</span>
-<span class="nc" id="L45">    private val _reset = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L44">        get() = _navigateToOk</span>
+<span class="fc" id="L45">    private val _reset = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val reset: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L47">        get() = _reset</span>
+<span class="fc" id="L47">        get() = _reset</span>
     fun onBackClicked() {
-<span class="nc" id="L49">        _navigateToBack.value = Event(Unit)</span>
-<span class="nc" id="L50">    }</span>
+<span class="fc" id="L49">        _navigateToBack.value = Event(Unit)</span>
+<span class="fc" id="L50">    }</span>
 
-<span class="nc" id="L52">    var name: String = gson.fromJson(</span>
-<span class="nc" id="L53">        preferences.getString(Constants.register, &quot;&quot;),</span>
-<span class="nc" id="L54">        RegisterUser::class.java</span>
-<span class="nc" id="L55">    ).firstName.toString()</span>
+<span class="fc" id="L52">    var name: String = gson.fromJson(</span>
+<span class="fc" id="L53">        preferences.getString(Constants.register, &quot;&quot;),</span>
+<span class="fc" id="L54">        RegisterUser::class.java</span>
+<span class="fc" id="L55">    ).firstName.toString()</span>
 <span class="nc" id="L56">        @Bindable get</span>
         set(value) {
 <span class="nc" id="L58">            field = value</span>
 <span class="nc" id="L59">            callbacks.notifyCallbacks(this, BR.name, null)</span>
 <span class="nc" id="L60">        }</span>
 
-<span class="nc" id="L62">    var lastEnrollmentDate: String = preferences.getString(Constants.TimeStampReg, &quot;&quot;).toString()</span>
+<span class="fc" id="L62">    var lastEnrollmentDate: String = preferences.getString(Constants.TimeStampReg, &quot;&quot;).toString()</span>
 <span class="nc" id="L63">        @Bindable get</span>
         set(value) {
 <span class="nc" id="L65">            field = value</span>
@@ -83,12 +83,12 @@ import org.apache.commons.lang3.StringUtils
 <span class="nc" id="L83">    }</span>
 
     fun onOkClicked() {
-<span class="nc" id="L86">        _navigateToOk.value = Event(Unit)</span>
-<span class="nc" id="L87">    }</span>
+<span class="fc" id="L86">        _navigateToOk.value = Event(Unit)</span>
+<span class="fc" id="L87">    }</span>
 
     fun onCreateAccount() {
-<span class="nc" id="L90">        _reset.value = Event(Unit)</span>
-<span class="nc" id="L91">    }</span>
+<span class="fc" id="L90">        _reset.value = Event(Unit)</span>
+<span class="fc" id="L91">    }</span>
 
     override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
 <span class="nc" id="L94">        callbacks.add(callback)</span>

@@ -17,13 +17,13 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
 
-<span class="nc" id="L20">class VerifyIdentityViewModel @Inject constructor(</span>
-<span class="nc" id="L21">    private val preferences: SharedPreferences,</span>
-<span class="nc" id="L22">    private val guestHomeRepository: GuestHomeRepository,</span>
-<span class="nc" id="L23">    private val gson: Gson</span>
-<span class="nc" id="L24">) : ViewModel(), Observable {</span>
-<span class="nc" id="L25">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
-<span class="nc" id="L26">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L20">class VerifyIdentityViewModel @Inject constructor(</span>
+<span class="fc" id="L21">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L22">    private val guestHomeRepository: GuestHomeRepository,</span>
+<span class="fc" id="L23">    private val gson: Gson</span>
+<span class="fc" id="L24">) : ViewModel(), Observable {</span>
+<span class="pc" id="L25">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="fc" id="L26">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
 
     var loading: Boolean = false
 <span class="nc" id="L29">        @Bindable get</span>
@@ -32,9 +32,9 @@ import javax.inject.Inject
 <span class="nc" id="L32">            callbacks.notifyCallbacks(this, BR.loading, null)</span>
 <span class="nc" id="L33">        }</span>
 
-<span class="nc" id="L35">    private val _startSession = MutableLiveData&lt;APIResponse&lt;StartIdentificationsReceiveParams&gt;&gt;()</span>
+<span class="fc" id="L35">    private val _startSession = MutableLiveData&lt;APIResponse&lt;StartIdentificationsReceiveParams&gt;&gt;()</span>
     val startSession: LiveData&lt;APIResponse&lt;StartIdentificationsReceiveParams&gt;&gt;
-<span class="nc" id="L37">        get() = _startSession</span>
+<span class="fc" id="L37">        get() = _startSession</span>
 
     fun startRegistration() {
 <span class="nc" id="L40">        compositeDisposable.add(</span>

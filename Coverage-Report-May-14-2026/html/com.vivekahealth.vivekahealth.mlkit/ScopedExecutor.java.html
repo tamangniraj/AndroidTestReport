@@ -43,8 +43,8 @@ public class ScopedExecutor implements Executor {
 <span class="fc" id="L43">    executor.execute(</span>
         () -&gt; {
           // Check again in case it has been shut down in the mean time.
-<span class="pc bpc" id="L46" title="1 of 2 branches missed.">          if (shutdown.get()) {</span>
-<span class="nc" id="L47">            return;</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">          if (shutdown.get()) {</span>
+<span class="fc" id="L47">            return;</span>
           }
 <span class="fc" id="L49">          command.run();</span>
 <span class="fc" id="L50">        });</span>

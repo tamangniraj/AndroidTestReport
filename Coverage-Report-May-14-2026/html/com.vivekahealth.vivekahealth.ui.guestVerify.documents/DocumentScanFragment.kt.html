@@ -1428,23 +1428,23 @@ open class DocumentScanFragment : BaseFragment(), Injectable {
 
 fun convertToGrayscale(bitmap: Bitmap): Bitmap {
     // Create a new Bitmap with the same size as the original
-<span class="nc" id="L1431">    val grayscaleBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)</span>
+<span class="fc" id="L1431">    val grayscaleBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)</span>
 
     // Create a Canvas to draw the original bitmap onto the new one
-<span class="nc" id="L1434">    val canvas = Canvas(grayscaleBitmap)</span>
+<span class="fc" id="L1434">    val canvas = Canvas(grayscaleBitmap)</span>
 
     // Create a ColorMatrix for grayscale conversion
-<span class="nc" id="L1437">    val colorMatrix = ColorMatrix()</span>
-<span class="nc" id="L1438">    colorMatrix.setSaturation(0f) // Set saturation to 0 to get grayscale</span>
+<span class="fc" id="L1437">    val colorMatrix = ColorMatrix()</span>
+<span class="fc" id="L1438">    colorMatrix.setSaturation(0f) // Set saturation to 0 to get grayscale</span>
 
     // Create a Paint object and set the ColorMatrix filter
-<span class="nc" id="L1441">    val paint = Paint()</span>
-<span class="nc" id="L1442">    paint.colorFilter = ColorMatrixColorFilter(colorMatrix)</span>
+<span class="fc" id="L1441">    val paint = Paint()</span>
+<span class="fc" id="L1442">    paint.colorFilter = ColorMatrixColorFilter(colorMatrix)</span>
 
     // Draw the original bitmap onto the canvas using the paint (which applies the grayscale filter)
-<span class="nc" id="L1445">    canvas.drawBitmap(bitmap, 0f, 0f, paint)</span>
+<span class="fc" id="L1445">    canvas.drawBitmap(bitmap, 0f, 0f, paint)</span>
 
-<span class="nc" id="L1447">    return grayscaleBitmap</span>
+<span class="fc" id="L1447">    return grayscaleBitmap</span>
 }
 
 enum class DocumentType {

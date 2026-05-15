@@ -30,75 +30,75 @@ import javax.inject.Inject
 import org.apache.commons.lang3.StringUtils
 import retrofit2.Response
 
-<span class="nc" id="L33">class LoginViewModel @Inject constructor(</span>
-<span class="nc" id="L34">    private val preferences: SharedPreferences,</span>
-<span class="nc" id="L35">    private val loginRepository: LoginRepository</span>
-<span class="nc" id="L36">) : ViewModel(), Observable {</span>
+<span class="fc" id="L33">class LoginViewModel @Inject constructor(</span>
+<span class="fc" id="L34">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L35">    private val loginRepository: LoginRepository</span>
+<span class="fc" id="L36">) : ViewModel(), Observable {</span>
 
-<span class="nc" id="L38">    var gson = Gson()</span>
-<span class="nc" id="L39">    var user = RegisterUser()</span>
-<span class="nc" id="L40">    var enroll = EnrollMember()</span>
+<span class="pc" id="L38">    var gson = Gson()</span>
+<span class="pc" id="L39">    var user = RegisterUser()</span>
+<span class="pc" id="L40">    var enroll = EnrollMember()</span>
 
-<span class="nc" id="L42">    var encode: String = preferences.getString(</span>
-<span class="nc" id="L43">        Constants.KEY_PASSWORD,</span>
-<span class="nc" id="L44">        &quot;Re-register&quot;</span>
-<span class="nc" id="L45">    ).toString()</span>
+<span class="pc" id="L42">    var encode: String = preferences.getString(</span>
+<span class="fc" id="L43">        Constants.KEY_PASSWORD,</span>
+<span class="fc" id="L44">        &quot;Re-register&quot;</span>
+<span class="pc" id="L45">    ).toString()</span>
 
-<span class="nc" id="L47">    var savedUserNameEncoded: String = preferences.getString(</span>
-<span class="nc" id="L48">        Constants.encodedEmail,</span>
-<span class="nc" id="L49">        &quot;&quot;</span>
-<span class="nc" id="L50">    ).toString()</span>
-<span class="nc" id="L51">    var savedPasswordEncoded: String = preferences.getString(</span>
-<span class="nc" id="L52">        Constants.encodedPassword,</span>
-<span class="nc" id="L53">        &quot;&quot;</span>
-<span class="nc" id="L54">    ).toString()</span>
-<span class="nc" id="L55">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="pc" id="L47">    var savedUserNameEncoded: String = preferences.getString(</span>
+<span class="fc" id="L48">        Constants.encodedEmail,</span>
+<span class="fc" id="L49">        &quot;&quot;</span>
+<span class="pc" id="L50">    ).toString()</span>
+<span class="pc" id="L51">    var savedPasswordEncoded: String = preferences.getString(</span>
+<span class="fc" id="L52">        Constants.encodedPassword,</span>
+<span class="fc" id="L53">        &quot;&quot;</span>
+<span class="pc" id="L54">    ).toString()</span>
+<span class="pc" id="L55">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
 
-<span class="nc" id="L57">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L57">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
 //    var isBiometricEnabled:Boolean = preferences.getBoolean(preferences.getString(&quot;memberID&quot;,&quot;&quot;)+Constants.biometricPref,false)
 
-<span class="nc" id="L60">    private val _emailChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+<span class="fc" id="L60">    private val _emailChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
     val emailChanged: LiveData&lt;Event&lt;String&gt;&gt;
 <span class="nc" id="L62">        get() = _emailChanged</span>
-<span class="nc" id="L63">    private val _passwordChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+<span class="fc" id="L63">    private val _passwordChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
     val passwordChanged: LiveData&lt;Event&lt;String&gt;&gt;
 <span class="nc" id="L65">        get() = _passwordChanged</span>
 
-<span class="nc" id="L67">    private val _logInSuccess = MutableLiveData&lt;APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;&gt;()</span>
+<span class="fc" id="L67">    private val _logInSuccess = MutableLiveData&lt;APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;&gt;()</span>
     val logInSuccess: LiveData&lt;APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;&gt;
-<span class="nc" id="L69">        get() = _logInSuccess</span>
+<span class="fc" id="L69">        get() = _logInSuccess</span>
 
-<span class="nc" id="L71">    private val _alternativeApp = MutableLiveData&lt;Event&lt;ErrorResponse&gt;&gt;()</span>
+<span class="fc" id="L71">    private val _alternativeApp = MutableLiveData&lt;Event&lt;ErrorResponse&gt;&gt;()</span>
     val alternativeApp: LiveData&lt;Event&lt;ErrorResponse&gt;&gt;
 <span class="nc" id="L73">        get() = _alternativeApp</span>
 
-<span class="nc" id="L75">    private val _logInFail = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+<span class="fc" id="L75">    private val _logInFail = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
     val logInFail: LiveData&lt;Event&lt;String&gt;&gt;
-<span class="nc" id="L77">        get() = _logInFail</span>
+<span class="fc" id="L77">        get() = _logInFail</span>
 
-<span class="nc" id="L79">    private val _signUp = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L79">    private val _signUp = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val signUp: LiveData&lt;Event&lt;Unit&gt;&gt;
 <span class="nc" id="L81">        get() = _signUp</span>
-<span class="nc" id="L82">    private val _loginClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L82">    private val _loginClicked = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val loginClicked: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L84">        get() = _loginClicked</span>
+<span class="fc" id="L84">        get() = _loginClicked</span>
 
-<span class="nc" id="L86">    private val _fingerPrintLogin = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L86">    private val _fingerPrintLogin = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val fingerPrintLogin: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L88">        get() = _fingerPrintLogin</span>
-<span class="nc" id="L89">    private val _registrationPopUp = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L88">        get() = _fingerPrintLogin</span>
+<span class="fc" id="L89">    private val _registrationPopUp = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val registrationPopUp: LiveData&lt;Event&lt;Unit&gt;&gt;
 <span class="nc" id="L91">        get() = _registrationPopUp</span>
-<span class="nc" id="L92">    private val _enrollPopUp = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L92">    private val _enrollPopUp = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val enrollPopUp: LiveData&lt;Event&lt;Unit&gt;&gt;
 <span class="nc" id="L94">        get() = _enrollPopUp</span>
 
-<span class="nc" id="L96">    private val _navigateToFingerPrint = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L96">    private val _navigateToFingerPrint = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val navigateToFingerPrint: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L98">        get() = _navigateToFingerPrint</span>
-<span class="nc" id="L99">    var email: String = &quot;&quot;</span>
+<span class="fc" id="L98">        get() = _navigateToFingerPrint</span>
+<span class="pc" id="L99">    var email: String = &quot;&quot;</span>
 
-<span class="nc" id="L101">    private val _isAppUpdateAvailable = MutableLiveData&lt;Boolean&gt;()</span>
+<span class="fc" id="L101">    private val _isAppUpdateAvailable = MutableLiveData&lt;Boolean&gt;()</span>
 <span class="nc" id="L102">    val getAppUpdateAvailable: LiveData&lt;Boolean&gt; get() = _isAppUpdateAvailable</span>
 //        @Bindable get
 //        set(value) {
@@ -106,10 +106,10 @@ import retrofit2.Response
 //            callbacks.notifyCallbacks(this, BR.email, null)
 //        }
 
-<span class="nc" id="L109">    var biometricEnabled: MutableLiveData&lt;Boolean&gt; = MutableLiveData(</span>
-<span class="nc" id="L110">        preferences.getBoolean(</span>
-<span class="nc" id="L111">            preferences.getString(&quot;memberID&quot;, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,</span>
-<span class="nc" id="L112">            false</span>
+<span class="fc" id="L109">    var biometricEnabled: MutableLiveData&lt;Boolean&gt; = MutableLiveData(</span>
+<span class="fc" id="L110">        preferences.getBoolean(</span>
+<span class="fc" id="L111">            preferences.getString(&quot;memberID&quot;, &quot;&quot;) + Constants.BIO_PERMISSION_REQUESTED,</span>
+<span class="fc" id="L112">            false</span>
         )
     )
 <span class="nc" id="L115">        @Bindable get</span>
@@ -117,7 +117,7 @@ import retrofit2.Response
 <span class="nc" id="L117">            field = value</span>
 <span class="nc" id="L118">            callbacks.notifyCallbacks(this, BR.biometricEnabled, null)</span>
 <span class="nc" id="L119">        }</span>
-<span class="nc" id="L120">    var password: String = &quot;&quot;</span>
+<span class="pc" id="L120">    var password: String = &quot;&quot;</span>
 
     fun setBiometric() {
 <span class="nc bnc" id="L123" title="All 2 branches missed.">        if (biometricEnabled.value == true) {</span>
@@ -140,7 +140,7 @@ import retrofit2.Response
 <span class="nc" id="L140">    }</span>
 
 <span class="nc" id="L142">    @get:Bindable</span>
-<span class="nc" id="L143">    val emailTextWatcher = object : TextWatcher {</span>
+<span class="fc" id="L143">    val emailTextWatcher = object : TextWatcher {</span>
         override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
             // Do nothing.
 <span class="nc" id="L146">        }</span>
@@ -154,7 +154,7 @@ import retrofit2.Response
     }
 
 <span class="nc" id="L156">    @get:Bindable</span>
-<span class="nc" id="L157">    val passwordTextWatcher = object : TextWatcher {</span>
+<span class="fc" id="L157">    val passwordTextWatcher = object : TextWatcher {</span>
         override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
             // Do nothing.
 <span class="nc" id="L160">        }</span>
@@ -167,13 +167,13 @@ import retrofit2.Response
 <span class="nc" id="L167">        }</span>
     }
 
-<span class="nc" id="L170">    private var _emailEmpty = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
+<span class="fc" id="L170">    private var _emailEmpty = MutableLiveData&lt;Event&lt;Boolean&gt;&gt;()</span>
     val emailEmpty: LiveData&lt;Event&lt;Boolean&gt;&gt;
 <span class="nc" id="L172">        get() = _emailEmpty</span>
 
     fun fingerPrintLogin() {
-<span class="nc" id="L175">        _fingerPrintLogin.value = Event(Unit)</span>
-<span class="nc" id="L176">    }</span>
+<span class="fc" id="L175">        _fingerPrintLogin.value = Event(Unit)</span>
+<span class="fc" id="L176">    }</span>
 
     fun sample(): Boolean {
 <span class="nc bnc" id="L179" title="All 2 branches missed.">        val value = biometricEnabled.value ?: true</span>
@@ -206,8 +206,8 @@ import retrofit2.Response
 <span class="nc" id="L206">    }</span>
 
     fun fingerPrint() {
-<span class="nc" id="L209">        _navigateToFingerPrint.value = Event(Unit)</span>
-<span class="nc" id="L210">    }</span>
+<span class="fc" id="L209">        _navigateToFingerPrint.value = Event(Unit)</span>
+<span class="fc" id="L210">    }</span>
 
     fun removeConfData() {
 <span class="nc bnc" id="L213" title="All 6 branches missed.">        if (!preferences.getString(Constants.Registration, &quot;&quot;).isNullOrBlank()) {</span>
@@ -304,21 +304,21 @@ import retrofit2.Response
 <span class="nc" id="L304">    }</span>
 
     fun loginClicked() {
-<span class="nc" id="L307">        _loginClicked.value = Event(Unit)</span>
-<span class="nc" id="L308">    }</span>
+<span class="fc" id="L307">        _loginClicked.value = Event(Unit)</span>
+<span class="fc" id="L308">    }</span>
 
     fun login() {
-<span class="nc" id="L311">        compositeDisposable.add(</span>
+<span class="fc" id="L311">        compositeDisposable.add(</span>
 
-<span class="nc" id="L313">            loginRepository.getLogin(userName = email, password = password, &quot;&quot;, false)</span>
-<span class="nc" id="L314">                .subscribeOn(Schedulers.io())</span>
-<span class="nc" id="L315">                .observeOn(AndroidSchedulers.mainThread())</span>
-<span class="nc" id="L316">                .doOnSubscribe {</span>
-<span class="nc" id="L317">                    _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().loading()</span>
-<span class="nc" id="L318">                }</span>
-<span class="nc" id="L319">                .subscribe({</span>
-<span class="nc bnc" id="L320" title="All 10 branches missed.">                    if (it.isSuccessful || it.raw().code == 200 || it.raw().code == 400 || it.raw().code == 401 || it.raw().code == 404) {</span>
-<span class="nc" id="L321">                        _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(it)</span>
+<span class="fc" id="L313">            loginRepository.getLogin(userName = email, password = password, &quot;&quot;, false)</span>
+<span class="fc" id="L314">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L315">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L316">                .doOnSubscribe {</span>
+<span class="fc" id="L317">                    _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().loading()</span>
+<span class="fc" id="L318">                }</span>
+<span class="fc" id="L319">                .subscribe({</span>
+<span class="pc bpc" id="L320" title="9 of 10 branches missed.">                    if (it.isSuccessful || it.raw().code == 200 || it.raw().code == 400 || it.raw().code == 401 || it.raw().code == 404) {</span>
+<span class="fc" id="L321">                        _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(it)</span>
 <span class="nc bnc" id="L322" title="All 2 branches missed.">                    } else if (it.raw().code == 403) {</span>
 <span class="nc" id="L323">                        try {</span>
 <span class="nc" id="L324">                            val errorResponse: ErrorResponse? = gson.fromJson(</span>
@@ -334,29 +334,29 @@ import retrofit2.Response
                     } else {
 <span class="nc" id="L335">                        _logInFail.value = Event(it.raw().code.toString())</span>
                     }
-<span class="nc" id="L337">                }, {</span>
-<span class="nc" id="L338">                    _logInFail.value = Event(it.message.toString())</span>
-<span class="nc" id="L339">                })</span>
+<span class="fc" id="L337">                }, {</span>
+<span class="fc" id="L338">                    _logInFail.value = Event(it.message.toString())</span>
+<span class="fc" id="L339">                })</span>
         )
-<span class="nc" id="L341">    }</span>
+<span class="fc" id="L341">    }</span>
 
     fun magicLogin(magicTempUUID: String) {
-<span class="nc" id="L344">        preferences.edit().putString(Constants.MAGIC_TEMP_TOKEN, magicTempUUID).apply()</span>
-<span class="nc" id="L345">        compositeDisposable.add(</span>
-<span class="nc" id="L346">            loginRepository.getMagicLogin(magicTempUUID)</span>
-<span class="nc" id="L347">                .subscribeOn(Schedulers.io())</span>
-<span class="nc" id="L348">                .observeOn(AndroidSchedulers.mainThread())</span>
-<span class="nc" id="L349">                .doOnSubscribe {</span>
-<span class="nc" id="L350">                    preferences.edit().putBoolean(Constants.IS_MAGIC_LOGIN, true).apply()</span>
-<span class="nc" id="L351">                    _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().loading()</span>
-<span class="nc" id="L352">                }</span>
-<span class="nc" id="L353">                .subscribe({</span>
-<span class="nc" id="L354">                    _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(it)</span>
-<span class="nc" id="L355">                }, {</span>
-<span class="nc" id="L356">                    _logInFail.value = Event(it.message.toString())</span>
-<span class="nc" id="L357">                })</span>
+<span class="fc" id="L344">        preferences.edit().putString(Constants.MAGIC_TEMP_TOKEN, magicTempUUID).apply()</span>
+<span class="fc" id="L345">        compositeDisposable.add(</span>
+<span class="fc" id="L346">            loginRepository.getMagicLogin(magicTempUUID)</span>
+<span class="fc" id="L347">                .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L348">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L349">                .doOnSubscribe {</span>
+<span class="fc" id="L350">                    preferences.edit().putBoolean(Constants.IS_MAGIC_LOGIN, true).apply()</span>
+<span class="fc" id="L351">                    _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().loading()</span>
+<span class="fc" id="L352">                }</span>
+<span class="fc" id="L353">                .subscribe({</span>
+<span class="fc" id="L354">                    _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(it)</span>
+<span class="fc" id="L355">                }, {</span>
+<span class="fc" id="L356">                    _logInFail.value = Event(it.message.toString())</span>
+<span class="fc" id="L357">                })</span>
         )
-<span class="nc" id="L359">    }</span>
+<span class="fc" id="L359">    }</span>
 
     fun showReg() {
 <span class="nc" id="L362">        _registrationPopUp.value = Event(Unit)</span>

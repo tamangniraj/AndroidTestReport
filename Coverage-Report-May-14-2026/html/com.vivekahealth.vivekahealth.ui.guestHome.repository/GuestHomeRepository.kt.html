@@ -64,7 +64,7 @@ import javax.inject.Singleton
     }
 
     fun startGuestRegistration(): Single&lt;StartIdentificationsReceiveParams&gt; {
-<span class="nc" id="L67">        return homeService.getGuestHomeApi().startRegistration()</span>
+<span class="fc" id="L67">        return homeService.getGuestHomeApi().startRegistration()</span>
     }
 
     fun changeGuestPassword(passDto: ChangePasswordV3DTO): Single&lt;DataResponse&gt; {

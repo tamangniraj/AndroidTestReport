@@ -96,8 +96,8 @@ import java.net.SocketTimeoutException
 
 sealed class APIResponseState {
 <span class="nc" id="L98">    data class SuccessOtp(val data: ResponseOtpReceiveParams) : APIResponseState()</span>
-<span class="nc" id="L99">    data class SuccessGeneric(val data: DataResponse) : APIResponseState()</span>
+<span class="fc" id="L99">    data class SuccessGeneric(val data: DataResponse) : APIResponseState()</span>
 <span class="nc" id="L100">    data class Error(val message: String) : APIResponseState()</span>
-<span class="nc" id="L101">    object Loading : APIResponseState()</span>
+<span class="fc" id="L101">    object Loading : APIResponseState()</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

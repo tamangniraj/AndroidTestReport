@@ -37,56 +37,56 @@ import kotlinx.coroutines.Job
 import org.apache.commons.lang3.StringUtils
 import retrofit2.Response
 
-<span class="nc" id="L40">class GuestEmailViewModel @Inject constructor(</span>
-<span class="nc" id="L41">    private val preferences: SharedPreferences,</span>
-<span class="nc" id="L42">    private val emailRepository: EmailRepository,</span>
-<span class="nc" id="L43">    private val loginRepository: LoginRepository,</span>
-<span class="nc" id="L44">    private val codeRepository: PhoneCodeRepository,</span>
-<span class="nc" id="L45">    private val recaptchaClient: RecaptchaClient</span>
-<span class="nc" id="L46">) : ViewModel(), Observable {</span>
+<span class="fc" id="L40">class GuestEmailViewModel @Inject constructor(</span>
+<span class="fc" id="L41">    private val preferences: SharedPreferences,</span>
+<span class="fc" id="L42">    private val emailRepository: EmailRepository,</span>
+<span class="fc" id="L43">    private val loginRepository: LoginRepository,</span>
+<span class="fc" id="L44">    private val codeRepository: PhoneCodeRepository,</span>
+<span class="fc" id="L45">    private val recaptchaClient: RecaptchaClient</span>
+<span class="fc" id="L46">) : ViewModel(), Observable {</span>
 
-<span class="nc" id="L48">    var gson = Gson()</span>
-<span class="nc" id="L49">    var user = RegisterUser()</span>
+<span class="pc" id="L48">    var gson = Gson()</span>
+<span class="pc" id="L49">    var user = RegisterUser()</span>
     private lateinit var job: Job
-<span class="nc" id="L51">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
+<span class="pc" id="L51">    private val callbacks: PropertyChangeRegistry by lazy { PropertyChangeRegistry() }</span>
 
-<span class="nc" id="L53">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
+<span class="fc" id="L53">    private var compositeDisposable: CompositeDisposable = CompositeDisposable()</span>
 
-<span class="nc" id="L55">    private val _logInSuccess = MutableLiveData&lt;APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;&gt;()</span>
+<span class="fc" id="L55">    private val _logInSuccess = MutableLiveData&lt;APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;&gt;()</span>
     val logInSuccess: LiveData&lt;APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;&gt;
-<span class="nc" id="L57">        get() = _logInSuccess</span>
-<span class="nc" id="L58">    private val _logInFail = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+<span class="fc" id="L57">        get() = _logInSuccess</span>
+<span class="fc" id="L58">    private val _logInFail = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
     val logInFail: LiveData&lt;Event&lt;String&gt;&gt;
-<span class="nc" id="L60">        get() = _logInFail</span>
-<span class="nc" id="L61">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L60">        get() = _logInFail</span>
+<span class="fc" id="L61">    private val _navigateToBack = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val navigateToBack: LiveData&lt;Event&lt;Unit&gt;&gt;
-<span class="nc" id="L63">        get() = _navigateToBack</span>
-<span class="nc" id="L64">    private val _navigateToPassword = MutableLiveData&lt;APIResponseState&gt;()</span>
+<span class="fc" id="L63">        get() = _navigateToBack</span>
+<span class="fc" id="L64">    private val _navigateToPassword = MutableLiveData&lt;APIResponseState&gt;()</span>
     val navigateToPassword: LiveData&lt;APIResponseState&gt;
-<span class="nc" id="L66">        get() = _navigateToPassword</span>
+<span class="fc" id="L66">        get() = _navigateToPassword</span>
 
-<span class="nc" id="L68">    private val _displaySuggestionError = MutableLiveData&lt;String?&gt;()</span>
+<span class="fc" id="L68">    private val _displaySuggestionError = MutableLiveData&lt;String?&gt;()</span>
     val displaySuggestionError: LiveData&lt;String?&gt;
 <span class="nc" id="L70">        get() = _displaySuggestionError</span>
 
-<span class="nc" id="L72">    private val _suggestion = MutableLiveData&lt;String?&gt;()</span>
+<span class="fc" id="L72">    private val _suggestion = MutableLiveData&lt;String?&gt;()</span>
     val suggestion: LiveData&lt;String?&gt;
 <span class="nc" id="L74">        get() = _suggestion</span>
 
-<span class="nc" id="L76">    private val _emailChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
+<span class="fc" id="L76">    private val _emailChanged = MutableLiveData&lt;Event&lt;String&gt;&gt;()</span>
 
     val emailChanged: LiveData&lt;Event&lt;String&gt;&gt;
 <span class="nc" id="L79">        get() = _emailChanged</span>
 
     val showError: LiveData&lt;APIResponse&lt;DataResponse&gt;&gt;
 <span class="nc" id="L82">        get() = _showError</span>
-<span class="nc" id="L83">    private val _showError = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
+<span class="fc" id="L83">    private val _showError = MutableLiveData&lt;APIResponse&lt;DataResponse&gt;&gt;()</span>
 
-<span class="nc" id="L85">    private val _navigateSuccess = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
+<span class="fc" id="L85">    private val _navigateSuccess = MutableLiveData&lt;Event&lt;Unit&gt;&gt;()</span>
     val navigateSuccess: LiveData&lt;Event&lt;Unit&gt;&gt;
 <span class="nc" id="L87">        get() = _navigateSuccess</span>
 
-<span class="nc" id="L89">    var email: String = &quot;&quot;</span>
+<span class="fc" id="L89">    var email: String = &quot;&quot;</span>
 <span class="nc" id="L90">        @Bindable get</span>
         set(value) {
 <span class="nc" id="L92">            field = value</span>
@@ -94,32 +94,32 @@ import retrofit2.Response
 <span class="nc" id="L94">        }</span>
 
     fun onPrevClicked() {
-<span class="nc" id="L97">        _navigateToBack.value = Event(Unit)</span>
-<span class="nc" id="L98">    }</span>
+<span class="fc" id="L97">        _navigateToBack.value = Event(Unit)</span>
+<span class="fc" id="L98">    }</span>
 
-<span class="nc" id="L100">    private val _alternativeApp = MutableLiveData&lt;Event&lt;ErrorResponse&gt;&gt;()</span>
+<span class="fc" id="L100">    private val _alternativeApp = MutableLiveData&lt;Event&lt;ErrorResponse&gt;&gt;()</span>
     val alternativeApp: LiveData&lt;Event&lt;ErrorResponse&gt;&gt;
 <span class="nc" id="L102">        get() = _alternativeApp</span>
 
-<span class="nc" id="L104">    var registrationId: String = &quot;&quot;</span>
+<span class="pc" id="L104">    var registrationId: String = &quot;&quot;</span>
 
-<span class="nc" id="L106">    var ssnOrMember: Boolean = true</span>
-<span class="nc" id="L107">    var firstName: String = &quot;&quot;</span>
-<span class="nc" id="L108">    var lastName: String = &quot;&quot;</span>
-<span class="nc" id="L109">    var dob: String = &quot;&quot;</span>
-<span class="nc" id="L110">    var password: String = &quot;&quot;</span>
-<span class="nc" id="L111">    var passwordConfirm: String = &quot;&quot;</span>
-<span class="nc" id="L112">    var gender: String = &quot;&quot;</span>
-<span class="nc" id="L113">    var mobile: String = &quot;&quot;</span>
-<span class="nc" id="L114">    var usernameType: String = &quot;&quot;</span>
-<span class="nc" id="L115">    var countryCode: String = &quot;&quot;</span>
-<span class="nc" id="L116">    var electronicDocuments: String = &quot;&quot;</span>
-<span class="nc" id="L117">    var overrideOldRegistration: String = &quot;&quot;</span>
-<span class="nc" id="L118">    var resendVerification: String = &quot;&quot;</span>
-<span class="nc" id="L119">    var tempUUID: String = &quot;&quot;</span>
+<span class="pc" id="L106">    var ssnOrMember: Boolean = true</span>
+<span class="pc" id="L107">    var firstName: String = &quot;&quot;</span>
+<span class="pc" id="L108">    var lastName: String = &quot;&quot;</span>
+<span class="pc" id="L109">    var dob: String = &quot;&quot;</span>
+<span class="pc" id="L110">    var password: String = &quot;&quot;</span>
+<span class="pc" id="L111">    var passwordConfirm: String = &quot;&quot;</span>
+<span class="pc" id="L112">    var gender: String = &quot;&quot;</span>
+<span class="pc" id="L113">    var mobile: String = &quot;&quot;</span>
+<span class="pc" id="L114">    var usernameType: String = &quot;&quot;</span>
+<span class="pc" id="L115">    var countryCode: String = &quot;&quot;</span>
+<span class="pc" id="L116">    var electronicDocuments: String = &quot;&quot;</span>
+<span class="pc" id="L117">    var overrideOldRegistration: String = &quot;&quot;</span>
+<span class="pc" id="L118">    var resendVerification: String = &quot;&quot;</span>
+<span class="pc" id="L119">    var tempUUID: String = &quot;&quot;</span>
 
 <span class="nc" id="L121">    @get:Bindable</span>
-<span class="nc" id="L122">    val emailTextWatcher = object : TextWatcher {</span>
+<span class="fc" id="L122">    val emailTextWatcher = object : TextWatcher {</span>
         override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
             // Do nothing.
 <span class="nc" id="L125">        }</span>
@@ -133,27 +133,27 @@ import retrofit2.Response
     }
 
     fun loginClicked(password: String) {
-<span class="nc" id="L136">        compositeDisposable.add(</span>
+<span class="fc" id="L136">        compositeDisposable.add(</span>
 
-<span class="nc" id="L138">            loginRepository.getLogin(</span>
-<span class="nc" id="L139">                userName = email,</span>
-<span class="nc" id="L140">                password = password,</span>
-<span class="nc" id="L141">                user.tempUUID.toString(),</span>
-<span class="nc" id="L142">                false</span>
-<span class="nc" id="L143">            ).subscribeOn(</span>
-<span class="nc" id="L144">                Schedulers.io()</span>
+<span class="fc" id="L138">            loginRepository.getLogin(</span>
+<span class="fc" id="L139">                userName = email,</span>
+<span class="fc" id="L140">                password = password,</span>
+<span class="fc" id="L141">                user.tempUUID.toString(),</span>
+<span class="fc" id="L142">                false</span>
+<span class="fc" id="L143">            ).subscribeOn(</span>
+<span class="fc" id="L144">                Schedulers.io()</span>
             )
-<span class="nc" id="L146">                .observeOn(AndroidSchedulers.mainThread())</span>
-<span class="nc" id="L147">                .doOnSubscribe {</span>
-<span class="nc" id="L148">                    _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().loading()</span>
-<span class="nc" id="L149">                }</span>
-<span class="nc" id="L150">                .subscribe({</span>
-<span class="nc" id="L151">                    _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(it)</span>
-<span class="nc" id="L152">                }, {</span>
-<span class="nc" id="L153">                    _logInFail.value = Event(it.message.toString())</span>
-<span class="nc" id="L154">                })</span>
+<span class="fc" id="L146">                .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="fc" id="L147">                .doOnSubscribe {</span>
+<span class="fc" id="L148">                    _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().loading()</span>
+<span class="fc" id="L149">                }</span>
+<span class="fc" id="L150">                .subscribe({</span>
+<span class="fc" id="L151">                    _logInSuccess.value = APILoginResponse&lt;Response&lt;AuthToken&gt;&gt;().success(it)</span>
+<span class="fc" id="L152">                }, {</span>
+<span class="fc" id="L153">                    _logInFail.value = Event(it.message.toString())</span>
+<span class="fc" id="L154">                })</span>
         )
-<span class="nc" id="L156">    }</span>
+<span class="fc" id="L156">    }</span>
 
 <span class="nc" id="L158">    var lastSuggestEmail: String ? = null</span>
 <span class="nc" id="L159">    var lastSuggestion: String ? = null</span>
@@ -268,7 +268,7 @@ import retrofit2.Response
 <span class="nc" id="L268">        preferences.edit().putString(Constants.SCOPE, data.scope).apply()</span>
 <span class="nc" id="L269">    }</span>
 
-<span class="nc" id="L271">    var initialEmail = &quot;&quot;</span>
+<span class="pc" id="L271">    var initialEmail = &quot;&quot;</span>
 
     fun loadData() {
 <span class="nc" id="L274">        job = Coroutines.ioToMainThread(</span>
@@ -288,15 +288,15 @@ import retrofit2.Response
 <span class="nc" id="L288">    }</span>
 
     fun continuePassword() {
-<span class="nc" id="L291">        _navigateToPassword.value = APIResponseState.SuccessGeneric(</span>
-<span class="nc" id="L292">            DataResponse(</span>
-<span class="nc" id="L293">                code = &quot;200&quot;,</span>
-<span class="nc" id="L294">                errorCode = &quot;&quot;,</span>
-<span class="nc" id="L295">                reason = &quot;NOT_REGISTERED&quot;,</span>
-<span class="nc" id="L296">                otherDetails = OtherDetails(sessionId = registrationId)</span>
+<span class="fc" id="L291">        _navigateToPassword.value = APIResponseState.SuccessGeneric(</span>
+<span class="fc" id="L292">            DataResponse(</span>
+<span class="fc" id="L293">                code = &quot;200&quot;,</span>
+<span class="fc" id="L294">                errorCode = &quot;&quot;,</span>
+<span class="fc" id="L295">                reason = &quot;NOT_REGISTERED&quot;,</span>
+<span class="fc" id="L296">                otherDetails = OtherDetails(sessionId = registrationId)</span>
             )
         )
-<span class="nc" id="L299">    }</span>
+<span class="fc" id="L299">    }</span>
 
     fun saveEmail() {
 <span class="nc" id="L302">        user.email = email</span>

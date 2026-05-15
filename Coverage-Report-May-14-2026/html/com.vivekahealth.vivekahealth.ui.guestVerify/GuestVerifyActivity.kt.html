@@ -686,39 +686,39 @@ class GuestVerifyActivity : BaseActivity(), Injectable, HasAndroidInjector {
     }
 }
 
-<span class="nc" id="L689">class DurationTracker(</span>
-<span class="nc" id="L690">    private val analytics: FirebaseAnalytics,</span>
-<span class="nc" id="L691">    private val sharedViewModel: SharedViewModel</span>
+<span class="fc" id="L689">class DurationTracker(</span>
+<span class="fc" id="L690">    private val analytics: FirebaseAnalytics,</span>
+<span class="fc" id="L691">    private val sharedViewModel: SharedViewModel</span>
 ) {
     private var stepStartTime: Long = 0
     private var flowStartTime: Long = 0
-<span class="nc" id="L695">    private var currentStep: String = &quot;&quot;</span>
+<span class="fc" id="L695">    private var currentStep: String = &quot;&quot;</span>
 
-<span class="nc" id="L697">    private fun getCommonParams(): Bundle = Bundle().apply {</span>
-<span class="nc bnc" id="L698" title="All 2 branches missed.">        putString(FirebaseTags.PARAM_TOKEN, sharedViewModel.token.value ?: &quot;&quot;)</span>
-<span class="nc" id="L699">    }</span>
+<span class="fc" id="L697">    private fun getCommonParams(): Bundle = Bundle().apply {</span>
+<span class="pc bpc" id="L698" title="1 of 2 branches missed.">        putString(FirebaseTags.PARAM_TOKEN, sharedViewModel.token.value ?: &quot;&quot;)</span>
+<span class="fc" id="L699">    }</span>
 
     fun startFlow() {
-<span class="nc" id="L702">        flowStartTime = System.currentTimeMillis()</span>
-<span class="nc" id="L703">    }</span>
+<span class="fc" id="L702">        flowStartTime = System.currentTimeMillis()</span>
+<span class="fc" id="L703">    }</span>
 
     fun startStep(stepName: String) {
-<span class="nc bnc" id="L706" title="All 4 branches missed.">        if (currentStep.isNotEmpty()) {</span>
-<span class="nc" id="L707">            logStepDuration()</span>
+<span class="fc bfc" id="L706" title="All 4 branches covered.">        if (currentStep.isNotEmpty()) {</span>
+<span class="fc" id="L707">            logStepDuration()</span>
         }
-<span class="nc" id="L709">        currentStep = stepName</span>
-<span class="nc" id="L710">        stepStartTime = System.currentTimeMillis()</span>
-<span class="nc" id="L711">    }</span>
+<span class="fc" id="L709">        currentStep = stepName</span>
+<span class="fc" id="L710">        stepStartTime = System.currentTimeMillis()</span>
+<span class="fc" id="L711">    }</span>
 
     fun logStepDuration(): Long {
-<span class="nc bnc" id="L714" title="All 4 branches missed.">        if (currentStep.isEmpty()) return 0</span>
-<span class="nc" id="L715">        val duration = System.currentTimeMillis() - stepStartTime</span>
-<span class="nc" id="L716">        val bundle = getCommonParams().apply {</span>
-<span class="nc" id="L717">            putString(&quot;step_name&quot;, currentStep)</span>
-<span class="nc" id="L718">            putLong(&quot;duration_ms&quot;, duration)</span>
-<span class="nc" id="L719">        }</span>
-<span class="nc" id="L720">        analytics.logEvent(FirebaseTags.GUEST_VERIFY_STEP_DURATION, bundle)</span>
-<span class="nc" id="L721">        return duration</span>
+<span class="pc bpc" id="L714" title="2 of 4 branches missed.">        if (currentStep.isEmpty()) return 0</span>
+<span class="fc" id="L715">        val duration = System.currentTimeMillis() - stepStartTime</span>
+<span class="fc" id="L716">        val bundle = getCommonParams().apply {</span>
+<span class="fc" id="L717">            putString(&quot;step_name&quot;, currentStep)</span>
+<span class="fc" id="L718">            putLong(&quot;duration_ms&quot;, duration)</span>
+<span class="fc" id="L719">        }</span>
+<span class="fc" id="L720">        analytics.logEvent(FirebaseTags.GUEST_VERIFY_STEP_DURATION, bundle)</span>
+<span class="fc" id="L721">        return duration</span>
     }
 
     fun logTotalDuration(completed: Boolean): Long {

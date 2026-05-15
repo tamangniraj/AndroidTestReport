@@ -390,9 +390,9 @@ object HelperUtils {
 
     @Throws(java.lang.Exception::class)
     private fun generateKey(): Key {
-<span class="nc" id="L393">        return SecretKeySpec(</span>
-<span class="nc" id="L394">            Constants.KEY.toByteArray(),</span>
-<span class="nc" id="L395">            Constants.KEY_ALGORITHM</span>
+<span class="fc" id="L393">        return SecretKeySpec(</span>
+<span class="fc" id="L394">            Constants.KEY.toByteArray(),</span>
+<span class="fc" id="L395">            Constants.KEY_ALGORITHM</span>
         )
     }
 
@@ -557,22 +557,22 @@ object HelperUtils {
     //
     //    }
     fun encrypt(value: String?): String? {
-<span class="nc bnc" id="L560" title="All 2 branches missed.">        requireNotNull(value) { &quot;Input value cannot be null&quot; }</span>
-<span class="nc" id="L561">        val key = generateKey()</span>
-<span class="nc" id="L562">        val iv = ByteArray(16)</span>
-<span class="nc" id="L563">        SecureRandom().nextBytes(iv)</span>
-<span class="nc" id="L564">        val ivParams = IvParameterSpec(iv)</span>
+<span class="pc bpc" id="L560" title="1 of 2 branches missed.">        requireNotNull(value) { &quot;Input value cannot be null&quot; }</span>
+<span class="fc" id="L561">        val key = generateKey()</span>
+<span class="fc" id="L562">        val iv = ByteArray(16)</span>
+<span class="fc" id="L563">        SecureRandom().nextBytes(iv)</span>
+<span class="fc" id="L564">        val ivParams = IvParameterSpec(iv)</span>
 
-<span class="nc" id="L566">        val cipher = Cipher.getInstance(Constants.ALGORITHM) // Use appropriate padding and mode</span>
-<span class="nc" id="L567">        cipher.init(Cipher.ENCRYPT_MODE, key, ivParams)</span>
-<span class="nc" id="L568">        val encryptedByteValue = cipher.doFinal(value.toByteArray(Charsets.UTF_8))</span>
+<span class="fc" id="L566">        val cipher = Cipher.getInstance(Constants.ALGORITHM) // Use appropriate padding and mode</span>
+<span class="fc" id="L567">        cipher.init(Cipher.ENCRYPT_MODE, key, ivParams)</span>
+<span class="fc" id="L568">        val encryptedByteValue = cipher.doFinal(value.toByteArray(Charsets.UTF_8))</span>
 
         // Combine IV and encrypted value
-<span class="nc" id="L571">        val combined = ByteArray(iv.size + encryptedByteValue.size)</span>
-<span class="nc" id="L572">        System.arraycopy(iv, 0, combined, 0, iv.size)</span>
-<span class="nc" id="L573">        System.arraycopy(encryptedByteValue, 0, combined, iv.size, encryptedByteValue.size)</span>
+<span class="fc" id="L571">        val combined = ByteArray(iv.size + encryptedByteValue.size)</span>
+<span class="fc" id="L572">        System.arraycopy(iv, 0, combined, 0, iv.size)</span>
+<span class="fc" id="L573">        System.arraycopy(encryptedByteValue, 0, combined, iv.size, encryptedByteValue.size)</span>
 
-<span class="nc" id="L575">        return Base64.encodeToString(combined, Base64.DEFAULT)</span>
+<span class="fc" id="L575">        return Base64.encodeToString(combined, Base64.DEFAULT)</span>
     }
 
     private fun savePassword(
