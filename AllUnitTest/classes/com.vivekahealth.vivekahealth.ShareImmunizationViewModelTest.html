@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=edge"/>
+<title>Test results - Class com.vivekahealth.vivekahealth.ShareImmunizationViewModelTest</title>
+<link href="../css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="../css/style.css" rel="stylesheet" type="text/css"/>
+<script src="../js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<h1>Class com.vivekahealth.vivekahealth.ShareImmunizationViewModelTest</h1>
+<div class="breadcrumbs">
+<a href="../index.html">all</a> &gt; 
+<a href="../packages/com.vivekahealth.vivekahealth.html">com.vivekahealth.vivekahealth</a> &gt; ShareImmunizationViewModelTest</div>
+<div id="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox" id="tests">
+<div class="counter">4</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="failures">
+<div class="counter">0</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="ignored">
+<div class="counter">0</div>
+<p>ignored</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="duration">
+<div class="counter">17.430s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox success" id="successRate">
+<div class="percent">100%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="tab-container">
+<ul class="tabLinks">
+<li>
+<a href="#">Tests</a>
+</li>
+<li>
+<a href="#">Standard output</a>
+</li>
+<li>
+<a href="#">Standard error</a>
+</li>
+</ul>
+<div class="tab">
+<h2>Tests</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Duration</th>
+<th>Result</th>
+</tr>
+</thead>
+<tr>
+<td class="success">testDownloadVaccinePDFSuccess</td>
+<td class="success">4.368s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">testDownloadVaccinePDFWithInvalidMemberId</td>
+<td class="success">4.235s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">testShareVaccinationCardsSuccess</td>
+<td class="success">4.260s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">testShareVaccinationCardsWithInvalidEmail</td>
+<td class="success">4.567s</td>
+<td class="success">passed</td>
+</tr>
+</table>
+</div>
+<div class="tab">
+<h2>Standard output</h2>
+<span class="code">
+<pre>=== Starting Login ===
+Login successful!
+Access Token: a7a4b7d6-738a-464f-b...
+Token Type: bearer
+
+=== Getting Member Info ===
+Member Info retrieved successfully!
+Member ID (selfId): 1410200
+Member Name: SUBARNA LOHANI
+Email: subarnalohani@vivekahealth.com
+
+=== Testing Share Vaccination Cards with Invalid Email ===
+Response: Success=true, Message=Vaccination record sent
+✅ Invalid email test completed!
+=== Starting Login ===
+Login successful!
+Access Token: a7a4b7d6-738a-464f-b...
+Token Type: bearer
+
+=== Getting Member Info ===
+Member Info retrieved successfully!
+Member ID (selfId): 1410200
+Member Name: SUBARNA LOHANI
+Email: subarnalohani@vivekahealth.com
+
+=== Testing Download Vaccination PDF with Invalid Member ID ===
+✅ Error occurred as expected: Apologies! Something went wrong. Please try again later. We're working on fixing the issue. Thank you for your patience.
+✅ Invalid member ID test completed!
+=== Starting Login ===
+Login successful!
+Access Token: a7a4b7d6-738a-464f-b...
+Token Type: bearer
+
+=== Getting Member Info ===
+Member Info retrieved successfully!
+Member ID (selfId): 1410200
+Member Name: SUBARNA LOHANI
+Email: subarnalohani@vivekahealth.com
+
+=== Testing Download Vaccination PDF API ===
+✅ Success! PDF downloaded
+Content Type: application/json;charset=UTF-8
+Content Length: -1 bytes
+✅ Download Vaccination PDF test completed successfully!
+=== Starting Login ===
+Login successful!
+Access Token: a7a4b7d6-738a-464f-b...
+Token Type: bearer
+
+=== Getting Member Info ===
+Member Info retrieved successfully!
+Member ID (selfId): 1410200
+Member Name: SUBARNA LOHANI
+Email: subarnalohani@vivekahealth.com
+
+=== Testing Share Vaccination Cards API ===
+✅ Success! Vaccination cards shared
+Success: true
+Message: Vaccination record sent
+✅ Share Vaccination Cards test completed successfully!
+</pre>
+</span>
+</div>
+<div class="tab">
+<h2>Standard error</h2>
+<span class="code">
+<pre>Jun 09, 2026 4:37:38 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; POST https://mobile-preprod.vivekahealth.com/app-server/oauth/token
+Jun 09, 2026 4:37:38 PM okhttp3.internal.platform.Platform log
+INFO: Content-Type: application/x-www-form-urlencoded
+Jun 09, 2026 4:37:38 PM okhttp3.internal.platform.Platform log
+INFO: Content-Length: 194
+Jun 09, 2026 4:37:38 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:38 PM okhttp3.internal.platform.Platform log
+INFO: client_id=viveka-mobile-v2&amp;client_secret=J8K1BA9eI2hic8xo1G7%29UT1n%3F98F631Z&amp;grant_type=password&amp;username=subarnalohani%40vivekahealth.com&amp;password=Test%4012345&amp;tempUUID=&amp;isBiometricLogin=false
+Jun 09, 2026 4:37:38 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; END POST (194-byte body)
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- 200 https://mobile-preprod.vivekahealth.com/app-server/oauth/token (1419ms)
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: date: Tue, 09 Jun 2026 10:52:39 GMT
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: content-type: application/json;charset=UTF-8
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: content-length: 140
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: server: nginx
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: cache-control: no-store
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: pragma: no-cache
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: x-content-type-options: nosniff
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: x-xss-protection: 1; mode=block
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: x-frame-options: DENY
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: access-control-allow-headers: Authorization,Content-Type,Device-Id,Device-Info
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: access-control-allow-credentials: true
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: {&quot;access_token&quot;:&quot;a7a4b7d6-738a-464f-b516-311afb5bdf25&quot;,&quot;token_type&quot;:&quot;bearer&quot;,&quot;expires_in&quot;:30057,&quot;scope&quot;:&quot;read write trust&quot;,&quot;is_guest&quot;:false}
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- END HTTP (140-byte body)
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; GET https://mobile-preprod.vivekahealth.com/app-server/member/v2/info
+Jun 09, 2026 4:37:39 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; END GET
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- 200 https://mobile-preprod.vivekahealth.com/app-server/member/v2/info (1324ms)
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: Date: Tue, 09 Jun 2026 10:52:40 GMT
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: Content-Type: application/hal+json;charset=UTF-8
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: Content-Length: 3837
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: Connection: keep-alive
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: Server: nginx
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: X-Content-Type-Options: nosniff
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: X-XSS-Protection: 1; mode=block
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: Pragma: no-cache
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: Expires: 0
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: X-Frame-Options: DENY
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Headers: Authorization,Content-Type,Device-Id,Device-Info
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Credentials: true
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: {&quot;selfId&quot;:1410200,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SUBARNA&quot;,&quot;lastName&quot;:&quot;LOHANI&quot;,&quot;username&quot;:&quot;subarnalohani@vivekahealth.com&quot;,&quot;usernameType&quot;:1,&quot;displayName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;birthDate&quot;:&quot;1994-01-01&quot;,&quot;memberRelationship&quot;:&quot;Insured&quot;,&quot;fullName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;hipaaNumber&quot;:&quot;096269036&quot;,&quot;ssn&quot;:&quot;*****9036&quot;,&quot;allowChangeAvatar&quot;:{&quot;message&quot;:&quot;You cannot change your selfie more than once a year. If you took a bad selfie that is not identifiable as you, contact your plan administrator.&quot;,&quot;messageKey&quot;:&quot;CANNOT_CHANGE_SELFIE&quot;,&quot;status&quot;:false},&quot;hasAvatar&quot;:true,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Insured&quot;,&quot;maritalStatus&quot;:&quot;SINGLE&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:false,&quot;selfieMandatorySwitch&quot;:true,&quot;email&quot;:&quot;subarnalohani@vivekahealth.com&quot;,&quot;dependents&quot;:[{&quot;selfId&quot;:1533357,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SUBARNA&quot;,&quot;lastName&quot;:&quot;LOHANI&quot;,&quot;displayName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;birthDate&quot;:&quot;2025-12-30&quot;,&quot;memberRelationship&quot;:&quot;Child&quot;,&quot;fullName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;hipaaNumber&quot;:&quot;096269036&quot;,&quot;allowChangeAvatar&quot;:{&quot;message&quot;:null,&quot;messageKey&quot;:null,&quot;status&quot;:true},&quot;hasAvatar&quot;:false,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Child&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:false,&quot;selfieMandatorySwitch&quot;:true,&quot;eligibilityStatus&quot;:&quot;Selfie Required&quot;,&quot;eligible&quot;:false,&quot;_links&quot;:{}},{&quot;selfId&quot;:1549721,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SUBORH&quot;,&quot;lastName&quot;:&quot;ALYNNE&quot;,&quot;displayName&quot;:&quot;ALYNNE, SUBORH&quot;,&quot;birthDate&quot;:&quot;2012-01-10&quot;,&quot;memberRelationship&quot;:&quot;Child&quot;,&quot;fullName&quot;:&quot;ALYNNE, SUBORH&quot;,&quot;hipaaNumber&quot;:&quot;096269036&quot;,&quot;ssn&quot;:&quot;*****1661&quot;,&quot;allowChangeAvatar&quot;:{&quot;message&quot;:&quot;You cannot change your selfie more than once a year. If you took a bad selfie that is not identifiable as you, contact your plan administrator.&quot;,&quot;messageKey&quot;:&quot;CANNOT_CHANGE_SELFIE&quot;,&quot;status&quot;:false},&quot;hasAvatar&quot;:true,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Child&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:false,&quot;selfieMandatorySwitch&quot;:true,&quot;eligible&quot;:true,&quot;_links&quot;:{}},{&quot;selfId&quot;:-1410200,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;JANE&quot;,&quot;lastName&quot;:&quot;WILLIM&quot;,&quot;displayName&quot;:&quot;WILLIM, JANE&quot;,&quot;birthDate&quot;:&quot;2000-03-02&quot;,&quot;memberRelationship&quot;:&quot;Spouse&quot;,&quot;hasAvatar&quot;:false,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;F&quot;,&quot;relationDesc&quot;:&quot;Spouse&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:true,&quot;selfieMandatorySwitch&quot;:true,&quot;shouldEnroll&quot;:false,&quot;collectMissingGenderDuringEnrollment&quot;:false,&quot;optInEdd&quot;:false,&quot;fullNameType2&quot;:&quot;JANE WILLIM&quot;,&quot;_links&quot;:{}},{&quot;selfId&quot;:-1410201,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SMITH&quot;,&quot;lastName&quot;:&quot;JANES&quot;,&quot;displayName&quot;:&quot;JANES, SMITH&quot;,&quot;birthDate&quot;:&quot;2022-01-01&quot;,&quot;memberRelationship&quot;:&quot;Child&quot;,&quot;hasAvatar&quot;:false,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Child&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:true,&quot;selfieMandatorySwitch&quot;:true,&quot;shouldEnroll&quot;:false,&quot;collectMissingGenderDuringEnrollment&quot;:false,&quot;optInEdd&quot;:false,&quot;fullNameType2&quot;:&quot;SMITH JANES&quot;,&quot;_links&quot;:{}}],&quot;skipTour&quot;:false,&quot;skipFacebook&quot;:false,&quot;shouldEnroll&quot;:false,&quot;homeAddress&quot;:{&quot;selfId&quot;:null,&quot;street1&quot;:&quot;112 Wyoming St&quot;,&quot;street2&quot;:null,&quot;city&quot;:&quot;Boulder City&quot;,&quot;state&quot;:&quot;NV&quot;,&quot;zip&quot;:&quot;89005&quot;,&quot;zipExtension&quot;:null,&quot;latitude&quot;:35.9777414,&quot;longitude&quot;:-114.8222503,&quot;country&quot;:&quot;USA&quot;,&quot;addressStatus&quot;:null,&quot;current&quot;:null,&quot;type&quot;:null,&quot;checkEnrollment&quot;:true,&quot;originalAddress&quot;:null,&quot;postalCode&quot;:&quot;89005&quot;,&quot;_links&quot;:{}},&quot;workAddress&quot;:{&quot;selfId&quot;:null,&quot;street1&quot;:&quot;15 St Margarets Lane&quot;,&quot;street2&quot;:null,&quot;city&quot;:&quot;New York&quot;,&quot;state&quot;:&quot;NY&quot;,&quot;zip&quot;:&quot;10033&quot;,&quot;zipExtension&quot;:null,&quot;latitude&quot;:40.7080297,&quot;longitude&quot;:-74.0042405,&quot;country&quot;:&quot;USA&quot;,&quot;addressStatus&quot;:null,&quot;current&quot;:null,&quot;type&quot;:null,&quot;checkEnrollment&quot;:true,&quot;originalAddress&quot;:null,&quot;postalCode&quot;:&quot;10033&quot;,&quot;_links&quot;:{}},&quot;collectMissingGenderDuringEnrollment&quot;:false,&quot;countryCode&quot;:&quot;+1&quot;,&quot;languagePreference&quot;:&quot;en&quot;,&quot;initialLoginComplete&quot;:true,&quot;registrationType&quot;:1,&quot;steerToFullRegistration&quot;:true,&quot;enrollmentStatus&quot;:1,&quot;fullNameType2&quot;:&quot;SUBARNA LOHANI&quot;,&quot;eligible&quot;:true,&quot;_links&quot;:{}}
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- END HTTP (3837-byte body)
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; GET https://mobile-preprod.vivekahealth.com/app-server/member/1410200/vaccination/sharePDFToEmail?email=invalid-email-format
+Jun 09, 2026 4:37:40 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; END GET
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- 200 https://mobile-preprod.vivekahealth.com/app-server/member/1410200/vaccination/sharePDFToEmail?email=invalid-email-format (1277ms)
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: Date: Tue, 09 Jun 2026 10:52:42 GMT
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: Content-Type: application/json;charset=UTF-8
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: Content-Length: 69
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: Connection: keep-alive
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: Server: nginx
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: X-Content-Type-Options: nosniff
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: X-XSS-Protection: 1; mode=block
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: Pragma: no-cache
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: Expires: 0
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: X-Frame-Options: DENY
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Headers: Authorization,Content-Type,Device-Id,Device-Info
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Credentials: true
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: {&quot;message&quot;:&quot;Vaccination record sent&quot;,&quot;messageKey&quot;:null,&quot;status&quot;:true}
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- END HTTP (69-byte body)
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; POST https://mobile-preprod.vivekahealth.com/app-server/oauth/token
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: Content-Type: application/x-www-form-urlencoded
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: Content-Length: 194
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: client_id=viveka-mobile-v2&amp;client_secret=J8K1BA9eI2hic8xo1G7%29UT1n%3F98F631Z&amp;grant_type=password&amp;username=subarnalohani%40vivekahealth.com&amp;password=Test%4012345&amp;tempUUID=&amp;isBiometricLogin=false
+Jun 09, 2026 4:37:42 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; END POST (194-byte body)
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- 200 https://mobile-preprod.vivekahealth.com/app-server/oauth/token (1397ms)
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: date: Tue, 09 Jun 2026 10:52:43 GMT
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: content-type: application/json;charset=UTF-8
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: content-length: 140
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: server: nginx
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: cache-control: no-store
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: pragma: no-cache
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: x-content-type-options: nosniff
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: x-xss-protection: 1; mode=block
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: x-frame-options: DENY
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: access-control-allow-headers: Authorization,Content-Type,Device-Id,Device-Info
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: access-control-allow-credentials: true
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: {&quot;access_token&quot;:&quot;a7a4b7d6-738a-464f-b516-311afb5bdf25&quot;,&quot;token_type&quot;:&quot;bearer&quot;,&quot;expires_in&quot;:30052,&quot;scope&quot;:&quot;read write trust&quot;,&quot;is_guest&quot;:false}
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- END HTTP (140-byte body)
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; GET https://mobile-preprod.vivekahealth.com/app-server/member/v2/info
+Jun 09, 2026 4:37:43 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; END GET
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- 200 https://mobile-preprod.vivekahealth.com/app-server/member/v2/info (1633ms)
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: Date: Tue, 09 Jun 2026 10:52:45 GMT
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: Content-Type: application/hal+json;charset=UTF-8
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: Content-Length: 3837
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: Connection: keep-alive
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: Server: nginx
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: X-Content-Type-Options: nosniff
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: X-XSS-Protection: 1; mode=block
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: Pragma: no-cache
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: Expires: 0
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: X-Frame-Options: DENY
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Headers: Authorization,Content-Type,Device-Id,Device-Info
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Credentials: true
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: {&quot;selfId&quot;:1410200,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SUBARNA&quot;,&quot;lastName&quot;:&quot;LOHANI&quot;,&quot;username&quot;:&quot;subarnalohani@vivekahealth.com&quot;,&quot;usernameType&quot;:1,&quot;displayName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;birthDate&quot;:&quot;1994-01-01&quot;,&quot;memberRelationship&quot;:&quot;Insured&quot;,&quot;fullName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;hipaaNumber&quot;:&quot;096269036&quot;,&quot;ssn&quot;:&quot;*****9036&quot;,&quot;allowChangeAvatar&quot;:{&quot;message&quot;:&quot;You cannot change your selfie more than once a year. If you took a bad selfie that is not identifiable as you, contact your plan administrator.&quot;,&quot;messageKey&quot;:&quot;CANNOT_CHANGE_SELFIE&quot;,&quot;status&quot;:false},&quot;hasAvatar&quot;:true,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Insured&quot;,&quot;maritalStatus&quot;:&quot;SINGLE&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:false,&quot;selfieMandatorySwitch&quot;:true,&quot;email&quot;:&quot;subarnalohani@vivekahealth.com&quot;,&quot;dependents&quot;:[{&quot;selfId&quot;:1533357,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SUBARNA&quot;,&quot;lastName&quot;:&quot;LOHANI&quot;,&quot;displayName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;birthDate&quot;:&quot;2025-12-30&quot;,&quot;memberRelationship&quot;:&quot;Child&quot;,&quot;fullName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;hipaaNumber&quot;:&quot;096269036&quot;,&quot;allowChangeAvatar&quot;:{&quot;message&quot;:null,&quot;messageKey&quot;:null,&quot;status&quot;:true},&quot;hasAvatar&quot;:false,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Child&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:false,&quot;selfieMandatorySwitch&quot;:true,&quot;eligibilityStatus&quot;:&quot;Selfie Required&quot;,&quot;eligible&quot;:false,&quot;_links&quot;:{}},{&quot;selfId&quot;:1549721,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SUBORH&quot;,&quot;lastName&quot;:&quot;ALYNNE&quot;,&quot;displayName&quot;:&quot;ALYNNE, SUBORH&quot;,&quot;birthDate&quot;:&quot;2012-01-10&quot;,&quot;memberRelationship&quot;:&quot;Child&quot;,&quot;fullName&quot;:&quot;ALYNNE, SUBORH&quot;,&quot;hipaaNumber&quot;:&quot;096269036&quot;,&quot;ssn&quot;:&quot;*****1661&quot;,&quot;allowChangeAvatar&quot;:{&quot;message&quot;:&quot;You cannot change your selfie more than once a year. If you took a bad selfie that is not identifiable as you, contact your plan administrator.&quot;,&quot;messageKey&quot;:&quot;CANNOT_CHANGE_SELFIE&quot;,&quot;status&quot;:false},&quot;hasAvatar&quot;:true,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Child&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:false,&quot;selfieMandatorySwitch&quot;:true,&quot;eligible&quot;:true,&quot;_links&quot;:{}},{&quot;selfId&quot;:-1410200,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;JANE&quot;,&quot;lastName&quot;:&quot;WILLIM&quot;,&quot;displayName&quot;:&quot;WILLIM, JANE&quot;,&quot;birthDate&quot;:&quot;2000-03-02&quot;,&quot;memberRelationship&quot;:&quot;Spouse&quot;,&quot;hasAvatar&quot;:false,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;F&quot;,&quot;relationDesc&quot;:&quot;Spouse&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:true,&quot;selfieMandatorySwitch&quot;:true,&quot;shouldEnroll&quot;:false,&quot;collectMissingGenderDuringEnrollment&quot;:false,&quot;optInEdd&quot;:false,&quot;fullNameType2&quot;:&quot;JANE WILLIM&quot;,&quot;_links&quot;:{}},{&quot;selfId&quot;:-1410201,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SMITH&quot;,&quot;lastName&quot;:&quot;JANES&quot;,&quot;displayName&quot;:&quot;JANES, SMITH&quot;,&quot;birthDate&quot;:&quot;2022-01-01&quot;,&quot;memberRelationship&quot;:&quot;Child&quot;,&quot;hasAvatar&quot;:false,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Child&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:true,&quot;selfieMandatorySwitch&quot;:true,&quot;shouldEnroll&quot;:false,&quot;collectMissingGenderDuringEnrollment&quot;:false,&quot;optInEdd&quot;:false,&quot;fullNameType2&quot;:&quot;SMITH JANES&quot;,&quot;_links&quot;:{}}],&quot;skipTour&quot;:false,&quot;skipFacebook&quot;:false,&quot;shouldEnroll&quot;:false,&quot;homeAddress&quot;:{&quot;selfId&quot;:null,&quot;street1&quot;:&quot;112 Wyoming St&quot;,&quot;street2&quot;:null,&quot;city&quot;:&quot;Boulder City&quot;,&quot;state&quot;:&quot;NV&quot;,&quot;zip&quot;:&quot;89005&quot;,&quot;zipExtension&quot;:null,&quot;latitude&quot;:35.9777414,&quot;longitude&quot;:-114.8222503,&quot;country&quot;:&quot;USA&quot;,&quot;addressStatus&quot;:null,&quot;current&quot;:null,&quot;type&quot;:null,&quot;checkEnrollment&quot;:true,&quot;originalAddress&quot;:null,&quot;postalCode&quot;:&quot;89005&quot;,&quot;_links&quot;:{}},&quot;workAddress&quot;:{&quot;selfId&quot;:null,&quot;street1&quot;:&quot;15 St Margarets Lane&quot;,&quot;street2&quot;:null,&quot;city&quot;:&quot;New York&quot;,&quot;state&quot;:&quot;NY&quot;,&quot;zip&quot;:&quot;10033&quot;,&quot;zipExtension&quot;:null,&quot;latitude&quot;:40.7080297,&quot;longitude&quot;:-74.0042405,&quot;country&quot;:&quot;USA&quot;,&quot;addressStatus&quot;:null,&quot;current&quot;:null,&quot;type&quot;:null,&quot;checkEnrollment&quot;:true,&quot;originalAddress&quot;:null,&quot;postalCode&quot;:&quot;10033&quot;,&quot;_links&quot;:{}},&quot;collectMissingGenderDuringEnrollment&quot;:false,&quot;countryCode&quot;:&quot;+1&quot;,&quot;languagePreference&quot;:&quot;en&quot;,&quot;initialLoginComplete&quot;:true,&quot;registrationType&quot;:1,&quot;steerToFullRegistration&quot;:true,&quot;enrollmentStatus&quot;:1,&quot;fullNameType2&quot;:&quot;SUBARNA LOHANI&quot;,&quot;eligible&quot;:true,&quot;_links&quot;:{}}
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- END HTTP (3837-byte body)
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; GET https://mobile-preprod.vivekahealth.com/app-server/member/invalid_member_id/vaccination/generatePDF
+Jun 09, 2026 4:37:45 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; END GET
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- 500 https://mobile-preprod.vivekahealth.com/app-server/member/invalid_member_id/vaccination/generatePDF (1189ms)
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: Date: Tue, 09 Jun 2026 10:52:46 GMT
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: Content-Type: application/json;charset=UTF-8
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: Content-Length: 163
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: Connection: keep-alive
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: Server: nginx
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: X-Content-Type-Options: nosniff
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: X-XSS-Protection: 1; mode=block
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: Pragma: no-cache
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: Expires: 0
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: X-Frame-Options: DENY
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Headers: Authorization,Content-Type,Device-Id,Device-Info
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Credentials: true
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: {&quot;errorCode&quot;:&quot;Exception&quot;,&quot;errorDetails&quot;:&quot;Apologies! Something went wrong. Please try again later. We're working on fixing the issue. Thank you for your patience.&quot;}
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- END HTTP (163-byte body)
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; POST https://mobile-preprod.vivekahealth.com/app-server/oauth/token
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: Content-Type: application/x-www-form-urlencoded
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: Content-Length: 194
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: client_id=viveka-mobile-v2&amp;client_secret=J8K1BA9eI2hic8xo1G7%29UT1n%3F98F631Z&amp;grant_type=password&amp;username=subarnalohani%40vivekahealth.com&amp;password=Test%4012345&amp;tempUUID=&amp;isBiometricLogin=false
+Jun 09, 2026 4:37:46 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; END POST (194-byte body)
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- 200 https://mobile-preprod.vivekahealth.com/app-server/oauth/token (1523ms)
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: date: Tue, 09 Jun 2026 10:52:48 GMT
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: content-type: application/json;charset=UTF-8
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: content-length: 140
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: server: nginx
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: cache-control: no-store
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: pragma: no-cache
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: x-content-type-options: nosniff
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: x-xss-protection: 1; mode=block
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: x-frame-options: DENY
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: access-control-allow-headers: Authorization,Content-Type,Device-Id,Device-Info
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: access-control-allow-credentials: true
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: {&quot;access_token&quot;:&quot;a7a4b7d6-738a-464f-b516-311afb5bdf25&quot;,&quot;token_type&quot;:&quot;bearer&quot;,&quot;expires_in&quot;:30048,&quot;scope&quot;:&quot;read write trust&quot;,&quot;is_guest&quot;:false}
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- END HTTP (140-byte body)
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; GET https://mobile-preprod.vivekahealth.com/app-server/member/v2/info
+Jun 09, 2026 4:37:48 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; END GET
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- 200 https://mobile-preprod.vivekahealth.com/app-server/member/v2/info (1601ms)
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: Date: Tue, 09 Jun 2026 10:52:49 GMT
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: Content-Type: application/hal+json;charset=UTF-8
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: Content-Length: 3837
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: Connection: keep-alive
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: Server: nginx
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: X-Content-Type-Options: nosniff
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: X-XSS-Protection: 1; mode=block
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: Pragma: no-cache
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: Expires: 0
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: X-Frame-Options: DENY
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Headers: Authorization,Content-Type,Device-Id,Device-Info
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Credentials: true
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: {&quot;selfId&quot;:1410200,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SUBARNA&quot;,&quot;lastName&quot;:&quot;LOHANI&quot;,&quot;username&quot;:&quot;subarnalohani@vivekahealth.com&quot;,&quot;usernameType&quot;:1,&quot;displayName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;birthDate&quot;:&quot;1994-01-01&quot;,&quot;memberRelationship&quot;:&quot;Insured&quot;,&quot;fullName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;hipaaNumber&quot;:&quot;096269036&quot;,&quot;ssn&quot;:&quot;*****9036&quot;,&quot;allowChangeAvatar&quot;:{&quot;message&quot;:&quot;You cannot change your selfie more than once a year. If you took a bad selfie that is not identifiable as you, contact your plan administrator.&quot;,&quot;messageKey&quot;:&quot;CANNOT_CHANGE_SELFIE&quot;,&quot;status&quot;:false},&quot;hasAvatar&quot;:true,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Insured&quot;,&quot;maritalStatus&quot;:&quot;SINGLE&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:false,&quot;selfieMandatorySwitch&quot;:true,&quot;email&quot;:&quot;subarnalohani@vivekahealth.com&quot;,&quot;dependents&quot;:[{&quot;selfId&quot;:1533357,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SUBARNA&quot;,&quot;lastName&quot;:&quot;LOHANI&quot;,&quot;displayName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;birthDate&quot;:&quot;2025-12-30&quot;,&quot;memberRelationship&quot;:&quot;Child&quot;,&quot;fullName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;hipaaNumber&quot;:&quot;096269036&quot;,&quot;allowChangeAvatar&quot;:{&quot;message&quot;:null,&quot;messageKey&quot;:null,&quot;status&quot;:true},&quot;hasAvatar&quot;:false,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Child&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:false,&quot;selfieMandatorySwitch&quot;:true,&quot;eligibilityStatus&quot;:&quot;Selfie Required&quot;,&quot;eligible&quot;:false,&quot;_links&quot;:{}},{&quot;selfId&quot;:1549721,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SUBORH&quot;,&quot;lastName&quot;:&quot;ALYNNE&quot;,&quot;displayName&quot;:&quot;ALYNNE, SUBORH&quot;,&quot;birthDate&quot;:&quot;2012-01-10&quot;,&quot;memberRelationship&quot;:&quot;Child&quot;,&quot;fullName&quot;:&quot;ALYNNE, SUBORH&quot;,&quot;hipaaNumber&quot;:&quot;096269036&quot;,&quot;ssn&quot;:&quot;*****1661&quot;,&quot;allowChangeAvatar&quot;:{&quot;message&quot;:&quot;You cannot change your selfie more than once a year. If you took a bad selfie that is not identifiable as you, contact your plan administrator.&quot;,&quot;messageKey&quot;:&quot;CANNOT_CHANGE_SELFIE&quot;,&quot;status&quot;:false},&quot;hasAvatar&quot;:true,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Child&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:false,&quot;selfieMandatorySwitch&quot;:true,&quot;eligible&quot;:true,&quot;_links&quot;:{}},{&quot;selfId&quot;:-1410200,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;JANE&quot;,&quot;lastName&quot;:&quot;WILLIM&quot;,&quot;displayName&quot;:&quot;WILLIM, JANE&quot;,&quot;birthDate&quot;:&quot;2000-03-02&quot;,&quot;memberRelationship&quot;:&quot;Spouse&quot;,&quot;hasAvatar&quot;:false,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;F&quot;,&quot;relationDesc&quot;:&quot;Spouse&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:true,&quot;selfieMandatorySwitch&quot;:true,&quot;shouldEnroll&quot;:false,&quot;collectMissingGenderDuringEnrollment&quot;:false,&quot;optInEdd&quot;:false,&quot;fullNameType2&quot;:&quot;JANE WILLIM&quot;,&quot;_links&quot;:{}},{&quot;selfId&quot;:-1410201,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SMITH&quot;,&quot;lastName&quot;:&quot;JANES&quot;,&quot;displayName&quot;:&quot;JANES, SMITH&quot;,&quot;birthDate&quot;:&quot;2022-01-01&quot;,&quot;memberRelationship&quot;:&quot;Child&quot;,&quot;hasAvatar&quot;:false,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Child&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:true,&quot;selfieMandatorySwitch&quot;:true,&quot;shouldEnroll&quot;:false,&quot;collectMissingGenderDuringEnrollment&quot;:false,&quot;optInEdd&quot;:false,&quot;fullNameType2&quot;:&quot;SMITH JANES&quot;,&quot;_links&quot;:{}}],&quot;skipTour&quot;:false,&quot;skipFacebook&quot;:false,&quot;shouldEnroll&quot;:false,&quot;homeAddress&quot;:{&quot;selfId&quot;:null,&quot;street1&quot;:&quot;112 Wyoming St&quot;,&quot;street2&quot;:null,&quot;city&quot;:&quot;Boulder City&quot;,&quot;state&quot;:&quot;NV&quot;,&quot;zip&quot;:&quot;89005&quot;,&quot;zipExtension&quot;:null,&quot;latitude&quot;:35.9777414,&quot;longitude&quot;:-114.8222503,&quot;country&quot;:&quot;USA&quot;,&quot;addressStatus&quot;:null,&quot;current&quot;:null,&quot;type&quot;:null,&quot;checkEnrollment&quot;:true,&quot;originalAddress&quot;:null,&quot;postalCode&quot;:&quot;89005&quot;,&quot;_links&quot;:{}},&quot;workAddress&quot;:{&quot;selfId&quot;:null,&quot;street1&quot;:&quot;15 St Margarets Lane&quot;,&quot;street2&quot;:null,&quot;city&quot;:&quot;New York&quot;,&quot;state&quot;:&quot;NY&quot;,&quot;zip&quot;:&quot;10033&quot;,&quot;zipExtension&quot;:null,&quot;latitude&quot;:40.7080297,&quot;longitude&quot;:-74.0042405,&quot;country&quot;:&quot;USA&quot;,&quot;addressStatus&quot;:null,&quot;current&quot;:null,&quot;type&quot;:null,&quot;checkEnrollment&quot;:true,&quot;originalAddress&quot;:null,&quot;postalCode&quot;:&quot;10033&quot;,&quot;_links&quot;:{}},&quot;collectMissingGenderDuringEnrollment&quot;:false,&quot;countryCode&quot;:&quot;+1&quot;,&quot;languagePreference&quot;:&quot;en&quot;,&quot;initialLoginComplete&quot;:true,&quot;registrationType&quot;:1,&quot;steerToFullRegistration&quot;:true,&quot;enrollmentStatus&quot;:1,&quot;fullNameType2&quot;:&quot;SUBARNA LOHANI&quot;,&quot;eligible&quot;:true,&quot;_links&quot;:{}}
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- END HTTP (3837-byte body)
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; GET https://mobile-preprod.vivekahealth.com/app-server/member/1410200/vaccination/generatePDF
+Jun 09, 2026 4:37:49 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; END GET
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- 200 https://mobile-preprod.vivekahealth.com/app-server/member/1410200/vaccination/generatePDF (1229ms)
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: Date: Tue, 09 Jun 2026 10:52:50 GMT
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: Content-Type: application/json;charset=UTF-8
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: Transfer-Encoding: chunked
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: Connection: keep-alive
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: Server: nginx
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: Content-Disposition: inline; filename=&quot;vaccination_record_SUBARNA_LOHANI_20260609.pdf&quot;
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: X-Content-Type-Options: nosniff
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: X-XSS-Protection: 1; mode=block
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: Pragma: no-cache
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: Expires: 0
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: X-Frame-Options: DENY
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: vary: accept-encoding
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Headers: Authorization,Content-Type,Device-Id,Device-Info
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Credentials: true
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: %PDF-1.4
+%����
+4 0 obj
+&lt;&lt;/Length 2237/Filter/FlateDecode&gt;&gt;stream
+x��Yms�?��_���̅%މ|�%��oz��v��t��'�6S�r(ک;����?	P?�t&lt;?�?���.v?.�k��&gt;+�6��o�?��OٯY�?\K�[��'x�KF?�9��??��g�?E	|
+](��?|A�G���?(ѹ$�??L�?J�?�0D�\��.�ß�?���~K�x�?�&lt;.�?�S?	~z�kb�?V0�*�J��D?A�K�X��Ea2�D���?;?��$��tF�B\&lt;�1�SCx?���y��U��uՎO뢚�BE���s�}�?rW?�ͦޟ?�(0�?C�7%��pɅ��h�H�I�F�?1������}������?�S�mޘ?&gt;�?�b���*i�Zy?�n�s�-��S�?��dF�?�J�*+��?�v�`��@���?�Oc?�d�?_C??&gt;)sQ?�s�,u�K��U�$@�3I��?9X�#n5�P�&quot;/}?��en4@?�?�\??�3�?@�8*+�R?�Z?�?&amp;�2�?���&amp;���Ӄ�A?�EzB?�Y?�FF�x^��?�?9��	d?Ε�k��l���)�C?4N�=??&quot;7rK `�Q��6�T9���6����tK��(?�[�y�7�·���K����C��,K���+�tN�Mi??�`���)?8.]�#�jq�(l�l��q�+`o���?Qr��E??��z�Ʉ�dsaeI߅�T	&amp;v�`�(��jؽ�?^�&gt;?�T�@{��&#xa6429;e9AT���?�&quot;?^��9�x?�%���D�?�?q^�8?6Obs�!�D��K�|U��M?w�?���T�?q??o?�]??T����ID&lt;���s�C%-&#x25fa7;�Ǹ{���!Nx�&#x7f;SY.?G2&lt;?��Y�`�²t�?�?��0?5�aT�?�=�IE�*��M����?f?/t4?&gt;�3`�3?U�颌?�$?SQ?�s]SȌ%���T�?O??�PA��ˢ=���L5x��s�B�/&#x45ba6;�Ǩz�N�gga?а!�P?��O��[ԅ?WC�,`0�;kn����?��O�&gt;�ܯ&#x7f;�.�(��*?Gh���X��?븀?�^?ā6?�gJ��x�Q~�ul��k�2?M.??���C�p��v?�??0��?�?�AfN�?�Ux?�^hA8v�6?x7? 6P�?l�R:���G t[��
+l+9����p����-?=Ia���A?#mWU�XC��ԏ�\��Ђa�-���??-��?l��(�`?N-�Ǿ???:�Y?[05?�?LZc��???d���?��?�?MX�Kۖa$���!��?t��rn�0�\�^?הۗh�Ω]��y�3v�9�1w�?
+?l��CB��~�q��G�7��5�?�e\�ha�T�rtHA��*Ǻ%1?:\2�L0�K�)��J?�v}�Dd�8�&amp;������Cb�p�h??�OӜ;M���wF�E?��?kF�?q�ݶU�?rƜv�m��]j��?tuJ?�b6�?IR�?��2I�$�����?��L�v?j�8??�?P���v�)�����?\D�u�??ޤ�?�l|��O.��n?'?����`2W6^sM%o��o?m?o?�?�)��i�u?s^��\�r�V���V���?��(�#۽��/?�?TcX�t����M�i?�X�??3?�&amp;Q}�b�,&amp;?�T�r���9-?&gt;�̱+�(s�TN?�.����ar?�?
+�&amp;�-o��0s ��O5z��׎�@\�{K�qA5^;�w�p�R��d^�*?�9��b�� ۨ���^��?���zr[ov�vR�����ԱX?p�?(�r)�:&#x7f;�zSu���j*H9��Y�$Y�n?&gt;�~���W�7W�/?~����eOpDǩ?��?k��~�?��:K?,U,��?Z�d���&#x7f;��7B�?j�8�R&#x8b;��q$��_gH������?R��?���(�L���	�^�C�?
+�f3��l�����f?�7�vꀎ;/����fE�ͣ��Q(\�g�%��^m��?��Po��9�A��n�jM?iO�Y�˰{m�&gt;�W�f�?�a?ې���z��??F�ܽ������ե�*??�o����ڻX	�/?V�f��L�?��4�*?�P��PEt���X�(d`A~�������?�������W�����;�����0��
+
+^���P�����B�;6��?�U�� �G��???�,��a�$rprK�[����w�X�#�ٍ�f�a?H2������S�'�=,?��V�zK��7m�t{��Ɗ�_�v�8&#x83;qGV43c��&gt;Ҟ��t�?�w#i�M���Iն�u�^��??�mN�v]�&gt;[3'�#���K�A?�}?E�@�z~���4?d|���o��*�}H5�v��P�ǥ�?C� &gt;#?��R �mտ#�@�'_�?h��a׶]ݏ��n�j�0-(�32}�G�&lt;�6�~���?�+��u�m;e���=&lt;4?�n�?��}?ljX]?��/�H�v/�'����s�?Am?�J?�#�`x�=Q�?���&#x7f;�R�F
+endstream
+endobj
+1 0 obj
+&lt;&lt;/Type/Page/MediaBox[0 0 612 792]/Resources&lt;&lt;/Font&lt;&lt;/F1 2 0 R/F2 3 0 R&gt;&gt;&gt;&gt;/Contents 4 0 R/Parent 5 0 R&gt;&gt;
+endobj
+8 0 obj
+&lt;&lt;/Title(Vaccination History)/Parent 7 0 R/Dest[1 0 R/XYZ 0 578.74 0]&gt;&gt;
+endobj
+7 0 obj
+&lt;&lt;/Title(Immunization Record)/Parent 6 0 R/First 8 0 R/Last 8 0 R/Dest[1 0 R/XYZ 0 734.55 0]/Count 1&gt;&gt;
+endobj
+6 0 obj
+&lt;&lt;/Type/Outlines/First 7 0 R/Last 7 0 R/Count 2&gt;&gt;
+endobj
+2 0 obj
+&lt;&lt;/Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding&gt;&gt;
+endobj
+3 0 obj
+&lt;&lt;/Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding&gt;&gt;
+endobj
+5 0 obj
+&lt;&lt;/Type/Pages/Count 1/Kids[1 0 R]&gt;&gt;
+endobj
+9 0 obj
+&lt;&lt;/Type/Catalog/Pages 5 0 R/Outlines 6 0 R/PageMode/UseOutlines&gt;&gt;
+endobj
+10 0 obj
+&lt;&lt;/Producer(iText� 5.5.11 �2000-2017 iText Group NV \(AGPL-version\))/CreationDate(D:20260609105250Z)/ModDate(D:20260609105250Z)/Title(Immunization Record)&gt;&gt;
+endobj
+xref
+0 11
+0000000000 65535 f 
+0000002320 00000 n 
+0000002711 00000 n 
+0000002799 00000 n 
+0000000015 00000 n 
+0000002892 00000 n 
+0000002646 00000 n 
+0000002528 00000 n 
+0000002441 00000 n 
+0000002943 00000 n 
+0000003024 00000 n 
+trailer
+&lt;&lt;/Size 11/Root 9 0 R/Info 10 0 R/ID [&lt;8cd315c222dfd5f7f3fe44c2942255e1&gt;&lt;8cd315c222dfd5f7f3fe44c2942255e1&gt;]&gt;&gt;
+%iText-5.5.11
+startxref
+3198
+%%EOF
+{&quot;message&quot;:&quot;Download Started.&quot;,&quot;messageKey&quot;:null,&quot;status&quot;:true}
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- END HTTP (3644-byte body)
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; POST https://mobile-preprod.vivekahealth.com/app-server/oauth/token
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: Content-Type: application/x-www-form-urlencoded
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: Content-Length: 194
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: client_id=viveka-mobile-v2&amp;client_secret=J8K1BA9eI2hic8xo1G7%29UT1n%3F98F631Z&amp;grant_type=password&amp;username=subarnalohani%40vivekahealth.com&amp;password=Test%4012345&amp;tempUUID=&amp;isBiometricLogin=false
+Jun 09, 2026 4:37:50 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; END POST (194-byte body)
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- 200 https://mobile-preprod.vivekahealth.com/app-server/oauth/token (1475ms)
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: date: Tue, 09 Jun 2026 10:52:52 GMT
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: content-type: application/json;charset=UTF-8
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: content-length: 140
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: server: nginx
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: cache-control: no-store
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: pragma: no-cache
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: x-content-type-options: nosniff
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: x-xss-protection: 1; mode=block
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: x-frame-options: DENY
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: access-control-allow-headers: Authorization,Content-Type,Device-Id,Device-Info
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: access-control-allow-credentials: true
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: {&quot;access_token&quot;:&quot;a7a4b7d6-738a-464f-b516-311afb5bdf25&quot;,&quot;token_type&quot;:&quot;bearer&quot;,&quot;expires_in&quot;:30044,&quot;scope&quot;:&quot;read write trust&quot;,&quot;is_guest&quot;:false}
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- END HTTP (140-byte body)
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; GET https://mobile-preprod.vivekahealth.com/app-server/member/v2/info
+Jun 09, 2026 4:37:52 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; END GET
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- 200 https://mobile-preprod.vivekahealth.com/app-server/member/v2/info (1289ms)
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: Date: Tue, 09 Jun 2026 10:52:53 GMT
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: Content-Type: application/hal+json;charset=UTF-8
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: Content-Length: 3837
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: Connection: keep-alive
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: Server: nginx
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: X-Content-Type-Options: nosniff
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: X-XSS-Protection: 1; mode=block
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: Pragma: no-cache
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: Expires: 0
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: X-Frame-Options: DENY
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Headers: Authorization,Content-Type,Device-Id,Device-Info
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Credentials: true
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: {&quot;selfId&quot;:1410200,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SUBARNA&quot;,&quot;lastName&quot;:&quot;LOHANI&quot;,&quot;username&quot;:&quot;subarnalohani@vivekahealth.com&quot;,&quot;usernameType&quot;:1,&quot;displayName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;birthDate&quot;:&quot;1994-01-01&quot;,&quot;memberRelationship&quot;:&quot;Insured&quot;,&quot;fullName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;hipaaNumber&quot;:&quot;096269036&quot;,&quot;ssn&quot;:&quot;*****9036&quot;,&quot;allowChangeAvatar&quot;:{&quot;message&quot;:&quot;You cannot change your selfie more than once a year. If you took a bad selfie that is not identifiable as you, contact your plan administrator.&quot;,&quot;messageKey&quot;:&quot;CANNOT_CHANGE_SELFIE&quot;,&quot;status&quot;:false},&quot;hasAvatar&quot;:true,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Insured&quot;,&quot;maritalStatus&quot;:&quot;SINGLE&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:false,&quot;selfieMandatorySwitch&quot;:true,&quot;email&quot;:&quot;subarnalohani@vivekahealth.com&quot;,&quot;dependents&quot;:[{&quot;selfId&quot;:1533357,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SUBARNA&quot;,&quot;lastName&quot;:&quot;LOHANI&quot;,&quot;displayName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;birthDate&quot;:&quot;2025-12-30&quot;,&quot;memberRelationship&quot;:&quot;Child&quot;,&quot;fullName&quot;:&quot;LOHANI, SUBARNA&quot;,&quot;hipaaNumber&quot;:&quot;096269036&quot;,&quot;allowChangeAvatar&quot;:{&quot;message&quot;:null,&quot;messageKey&quot;:null,&quot;status&quot;:true},&quot;hasAvatar&quot;:false,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Child&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:false,&quot;selfieMandatorySwitch&quot;:true,&quot;eligibilityStatus&quot;:&quot;Selfie Required&quot;,&quot;eligible&quot;:false,&quot;_links&quot;:{}},{&quot;selfId&quot;:1549721,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SUBORH&quot;,&quot;lastName&quot;:&quot;ALYNNE&quot;,&quot;displayName&quot;:&quot;ALYNNE, SUBORH&quot;,&quot;birthDate&quot;:&quot;2012-01-10&quot;,&quot;memberRelationship&quot;:&quot;Child&quot;,&quot;fullName&quot;:&quot;ALYNNE, SUBORH&quot;,&quot;hipaaNumber&quot;:&quot;096269036&quot;,&quot;ssn&quot;:&quot;*****1661&quot;,&quot;allowChangeAvatar&quot;:{&quot;message&quot;:&quot;You cannot change your selfie more than once a year. If you took a bad selfie that is not identifiable as you, contact your plan administrator.&quot;,&quot;messageKey&quot;:&quot;CANNOT_CHANGE_SELFIE&quot;,&quot;status&quot;:false},&quot;hasAvatar&quot;:true,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Child&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:false,&quot;selfieMandatorySwitch&quot;:true,&quot;eligible&quot;:true,&quot;_links&quot;:{}},{&quot;selfId&quot;:-1410200,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;JANE&quot;,&quot;lastName&quot;:&quot;WILLIM&quot;,&quot;displayName&quot;:&quot;WILLIM, JANE&quot;,&quot;birthDate&quot;:&quot;2000-03-02&quot;,&quot;memberRelationship&quot;:&quot;Spouse&quot;,&quot;hasAvatar&quot;:false,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;F&quot;,&quot;relationDesc&quot;:&quot;Spouse&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:true,&quot;selfieMandatorySwitch&quot;:true,&quot;shouldEnroll&quot;:false,&quot;collectMissingGenderDuringEnrollment&quot;:false,&quot;optInEdd&quot;:false,&quot;fullNameType2&quot;:&quot;JANE WILLIM&quot;,&quot;_links&quot;:{}},{&quot;selfId&quot;:-1410201,&quot;clientId&quot;:100,&quot;firstName&quot;:&quot;SMITH&quot;,&quot;lastName&quot;:&quot;JANES&quot;,&quot;displayName&quot;:&quot;JANES, SMITH&quot;,&quot;birthDate&quot;:&quot;2022-01-01&quot;,&quot;memberRelationship&quot;:&quot;Child&quot;,&quot;hasAvatar&quot;:false,&quot;avatarInReview&quot;:false,&quot;gender&quot;:&quot;M&quot;,&quot;relationDesc&quot;:&quot;Child&quot;,&quot;demographicUpdatePending&quot;:false,&quot;memberAdditionInReview&quot;:true,&quot;selfieMandatorySwitch&quot;:true,&quot;shouldEnroll&quot;:false,&quot;collectMissingGenderDuringEnrollment&quot;:false,&quot;optInEdd&quot;:false,&quot;fullNameType2&quot;:&quot;SMITH JANES&quot;,&quot;_links&quot;:{}}],&quot;skipTour&quot;:false,&quot;skipFacebook&quot;:false,&quot;shouldEnroll&quot;:false,&quot;homeAddress&quot;:{&quot;selfId&quot;:null,&quot;street1&quot;:&quot;112 Wyoming St&quot;,&quot;street2&quot;:null,&quot;city&quot;:&quot;Boulder City&quot;,&quot;state&quot;:&quot;NV&quot;,&quot;zip&quot;:&quot;89005&quot;,&quot;zipExtension&quot;:null,&quot;latitude&quot;:35.9777414,&quot;longitude&quot;:-114.8222503,&quot;country&quot;:&quot;USA&quot;,&quot;addressStatus&quot;:null,&quot;current&quot;:null,&quot;type&quot;:null,&quot;checkEnrollment&quot;:true,&quot;originalAddress&quot;:null,&quot;postalCode&quot;:&quot;89005&quot;,&quot;_links&quot;:{}},&quot;workAddress&quot;:{&quot;selfId&quot;:null,&quot;street1&quot;:&quot;15 St Margarets Lane&quot;,&quot;street2&quot;:null,&quot;city&quot;:&quot;New York&quot;,&quot;state&quot;:&quot;NY&quot;,&quot;zip&quot;:&quot;10033&quot;,&quot;zipExtension&quot;:null,&quot;latitude&quot;:40.7080297,&quot;longitude&quot;:-74.0042405,&quot;country&quot;:&quot;USA&quot;,&quot;addressStatus&quot;:null,&quot;current&quot;:null,&quot;type&quot;:null,&quot;checkEnrollment&quot;:true,&quot;originalAddress&quot;:null,&quot;postalCode&quot;:&quot;10033&quot;,&quot;_links&quot;:{}},&quot;collectMissingGenderDuringEnrollment&quot;:false,&quot;countryCode&quot;:&quot;+1&quot;,&quot;languagePreference&quot;:&quot;en&quot;,&quot;initialLoginComplete&quot;:true,&quot;registrationType&quot;:1,&quot;steerToFullRegistration&quot;:true,&quot;enrollmentStatus&quot;:1,&quot;fullNameType2&quot;:&quot;SUBARNA LOHANI&quot;,&quot;eligible&quot;:true,&quot;_links&quot;:{}}
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- END HTTP (3837-byte body)
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; GET https://mobile-preprod.vivekahealth.com/app-server/member/1410200/vaccination/sharePDFToEmail?email=nirajtamang%40vivekahealth.com
+Jun 09, 2026 4:37:53 PM okhttp3.internal.platform.Platform log
+INFO: --&gt; END GET
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- 200 https://mobile-preprod.vivekahealth.com/app-server/member/1410200/vaccination/sharePDFToEmail?email=nirajtamang%40vivekahealth.com (1484ms)
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: Date: Tue, 09 Jun 2026 10:52:55 GMT
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: Content-Type: application/json;charset=UTF-8
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: Content-Length: 69
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: Connection: keep-alive
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: Server: nginx
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: X-Content-Type-Options: nosniff
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: X-XSS-Protection: 1; mode=block
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: Pragma: no-cache
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: Expires: 0
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: X-Frame-Options: DENY
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Headers: Authorization,Content-Type,Device-Id,Device-Info
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: Access-Control-Allow-Credentials: true
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: 
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: {&quot;message&quot;:&quot;Vaccination record sent&quot;,&quot;messageKey&quot;:null,&quot;status&quot;:true}
+Jun 09, 2026 4:37:55 PM okhttp3.internal.platform.Platform log
+INFO: &lt;-- END HTTP (69-byte body)
+</pre>
+</span>
+</div>
+</div>
+<div id="footer">
+<p>
+<div>
+<label class="hidden" id="label-for-line-wrapping-toggle" for="line-wrapping-toggle">Wrap lines
+<input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
+</label>
+</div>Generated by 
+<a href="https://www.gradle.org">Gradle 8.14.2</a> at Jun 9, 2026, 4:38:13 PM</p>
+</div>
+</div>
+</body>
+</html>
