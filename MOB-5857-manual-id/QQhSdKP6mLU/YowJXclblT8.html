@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=edge"/>
+<title>Test results - testShareVaccinationCardsWithInvalidEmail</title>
+<link href="../css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="../css/style.css" rel="stylesheet" type="text/css"/>
+<script src="../js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<div class="breadcrumbs">
+<a class="breadcrumb" href="../index.html">all</a> &gt; 
+<a class="breadcrumb" href="index.html">com.vivekahealth.vivekahealth.ShareImmunizationViewModelTest</a> &gt; 
+<span class="breadcrumb">testShareVaccinationCardsWithInvalidEmail</span>
+</div>
+<div class="tab-container">
+<ul class="tabLinks">
+<li>
+<a class="successGroup" href="#">Gradle Test Run :app:testBasePreprodUnitTest</a>
+</li>
+</ul>
+<div class="tab">
+<h2>Gradle Test Run :app:testBasePreprodUnitTest</h2>
+<h1>testShareVaccinationCardsWithInvalidEmail</h1>
+<div class="tab-container">
+<ul class="tabLinks">
+<li>
+<a class="" href="#">summary</a>
+</li>
+<li>
+<a class="" href="#">standard output</a>
+</li>
+<li>
+<a class="" href="#">error output</a>
+</li>
+</ul>
+<div class="tab">
+<h2>summary</h2>
+<div>
+<div class="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox">
+<div class="counter">1</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox">
+<div class="counter">0</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox">
+<div class="counter">0</div>
+<p>skipped</p>
+</div>
+</td>
+<td>
+<div class="infoBox duration">
+<div class="counter">2.165s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox success successRate">
+<div class="percent">100%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="tab">
+<h2>standard output</h2>
+<span class="code">
+<pre id="root-0-test-stdout-testShareVaccinationCardsWithInvalidEmail">=== Starting Login ===
+Login failed with code: 404
+Error body: {&quot;error&quot;:&quot;invalid_request&quot;,&quot;error_description&quot;:&quot;Username not registered.&quot;,&quot;errorType&quot;:&quot;NOT_REGISTERED&quot;}
+⚠️ Login failed or memberId not retrieved, skipping test
+</pre>
+<button class="clipboard-copy-btn" aria-label="Copy to clipboard" data-copy-element-id="root-0-test-stdout-testShareVaccinationCardsWithInvalidEmail">Copy</button>
+</span>
+</div>
+<div class="tab">
+<h2>error output</h2>
+<span class="code">
+<pre id="root-0-test-stderr-testShareVaccinationCardsWithInvalidEmail">Aug 13, 2026 10:53:06 AM okhttp3.internal.platform.Platform log
+INFO: --&gt; POST https://mobile-preprod.vivekahealth.com/app-server/oauth/token
+Aug 13, 2026 10:53:06 AM okhttp3.internal.platform.Platform log
+INFO: Content-Type: application/x-www-form-urlencoded
+Aug 13, 2026 10:53:06 AM okhttp3.internal.platform.Platform log
+INFO: Content-Length: 194
+Aug 13, 2026 10:53:06 AM okhttp3.internal.platform.Platform log
+INFO: 
+Aug 13, 2026 10:53:06 AM okhttp3.internal.platform.Platform log
+INFO: client_id=viveka-mobile-v2&amp;client_secret=J8K1BA9eI2hic8xo1G7%29UT1n%3F98F631Z&amp;grant_type=password&amp;username=bibekadhikari%40vivekahealth.com&amp;password=Test%4012345&amp;tempUUID=&amp;isBiometricLogin=false
+Aug 13, 2026 10:53:06 AM okhttp3.internal.platform.Platform log
+INFO: --&gt; END POST (194-byte body)
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: &lt;-- 404 https://mobile-preprod.vivekahealth.com/app-server/oauth/token (2111ms)
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: date: Thu, 13 Aug 2026 05:08:08 GMT
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: content-type: application/json;charset=UTF-8
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: content-length: 103
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: x-ratelimit-limit: 10000
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: x-ratelimit-remaining: 9997
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: x-ratelimit-reset: 47
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: cache-control: no-store
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: pragma: no-cache
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: x-content-type-options: nosniff
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: x-xss-protection: 1; mode=block
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: x-frame-options: DENY
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: access-control-allow-origin: *
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: access-control-allow-headers: Authorization,Content-Type,Device-Id,Device-Info
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: access-control-allow-credentials: true
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: x-envoy-upstream-service-time: 408
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: server: istio-envoy
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: x-envoy-decorator-operation: apisix-gateway.ingress-apisix.svc.cluster.local:80/*
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: 
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: {&quot;error&quot;:&quot;invalid_request&quot;,&quot;error_description&quot;:&quot;Username not registered.&quot;,&quot;errorType&quot;:&quot;NOT_REGISTERED&quot;}
+Aug 13, 2026 10:53:08 AM okhttp3.internal.platform.Platform log
+INFO: &lt;-- END HTTP (103-byte body)
+</pre>
+<button class="clipboard-copy-btn" aria-label="Copy to clipboard" data-copy-element-id="root-0-test-stderr-testShareVaccinationCardsWithInvalidEmail">Copy</button>
+</span>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<p>
+<div>
+<label class="hidden" id="label-for-line-wrapping-toggle" for="line-wrapping-toggle">Wrap lines
+<input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
+</label>
+</div>Generated by 
+<a href="https://www.gradle.org">Gradle 9.4.1</a> at Aug 13, 2026, 10:53:32 AM</p>
+</div>
+</div>
+</body>
+</html>
